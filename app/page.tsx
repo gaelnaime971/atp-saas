@@ -9,15 +9,7 @@ export default function Home() {
         className="sticky top-0 z-50 flex items-center justify-between px-8 py-4 border-b"
         style={{ background: 'rgba(10,12,15,0.85)', borderColor: 'var(--border)', backdropFilter: 'blur(12px)' }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-            <span className="text-green-400 text-xs font-bold font-mono">ATP</span>
-          </div>
-          <div>
-            <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>ATP</span>
-            <span className="text-sm font-semibold text-green-400"> Coaching</span>
-          </div>
-        </div>
+        <img src="/logo-atp.png" alt="Alpha Trading Pro" style={{ height: 32 }} />
 
         <Link
           href="/login"

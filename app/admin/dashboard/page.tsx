@@ -9,6 +9,7 @@ import Calendar from '@/components/admin/pages/Calendar'
 import Sessions from '@/components/admin/pages/Sessions'
 import Revenus from '@/components/admin/pages/Revenus'
 import Bibliotheque from '@/components/admin/pages/Bibliotheque'
+import Settings from '@/components/admin/pages/Settings'
 
 type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'settings'
 
@@ -48,7 +49,7 @@ export default function AdminDashboard() {
       case 'revenus': return <Revenus />
       case 'bibliotheque': return <Bibliotheque />
       case 'broadcast': return <div className="text-[#5a6a82] text-sm">Broadcast — bientôt disponible</div>
-      case 'settings': return <div className="text-[#5a6a82] text-sm">Paramètres — bientôt disponible</div>
+      case 'settings': return <Settings />
       default: return <Overview />
     }
   }

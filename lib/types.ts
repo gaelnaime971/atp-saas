@@ -53,6 +53,12 @@ export interface Revenue {
   amount: number
   description: string | null
   payment_date: string
+  payment_method: string | null
+  is_ttc: boolean
+  amount_ht: number | null
+  tva_amount: number | null
+  invoice_number: string | null
+  invoice_url: string | null
   created_at: string
 }
 

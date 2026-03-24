@@ -115,18 +115,28 @@ export default function Results() {
                 <tr className="border-b border-[rgba(255,255,255,0.05)]">
                   <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Trader</th>
                   <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Date</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Instrument</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Setup</th>
+                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Inst.</th>
                   <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Trades</th>
                   <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">PnL</th>
-                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Résultat</th>
+                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">R</th>
+                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Win%</th>
+                  <th className="text-center text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Plan</th>
+                  <th className="text-center text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Humeur</th>
+                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Type</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
-                {filtered.map((session) => (
+                {filtered.map((session) => {
+                  const meta = (() => { try { return session.setup ? JSON.parse(session.setup) : null } catch { return null } })()
+                  const rValue = meta?.r_value ?? session.pnl / 25
+                  const winPct = meta?.win_rate ?? (session.result === 'win' ? 100 : session.result === 'loss' ? 0 : 50)
+                  const planScore = meta?.plan_score
+                  const mood = meta?.mood ?? '—'
+                  const sessionType = meta?.session_type ?? (session.result === 'win' ? 'Win' : session.result === 'loss' ? 'Loss' : 'BE')
+                  return (
                   <tr key={session.id} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
                     <td className="py-3 text-sm font-medium text-[#e8edf5]">{session.trader_name}</td>
-                    <td className="py-3 text-sm text-[#a0aec0]">
+                    <td className="py-3 text-sm text-[#a0aec0] font-mono">
                       {new Date(session.session_date).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="py-3">
@@ -134,22 +144,30 @@ export default function Results() {
                         {session.instrument ?? 'N/A'}
                       </span>
                     </td>
-                    <td className="py-3 text-sm text-[#a0aec0]">{session.setup ?? '—'}</td>
                     <td className="py-3 text-sm text-[#a0aec0] text-right font-mono">{session.trades_count}</td>
                     <td className={`py-3 text-sm font-mono font-medium text-right ${session.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {session.pnl >= 0 ? '+' : ''}{session.pnl.toFixed(2)} $
                     </td>
-                    <td className="py-3 text-right">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        session.result === 'win' ? 'bg-green-500/10 text-green-400' :
-                        session.result === 'loss' ? 'bg-red-500/10 text-red-400' :
-                        'bg-[#222940] text-[#a0aec0]'
-                      }`}>
-                        {session.result === 'win' ? 'Win' : session.result === 'loss' ? 'Loss' : 'Breakeven'}
-                      </span>
+                    <td className={`py-3 text-sm font-mono text-right ${rValue >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {rValue >= 0 ? '+' : ''}{Number(rValue).toFixed(1)}R
                     </td>
+                    <td className="py-3 text-sm text-[#a0aec0] text-right font-mono">{winPct}%</td>
+                    <td className="py-3 text-center">
+                      {planScore != null ? (
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          planScore >= 8 ? 'bg-green-500/10 text-green-400' :
+                          planScore >= 5 ? 'bg-amber-500/10 text-amber-400' :
+                          'bg-red-500/10 text-red-400'
+                        }`}>
+                          {planScore}/10
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="py-3 text-center text-base">{mood}</td>
+                    <td className="py-3 text-right text-xs text-[#5a6a82]">{sessionType}</td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
