@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATP — Coaching Dashboard</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMwAAAEkCAYAAABjQt6pAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAABCCklEQVR42u29d7ylV13v//6u9ZRdT5meXkgCoUuCFAVBioqIICAgIiKgYkEv1p9XBS9er3pVRLFw6U06JJQkQCCBQAghIYQkQHoySabPnLbbU9b6/v549t7nzCRgzsxkzpw56/N6Pa9zZs/e53n2WuuzvmV9CwQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBMCjnvZg/aO3/KY+6GemNIzG2oMJQ7A87B3sIp0Wnv9rP8ezX3+ucjqBOIEwAT8Ipc1pbEzx9YwzH3MKr/2fL2Ly3ECaQJiA+yaMydm29y6oewrTo7U54Q//8rd4+u88OpAmECbgQMRpRK2V4iTHpRkLZi/bstt54rPP4dX/8Vyd/lEbiBMIEzCCOk8khqIoIPZ0G3vwx3fYFd3B1Fkpr/yTl3Duy04LpAmECQAwagAPgBePi5W5bA7qjo7OMM9unvXSp/Gqf3qOTjws2DaBMAFLyBPRknU0dAqfWSJjiGtKx+1iy1lNXvMXL+FHXrw5kCYQJgBA1NDdO2C6vgnjIgaDAe11DfK4y/bBHaTHeX7yF5/AC//mcRoHaRMIEySM0Ixa5PMFkVqiyDDT2wd1R7LBsLVzC/EWz8mP2czvveFFnP389YE0gTBrG5OtFuWgj+BJGzV6eZd93X1oHVobm+zq7WIQ9ejGCzz/lT/PS974dJXTgrQJhFmTUObmd9NoR0jk6PXnaU9OsG7DJvICds90SFsTzBcD4nZCZrqc9Igt/P4bXsTDX7AxkCYQZq0ZMR5nC3IGOM3xqgz6Gd3uADRmcmID8/M9mq0JSinp6AJl0qWx2fCMFz6BF//NkwJpAmHWDrx4JDEUpqAwYOIIa1OsphgX4QfQiFr43OO9hxjyKGPezOGnck541CZ+8+2/oFt+ohaIEwizFhQygxNwYlABFYN4g/GC8QbjDVaHgywlKiWlzSmijH5cMEi6pJuUV//pS/mJ//GQQJpAmLUgZSKcRCgRqMEAVhWrnlhLrBYIBYLDi8OLUhooLeRRSbzRsK17Gz/6zEfyqrf+jE4/ITgEAmGO6eETUFv9RJb8j0NwCB6Dh+FPXXwLzih7u7uob4jpmwXWnzrBq1/3Ep74aw8KpAmEOVbtfoP1IFpdQ7kDeFSqCzxIFU4zep9RwSikqSXzPTQp6ckCZTPnJ573Y7zwr5+sG54ogThHGaIwBIdAFgWrfmzRVK+N4szu4/34aodSQA1ePGVZUpQFElviVOhrF2+U0889mZPOeAmfPe7zetv1eyhuRMKIBwmz2i0YLEV1aYlQVtQRcET7XTocaqseq55Ic2JfUo9q1OtNnHoGLoMGZLWMeWYo2gNe+BvP4+kv+FGajw62TSDM6tfHKhULP36pslHM8Peldo0BNWPJVP00lKVn0MswxhCnEVnZJdcuNB1F0mdPtpPHPvXRvOK1L+Fhzz0xkCYQZhVDDU4MjgiPGUoRs+gOUB2/WhHI4Fn8jBODqpAkCaLgihIrYMRRuj7e5kT1gp29u6gfb3jurz+LZ7/+x1UeGaRNsGFWK2fELGs3uq/3GzV4qeyfRS+aBymx9RSJDJ3eHMZ1OfvxD2LjaRv54kVf1K0fmg92TZAwa45xw2sknfafkoWFOZSCKFacDCjpcvzJUzzruU/j59/4BE0eFKRNIMyamwKDGZJGlhBHBaI0ovQ52IK0Iajts9DfRXNSeeTjzuAVr3s2zaCiBcKsGb+BLp2KA0kDcRwjouS+T+H7aJxh6gW5zLGru5X2qZY//ttXcepPrQukCYRZC4zxY9IYZUyakYrW6w3IXYlYUOPIXY/MdzA1T3tTgmtkbOtu5RW//xIe+9IQjxYIc+wbMcMoAL+URWPiRHEKVN61pJaQNmtIpAzyLvP9eQpbEK8TdvZv44Wv+il+/o9+PJAmEGYtkEaHUqaSLJVaJqhCktYRsczMdZiZX0BMRNKsY6ylk3WRumDaBbfP3MAjn3QGz/qDxwXSPEAIbuUVx2KMmYoB9eN9THwEAmXhQQxprQXiKZwH5wFLo1an1+uQxAZaln3Zdh7+1AejNtEL//6y4HYOEuYYI4ssDcz0S2yZkVPAVPuaRlVUtFqUGCVBJSLPc7wvwWpVvrae4xp9TnjYBh7/6kcGSRMIcwwTZyRq8AeQpiKOqBkSJwKNEW+JxBBbg0fwIpS2pMc87S2GJz7z4Zz6jOlAmkCYY3ka/CJp8BhKRukCYz6xeFYTRxHWRpSFI3clWMi0y0BmiCcKnvtLz6T98HBOEwhzrAy/LrnG0sQjKIgDcRjKijhD9U3Uj9W3InfDs5sI44TURMTW4CQnN10mTqjzs7/0zDDUgTDHCiz3FRKDjNIFSpBiSByH0SrGDPEY9eSFx5iENIqJVNCiQNRjreBMyVy2jwc/5kGc9uxQsjYQZrVDhSqeeZTiPJyO8bnMKM3ZLSHPkDi4im42Rb3BIETioSwQV2LUUHqlMJ6udHn6854EpwTVLBBmDUFYesBZ2To2jsnKgrzMEBFiG5FEKZFJ8aVCrJRRRmOz5UkveEgYxECY1cwAZTH/X8elmiqpEw3dx6NrWJmG/aOaveaYCNRUMshrhCsNvvTE1lCUXTTuk6ddzn78WXBGkDKBMKudNPeqdWH+m2vp5x1IlUcz8quhFuOHKdGJpdQBmXaoTyc8/Mmbw5ivBGEe9LQTlVPDbrXydpDhvmrLjIpwGCM4VTyKjQ2P//EnhjFbCcI842efyvN/9RnEQcQfhb4EHfkU8N6jOKIkojvosH7zJA9+znEHNWd/94G/0Ce97GEaCHMQ2HjCNA8+5zRe979+jeN+MtQGXrEJHGdrMibJEjmDiJAVOSY2FOTkPuPcJzzq4O5VL3jOS57Ob/zbz+nEj67NjfKgCTPT2ct8vpu8OcfvveHVPOcNPxZUtBWcxKVFBL0wLCAIJrIURQZ44jQip89JZ554cHPe28Wu7jbamyN+989+hcf+2kkaCHN/xX6UY5se2n1u2fMdznrsifzWX/4ipzxjQyDNkfQZjMVKldI8Isu4VIA6kiTBaYmXEmKwDTj9p5bfDW0gPdobE7SVsyB7eOYLn8LL/vGpa6od4UETJvc9NC7o+gVqGxJ6ZpbWCYZf/f1f5Nl/9CSNTg/S5ggYK/upY/eFoihoNBoonl7Ww1tHLhkPO+esZd+u3k7Z191LEfXReklHZjj+oZt47etfwqN/5VQNhPlhH4zAaYlNUrp5D+olXdnNHncbP/JTZ/DLr3s2m57cCKQ5AlMoahYlini8LGZvxnFKv9+nKAomJlo4Lcjpc+qDT1r2nUp1+ETJJae0BXmUk6UZeX3AT7/4aTz/b56u5sHH9kZ5COcw1cSU3lF6h7cOaRrytEsn2sPJj1zPS1/7Czz5tY8JpHkA1THz34yuiFSXgtcSJwVqPLa+/Ps5MyqwrjjjccbRcz18w9NjlrPOOZnf/rMXcdpPT2ogzH16aJQ0joiiiLL0VeySCPv6s+zOd2LW93jsT53Gq9720zr1xKCiPfDwB3jJDKKCwSJi8N7jcWAdtiZMPG6ZczJU/xYLrQtEMb1igGl7emYPvr2PV7zuubz0756igTD3pSNnfRJjELEUpadWb9GYaJFLxp7eNrQ9T31Ln9/+s+fzuFduCaQ5QqZNVUkTcFWdgEgi1Asi4CmRWNl43ORBLZmqVYfBKCRRTFkOmO/spbAdtJExpzs48eEb+O13Pk9P/eljq9W6OZSPClAOBqTWkpoEnwlFLqAJcZrSnGrQK2dx9S4zfivPeflP8so3P1NrIaHpME/h4s7v9zv2N6ijkjKm6o5mjMHhcFIyvX5i2XcaZX/aYTvC+X272bJxmol2gyzvYhLo0WVW97H+jAme84pn8vQ/fLyuecKIGsRbGmkLnA4LaStaFnQX5ul3u5RlCXEMkaWxfpK7Z+9i3RmTvPaNv8bDX3ZmIM2RkDaqlTTAVr/boeqmjsmp1kGo4RVZRKs+npvXTTCzeztZv0u7PUmJ4JKYqBWzdW4rOjngcT/9UH7j7S/Q6ScaXbOEqUzOCEudYiBQOuqJ0Gp4WnVIkyoL0BcNskGDPTOeqL2eQZIxaO7hGS97KC9+049rO9QGPuzq2FI7prJfZBgYrUO9oDqfabUay9wkFy/rI6x6uvO7mWrFpJGlNz8gL2KcJgzE0FhfJ08X2J3dwtTJjtf+z5fxlF9f3aE1h27DlGBtTJwkeF/S6y3gyoxIDDhQb7Fxk3pzgn6Z0/c98qhL3+5ly9kT/PZfvozHPfesQJpDMPRHOTJGq51/pJWp+LEbTbygDix2PPNxLT4IMpr9CJmmKV6VonBYG9FotIiihLLM6WV9JC6QumOu3E3X7OOpz30CL/+/z9Etj1+dnrSDJowTKA1463DGU3iHxxDFDcSkeF+5NK04DDnqe0SmJBpVQpOYIsrobtjBM197Ls9+42OUBwdps7wFrNWZi3jssM155KLhuYzijMOZEi8e7z2JSXGFw4pQUpI202VS05JbyC04U+IMFERkPsLbCKxQ5h207JOKkKhBS0uRQ9xsUqQl29xWNj2mzvP+8Mk8/rWrr/ntIUkYhbFffrT73CtvQxaLOVSXjm/tjIdJx47iLs583Cn87l+9gDOftymQZll6kt/PvhhdfniAWc2NVpKHUWXNat7cMk2KKrFtFH6jKOBGbddHkkdGTaSqRlIWizERTj25FPRlgV40Q+0E5WFPPpVf/+fn6tTDVo9tY1b69kVmSEyT3GWQZrz4lT/Lz//5EwJpjhWF0S8S2lpLmqYURYFzjunNbabOSvjNN/wyj3npKRoIcz+UYisJReEoXE5rfZ2O7OXsJ5zC7773Bbr5KVEgzjEAYwxlWaKq1Go1ADqdDnO9WYpGlxm7jWe97Gn8ypt+Ts2ZR7davuIpyt5DFEVMb5pib3cnHZmBqQw/1ePFr30eP/kn5wTSrHKyRFGE957BYIBzDmstURQRJRGz/RlqG2PmzA42npXy2te/hEe84OiVNitOGBHFxHDP9ruhZrDNiO2z92AmPb6d8aBzjuf3P/QybT8+OARWI/I8R6RqfGutxTlXnQcZgzHQmmwx15vFRQMGdpasvpcX/uZP8/L/+2wNhLkXWxRsTj+fY/3mddg4Inee+uQkfT+gtH1aGw0LZjuv+6tX8eOvCe7n1YiyLMekMaaKaXPOkeclWSdnoj6J1xKNchqbDNuyW5ATBrz2oy/T1pMSDYRZVMgoyj6tqSbd/jz9fp8kqVEUjrIscVKS6QLt9TH7srt56nOeyMv/6VnaPidIm9WCZrOJc45+v19FfixR0yJjqcUJ/e5C9XocMT/oIA2hfWKdQWOG33n9y3n87z1MOUoOuFdeJYsMvUG3KkIXx9U5gRpqNq3O3HyJRA5bU+bLPWx56AZ+9Q9/iYe/8tRAmlWALMuIoogkSSo/j+qSnx7v+6SJwWIpS4OYFqUmDMoC6jmz7jZ+4rkP4RX/31OY+rGVJ82KEsYLKFL1PaEqF2S18uFXv4Nz1SlyrgV5VJAnPeonRDzxOY/hhf/yDI3PCtJm1UI8Kq46gGXUBycergcAh0ly+n4XjQ0Ff/zXv8LP/PGP6JolTFW1PgVNEDUY9Qg5VnOsekQNsalXvVBMDW+FTjnH3nwbMtXhpEdM8Rt/+iJ+4uWhcdBqhAKFgcJ4nCwuSKuQOEPswTolH/RYv2WKu2fu5CFPPINXveMXlXOtrj3CIEs6a5lhOW6tWj2M+qGIRb0Mw25iTCoQ5WQ6T9fvpX18wlN+/vG84C+fHEizyuDFoGLwYoc5PB7BYdUh+KqElBPWTW9kx67dmLrBpRkTJ9f5ndf/Kqf/0gm6pghjdDG/wgwr2XtkMT99uAt5KyiOoszAK0kUk8YWtTmzfie7/T087Eln8pp3/IKG2sGrScQYdKhhjFQwJBteBaB4Ynp9odXejJcU24jos4+Z8lZe+ls/w8/92WN1zRCmegC/5CGqItwOW9UJFk9Bjo3BxqBaUOYZbpBDH3zhSKcsyUa4c+5WkvXwx3/zcjb9RBxIs1rMGJXFCGvxqJR4Uw6LeUBSbzC70KGX5WgEc50ZMH2m1iXsmr+dM845md96+/N1bRBGdNj7pBjuOBZPjCelNJbSQqEDcr8Apk+aKs04pmEatGSSpp1gX3cv3WieiS11sqiHq+X86mt+mZN+cjKQ5iiHASJfXXaY9uyJKI0ht5BFno72aG1q09cujozpyQbGe0zuqCUxvplRPz7iN97zQj0S/W+Ogur9S3ueDMX0klZ29WYNxTMY9MnzHOeqM5o895Slp1arMcj7FKYgnrD0zDzxOnjBK36WE5/2QJV5Mvs/81Gh3sjiaMrSYhh+bGIvVYFlmDuzHFj1WB01rJVhdLocyn6J0SWVb4bPszQqOnclvWyBRruOF898d54kibDWUpQZpSkYSIf28Qm/9fcvJn7sA0sas/LzXBl+i41Qq1Z1gkcUisxjNSGOGhib4o3FWfBxibcKpaUmbcpMGbgBrpExa+5BNszyst97FluedpgHcOSkgCWdwlZOnRmF88vwSdR4/Lgckh8a0uV4YVpvxrkz1i9v+mPvqJWemlfQCKf2kAZXhzUI/DAFoUoNAOMZ5vYYUmIiIlzuiSTCxgmD0pGpQyKLKzzNdp3d/buwGzq85vXPg0c9cKQ5uvrDjAdtMZ+iyt9YvEYOAWeqQTbeIt4OdzzwNqOwffJkgTzu8Muvfj6H/5TYHG1DtrgIl8hsXUJouRexZdnfI0LHEkaN4I0chg3zwALq99ERR81+Tzr6jBdI0pROd57JjU06bh/zbge//ec/y9ogzEG5JhcHvJJKw8EdVoOsTzX53T950bHqZhpLEr2PBSe6mMinw6QvZ/wwuUzHBcvv/93MsDKNx5myMtBlZUfA+QIbRXTm5mmkDdrNCSanJ/mF1z9RA2Huw/rR8VcYRgf4xYXiBOYGc0xsnuDlf/vcY84JsKjSLJU4ZthkydxL6ozVtKHa5pZLGNVF0hiHj/zwr6/UdgFRYpnvzlOvN6uSUiLMzO3jnB8/h3NfeoYGwvwAkV4ddPnhz4pIzgCJ0Lddtpy5jsf+yhnHJGl0aAcsqmgG8WZ4vjV6nx86BHScvuxFl7lBWbzaIWEqCaNmBZ0fohQU1JpJVQ1nGEbVnGqxbe4ufvqFP8nEuaKBMD9o/GBYM6vy3igGrQt53GeBPTzjF558zCll/oDi4yBDZ4Assf8WSTM+EL4P2+G/lzAWVYNXOySpW/HvX2pJXIvpdLokUYqI4CjRuqeoZ/zMi58RJMyBNsxo/zNakaZSSyKcQN8PyOyA+qaEnpnhKb/7ED2WyDJSsyqP3f5es3sTa+R2Hrrtl+kSFhehPka9GfbNdCvqJfTiiRLL7r27mJ6Ypigc3oETB42SPdk2Tn/USZz4cy0NhNnPklnqyzdjD5AXIFYKO2Am34U2Cp74tHOZfsyxFT4zkhZmyRnLfTeLNRi1GJ8gGiM+WaaFnSCuDj7GDKvQrDQ6vQU2bdpElmVYiYjjmE5/nlJyognLvO7jGT//lCBh7m3+jRZItVhGnbhyzYnqgkaOnlugtAOe84vPPIbIMnQdLzHyjY4mVjAGOv0O7fYkLneIRtgyoi4TLOzuLuten/7kRZgypW4nyRdKasT7ORdWAkkSMxj0ljglHEktppSCQjJy06O1qc65LztNA2FgeCY8WjxD20UWa6YZ68nzDJWSKBHKKKO1qcmGc9JjMHTGHGC3KN57Wq0WO3bsII1TEmqYPEY6lksuvHxZf/07H7lF9m3roh3LlonNlN2Cla8oJvvbaCM1fRiXJomHpORh5z44SJixVwi/RLIMjzyl8phFAr7Mq0rQsaHE097Q4Eef9uhjiir35QuqOvoJWZaxecNmsq4j9gl1bXHll65m8M3la1Ufe8/5tO168n0lrbi94hJm5BX0UrnJ/QGucq85pfQ5+azjOelph97te1UTppInfrxY/DjKeWTbKMYribFYb/CO6gwiKTn1ESfAMVMI3Qy9Y+YAy87jfYm1FlFDLapTdqCYU772lhsOygRZuCqTyz93JRNmCnpgV/DkcmSzVZvD4iFuFTdXtePAK15z+rrA455yzlqXMNXZi1FAbRWXNu4mXEkYXxSkNsW6GFeAsZa+75FuMJz6I41VT5WRkb+/alR5zbx4orQqZj07O4f1EdPpOi786OcP6Z6XvOVK8bOK7VtEoxVXQRdL4y6eRxlvMD4iUkuSRHTzOU5/xKnEDz20TXL1q2T4sUrmifBihumuCpRI6YmxxCTgpOpbb0rKZMAjf/Qhq9ziX2qvmHE08qIjpCrP2s8G1JM6tajOTdfdyvc+dc8hi4ULP/Y5pmpT41rNK7thjIbDjw9SjbdYX2kWURQhqUKt5CGPPm7tSpj7Cg/3MjT6jcegxNaiuSeWBKMxzikSKQN6nHTm8ceG/eLv7UIedVQeZBmt1gSuVIq+47/e8/nDcs9vn79HbrzulhW1YRbn39wrps4OGz/hwZUFUSIMXI+HPOqstUuYsQIyslnEIapLIniFOEooS1/p8SKUZY6NDaVm1CdqbDioYgpHRy7MqIVelbXqh54hjzflsOOxor6kJgl1V+erF10O3z98xyef/ciVJGVKXNphEpgHSmDYYuOHjJsf6gbLDjf4gfO/KHHMkr9pjKEoiip8KhE2n7Zp7RJGpVLDdJjQZcgRyYf5H9Vpf14CUUy37OOjAqKSssyJbUJWZjz43FOXNzmmxBs3dl2vNKwHLXKSGIx1DHwPHysaKwOXkcQWugW9O/t849/vOqwW+uy3kcs/9U3W6SRJARR9mk1LQQ+VEke5hBQj1dlXdRtIUJIq6uCg5x+cqdqhj8gSOYtVgzOO0hY4dRgbYbB4HHYKJp568FN3DARfDvX4cS6NW3I2Y8Z9S0Z9UsaJSmoAZfq4iYO4p18yfCurksQmxmApc4e6RUkKULMpdIVa2eTS8y97QJ7ha5/byu47eqR+gtS26c53KZ3DRBZvhoVNRnM0tLnu5aA4JOmymF0qfngOpdUG6sWjRqsDTVU8ipOMyc21ta2SHQpOPHE12zGCqMVoDVdGoCmRJGimRJmlXjSZ0C3ces0Obvzc4AHx/+qdyHkf/TpWt1BmbdQ1aTXXUzhBVYaeywh8CpoOk/3Aao6Q73fwfOgK6n2MkMiYMFBFA5xyyimBMAeL6fXTB+eZ0qNh6JTSF5hIUBMjJqnquOVgs5Qka+N2p3z+o998QJ9i28X75Norb6OdbEZcEy0t4hVVVx0katWLDI2BqqWg4DAUh8Ue3N/hYfaza0bSdkSaUn0gzCG4l4hiw8E38VnpflSeQvr4uMBFHheBU4+VhLaZJu5P8fWLbmT+Ow98nOSnP/R5fC+iZlrM710giS02qto1qvFDWzNZUg+hRHAP8PgsqeW85DB7w+YNgTAHi8IXTE4udybMUTF0fljbwEWe3OYUpqDEkSQpidbZe8cCX/vAVUfmKP4mlYs+8XnaUZuJdALrHLEohhwkHyew6X79Tw9/EZF7uddVMUaGNk31WqPRCIQ56EXnS6bWL28Ax0UYjoIAd7WGTEpy06eM+qgpUPXs3bGPL3/uK0f0Wa55741y+/W3sam5DhkUGJdhyBBG1SzLYQH6/cqcPLDzi4I1Y1tmpKIFwhykSoNRmu3m6hwyNaAxztnxTmpEIXPsvH0HN31h+xFn9CWfvJRyBqIiwZYGq4pIAVKgJkPFDQtpmCVV+h9AuqjDmCVzZoTSu0CYQ1FroiQ+aKN7ZWGJ/QSS1ahJSlJA3aUw7/nYuy5fkSe65yulfPeKrcT9CZKiSd0kWHVEiaPUHv18HhMpNkqrM7IHbAkOQ2SGDWlHh9siivdlIMwRphlHw2m/UYPPlMmoTdSHqG9Jew2u+Nw1sHXl9MVPf/Ayan4jDb+OcgEG3T7qc1rtlHojIncZZVkSp+kRGsXKehrVMjuU4II1TxgdVlFZ7s61aLSuHEQ9iTq002NTMo3ZJ3TuKLjy3TtW1Lgq7kQu+sQVaDZJK9nCpumTKPoF+/buJEmFpB6TlwVaZXo94BrEYsGPcYnDQJgju1KPEgmDJzIF9Qikr2xIN3HBR750VAzRlR++XvZu79OZcQwWlMTEtJpNijKj313AGDN2+T6AO8p+m5w/DKFrgTDDckzLIwtDqbSyxPHicKZH4bu4Qrn8sm9z52X9H7ok0jPQs5+1Xl/4p+fqr73+p+73im2fGulfve0P9ffe/HJ9xmvP1fSxKCf/8K36fe/5IFPtLWQ9RXzMVGsKXzrUlbQbE7jCH3KK82IozP3XEPwhaAbRWqaKHrRwXowMFuzKPb94JI3IHLiBcOHHb7i3W+Ah6EkP2sSjHnEWZz30QTQnYjR2dPN5tt20737fa+GOUopGX2tTEeee9Uge8vTTaDfa3PHd7Xrzdbdx+/dvY89lxSJZT0W7V6p87atX6KN/7MEM2MeuHXuoTzRJowjvHLG1cJgOL+UI+V/WNGGW6rnLN/j1KHhuQ2YjCrFcdP4X4A5EzkbPPvskTn7oRs7+kQcRNQ3eOEQLkFl2Zz3EJpSthKy9jDJLp6G0S/qyAEnJIO3Q11k2P6LNptMfytOe90jsHxm99YY72HH3Xq679hb23gFf/OS3OeXs45k+oU2v6BARMxjk+EJpNttkRWdVrZVAGNGDUguMCrrCnFEM/X7GhukTOOUhp/HcD56j61oTZPkseTyDq8+TWYfzWdXqwlocnii1OPFkvrj/N7sd6bqumimYzWeQtJIMe3s9tqzfwMLMLiKxnHnOCZz04C089qmPJfnThl77/e9Qmoz5TsH0+g30Bh3yPGf91DRzcwtEySEaFSqL4mVU0FBGRVH8Eqvj8GxygTDL9HZV82Oq+l5eV/S03yo0TEKvs5cfecLpWD/HvM6hqUNNgReHAmIS1CuCxYjHl4pxGfVllnq1Jqbr57CJEPsYUdBazEKvg0kinAqz2oGWAXUMWODUR24eVvn39AY9wFCrNej2OxVZDkWX0lHLjqX25FBFVgMSVe1Qho2Gq95Dtkq2C4Q5WAFzMIZ7VXhCMYjq4UgaPCTSgEdtj9IuVdf8olE8dG54qRZY1Q7EY5cpIpe6Zq23iMqwTw9L6ii44VUcYaPDL2mWI4ukGRFqtDkc4lFA8JIFBATCBAQEwgQEBMIEBATCBAQEwgQEBATCBAQEwgQEBMIEBATCBAQEwgQEBMIEBAQEwgQEBMIEBATCBAQEwgQEBMIEBATCBAQEBMIEBATCBAQEwgQEBMIEBATCBAQEwgQEBATCBAQEwgQEBMIEBATCBAQEwgQEBMIEBAQEwgQEBMIEBATCBAQEwgQEBMIEBATCBAQEBMIEBATCBAQEwgQEBMIEBATCBAQEwgQEBATCBAQEwgQEBMIEBKw4otX+BUQFABUFwItf3A3ULHnffXwWAAt6/4fBql/yt2R834BAmFVBlhEpPB5nHLqEMH5Imup9S0gjigLWG1I7QZEvY8C8EnsPalAMqN43GwOCSnY0Y+mSHQqdJZIGZEgsGcuGilhlVmBMtAySjv6W4CUsoCBhVhlJ/H4vGJDRol582QuY0Tt1+DkBEY9XR72W3P97iqBSfV6H5AyGYCDMatHJ0CER/JAhS4lSqWOLpAEdihiPikcFnCsw6u/3LT3gMRVhJGhjgTCrkDQHShlzL0Nfh9LB7+cYUCC2EUW+DCMGg4oZSxkb1lAgzGqCvw+D7MBdX4dSxcviJyrpYGg3Jsj7bhkq2UjKjP5WEDGBMKuILGqqpSt+aNQPPWL7qWHD3yvimPH7RS3zswN2b9t7EN4SHauBAYEwq0Qd8wdoZ7Lk7GVRkvihvcLYphGMRliXcvuNd7H7m/n99neJGowKgh/aPsFVtpZwjDt4lMIXJLUUVaXX6THRnCbxdWyRIFnCx/7yS8ta8d2ZPlYN9aiGL0rwnnq9XlHUe1QV5xxRFGHM0Te8qkPniASirz3CLDnJNyrVv0cHmUMVzBjo9ToIlnajTTaf43vCpF3PRR//4rJvOXMN0p8Z4DuOhqkhCgsLC5RlSZIk1Go1rLXkeU5ZlmGFBcKsHunixWPjCO89BqEeNdC+YUKm2f79nXzv/TsPapv91IcvgF5EXNZopM1Kt40iVJUsy8a7uLXBhxYIc5Q9vHgzNOArd/KIAWPPGI6kliIeytzTtJOYXsTFH7/0oO97ywVzcsf1dzEZTeMKjzGGNE1xzjEYDMZkORpVsoA1LmHMSB0bq2h+fKl4SnWICM4pUkQ0TINrr7iBuy7tHZISf8n536S3x6OZ4Jwjz3OMMWOVzHuPcy6ssECYo03zkqHnavGr+LFnTLFW8N4jYqnZGnu3zXLJZ6445NvOfwf5/PmXUEua1Ot1+v0+3nvSNKUoClQ1SJhAmKOTLOOzFfYPvByfvRiDwTLoZVx28Vfp3Xx4fMHXfOBuufWmW4miCGstZVninBs7AEa2TEAgzFEBQTE4LAVCiUqJB9zIQ6aC7ztqPiXqJyzsGHDNB+86rP7USz55NfluaEeTRGpwziHWksQpg8EAUQ+UeMnxUuLF48O6W3uEMbryR3aGktSWWO2QFTMQFfhYcaKkSZPYp7S0gduZs1G38Mm3XnDYn2HmC8j2y2eI5hNq0qAsKifDzMwc7WYbIwUifdQO8LZPacthdIIfkukIbzLD85cg/dakDVPt6MbGpPUaJcrAZeRlyWCQgTNoF06cOpVLPvVVZr+tDwjHL/7Y5fiFGD8wpHGDXq/HunXr6HQ6Q50wArX4YWCFwliVDNE1gTBHDB7DoIwotIlGUzitYWxCksY4VxJJRC2aYufd81z6xRsesOdYuBX5woWXM908gcFCzkRrgn7eQ2KLI8VpC9wE1jWwLsX4kQM8nLYHwhxJmx/BRyl9bymcxakliiJiY5FSiVxMotN8+hOXwh0P7Oq87oNb5Y7v7aAdT2K80uvPk9QtThJUU8Q3EVfHeoNdIug0cCYQ5ohJGAGTRLhIybXK53dlRpkNSLRG7Cb47lV3c9undx+RZfmRd59HU1p09y0wNVGnN+gMgz4TjI+xPsF6g8FhcEA4pwmEOZISRiDzORIJSE4UeUyZkzjPVNqmnFMuPv8rR+x5+lchl190BeuSdSQmxmvJ6BBVtKo4Y9QjlHgpUFNA8JkFwhxJOOewkeJdj0QK6qakaS2m67nmK1excE33iCo9X/rE91nY3mcwW9BIGiAFmD5G+ghF5TXDoSbD2TwQJhDmyCI2NdIoxRcDrBtQx5IWCbN3z3LJv3//yFsIW5GvXnAN0mtR0zbGg1CAyUDyoe01qgmgofLMWiGMSBVyspIQNfhcYGCYrLVg4GhonSSv8bmPXbJiz3X9x/dIZ3sM3Sa1KKHb2UurGVGUA1QiJKozKBQb1468GnsI+TCjz4zyftZiTo05lIE/GgaskSZQFvRm50m1Rm+v5+4bZ7j1Syvrs333v34cm00yv6vHCZu2MDs7S+kdUdKiP1CiuE23k69KIb+Wk88Oera89yseXGhwlMUCZTbPCRs20ZAJWuZEPvD2y1betvoecu3lN3L89Cl0ZjOMSZicmqafeWw0gZUWaTwFunpyZkJ0wCEQpizLoyAa15MkJVHkmJ3poL7GBZ/+Kt0b7590Wfco9Bm//Bg99dEbl7USNj1q8n69/4v/cJl09mT4gcWaiEJhvreAAi4D45NVJWGWEmatSpmDLoKR5zlN4hUnTHcwSyNu0p7YzF03znLFu2//gTMZPzrWhz7ydB55zumccGKLepRgehN0swF3fHv3/brjg558kr7olT/PgL16z7a7ufaKG5nZucDOK/r3ed+PvO8jvOp1L2XW76XT79CabOC1ILExRTYgjlh1B/77xaNJIMz9QpZleF9f+S+QJkRRnd4CfOQjS3L0T0Gb0zGPfOwjOPnMkzjxzONJW4bcL+C0Q1879DNlupawUOy73/frs0A85Ykali2Tk5z2iGdiSXE5+r3rb+G2793O9d/aig6l3I7PqHzzidfog849kSg1SJRhNYKB0khSCr968v5DAY1DIExRFJWXbAU1Ci+GOJ6k34244apbsEnE4377wXrSCRs48yGbiWuOvZ19xBMZWr+LWZfR1z4iljiuUUvqlP0cTe7/otVawUI5Q1HuxUx6CrOX3TNd6o0JTnjkBA95zBP4xV95Or3dHf3ed2/k6hu+wx233sbJj9oMtYK53l4aSRMGKXGtjYgPpQDXAmEoLCa3aOpw4ireqCyR0KPyrJXqVC3w/Xu2HPqWZygLISsdT3rqk3j0Ix5DapQoGtArd5Mmnvpm6LtZ8tLhjRDVYzyKcyWZK7C+T8n9LxWblRmmBpJAIX16RZfGhjrZoEs6kdLp76U32MPGTRt5SPN0Hv7jD2cmn4c0o192mWy1UQet6Ta9hRzildutlxspbZ0SeYMz4EWQNegEOGjCzN49x5kPO4VuOo+Kw6sQYceDqOoq0hhFxY+zH/1woY/z8A8hvt0MvXX11DLX34ppCDlKLiXElh6gpcdLipWhul2CxYCCFYdYIYlrwPz9umdsbXUGVQqYGGuEIq/SkUstMSloIuz1s9ACLxmkHi+eSGr4QbV59HxFliPdkGn/fJjlnaP1du5lajJFnKVbOmrNBj7PWEvlcg+aMPu2z5LSoO+7aFSte1WtgtYVhKothB4wmIe74r0BEIfa/n2EMpr9vFBG79txcHARwwY0QlTHn1dR3PD30hb3/sSSTme6pIztakF33wLNBTCNqqxUXmbIGmv3cdDf9Z7bt2GJxwSpWkkMdywjYORebmcJzbpWNe6+ayeuVLwKJjaUvmStFWM/aMLsuxbRvCqQJ0bHO6wXjxvu9ZUaZpbs9MPbiQ/sWYW4/ba7qaVtwKDqQdZeZc9Dkqb7ds5gEUQ9VhZJo6I4PE5HTSEWS7gaHalGIUp3tU3/XXd0iWwDEUvhc0xs7lUQPozYD8GN19+MKQzGCfj9jUiP4vTezY4OtB8CVg7Ltd2Km5Ed2/aAWtR5jAnBl8vCd666Hs0VKRTxVY0wEUWNorLYfrVqLyFVKdexJuZZ2pooYBUwBrjqG98BFxPZBC1dIMxysOtqJ5JbbGERN+ybInZxLg7cgaoXw0JdxfjutXciZUxqUvwabE5wyKv3qxd/ncl0HVGZgLe0Gi063T5OS2wcLdnETKiRcgxg8E1E8pSi45HSEJt4XHjdOTcOn3HOEcdxIMyB+PYV27BFg7IvJNTYtXMP7XabWq1Gt7sAaFX0T0c2TJAyqx0ff/95rK9tYbq+AXVKr9cjyzKSJCFNU4wxqCr5sprtrhHCZNchN37rduq0SaVJJAn4qgtXkkZLXMh+WGl/8dZeTCDPCuJgJf7W8+fFzVuyfY5Y0nG3Ne89eZ6PO7AFlewH4MsXfINWtJ6yb5hoTZHnBVneJ03jH2DYBymz2nHd5TeSujblwJMkCUmS4Jzbr4vBsZhwdlhW7favZ7L1pu0Yl6CZoTbMVc+ybEyWsVo2vOUopixgdeLyL1xN3U/gCx1LFmMM9Xp9rJIdi/1xDtuKvfD8L2LKCFcosU0qLWws8w+QMENbJlR9XOHJPwQBMHNtXy793Ndo1SdJ05Q8z1FV0jTFe09RFMekWnbYCLP98jm58uvfwviIoqi6fkWxQaqCrsi9Yo4Mobbw6sZlb79Wtt5+J8BYJXPOjasJHYs9Pg+rTvSlf7pKXM/DQGglE+RdV50KE6EHSBSjHvsDdNxRD5XxzwMtIA2haEcLLr3gCjo7CyaS9cSaIqUSW4O1Qp4PhhqF7H+NtY6qMqjoqPXH4uVlyXXgGtjv76xiwgB85O0fpVk2ka6lpi1S26KfeXIsRDEOhxVPTIkWg3GPlKUDpOJRs+SnqV4fkcWojK9AmoOHPwyDt/M8lR3f7uF2JUza9cQ+Jh/0KIseac2ChVLBlRY0QY3F4XCSo7ZEKDF4DB5ZQhZdehm/JJdqGFEyvI608+iw323nxSqf+sAX2JCeiPYTip6n3ZrERsqg6GJjwQwldbs5MX6E/TMxf9BjhTCaw4nDtUl/5q++KjtvmqGcFyiELZuOQ1XH9QqMMZg4QqIq+U5Vqx6g+sPtqCqfytxnAsFKuYsekPve+JF9csXF36VtN1B2C2rGU+Rz2GSAk5y9nVkKInqFYtRivQwvO7wMdthKvGopPtoRGWZv6vgKjoOjAx98x0XM7+pSs2327p4BqsqopS9Q8UNm+CFRDJZqfj3R+NLhT7S6xEdLpMmiPq5DTaSKlParnzAAn/3fX5Zbr7mbEyZPIJvrsn6iicv6eM3ZuHkDM90uJqnjWezGZdQM3c+CqAx7qTB83YxJ44wfXwFHCW5DPvSO85nb0SNlktS2iKMaqoLXAucHOJ8hWtWzsyQICSqmsm8RPBaGl+jS64DmU+JQcUc8vfsBl2znvf8L3Hn9PdR8E7dQUrMJ4oRuv8fUxvXMdTtD+80vMeTNmCA/yE5Zqt96CaQ5WjD/TeS9/3k+SbkB8jaub4lNghUPmuF8DyixYhCJ8BrhsTgxOBnmTC25zH7XsIbD2NYt8SuQwPaAEsbdiLz7Xy8m2wlRNkFUtFnX3kS/UzI/O0etngy/vO5HglE/lSVbypAp5rDr3wGHFwuXI2//5w/jZlIm7WZSn1CTmMRCbNzQsAclwqmt1OyhUa/Dzc8MbdqRKjbaSA90kqlwxDfMB952uhX5l1d+Rvo7akyZk7nr+3s4YfpE1rUn8eUANW6oXjmccUtsE//DH3vkIQnRAkcdZi/pyQXvv4xsu6CzBtsXamqIBUSrTFynFjV2uGE6GF9DVzNV8ylzlHlBj9hq+5dXfUwuOe9qTlv/UAb7HH7BYctqNPwSm8QZfy/DflRowYykzMilGMhy1OL2z2yVt/7t+3C7LaaTkuYNUldDnMG7YS0hy5AkRdU7R0oMDsFhGBr1w6BdxA/FSrVR7l8r4hgkDMBX/v06ef9bPk62U9lc30yUWcQbbFwV18vLAoxSUNIvB4gd2Sv7P/DIKSDDLM6AoxPZDci//cZ58q3P3UTUmaJWbsSWTZKojhrPoFgAn2F8gTVKZEEp8Joj4oljw72Dd4ek0WhFNswjfsfbL9gnb//HT3DFBVezPtmCZDGaC7GpY0nIM0+t1mBiYoJBMRh26PJLLf79jMFgzBz9uOTtt8i7/+k8dt+aMRVtwXWrgnjNNEW80kwaSOkpBhm1JCVJEvKiR1FWRQK9VBJpsVub3NtzdqwSBqC8Afn8h6/jPW/+KLbbwA4amH5K004xUZ+iNztg754Z6s3W2BO21LirjMBoP0Mw4OjGXV/L5K2//Wm55DNXM51uIioM2s+pkeAzDwUYB2VW4osSE0fYxOJNWdmzS7xAS0/6jZpjnzAA/k5k62cH8u9//Qm237CPDfHx+DlLb09JO51m3eR6yswN9dXhZ5aQxgxTBYJ8WV247F+uk3e+6f0UuwqmZIqkbCH9lMQ3aSSTxLaGiEVV6Q8GQ8ky2jB1yfwfebKsKGHG+DZy3h9cJh//98/QyqY5qX0q0rW4HuAWz2Du22sWzmBWI3ZcUMh//tVF3Pi1O4m7LRpmA61oI76f0JnLUR9RS1uoEZxh0eUs++dWyZokzBA3fOxuectfvZ07v3MPk/F6fE+oR40Dzl4Wz2xG0ibEXq5S3ISc9/pvySff/3kG+8AUdfIOrGsfh6XGvpl5JqfX7Xc+o+Ixw5iAURzakT7sP6qMgO53kXe+7ny56BNfoGFbUMq4yv/4sMr4oas51DQ7FnDzJ2bkn//mv/jOVbewef1pdOZyvIs5/riT2XrnPUNV/N4aRmXyH/n5Pyqt5ivfdru88x8/xL5bu9SyKdJ8grioY1yM+Ko8qbMFzhZ448Y5E/sNqO7vfl7qTds/lWB5z7YYVl6phMFJdxhwPfKpv/iynP/uT9NmHXXfYvsduzjluNMRHw1tFbPEjlVUynFUyOhw0+hSaQQqssSztv/aOKYIAzD7FeS9v/EFuflLO4h3TzFdHk/craO5Yq0iSUnPz+FNiU0tjpJ+3sdaS2QsWnosFuMjzDDqFZVxroU3xTCygGH1mvsHWwpVJwuP03LVSbmjue3et99/u7z7b9/Ntuu2c9LEqbiOUnaVxDawJqb0DrEGFykDLfG2yqOxun8SgB+RZaiy6xKpZBSs+mOPMCN89h++Kh98y8eZub3DpsbxxEUNzS3iLWlSJ89z+v0+rVZ1drOwsEBZOtrtNoPBYHxazAGuyfGXV7MsO8gEV/YDip3fyOUDf/x5+cwHLkRnDJvqx6Edg+8LlpSyqFIE4lqEmqofj79P7uuYJPeSLocwh6ti9nd8vSf/8ZqPyGWfu5LjWqcQ99tke4Q4bzLdXk9kLDMzcwwGA1oTEygwszBP2krx4vDDcPCR+LbeELkY6+IqGnpZOpkftvcIkdIPJK597zZ5z5s+zM7v7aPWn2DSrKfuW9RsAy2h3+/iUJxElGIpjcUPZ9KoVinwuGGoTfXvikYWJ9GxTZgRLv77a+RNf/UfmPk6p00/lHo+yez2Hs24zWR9klELMokhJ2fgsnF8mpelNkiVqGZ0+ec4444EJhgvDzRmLkfe/TsXyve/fgtJp0HUS9Gu0IhbNGtVtq4TQ2kMbomZWqleVZ0A6xfP7EbqmjsEdXTV6Rf7LkXe/Ocf5MoLryftTXHK9Fn0ZzxFx5FECVm/S+kz2pN1MCXlkCxaabtUnQQq0Wz98g1ArfY1wCNBOzsiuPDvvynvetP76e8omI43UnYU3wOX6zjEf9RDlaGtKhphNFqSgGaqdOdDrJ+xOqf8duQzf/dl+dT7Ps/CtpIka1NzLUwRkRiLoBRlH2w1OE4MSlW9ZqS/ClUouVEw/v4PQzkquG1CXbUjie1fzuU/f/2T8u3LrqPpp7FZjbadwnqzpATxqHRXhGKHFYvMMPXZLJJK3BojzBDfPe9O+ec3vJOd351jym4iyWokGtOwMUWW0+v1hl/R4kmqck9iqsNPUwzDypcnYpxz+JGnKcRKH3kn0Buvko+/41PoTEzTTZCWlthB5Icbn45qAyQ4EgqJhxumjHUEoVybhAHQm5CP/uXn5Pz3XojbBxOyDnqWmjSZbq1HvN3PK3JgCZ/78qT8MHgPOi71ExbwSuC28+bk3W/6GDd85WZqeZ20SEiLlNhVxwhoVTbSGfBGcQacqSJERolpa5YwI1zzoTvlPW/+BFu/s4+W34wsNDD9OonWsAq+HFCUVZknLAzKgqhWX7ZC64rKcrQS4YvgJVsp9K5Fzn/jV+WSj36VYrtjUtaRFnVsIaAKVvHWoZHHmZys7CFSFRnkEEo+H1M6xcy3kPf8wcVy8cev5LjaGSSDNkme4HsFsSobpidxZU5v0KfZXsfcfB8vZllpsAt7IZEISkMa1whdCFYW33rP3fK+f72QW6/eSsNNkNKgbuoYBCuO/mCeKFYajRRjBZc7xNlAmKX4xjtukTf+wb+ysLWgljVYF7VY12yyb8c9lFnOxnVb6PU8Udxe/iHWnUiReXwJRm1Qy44CdK9GPvQnl8uFH/oiSV4jKWO0l1H0+6yfalHmfeZm9+CKnCSpYYgCYQ5Efj3ytt/6qHzzc1fj9oHb51jf2MhkbYo92/dhpUZs0oMagt3bdpNISj4oCAXVjx5c/f4d8u//5z1sv2k3E2aKLY3NzN0zR9M02TS5idQklHmJsXEgzA/CJf/2PfnY//sM5Z6ERjZNMQsbJzZhcs+g0zsoA/DGG26mETeGvv6wUI8m7P0m8q7f+4Jc8elv4XZGnNA4nWY5gXYF4xJEhMxngTA/DHdd4uTNb/gk1152CxOynnLe0UpqTDZrBxUifuMNd1BmSt3Wgw1zlOKr/3arvO+fP0HnzpJyT0SUt6ruAlicKQNh/jvoncj5/+cb8pF3f4qy4yn7XfL+PAcTbTzzDWTvzj1YCerY0Yxdl+XyH3/9Yb57+VaSfALxdbJigKkFt/L9xi2fnJV/e+P53Hj5nWyITyTN2xi/fJ12313zaL+KHHBmMR9nFHKzf9jNvXucjPN0Ah5QlFuRC978dfno2z7L3G0ZW5JTkblg9C9P2nwPueB/f08+/LdfxOydIu23li/yP3UN6+OTwSSUxuMoSeMI8hLykqlmAy1yRIeJaqM+N0OyWB9hfRRIc6Q2ygv3yjte8xm55TO7OKk8+6D/TrSWB/GGL98tnT3/pQvd2WV/dvu3erLtll2anVEidUuEsLCwwESthc8KFua7VStuYVihfihZxhImHHquBD74D5+VW55010G7ata8xXrnDTtl3x3ZQW3z37j8Shq2QVQKOMF7sHGEJBG5OoiSKkJ6SeuGCg41RRXPFsp4HHF887LvSCDMCuDKD90kZiDY3OL7Je1Gi7woKESxtRreCIpZbBCkZlwnWKUcemuCpFlNCIQ5RFz7tetoapvYpUQmpV/mFJRkvsCJMiqYfWCVRmdGTYECYQJh1hAu/ez3Gez2tJNpygysqXo5drIuJrbDZlF+SfG5KpLWL8kCDQiEWTPQG5CvXXQV5YLFlAkiMSKCiRSVfJhzU46Lz40/N87NCVMQCLPGcM1775K5bX1i18APoMwdjXqdPOsN22o7DGXV60RhlBGo2DB4gTBrE//19vMYzHjWNTaTd3PqUUJsBWsUMSVeC1Qd1saoN5S5RUhCU6hAmLWJ3ne8fPx9nybfV3LyhtPZu22GVtzCFyVJbKnVIqJYcKqIWAwxaEKIdg6EWbPYfvG8XHXJtXS3ZZyx+cHsvWcO6wwud3R7HTqdeUqXE8cxSVyvyt6GKVhViMIQHF585S3Xy7qpaT3TnsSm5glIXOCjHPWAcdjYourwJSgeuzKNtAKChDl6cN5fXyZ3fWcv0/ZEsjkoBoIxCXGaIOLIiz64nHocEQ4uA2ECgA+9/nNy3TduoWHXY7VBVjgGgwHOF1irRKZEXRaESyBMwAgfec+FbLtrliIz1NImNo5RAzYCpGDQnyfEkgXCBAzhb0be+7fnc9UXr0fnazRZhwwiisxhjKHWSEMrwkCYgP2wFbnin2+Ui952Ge6eBuuiU4jLSZQaTgweQ16WYIc1gn2JtYKI4n2JDItqjzEsDuyR0HI9EObYxc2f2iX/8oYPcs2lN5CWE0RZHetSytLRmmhTFh6jhjStU+aKqCGJFjNBx6SRAxoHhaENhDlmcQty4Ru/KZ//0JeIO3Wifp2mbTA/O0dsIqxJyHqKFhHlQMFVLTlGKQFVTeCluc9h+gJh1gCue/8O+Yf/+V9s/+4+Gm6aBhM07CRuAMYp69dP02zV6fe7Q4tmscj2aMqq5g0ueNkCYdYIbkI+9MeXyHnvuJRGbzMsJKQ+plkz7Nx5O0561NoJhREcMY4Ur+kwexOs5ljNCUpZIMyawo0fvkf+4RfeKXtvnmN9tJ7+bJ/JiRad3jwaK6VVSmPwMopurmpBm2E7OhM8aoEwaxHv/h+flQs+eDGbmsehWWX89/IMJ1RtB6Vq3zCeuAMyOAMCYdYcrnjXXfL3f/4hdt3Wp8km4rxe9TzRqmOaocBLiRePE6l6NQbSBMKsZfS+ifzXay6Xiz/wLSay42mVE8SZI3J9VLt4yXGRkpsI0ha59xhjUFXKskREiKIIay1RdO/YWhlW61QNtk8gzDGEb7/tdnnr69/HzPcW2KgbaJQpcSnUkhQVyIC9C/NIZFFVoiiiVqvhvafT6dDtdsnzPAxkIMzaQedbyHte+zn56kevZqo8jno+SWdPj3qtia0ZknaMWKEoCvI8pyyrItuNRoN2u00cx2EQA2HWHr78jpvkzX/xLvrbLadvOJt998xT9kpSm6DOVwlpSYKq4lwVpwbQ7XbD4AXCrE3MXIP856vPk0s/cTWnt8+m2a2R9g1Zt7+f7WKMIcsysizD2lBkIxBmjeNL/3iN/L+/fifJ3hat3gSbJrcQxzHdbpcsy0jTdGzst1qtMGCBMAE7Li3lza/4uNz8lbvo7xmQpilpmlKWJaqKiJDnOYPBIAxWIEzACB/7+6/LJ9/1JfbenLPenkBdJ9BB1ZsmMUIkMMqtUTjgzMaHDgKBMGsP93x6IB/460u45jNb2ehOZkonsVlJuxZhTM6g6OHFI1EMEuPUYrAYUURdGMBAmLWH8uZcLvi/l8rH/t+nWNiW09D15LOKFDET9UmsiXF5QVH28b7E41BATYh1DoRZw/juZ7bLW//hPG66ah8bGw8n6q+HQYrv56jPqNWgVhfUeJw3iEnCoAXCrG1kNyAf+8svyTvfdB5+fpJyLmIyXs/69jRaOnqdebz3mDii9CE8JhAmAICtF2yXt/7tB8j3RMxvL+jtzolcTC1pIh6KwuFcsGECYQIWpc11ubz9NR+V6752M3W3nppbh18wJL5BK20SmxA6EwgTcC987T++J2/+X//FLVfvYWP9dOpMMNjXJ/Jh+gNhAu5b2lyLfPTPLpaPv+siyn2Wk6ZOw3eCSrZchGLkaww3fGSr7Nn6UX3Ckx/N2ac9HLg0DEpAwP3B+rOS4CYLCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIOIbx/wOWHD3owGspyAAAAABJRU5ErkJggg==">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --green:#22c55e; --green-dim:rgba(34,197,94,0.1); --green-border:rgba(34,197,94,0.25);
+  --red:#ef4444;   --red-dim:rgba(239,68,68,0.1);
+  --amber:#f59e0b;
+  --bg:#0f1117; --bg2:#161b27; --bg3:#1c2333; --bg4:#222940;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --text:#e8edf5; --text2:#a0aec0; --text3:#5a6a82;
+  --radius:12px; --radius-sm:8px;
+  --sidebar:240px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden}
+.mono{font-family:'DM Mono',monospace}
+
+/* ── SIDEBAR ── */
+aside{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;padding:20px 0 24px}
+.logo-wrap{padding:0 18px 20px;border-bottom:1px solid var(--border)}
+.logo-img{width:140px;display:block}
+.logo-sub{font-size:9px;color:var(--text3);letter-spacing:0.12em;text-transform:uppercase;font-family:'DM Mono',monospace;margin-top:4px}
+.sidebar-section{font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);padding:16px 18px 6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 16px;margin:1px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+.nav-item.active{color:var(--green);background:var(--green-dim);border-left:2px solid var(--green)}
+.nav-item.sub-item{padding-left:32px;margin-left:8px;margin-right:8px;border-left:2px solid var(--border2);border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.nav-item.sub-item.active{border-left:2px solid var(--green);background:rgba(34,197,94,0.06)}
+.nav-item.sub-item span{font-size:11px;color:var(--text3)}
+.nav-item.sub-item.active span{color:var(--green)}
+.nav-icon{width:15px;height:15px;opacity:0.6;flex-shrink:0}
+.nav-item.active .nav-icon{opacity:1}
+.nav-badge{margin-left:auto;font-size:9px;font-family:'DM Mono',monospace;padding:1px 6px;border-radius:4px}
+.tag-red{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.tag-green{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.sidebar-footer{margin-top:auto;padding:16px 18px 0;border-top:1px solid var(--border)}
+.trader-mini{display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--green-dim);border:1px solid var(--green-border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--green);flex-shrink:0}
+
+/* ── MAIN ── */
+main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:50}
+.page-title{font-size:15px;font-weight:600;color:var(--text)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.tag{font-size:10px;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:5px;font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:'Outfit',sans-serif}
+.btn-primary{background:var(--green);color:#000}
+.btn-primary:hover{background:#16a34a}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{background:var(--bg3);color:var(--text)}
+.btn-red{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.content{padding:24px 28px;flex:1}
+
+/* ── PAGES ── */
+.page{display:none}.page.active{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:14px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px}
+.metric-val{font-size:26px;font-weight:700;font-family:'DM Mono',monospace;line-height:1.1;margin-bottom:4px}
+.metric-label{font-size:11px;color:var(--text3)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.up{color:var(--green)}.down{color:var(--red)}
+.chart-wrap{height:220px;position:relative}
+.section-title{font-size:15px;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:8px 12px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+tr:hover td{background:rgba(255,255,255,.02)}
+tr:last-child td{border-bottom:none}
+
+/* ── FORM ── */
+.form-group{margin-bottom:16px}
+label{display:block;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.07em}
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:13px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--green)}
+textarea{resize:vertical;min-height:80px;line-height:1.5}
+select option{background:var(--bg3)}
+
+/* ── HEATMAP ── */
+.heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.hm-cell{aspect-ratio:1;border-radius:6px;background:var(--bg3);cursor:default;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .1s}
+.hm-cell:hover{transform:scale(1.04);z-index:2}
+.hm-cell:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--border2);color:var(--text);font-size:11px;padding:5px 10px;border-radius:6px;white-space:nowrap;z-index:10;font-family:'DM Mono',monospace;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.hm-win{background:rgba(34,197,94,.22);border:1px solid rgba(34,197,94,.35)}
+.hm-loss{background:rgba(239,68,68,.22);border:1px solid rgba(239,68,68,.35)}
+.hm-be{background:rgba(245,158,11,.22);border:1px solid rgba(245,158,11,.35)}
+.hm-today{outline:2px solid var(--green);outline-offset:2px}
+.hm-win .hm-pnl{color:#4ade80}
+.hm-loss .hm-pnl{color:#f87171}
+.hm-be .hm-pnl{color:#fbbf24}
+
+/* ── CHECKLIST ── */
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.check-item:last-child{border-bottom:none}
+.check-box{width:18px;height:18px;border:1.5px solid var(--border2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:1px}
+.check-item.done .check-box{background:var(--green);border-color:var(--green)}
+.check-item.done .check-text{color:var(--text3);text-decoration:line-through}
+.check-text{font-size:13px;line-height:1.4;color:var(--text2)}
+.check-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.progress-bar{height:5px;background:var(--bg3);border-radius:99px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;background:var(--green);border-radius:99px;transition:width .3s}
+
+/* ── PERIOD TABS ── */
+.period-tabs{display:flex;gap:4px;background:var(--bg3);padding:3px;border-radius:var(--radius-sm);width:fit-content;margin-bottom:16px}
+.period-btn{padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);font-family:'Outfit',sans-serif;transition:all .15s}
+.period-btn.active{background:var(--bg4);color:var(--text)}
+
+/* ── MOOD / STARS ── */
+.mood-row{display:flex;gap:6px;flex-wrap:wrap}
+.mood-btn{padding:6px 10px;border-radius:var(--radius-sm);font-size:18px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);transition:all .15s}
+.mood-btn.active{border-color:var(--green);background:var(--green-dim)}
+.stars-row{display:flex;gap:4px}
+.star-btn{font-size:20px;cursor:pointer;opacity:.3;transition:opacity .15s}
+.star-btn.active{opacity:1}
+
+/* ── SLIDER ── */
+.plan-slider{width:100%;accent-color:var(--green)}
+
+/* ── PROP FIRM ── */
+.rdv-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:10px;display:flex;align-items:flex-start;gap:14px}
+.type-tabs{display:flex;gap:4px;background:var(--bg3);padding:3px;border-radius:var(--radius-sm);width:fit-content;margin-bottom:12px}
+.type-btn{padding:4px 12px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);font-family:'Outfit',sans-serif;transition:all .15s}
+.type-btn.active{background:var(--bg4);color:var(--text)}
+
+/* ── RING ── */
+.ring-wrap{position:relative;width:100px;height:100px;margin:0 auto 12px}
+.ring-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.ring-val{font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)}
+.ring-sub{font-size:9px;color:var(--text3)}
+
+/* ── STAT ROW ── */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.stat-key{font-size:12px;color:var(--text3)}
+.stat-val{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text)}
+.text-green{color:var(--green)}.text-red{color:var(--red)}.text-amber{color:var(--amber)}
+
+/* ── MODAL ── */
+.modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:28px;max-width:440px;width:90%}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:20px}
+
+/* ── JOURNAL ── */
+.journal-entry{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.journal-date{font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:6px}
+.journal-text{font-size:13px;color:var(--text2);line-height:1.5}
+
+/* ── RESSOURCES ── */
+.resource-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.resource-item:hover{border-color:var(--border2)}
+.resource-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+
+/* ── COMPTE ── */
+.toggle{position:relative;display:inline-block;width:36px;height:20px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--bg4);border-radius:99px;cursor:pointer;transition:.2s}
+.toggle-slider::before{content:"";position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked + .toggle-slider{background:var(--green)}
+.toggle input:checked + .toggle-slider::before{transform:translateX(16px)}
+.progress-strength{height:6px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-top:6px}
+.strength-fill{height:100%;border-radius:99px;transition:width .3s}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid var(--green-border);color:var(--text);padding:10px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;z-index:9000;transition:transform .3s;display:flex;align-items:center;gap:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+/* ── CHAT ── */
+#chat-panel{flex-direction:column;overflow:hidden}
+#chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:12px}
+#chat-messages::-webkit-scrollbar{width:3px}
+#chat-messages::-webkit-scrollbar-track{background:transparent}
+#chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+/* ── CONTRAT ── */
+.contrat-article{padding:14px 0;border-bottom:1px solid var(--border)}
+.contrat-article:last-child{border-bottom:none}
+.contrat-article h4{font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.contrat-article p{font-size:12px;color:var(--text2);line-height:1.6}
+
+scrollbar-width:thin;scrollbar-color:var(--border2) transparent;
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════ SIDEBAR -->
+<aside>
+  <div class="logo-wrap">
+    <img class="logo-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYsAAABMCAYAAACcepszAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAA+QUlEQVR42u29d9Qex32Y+8zM9rd8HfhQiA42kAQL2EAA7FUiaUqyrMJIih3LkXUTOc03uZGvj3MSx4l9EztucZMly1QPLVGFFEWxiRViAXsDAZIoBPC1t2+dmfvH+xGFKARB2pKSfc55zyH47c7Ozs7Or85voaSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKTk3eeX/tWHbTkKJSUlJT+byH+oC628aoxf/ovL7eINshQaJSUlJaWwODQvTT+PGM/41c9+nKt/ZVUpMEpKSkpKYXEwo+MLqQwNsLO1nQuvO5dP/48bbHQKpdAoKSkpKYXFPqYbHTo6JhgN2J1vQ8yJ+Re//Y856aOLSoFRUlJSUgqLPpV6nZ7OmMlnYLDAnWfoRtNc8vPnc+Gvn1UKjJKSkpJSWEA37uIFLk7FJZUpbdumaabwBg3nX3Y6K983txQYJSUlJf+nCwujYyw5aRqTFBpcHycKiGkz3Xmdn//YdeXTKCkpKfnfTVh87DdusGLZ0QeoI8+FosBVDq4ToAtFocHagrAuyYmZf1Ftb3v/7LdvfFvtl5SUlJT8FAqLFasW8Zu/86usun7pUS3ostC4ViAKgcwl0gagXZQFhSanx/ii0b3HDy6O+He/dyPLP1wrBUZJSUnJz6qwKFRK5ra59kMXccNvXPKWC7qy4GiBYyTKKBytUEbhCkm30yIMPQZHqvtOqGhiv8M1N17O+37/glJglJSUlPwsCgutUgq3g6k1OPHccT77zU/awQvUYRd1pV2UcVAGlLUoa3GMRSJRKBAG4Zq9x2cqI/MS8ihh5ZrF/Lv/9VG76HKvFBolJSUlP0vCwsicwumSqAYdMUGbSX75X32M9/zb9YdZ0B1AIq1EWJAUIAw2t1SrddrdBp1Oa5/lYgsym5MQM5NN0rUNPvlr/4jrf+u8v3eB4SwuYyUl7xKLyrl0rNROUTY6CSuXlmN40Nic4NhwhbBDp/vWWf4PMz7OsQuLDK1itDA4SpDFHQLHZ9lp4/zq//yI/ZN/+iVxgCUiBBaBEQAGRAEW4sLgRRFGZbBf2ajAqdCyHkLmGGswbt/ttfysBfyTP7/Ofv4/3ULxKuLdHpCP/MfL7ZKVi5iebNr/+bvfgFeO7hrHnTlkr/7gZYwsqqKVpttMeOjOx3j0K5uP6vzaCuwHbryc+rhPTBvpS9wooBdnKDckdKuApNtosXXLZp568nn2PA9sOXT/NnziNLv2yjNomyY2l9Cq8uxDW7n7Sz865PFX//J6u3z1OP4g9Ho9dM/jgR9s4unvbj3qMT7vIyfYa3/+KvZMTvGXf/K3dB9/58/n4n98uj3xzOV4gy5GpAgLeVoQyRDhCDLZJdEpRgT4fojjCIQ2dCaaTG3v8Hf/+YG9ffjQr19il5w2F+1ntE2C50VUbZ1eM6HX6+B5DlI6vL5jF48+vIkt320ec/+XXDlor/vglSiluPf2h+2jX3r5qNu69J+sssefvoJwyEeTom2GMQaQCK0wuSWLc/Lc8OxzL/HIX736lm2fetVx9oLL1yIjSyfvgKMYGhkgzmJC6WDaBbQd7r31cZ6488W97S1dN2Sv+8BVvLJ9B9/6vXuP6h5+4d/cYEcXOdSHXQD27Gxz+zcfYdv9rx/xfLUMu/jEOusuOYvlJx9HnHcoigLPCZA2sJM7Wmza+CKPP/Qs6QvvbG6tv/F0u+aCU8BNsCrHCouWBisMRoAjHAQOu7ZNsfnpLTz3+DbiZw59TX8Z9gM3Xsai44fw6oZm0qSbGhwvpCgUEoHvKrJezPZXXmPzc5t58dkU89Tbu4dwNfaq957P4hVLEI7L4MggaZGihKA507IvPPUST/74aV6/OxY/VcJCqxwtNTiSzBaIQBGbNjayzB1bwJkfXWwfu2nfJNbSooXEwYIw/X9jUVIS5xlRNcR11b72Y4E3EIFKybMeXuTQMzMUoWJs5Rhrr1rFvX/2zLs6GCdcP2JHVwxgBmKqvseq9eM888quozp3+aqFLDhpmBk7gRYZA8NjrDr/RB79yuajOj8YhYUnzSUYEzR1TqFyMrqoAozV9GyCpzwG5nicufJ4Vq2bTzqj+dbn7rG77jp40q08Yzl2MEOR48iAaKhGZbN/+MVt1XxGl4XEagY/s1SpM2/LCE+z9aj675+EPe/y0+l409jhhPd++HK++vgP3vEzCUck1YU+smpITYFyBCIzuFJTmAwVpDg6x1gHK2KMY/GFSy3ykfvd7vyLXLv0jPn4YwUN2yLTCbnqkSYt/DkBVcfBERJTaJaMzWHpqmuRH/ftHd++l0e++NLbfvk2XHMm1QUFWuesueQkHv3Sy0d97tylIwwtDMncGNwclEZhEQKUlqDByxQ6F6xfeQaXXbvW3vnth9n4V1sO28/5S+ex+KR5ZG6PINckNkVGXTydILTDwECVKB9mzoIx4MW9581bOcT4iXXsaMyn/uJ99k//081vqUAtXTUfNTADXheAIeUxOD9g2xHOOen6Rfaa913CyMKIRvY602IHplKglMDYHrqnCBaEXPq+81mzfg333v6AffJrm495URyYW6U2NyCVbQo3wQoDUlMIixAGK1wELvOGBjj+rMu59uc97r31YXvX/3z8oGuOLK2w4JRRqPboOg1srSCSPkbmmDQDIDcaUTOceNxiVq8/nm0vv87zD71sN35u4i3vQRyP/bkPn8u5F57BZHsPsWlTHayxJ96KCEAphZWCE9Yu4uz1q4l/MbP33Ho/j3z55XdVaByzG8oKg5ZgREAn1mhhSW0XUUlo5tu45PpzESfuM4+0LNACtAQtJFqAkYDvk1lNN03YvOXVve0/+tCTOCZAGJ8iLTAYclJi2aahJ1j3nnXvuuRcf+VabDUjdtt0nSYXvXcDHKWJlzltukyTeg3SsEObSagVR31tYSOSVDHd6JLkFq0EzaSHU/ORVR/jCbompZV1iU2KCB2qw1U+/ssfZMUlg/bgRTZgKt1D5nfoyhl0kBAMuod/npWUlp2g60yRBU1ip4mqHr11u+bCE6iMeyTeDHIgZ/4JY1TOf+fmcXXOIFQU00WDKTNNx+3Scdu0vRYt1aZtemTKUDiCnilodnt0kxTH9Rkc2pddV6kO4rgBU60WqS7waxUIwQzEpLUGcThF29tNx5sm9lsUYReinEvfeyGnvP/tlaQ54bq5dvGqYab1a3TVLuYfX+esjyw/6jaUV4UgInMEbVI6IqWjUjoyo+2mdIOcvCZgEFq8TjimueYDF/PJ/+8Dh7+Gb5ju7eb1zlayYIaiMs2kfpkk2kND7qCrptFuRmUgPFCbrBfsjrdSmWcI58LHP3MDauWRn6uo5FDpkrrTpO400ZglGD78unXlv15tP/Qr1+CPGV5pvEzDdkh8QezCRNohjxRi2KHrNOm4E4yukFz2gdV84LPrj3l+jc0fRkWC3IPMhySwJIEhDXKSICcOYpKghxnQvNrYTEtMc/n7LuQD//6yg68pfDy/Qq41nSwhyTN65LTyHqnU4Dngu2QYWr0uWimWrjyeK666hnXXHjmbdOkVI/af/9sPcdZFp/Bq4yXiqIEcTdijXyGuzjAldtANpygGWmRRgzhoUJvvcfF7zuejv3WVfTdd6scuLACLJM00teogxhhcXyJcTaEy3Jph6QnR/o6rfoyCvjsKQBiJtAqlXXZvn2DXt/ZpLHf/4GF0Ysk7OcP1UZI8x40CsizDigLj5Yyui961gZi7LrDDCwYRgSEVPazMqQ54LDi+cnRuOdeQiASn5uFWXbpFF/k27DYjIKwHyFCRmgwjIIqq9FoG23PxRI3IqeOIAG0VGYbUKVADgp+78b34Sw5MLti642UGR+vgWLTNyWVCJuLDTwQP2lkT4YH0oZt2MObohd2FV62nZTp0SSDUpDQ5f/2p7/i56C44mU9Y1BlUYwSiji4glzmqKtCOAaFwCaiIAQbVXKpmDNGOiKf2DUmr1UJ4Csd3EJ7CWk2eFijhYQsHnUp07iClAk+SeRk92cLUEq6/8WqWXDx61HPtrLUnMdHcQXXQxzop062dnH/R6qNXHDyHTGTEtof0JcpxUPiowkOkHiJ1IBdYa6kNRky0d9FhiqGlIb/4u+8/ZD9NJnGkj+c4SAnKsXihQ6EKkBZXhpgEsl52wHmdLKEyWmO6NwFBwrwThvn4Z34BseLwi5AlQYuEnmnTKlrEIiU3+pDHXvvZNfbk9cvoOlM09CQDcwbwgoiko3FtnXqwgLgh6DYNYTgAvmV3bztxtcmK845jw8dWH9MakIucPa1JMqkpsBRCoy0Y7SLyAJkFyMyl0+wwb9E8ek6bnckrrFq/nA3/9KQDrpn3ClKdoQOBCn2M6yKkS+jWiahh2wovDhj2RwmCiHa3xUyvifZz3vOhyzj5/Poh72F4XWR//pPXoQdSpuLd+FWHPM8pMk0lrGNyS+TXEYXCFBrhGBLTYCbZiannLDltIdd86MKfvGUhrINBIYWDLgpcIbG5QVuX3Eq6ecrS45ft05asQVk7e0mJMv00WidRVOwAN//pYwc+zE2I277zXSIUJAalqnQ6hpAKoQhI85jBseq7NhDnX3EWNirIdIzQBZHjYPIe77n24qM6P8NQKEWaSfLUwVMRpEdvBTq+oZAdUtvEq1jStIdTePidIezuKq0XEphyUXEVTIgb1ejKlKZsEy5wufR9aw9or16pEncTbKqQOEjPYpzssNePeylhtUaWWsgcIlXBt8FR9f2cjy22HdODKCAWDu00JaoIzjzz+Hf8XLY8uI3WkzGVbcM4W4boPG2Y6yxFGYfcpn33QQGLKgtoPtOgeAnUaxX0qwHP/HCf60cKTWF75E4OUmOSjLqtEjaHSLeEFK8MEzYWI9sjiLyCdl06foemP0knmGLDtRuOzr1xJnb5yeNEkU8Wp6AtQeAyONdl0cXhUS1sWmbENBB+ji16OCmMM49gT4XxdAEDrWGG0gGGzAAyDbHCIQ8K2sEUI6cpLvjMyoOu88yPXmL3s02CdICqGcBMS7y8ik0qDIVLsBN1nr5rK5sfef5AK8cdoZsoomCAtOgRyz34C1M+9dvvP7zr0EhMUWCFxAY1tKrgyNrBrrpfWW2XX7CcTqVHVokxgaYx0yOywwzpceKXCrbdu4vWU5pgZpxiuoLFJ3Ut3YphOmyw4QNnM3aGePsCQ1rcqkuRG0IvRBiBzFzsVIi7Z5TqrnHC3aMMF+OYWJM4Ca3KDJPeNs67ZjXBfh6HyPFI6GJrgti19AqNKyoU04LiVYvaqqjvqVNrVrFdg5YGVVX0/DaT1VfZ8KE1B/dvJfbaX7mE9tAUZizFeJC0C4b0HIaScfyZEYbjZdQbSxjqLsedrlItKvhCY70eXXeKTtRi5dqVrPv02e+KUu0c+6lir6yx1iKsRlj6VoOQWCWRjtr/2fStCxRYibAWYSUSyY/uvg/evI6twm6+q8m566epD0d4YYDCoUg76EwjyXGCd8clN3wadvnq5UxnE1RGQuJei27cYdD3qYwFLL7Ks6/elh3xYkI6oBRCKCwGIRRKHH3/rMz66chOjhAWaQVu4fPFP76Z1p1mX0OnYK/7pQuoL/YZGh8k63Ro6QYnnrWc7/Gjfe1pgxIOrhPSS2I6aZOeaR9hgTJoBFJ4ONLHGknSS46q7+deeio2snRtBp7EcSXNyRkW1I/jso+fYu/4wtPH/KAev/0l8fjtLx3w/y77jdPtkrVDaKWxViCt4tlHn+Vv/+CHsPVw/nSDkUVfuADCgqt9Pv97X2fm7v3OWYH9wL+4mGCBJRx1MDom14oFy4+DxVjeIqnisuvPo3AzeoUmiKpIR9Lp5YSixyXXruPzd711HMcKixUaMPhuAB2f5x/bwjf++j7M8/3rj6zFLj9lPhdcdS5B3aeddbCOIVWGDdes4bmHttjph/Xevu58akZ87qm/Y/wK7Ic++V6GR0Zp5m3CakhzT8ydf3Mvr9w+ddC99RKNdH2SOMdQEFQFseiiQsUnvnC5/fxv/eCgJIt6fYjpZCvuYERsLFkB8k1LTeVE7PFnLiR32lgVMzE5waI5K8kyn0d/+Ax3fWcj5skD2z35FxbZ9378Yvy6Ynd7D47v0C5muPL6S/jbx394DG50jRICU1jIYdsLO7n1M88ccM1V7xuyV9x4EeFYSKK69JIGjuNw7obTuOflJ/sHFRovUHSyJs1mi3kjC5G9iM/97tcw9x14Dx/543PtcWcsZKrZQkpDfcBSWRBSP96xrReLvcde/IEzicYsHTuJL3zSjmXJyFJsw+HR+5/grvs20poAXkCwCnvJFaey7KQxRpdUiPMZoqEaeV6QmoRlpyzivqU/tod/N/6eLYu9g27t3p9BY4UF1Q+6OM5hZJHou6SM6MchhufW+eSvX8NVv7ZmrwT81c/cyA3/6jwynVCQY6TGSo1VBk2OlQah3h2rYt17LsaEityzxDKjZWMYdpg0DcygYs2lbx0fcZRCSYG0BkGBEAblvB2B3h+PvntPIUyIU9QOFBQATyPu+/r9jMtxZNcipCW1McPjgwT7fR9E4SKM7L8ICrRbQJQf9uqJ6pLJnMQWpNpgHIkKvbfs9bIbhB1cUSN1emgnoxBtYt1GhB4dkbDm0lPe9diSySzVcBAKhat86tUhTAZHfhkk2NnfrHXraPdAQQGwGfHNv7yLUb+Gn2W4GhSWIMiYt+TI4+Gfgl1++gnMmBRRG2Ym9+iICqkb0VGG+ScsYnz90FtOCmEFwrhI42IzD5P7NPYUewUFwNQDiI1/vlP83efvQHYjPBMyWBmi3YoptOXCS9Yesu1GE/xKDS0McdEjTWN832fbtqlD90VpkjzG9T38MKAdd1CuJC1SRubU+OS/vPqgc16fnMEJKgjl4LsORZaQ9A50gZ581hLGF9XxZEpkNcfVxyj2ZLz88Gv88Lc3ijcLCoBnv/qauPemO+DlnOPNMoZag0SyysKly47FwQkUBKHC6BRlXXT74AXlmZtnxI4nduG2BX7u4UkP5TosXLnvmp4nkRZEbJjjjlBJItS0e5CgAPjyFx6mM93F5Bn1gSpaeOTSZWzBvAOOO/OMlWBiAlfiWsuAX0P3BF/7m2/yrd/ZKFr3IXgjI+wZxJ3//Snxl//1Tva8EjNWW0J7pku328GSsmTpPE46dcFP0rIAK0Ao2V/ojEEYu3d0hBCzf3vzkrj/+QVBrcbw/GGGRwZ4JtmnQY4fN4bjpMTZDMoTpHkPMEhpcRyFyEDb4p2vPIuwq9et4pX2FoL5AVOtXVSqIV4Y0piZQjkJC044jrF1g3bivoY4/FIkkFgsOdbqfmzm7UgzMavtCIEQCoGDNIfOXpp+AKESa1ORQ81gnYKp5jRz543y6tOTsw9WQW6x0iKlRAWK4cVDzPugZ5PJvO/vdAMqYYQ7DHMWD6MrBVlPUxiBVH0/7lux9oq1tPIZ4rRASkm1GtLttHD9OnGSMjon5IwPj9jHvzz1rmVmdFoxWTfHuAKjNT0T05juvIXXQfatWiQG2Y+4WUltGbb9Js24eByhMmGZzQdwhaHVmGDO3CFeZ/fhM6CuPp/E6ZGqDFd5QABCUUiNV1U0GtOcd+lZfPNHd7ylDtd3rEiElbjCJ40PPddfuaUtnjlts11x9gKSXkoQVun1uhy/ahnsZ2nuH2wstKAbdwkqAanWVKMK9jAirFoL0CYFk2NERlIY6mFEiCBPesxdWuVffu4G+z/+299RPN0fRxmFpEKR5gXSU6A10hx4geNOGCeVbYQscK1D3jG4ic93vnT3EUfmoZt2iEcfvNkOD0Mjg9QC6TEoHMJgpabRmsH3PFxRZWLnzCGPndo+wZzVQ2iV47gCpINf25cskusMtCH0XQLlk7dz3LyGuwKbbz5wbtmNiEqlaj3h0phqEIVVjHGpDQ3CbL7YgjVV67qawBfExiCNQBQuP37gcZ6++QjZU5sRN/3lD+3H/vnVhONVpC/IuylGppxx1qk8d8uOn5yw6LtfbF8TEgIjNHJ21hnRtzr2U5f2BrnfWByNsLSTBkNz6ghlSew+7aPZm6EYSPGrHpqCIs+xaDxpQfpo9Gzu+Ttj7dXLyNwpQhcEBT4eNpakOmMgqmKKLm6lxnkXn8W37/vhES0sYTUCjbA5EjHrqjvaGFA/acAICUIhURgOL2wqlQDCHg3ZASn3jet+loVEYTQkRYL0c8aXjHDdx66i6gxgrUYCjnaY7u7BGRC0kg7WSpTvA4q46B2xz4svGrPzly4gNg08JDJXeKnE6AqFBj9waaUznHfFGh7/8vffNcsi9Gp4KsSNBGmR42Y+9WDgLTQbZ9aq2PdcjDC0D7FPJTodG/g1OkUX5aSYIqXi1el2jjAeS7DLTp0HYY/AM3TbDeoDo3TbHaQskJ7AhIKFJ4ww94Ka3X1/WxzBnY7EINAURUbkVhisHT7teeOdT3LmhtOYiLcT1kI8LyBPuoQrsfFLB95fMg3WOOAKhCNQBtI4O8BqOcAN1W0gpUVrg7YwODxEu9XFKQqGoxpxd4Lq/GE+9f/8An/421+1tMCpV5hpdRmYExAnLWpuncHowPjiyKI6qdNB6wKbCUJTYduWBsXmt35p8i2I3VveSBfimNwrVmoQBZVqhCMdXOPjuf5hbBBNEHqIyJDnKWmeUZh9inCn00FKiSMVnXaTSAzhBx75Ie5FrMPumZpkdGyASlgljjVD1QEarea+qbR8PoWOCTyXZqfNcHUUM+Pyw+8+/pb3lW5ExM3chnMckrSL5/q0WpMsXbb4J2tZvGFBICzWmv5/v8k19eaMH2XfyKTqu6M0lpyEdqJR+1n5TqQwFBR5jHTBcWfdBzql0BkYDynfmRfNW4o979LVdItJvEhS9Awjaozvfvt7rFt7HsMjNQp6WNPh+FPmM3CatM0nzSEnpjFmdgE2/ZXfGKwp3pawEFZikSBAC0OhDu02Wnq1tLHTppE1EB4YDUP1IXbtnDzw4Toubgi5SenoBJ228Z2IhDaaDKM1Q9EQwhqavSZpHuOKCGsESIvyjvwOXnbdpSAg6xWMhENI63HP7fcwf9FxLFw6RG5iCpVSnTvAOZ9YYjd+/pV3xbrwZUAaZ2iRgBQUqcaRb+UyEwd4XS1gVMqSq7Gv3Lrvpa6sFvYjn3w/nSxB1SKMztG5phqM8Mrmw8d8LnzPaYRDUMgUB0NFOGx/5mV27tzJhZeez3R7J5Ffx61rLrzyPL52/w+O2FOBRVIQRAGm3aPVnDzs8ZM7YnRiiKKIuOihTY6nHBYvHeb5l6YPHLsIorBObHeSpxlYhc00YinWHmLRtTpFWE0URaRFii4srvJwrEOn08FTObFskbkun/qtD/H1r9/K682dDIwNEmcTuI6Dm0mkPnAtGBqv05I7AYmVDrWBYW7bdPsh7+9f/rdP2sF5dXY3tpPqBp7n4chBZODRdtq0d/fsw195nFcf3H7U88sIMxu/MnQ6bWyWUh+pH/LY41YtoPA0Vtq+x8RKevspDo7vYTGkRQwu4FhSeiz6uSH72jdn9vapdr5nr/nEBQzPGQRrSNoxjqjiuSGvvPLa3vZcXyKkpJf0CIMaaWIJVUjy5NEJxZdf3IoYncfQghBpCjKrCSLvJy8sCqtR+92DEALLAZuxDxu3sIBwLMpROEIh3X3tZFmCDKDIC4RVCCmR/Zaxmr5pJt7Z2nPeRScQDUmsLMhjCHSV17dMsfXmmEVqN+Nr5+L6GULGuJHL+Zefwm1PPnkYy0JgrQAMb3TLmrfXP2EVwjpoDMbJSUWXU35pmd36+BYi1d+XMrgIrv7IZUwFU7ihg4k1gQmZ3DFFut8OU43FCku724EQXKWwxuIIhS0MfuChlKTTaqE8B08ZHK8OuURnKUZrjmS3zTl/wC5YOZduvhsRS2pOSHOix4Nf38mSUxos+yfLSHQbN/DoxQlnbTiFjZ9/5V2xLIo0x5ceuBblOojCYzKePqq40F5VRVgyJ+Z9//xSvP+rYjvTDrX6KLHtga8xgaaZJISuwpURTz+yleLFw7+sZ1xwCsKPKZIYB8FAMcDXb/4BU1Ow/rQMxwFNguvVWHHaYoIV2OQwWrSwBmkFAkOadak5QwwOHSHz71XE7ok9NjoO8DSm0AS1CpqDlQ2rIesmGM/iBf16bb708F04VDrDQL3WdwpYSZ5Z4m6LOSNzyKa6VMNBuvkMXujgKyiKHtd/9HKUm1GIhFxnVFwXoQ0m29cXZzFWeJCSotwKoVdhz+7dSPdg5eqka0ZsfYml5eyiCJrUhz0QgnazgcDHCxyWDi9i5uQOrz64/e25opAoY6hUKmgfxpcPwvlYEggUuBGsu+okFp43n13JTvI4J7QhkXXZuXnfXPaDiNwaMgqCqqKjm+Qm5rJPrCX8xbnWKVxMoQkHBW21i+neJIH2qHl1PFvl5Sc2w/5zQUncICS2PVyvxtRk9yA33hGti6RgZGyYRm8XoefiRnXSdvKTFxbGGKwQffeT2M/aeMPztH+A41BBXdO3ROKkS5qmB2TzSAS+33c5FXmBlRLXgpIOQjgI+866f/b6M2lmk4jIELkhJlU8cvdj8ArikbuetRvOXUuqOyhP04ubnLFuFbfd8qTlpUNoYLOCQQj1hkf87eUPWIk0DtIosKBFQuH0uPKDG5A/t44iniCsO3RtQVfGEAoanQ5DepA6Qzz046cP8mXkJkcpgVQOuc5BKyJVQ+QSE+cUOqPqDpHZlFY3RngCR87qtcIeMZvrshvW09B7wMkYqA+R9xI2P/UcPI945fkejZ9r2drCCj3dwqu4eEOS439u0L74zcY7ti4kAs9x6WZter0eg+4onuO+1QDvExizGqVWKSldhOgytHwRu3dvZWjOMO2kjaFABRKd+Qw6Y9xx6/86bMvnfHy59YYUXZvhOhFFtyBp5kzOWixbnn7VnnjBShpFk17ewwtrnHvZKdyz+ekjxFf6GqyxhiTTxMmRrdR5C+cxUWzFuDGeF9FpdLHi4PmXxWCNxncDrO6hM4PQAqXUbND3QOJWFwdBkWl8x8cPImb2zHDfd+/lvddcjRMO0u71QBoyEoJqjUJYtIhxXEGapgTGEnj7XDzFq4henFuqAUlqkNJQDSJ8/2C3q+sUdLImtiIIQp9GvodCGFS1gpIGT0Xs2baToZG3l0b/xvtZaFAKUtNjeP4Q/+w3/xG2UAibIdycmBmmiilSDJVggFoRYZuCB/76sb3zuBMnKMdF+R5T3Sn8yMdWLSISdOPXidw6roGpZAbtxjhViRsHqMJHdBX33HLPmyaAoDAa4bg0Om1qo6OIpnv074fr0UtigrpPknQI/Bp5K+Odv3fvAq7bv5GiKNBaEwQRWZLj7ucDFEKglIsxBs/zyPP+35V0MbnBc3z8/V5433GxhcYUFmlBoWaLEDooq5BWIeyxrzvnfXSldQc8RBjR7OUYIxEGXr65JQC6jyBe3f46CJ9eWlC4htwvuOT6sw+jpVh0YRFvBFENsy/gUU5eK1DCw8NBakvgCoQbkwVNWnI3diyl57foyR7aESQpDAbzGLCjZLsMd/zhm8oQuGCUxg89Op0eLiFV6jx2xxM8d+9LPPPDF9h067Nsuvs5Jra0GPLH8KyLjyTttghdbzbucjBDpzt2wUlD5EELHWX0RJfEdvnBPc/tPebhHz9EN+uhpSU2KdovuOjqd2fXvTb9IpRSgusprNEIzFssDhohZ0vN6BwpoRCGTFpsJNne3EIwR9DWM/RMExUl5LaNyT3uvPXHHCnGcM5lp6L9jMQUZDogCudx71379g3dc+fTxLEPso5xJDPpJBveezYsOfTGNlMIXFlB587s/oSILDu8YhSuwXaSNn7Vw/Wg0ZxkdHgu219rHtK4ClwHF4cisThW9fdHHWbT3FBtEHIwqcFVPlJLXOPz0p05f/kHt2DjQaQewXdDIMHKFsrpkGYtHEfiuj5FoTFvat8TEdIEOLKGMD7SOiyaf3DGTmhrBLqGbjnY1EURIITF8Q2GLmnWIgol09M739YcUspDSQ8pHbIiB9Xf0JZ5DXSlBUMxTSYogoLUFJD7BEUd01Tc+60fvcm1V8FIl06SE9XqWCmIsy6F6OBGKb1iBwm7cWsJMswxZBglyDPBA9//MTt+1BNvjn9aIchNjldxaedNEhlTu/jo9pPMmTsP1w8pir6CkaY97LFkAbzbloVSCrQhTVPmjM6l2YxJugmBH6HzfdqQ74e00z14TkAcx4RRSDfu4amgX4XWyIMWf/GGO2u2Uq3Y63d2+ns07LHLurPWn0bmZXR1TjhQJ2mlpL0Wp39y2JrMZabbxR1xyD1DqjWu79BotzjxzJO4kx8fKtKPlQohHAqrsdairXlbwkIYcLREa4uZzUTSNsY6BQZNlmUoW6XqjpJmmmLSMvN6zJf+5OaDu+NBZlKSboKnHGQmeeGJl7jzd549eNE7Efux//tSBhb4eJ5koF5FGUvaO/QEW3/luaROE13pkUuBcgQVJ+T0DUO0TjA2R7BoxRKcIKSRNKhXI+K4y+CcBSy8YMhuv3/mHVoX5k1uJQMczVjvb10IpFFU3LlI4+AEKUWvQLoO9WrA5MxrzBteyPTOHg/8wTOH7e8pH6xaUUtJyFCRQhifuFcwtnicUz6SWqNhYMEQsc4RygE3Q0pNZlqcftEomz5/cCxCSQdTGDwvoNAGz3PBP7xmeebaVRiVE8cx+DmRX6U1HZM8dwhp70CWdShEju/5+MrD8RzywyS+mbwfo0BYTKEx1iC1hJcR7Zfhr/ia/cSnP4J0ckLlY3WKweA6favCGI9aUD3IsbD1hV0MnlTFiVwKXRAXCcuPXwZsPOC4h7+9XcxZ8pL1xiMm851UFxjmLx8m6/XwvBBpNLUwYnpy4u1ZFmbWbawctMmRTn8tSeM2RksqUUDkhX3rIxHU5SCqqXjy7kd45Is7DribPM8xpr/G2SKjyCzVoEo1rNCebBMpB18JcjS9rEeRC0J3lInJGe76y4Pfxx07XkeYk3Glopl2qQ+NINqa1WtXcd9dTx/xvmrnVO38xfNw3YK4gMirMhSN8eyjW37ywiLLMmpRBWathTzPidwIcnuAVVtkOcKRKOlidY7jOPsFwOVBAUjxRk68mM1esX33g7Cm/7c38uaPgfFLpJ1/wlx2xjtIZIZwXVRkCJTgqo+ej0Wxe6ZJMGxopA2iwZA4TVFRROC6nPrRk+1TNx38kKXobzi0VlBgMUof/fInDBiLNBZPS4zot+MQIDKXAEnFKJQdxGkP8PqOaaa3TfLYHQ/RePbgRSHJekSeh4tHGATY3Mf2DmPpPI+ouYOWIqbTbOG6LkpaPHXw9HCWY09as5Kmu41UdemYBIzAOHVWXXQqVXeQLLWYwCc3GcITCM+CK1Cu4OwNJ7P9/vt558Jin8CwwvT39xxRGOu95wkJWIujfdz2MDO7u8wdX0huOxi/h+PkjEQ1Wnum8MTYEdtde8m5OBVLix4ageMoVCQ5/vyFnLZ2MUVusL6kKzK0NOS6TeR5FHnM+RevYdPdt9k3F+ZzlUJrjXAEJk/RKsV4hy7VsvTauj3votWYqCDtpCyYM4furpTHH3j2MKlEYEVG6PtkNqXRajHsRziVQzmh6G+AlRIpLLnOEaKvGLxB++5E/Hl8k/3Hn76S+pwahTSkOiYIXYzrEDc1uO5BQcznNm7hilMuYTKdxA8kaE3geLzn/zrXfvePHj5gPL79h/uq3VauxX7sU5dRqQb0ej0cEaITw5YXX3t7wkKDNqAcRV4U+EpR8SKCxEEKD9GTFEmBIyJcUaUxmXHnbffwzM0HF+fTWvdTnG3Qr5iQu1RllYmtexiNhgl8F20SrDTgQW2gStzuoYLwkH3b/P0ZUfxiZnELEClF3qEwCavOWcHUP9ptn/vi4dNnr7phAyNzK0x2XqNSq9Fr9qAa8OLTr/zkhYWUEq37PtB2o4nn1nCVS9JLCf19taGSXooaUlitcRyHLC0IPB+h38pCeCN3SmJmRYrdK2COTVhcdt2lTCd70H5KEDr0Om3IwbeWdjqDkYbqeEgnmcJIQZJnxGnCSKVOnMxwyZVn89RNz76plwZrBRqBFSAdgQyPPihlMSBm3SlGI7VCGJeJ7S0mt88gswSROnSnBRM7Wrz0wmvkrx4+gl7oDCFdsjTBFgabaIru4bXvyK9SOAXaOuTWIAtzyDjT2kvPIHNjVGApbEqlEpKllk43Y6BaxZAjpUJIhyTN8EOfbjshcqvEaY/lqxcwfDp2etOx7ya14o2f2WsrWGHe0nKzVoB8I7YkcQqfm37/ZvbcFQsWYX/5X9/A0GKfpOhgXMH42Di59Ljon51o7/7D5w/q75K1FVufO0gsGijHYABtUowB1zF08wwj+n71QlusBWtzhJSkCKLhOqeffxybXtl2yBlhyTFOgVUxQwsDWIHdGwhdgT1j7Twufs86RJDRarVYOG8xk9t2MuSM88yjDxxyHAZXQCISPKGIkx7VeoU8S5Hh4ZSYvlvE2AJjNI4ERx5o5aQPp+KL+hb7yc9cRzA4gPRc4iwDTyGUpJf13S77s+WJVxFdl8qARy9vEHqK1xuvsmzNIm78zUH7t7/1/YNTmtc79sorzmbu8Bx27tlCrTqAK+pse2bXIRWmI8+H/n3lJscIiSgE7ekeO19q4qQBNtUUsSGPJXffsZHkCCm90oIjJEmukVYy6A+j25Y7v3E/225BsAT76c9czpyV4ziVgIlOAyE01aGQi35xtb37c08c1PYzG5/nzMtPAkcSxymuIxFBxns+dAXzR5+xD353E739Ei6O/8CoPfOc1Rx3/DC9bJrBwSqdToeKHGXnSzNseWrPT15YVIKIdruFcCSO4xB4Hmk3oV4f5vW8ud9xIS3T6i/9WmML+vsDjpAtte83u27NZlqZ/XaAv10WXOrbFacsZlv3Zdyq6uejC4+6U6fi+rTiaTJilAQlLIOVEaanm/iuR552iWpVlI5ZdfWIfebWfRvNhO1PGmsERoLwBW5N8pkv/bzNGoZE9NMOVazQqcUUBd/55u00nthXksHS92ciDMIKZBFw0x/dBsewsCohKYocz3HxhIv0AyrR4YOArVYLUc0J6hG9Xg9wcZwD0+3ESuzZF64mNhM4SuHkDtm0JVBVPOkTqJC4NYMtHAJ3gEhWEFbQ6E1iA4F1c4Jhh3MvP5lbNz37juadnRUaZnZBe6vEs77bYdalOWuVSu31BQXAa4jv3XS3/cV/cy1uaBDKZXqyy2CgOPOCk3nk9s2280JxwFUuf/9lyNAh0xrZN56whSZQPr405CZFeQ5ZnlHzK6QmQ0lJnmYIXIwjWbN+DZu+vO1NSSMaqQSZTVGeptHdw6ITx7jxs+dTkTU7UK2RFG2CiocbWpq9Dr7nMPN6i0FvIc8+9DKv39M5oK+Lzhuxx5+3hONOHcT6ltjEOBWPRq/JnIF5vO9j65i8ILFP3LeNXQ/v3nuudFT/nZMaIQu0sQckorxB9xHEX//uLfZX/sUH8YZ9unqGOE/xghq9JEO/6SOa6bOIJ+553C6/ZIzKkEYXXWrzItxCE4zV+dTfXmVnJto0Zrq0WwkLFi9j4ZIxjDfJxNRrVKqzMbWu4tmNm9/2/BHGgrGowMHzK8iO5skfP8WPfmf7237X+juaLNbkCAQSgc5UX1AAvIL4wZc32hs/80Ea3V3UjxuisGBNwrprz+buzz1xUJv3fvtFTjrxeAYWjyBMAyd06eQ9OnaSVRuWc+FllzA9PWNjOYMbGSpBgLEZqAYmiylSn0gOUHfm8uD9d9J7mnchseQdkuc5vusjpcR3A+JugkAxMjTKc08/t58F0nc7OY6D0fSznLTeq70crD3a/odIZrVGI+x+v1mt8hhu/+IrLqSVzBAMuhQmIZCKYWcI1aiQ7a4QxvOoZPPJ9zjIdkCyyzIs5zAazEEaQZK3SFWDtVed8ab4iulbPdZisBingLAgGAF3LKe2RDK80mfw+JDjVg9z/NrFzF0xckB8BmmwskBLTf+Ds94xCYp+UCsl9HysNv1KlYU5Ygwl0SmpyYlFQQZYcWBtL4A161YwMCfCjRzSNMUpAo7zl1JtDRJ0aji9gEgPMqxGqOgQr+fhJwMM+/P6prqfM5Xs4rS1J1Nffeylkw2yLyBmk6nfsDSOGBSfzTjr60f9rzYqc+D03/HwjHjy0Zfo9gRSRqgwpKszrKe56v2XHnDs3PWOnbt8DrkDxgo84VGVFVTHRTQDzLRPmI4RZXMw0z6yFeJ0+8c41gGhsI5kweJxllx5YIl5Y97YsyRBSbQ0uFWHOUvHkAOWnteGwQxbTZlqv04QOIwODRM6FTq7DN+56cGDg/AXn86aC1ex9LTFmMBgPbC+IByKmE6mmb9ilA1Xn8tl1x9YOLOwBbnJsaLA8SSOKw67GbbxJOLPf+9rJJOKihyi4tdBORgl0Id4Pnd988eohsLpeAz6w0xMTJDYDtN2N958y/zTB1l29lwuuHY1C04YQEQJUc0n1wVJasljyeMPPsfjX3n1bb8j/a91QrfbxuQGaQPIgmOaj0pbMBmO26+m0EnbiDfFmF7c2BSbn9xFRY5iU0Gn3URFBXllhvf+5pqD3oX4RcRtX7mPfLdgxJ/L9O5pooqPrBakQZOmu4tOME2wwCeLUtpiAhHF5KZJteJSDwfI2pZH73mGR+55/l1JLHlXYhZREOLjkCUpeW4YqIc8/sijvPDkvuDdxoce5qQNS/qlzF0XKSXGGIxjUNb0ffT7WQpm1nLQ0iCkxcjZF8jSr7+0d1PN0TP3jMguWn4ck+l2/FGLjlPGwjk8f+9mXtuo6U0InECivRQbdRBugUPIomULOHHNcoKwxlSyg6HaIGMrRlhxVWA335YIAEV/34dAoq1BkGNkTqLaUNPYqqaX5wjjEOcuw9Eo/ui+4VcWEAVGFRhZgHVw7LFvpBHGooRC+j5oQaEN5gjrs3UMTsUhMTnCd8kSiJMD0+1Wn30Sien0g+9a4ucRnRdyNv3oWaa6E6R5jFKCwPf7cQwhmLNkMSedswJnyJLbNrGIGRyYyzmXruGOJx45RjdUf/PiXsviKOJXewOaVsxmrB16LL71nx8U//QbH7aOE9OJU3wC8CSnrTuBp67bZF+4pa91n3PpqbTFBJ00xfECPCvo7Up5+r4dpFOC5p42gfKw1lIIQzQU4A5pTjhnjJFFg3Rz6GU9IipccPHZvPL9HxygeuhCIgjQGoQMmelkBLKKEw2CKEisodvrUauFxL02rZkuFTGPv/ofX4GXD1YwBuZGJKrFzExCLhOENGRJRhSFtNIWQegw1d1N4eRvEhazHyqTGoRGqTc2yB6amWcQf/WH/8t+9N9eTzEIpiIQUpKbQ2ww3Yr4s3//bfupf3c9Zq7DkpFTmOjOENUHyGSHJJ1BRoosj6n4w6RJQavRw/MGGajN4eUnt3HXbY8f2/sh+xmakR+CEcjCIRD1Y2rLNaYfk3AzjKOJOxnKHYETsOz3Rb+/+S/fFp/93qfsVPYqgXJpdveQCsHplyxj44PP2z23H2gNPv/DhojCB+01n7iUkfocuskMheqh6h7dfAIxopjJUwaHB9CdGXp5TBR6tJtt0tdT8lbId756D++0gOC7IiyUgcgLiLs9HNfDFDBQG0Ral69+8UcHVKO845YXWL3+NJrJNGHNJUk6CKmR1kVaibQHBrilNcjZGHm/km2/Yu0b+dHSgnybXqj1F2zA1T6jtbm0m9NUzRDTr8Z866+fxjx3+AF9kteY9wcL7PDiGuOVxf1NTblk3YUXsfm222YnjEeQVylms6H6kUQNiUBJjyyOUdahFg4T5/3aRuRmP+1E4GY1fAuOskjj42XHXoJ9LBgnm7A40iPwQgJbwTOtw7sTqeMWimSmwdDAMJ6JCMW+66++fpFdOPc4TJGhO5KBkXnIzOWrX/wuWx94c92n7r5AJpP4vx7aU9fPQxdNqsEc4mnDOWvO5Q6OTVg42iXIatjZXfO+reLo7C20Px8vj9BpgbFeP8BdHNpRf//3H+X8a05lsDYPm0sCEZL0Ui657EJeuOVr+KdhTznpNIQCZftZQM2de9h074s8+KfbjvhiNj60y179gcuIAh9HBeTNgrNOO5PbTv+hndrUt7GV8VGJh+Mp8lgwVBkk7miMdXAdHy1yPAmeU0fGFi+TvPDCVr712bsOe22FQ0XVyFMIKhV0keELg+zCoOjvJWnECQPhgWVTAlGhYuvkqUOeZLOlvMMjjnVzkxZ/8h9utr/2Hz+MRWEThUwOk831GuJPP/Utrvm1s+3J555ArTaHIknpFV2qlSGkFeQ5uDqA3DBaG6fXirn/rk3c81+ePOZFMMoqROkAWmeY3OCkISoPj1Exc3HikMCtoQKJLAo86cMhPv16y03f54pfWEshFfWwihUZU5MNPvrRD/Pfb/+Lg9p+7DuvipnuzfaKj27AG6vh1yLSPJ2tRVVDaUE+o/FtBR0LHD+iWlTZueV1vvkbd72rX8o7ZmGR9XqEkUehDaF0sJmm4laxRnLfPQ9gHnrTQG1CfONzt9v3f/pKWvlOhEwIXB/X+ORdCbpfD2mv26DXw/XAKEVuNEaDUhKsi80lXi4IzNvzZFRUlWoxSjztE3h1Oq0uX//jrxxRUOz1IX79Qa68/jLGFszHOgZbSEajfQH85ms9xC6PweFBfF1DphaLwUUhpUCnRb9+VCGYU1nCzm07mXphX0ynaIQ0XhQsPv5UWlMtXNenNdk55gf74gPbuOq6y8iyhOGBYSb2tJh67vDlKp65awuXvvdSBopxnMyhPdNl+uV9wmWsNh+nU0GmFRbKIWa2zPDIg08cQlAczO3/9T4xz7vOnnnOuezavov5g6PMTLUZXhHZ6c29tz2hZ15uUGxVzB1fihDQbce8/NgTRzxnzyMt0dtu7OC8uRiVYG3Bjs2HLgr47B0vMscZZcOl6wBBr92jXhvCq9UZPiOwaEM1n4eZyagHiqyZsf2hzWz6/ra37PvzX+mIZQOv2/WXru+7cHFpbe+xYtEypjb1fe8vPvEcl867GNs2VNQoNjNUtaZfKdfBWs1Ma4apyRabH3+VF596mYknj/zxlJc2vsa8oXWMhyOk3QTpO2RJD1c5iAKCpMZIJnnoiQPHcfLFFv5Zg9SjMbrdLqOj49zz4MNv/ZCeRfzZv/6y/dVPf5JaZZDk1fyIh3/v938snl672a7ZsIYVpyxlQX2EYibDc1w6rR6uDamIkBcefJEf3nYXE0/03tFCuG3jbk6cfyqtvMPw6AhTjSmmtraOqa0tjzdEuq1ih+fPwfMlbqPN7h2HbuvJm7aIxUOL7NoNZ2LSgpyCIRnQzSxzV8+1u5/YfdB9bb2rIf7srltYcfkce86GM1hy/HIc3yFtZdSVhzAWF0lrpsUjGzdx/71P032Bd/073Mfc4G/e/jHbtLtIdApCUI1qpL2UqZk2t//dg0RxnWUDp3D3TQ8IgAs/ts6+2NrEOTecQG1cUo1cbApKBziiim9CfvSdjTz0R1sFwG9/7xO27U/ToIv1JY4SYB3ixOIVAfXE5/t/cyebvrHn7+Xj5CUlJT85vJXYkbFK/1MH0qXT7DK5KSnf9TeUtzM9OzY+hjCW6elpGpMJ8Rb+XsfnmC0LWXjoQhDUauBBJ+6R6pzFyxdz4y8toGpHePQHT+09/oaPbOCpPTUqiz20k+MYn9T2QOYgM/LCPWBbVZ46dJIEWRfEaUwm+mW/88Ih8EOU6H/TtqSk5H8/spcQr7/ULQfiMEw8lokJdvyDXvOYs6F2bN1N1R+m3eoSZymZyAkHfHZOvE5iExIZY8N9O7gnOq8yf8kAWd6h0+oS9wqMVuBahJOT2RS9X0rLtq17CN1BQq+OqzxcJfEDB+mCEQU5OTlFOWtKSkpKfpqFxZMbXyCwFQbrwxQ6xTo5uDmOA17o0RU9Uqe/mLtLsG3doaMbpFmHWiUgCj3cQFCIGKMKpJr9NOksjz38LAP+KHEjw8YaxypcJZES0rxHajKc0C2fYElJSclPs7B47Ecv8uxjW7A9hSwcapUK3W6bMPDRugBPUMxuxMlfQUQDFVpJmzD0UcrSbE2QFz20SciLGIM5YGfoY1/dLDbe+wRVMURVDmNiQdJMwfQrZGpbHEUd9JKSkpKSn6iwyLYg7vjW/WSTLm5SJ57J8KxDzQ/ptWfIix5+tK/qrHIrFPQ/tVrkCTgJtbqDlGBmS/28edvE975+P5OvtQmLQYaccQI9QCiquCpAFxlZFpdPsKSkpOSnWVgATD2cij/6jZvo7RBUihEG1DDxRJe6E1HxPbrtfd+07aUJynXJ0gKDxfc9mp02AhdXBgRuQJEfmF6Xv4D4q//6TZ687wVohUTFEE4WImJQRlINo/IJlpSUlPy0CwsAXkN8/tN/J773hXupJGMMqzG8VKGKAk/sq2PpCMjSAj+skaQC5dUw1kNoH6E9dAbuoT6N+Sri2//5AXHbl+9FtGuE+SC6rRgJh8nfha8/lZSUlJT8QwiLWV78ypT4D7/2N7z86G7mBIuh7VBT+3YAm7xgfHQu3W6ClIpuJ8F1ArAewrpIK47Ymce+sUX8zkf+XGzdtIM53jyy6YIAr3yCJSUlJT9LwgLAvoD4wv97p7j1axupFfMQrX0xi8C4tCZaVMMqnheglEJYiTAKYZzZrrz1vomv//tbxfe/cRdhMYCMy2yokpKSkn8InL+PRu/8wqPix49usmtW76vMOrGthVoYorSiV/RwXYlEwzFsrHv4C8+KlzY+axePLyyfYElJScnPmmWxP+2ntbjrpkf27rL70XcfYzxaStI1CGPJkxZK5iA0VhazFWaPvv3p5xCP37W93P5fUlJS8rMsLN7Mc7e9Ju6+9REiZ5jhgbk4UiBMAqJfK98KS7lroqSkpOSnE+cf8mJ3/f59whmVdsHJEcMjVZJ0BhyNEW7/Ww6lnVBSUlLyf7Zl8QY/+Oy94pFbnyVqj+H3hnGKCo52UcYtN2SXlJSUlJbFPp7+i9dEY2Pb3nDjVdRWKvALyHwqZSpsSUlJSWlZ7M/2J2bEH/6bL4sf/+Bp2jsKIl2HuPRDlZSUlJTC4hD84I83ie994062b55kMBwtn0hJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJyc8u/z+SYT5dfu3ixQAAAABJRU5ErkJggg==" alt="Alpha Trading Pro">
+    <div class="logo-sub">Coaching Dashboard</div>
+  </div>
+
+  <div class="sidebar-section">Navigation</div>
+  <div class="nav-item active" onclick="nav('dashboard',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item" onclick="nav('session',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Saisie de session
+  </div>
+  <div class="nav-item" onclick="nav('stats',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><path d="M1 13l4-5 3 2 4-5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Stats & Performance
+  </div>
+  <div class="nav-item" onclick="nav('checklist',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Checklist pré-open
+  </div>
+  <div class="nav-item" onclick="nav('journal',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Journal
+  </div>
+  <div class="nav-item" onclick="nav('propfirm',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><rect x="1" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 4V3a2 2 0 014 0v1" stroke="currentColor" stroke-width="1.5"/></svg>
+    Prop Firm
+  </div>
+  <div class="nav-item" onclick="nav('calculateur',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 5h2m2 0h2M5 8h2m2 0h2M5 11h2m2 0h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Calculateur risque
+  </div>
+
+  <div class="sidebar-section" style="margin-top:8px">Coaching</div>
+  <div class="nav-item" onclick="nav('coaching',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Sessions coaching
+  </div>
+
+  <div class="sidebar-section" style="margin-top:8px">ATP</div>
+  <div class="nav-item" onclick="nav('progression',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><path d="M1 13l4-5 3 2 4-6 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Ma progression
+  </div>
+  <div class="nav-item" onclick="nav('ressources',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><path d="M3 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Ressources ATP
+  </div>
+  <div class="nav-item" onclick="nav('contrat',this)" id="nav-contrat">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><path d="M4 1h6l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M9 1v4h3M5 9h6M5 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Contrat
+    <span id="contrat-badge" class="nav-badge tag-red">A signer</span>
+  </div>
+
+  <div class="sidebar-section" style="margin-top:8px">Compte</div>
+  <div class="nav-item" onclick="nav('compte',this)">
+    <svg class="nav-icon" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Mon compte
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="trader-mini">
+      <div class="avatar">TK</div>
+      <div>
+        <div style="font-size:12px;font-weight:600">Thomas K.</div>
+        <div style="font-size:10px;color:var(--text3)">Coaching actif</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════════════ MAIN -->
+<main>
+  <div class="topbar">
+    <div class="page-title" id="page-title">Dashboard</div>
+    <div class="topbar-right">
+      <div id="current-date" style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace"></div>
+      <button class="btn btn-primary" onclick="nav('session',document.querySelectorAll('.nav-item')[1])">+ Session</button>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: DASHBOARD ═══ -->
+  <div class="page active" id="page-dashboard">
+  <div class="content">
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">P&L ce mois</div>
+        <div class="metric-val up" id="dash-pnl">+1 394 €</div>
+        <div class="metric-sub up">↑ +12% vs mois préc.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Win Rate</div>
+        <div class="metric-val up" id="dash-wr">62%</div>
+        <div class="metric-sub up">↑ +4pts vs mois préc.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">R-Multiple moy.</div>
+        <div class="metric-val up" id="dash-r">+2.1R</div>
+        <div class="metric-sub">14 sessions ce mois</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Profit Factor</div>
+        <div class="metric-val up" id="dash-pf">1.74</div>
+        <div class="metric-sub up">↑ vs 1.52 mois préc.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <!-- LEFT: Courbe + Histogramme -->
+      <div style="display:flex;flex-direction:column;gap:16px;align-self:stretch">
+        <div class="card" style="height:240px;display:flex;flex-direction:column;overflow:hidden">
+          <div class="card-title">Courbe P&L cumulée</div>
+          <div style="flex:1;position:relative;min-height:0"><canvas id="chart-cumul"></canvas></div>
+        </div>
+        <div class="card" style="flex:1;min-height:200px;display:flex;flex-direction:column;overflow:hidden">
+          <div class="card-title">P&L par session</div>
+          <div style="flex:1;position:relative;min-height:0"><canvas id="chart-bar-sessions"></canvas></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Heatmap -->
+      <div class="card" style="overflow:hidden">
+        <div class="card-title">Heatmap (30 derniers jours)</div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;gap:4px">
+          <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+        </div>
+        <div class="heatmap" id="heatmap"></div>
+        <div style="display:flex;gap:14px;margin-top:10px;font-size:10px;color:var(--text3)">
+          <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;background:rgba(34,197,94,.4);border:1px solid rgba(34,197,94,.5);border-radius:3px"></span>Profitable</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;background:rgba(239,68,68,.4);border:1px solid rgba(239,68,68,.5);border-radius:3px"></span>Perte</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;background:rgba(245,158,11,.4);border:1px solid rgba(245,158,11,.5);border-radius:3px"></span>Break-even</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sessions récentes</div>
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Instrument</th><th>Trades</th><th>P&L</th><th>R-Mult</th><th>Win%</th><th>Plan ATP</th><th>Humeur</th><th>Type</th>
+        </tr></thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: SESSION ═══ -->
+  <div class="page" id="page-session">
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-title">Saisie de session</div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="s-date">
+        </div>
+        <div class="grid-2" style="gap:10px;margin-bottom:0">
+          <div class="form-group">
+            <label>Instrument</label>
+            <select id="s-inst">
+              <option>ES (S&P500)</option><option>NQ (Nasdaq)</option><option>DAX</option><option>YM (Dow)</option><option>CL (Pétrole)</option><option>Autre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Comptes tradés</label>
+            <div class="type-tabs" id="acct-tabs">
+              <button class="type-btn active" onclick="setAcctMode(this,'all')">Tous</button>
+              <button class="type-btn" onclick="setAcctMode(this,'select')">Sélection</button>
+              <button class="type-btn" onclick="setAcctMode(this,'one')">1 compte</button>
+            </div>
+            <div id="acct-select-wrap" style="display:none;margin-top:8px;display:none">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Sélectionne les comptes concernés</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap" id="acct-checkboxes"></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid-2" style="gap:10px;margin-bottom:0">
+          <div class="form-group">
+            <label>Nb de trades</label>
+            <input type="number" id="s-nb" placeholder="ex: 4" min="0">
+          </div>
+          <div class="form-group">
+            <label>P&L (€)</label>
+            <input type="number" id="s-pnl" placeholder="ex: +312">
+          </div>
+        </div>
+        <div class="grid-2" style="gap:10px;margin-bottom:0">
+          <div class="form-group">
+            <label>Meilleur trade (R)</label>
+            <input type="number" id="s-best" placeholder="ex: 2.8" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Pire trade (R)</label>
+            <input type="number" id="s-worst" placeholder="ex: -0.6" step="0.1">
+          </div>
+        </div>
+        <div class="grid-2" style="gap:10px;margin-bottom:0">
+          <div class="form-group">
+            <label>Win Rate (%)</label>
+            <input type="number" id="s-wr" placeholder="ex: 75" min="0" max="100">
+          </div>
+          <div class="form-group">
+            <label>Max Drawdown (€)</label>
+            <input type="number" id="s-dd" placeholder="ex: 150">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Respect du plan ATP (0-10) — <span id="plan-val">5</span>/10</label>
+          <input type="range" class="plan-slider" id="s-plan" min="0" max="10" value="5" oninput="updatePlan(this.value)">
+          <div style="margin-top:6px"><span id="plan-tag" class="tag tag-red">Hors plan</span></div>
+        </div>
+        <div class="form-group">
+          <label>Humeur du jour</label>
+          <div class="mood-row" id="mood-row">
+            <button class="mood-btn" onclick="setMood(this)">😴</button>
+            <button class="mood-btn" onclick="setMood(this)">😬</button>
+            <button class="mood-btn active" onclick="setMood(this)">😐</button>
+            <button class="mood-btn" onclick="setMood(this)">😌</button>
+            <button class="mood-btn" onclick="setMood(this)">🎯</button>
+            <button class="mood-btn" onclick="setMood(this)">🔥</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Notes & Analyse</div>
+        <div class="form-group">
+          <label>Analyse technique</label>
+          <textarea id="s-tech" placeholder="Contexte macro, niveaux clés, confluences identifiées..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Analyse psychologique</label>
+          <textarea id="s-psy" placeholder="Etat mental, discipline, émotions ressenties..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Point d'amélioration</label>
+          <textarea id="s-amel" placeholder="Ce que je vais travailler pour la prochaine session..." style="min-height:60px"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Note globale de session</label>
+          <div class="stars-row" id="stars-row">
+            <span class="star-btn" onclick="setStar(1)">★</span>
+            <span class="star-btn" onclick="setStar(2)">★</span>
+            <span class="star-btn active" onclick="setStar(3)">★</span>
+            <span class="star-btn active" onclick="setStar(4)">★</span>
+            <span class="star-btn" onclick="setStar(5)">★</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px;font-family:'DM Mono',monospace" id="star-label">Bonne session</div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="saveSession()">Enregistrer la session</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: STATS ═══ -->
+  <div class="page" id="page-stats">
+  <div class="content">
+    <div class="period-tabs">
+      <button class="period-btn active" onclick="setPeriod(this)">7j</button>
+      <button class="period-btn" onclick="setPeriod(this)">30j</button>
+      <button class="period-btn" onclick="setPeriod(this)">3m</button>
+      <button class="period-btn" onclick="setPeriod(this)">1an</button>
+    </div>
+    <div class="grid-4">
+      <div class="card"><div class="card-title">P&L Total</div><div class="metric-val up">+1 394 €</div><div class="metric-sub">14 sessions</div></div>
+      <div class="card"><div class="card-title">Win Rate</div><div class="metric-val up">62%</div><div class="metric-sub">22W / 9L / 3BE</div></div>
+      <div class="card"><div class="card-title">Profit Factor</div><div class="metric-val up">1.74</div><div class="metric-sub">Cible &gt; 1.5</div></div>
+      <div class="card"><div class="card-title">R moyen</div><div class="metric-val up">+2.1R</div><div class="metric-sub">SL ref = 25 pts</div></div>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">Max Drawdown</div><div class="metric-val down">-380 €</div><div class="metric-sub">Semaine du 10 fév.</div></div>
+      <div class="card"><div class="card-title">Meilleure session</div><div class="metric-val up">+820 €</div><div class="metric-sub">5R — 21 mars</div></div>
+      <div class="card"><div class="card-title">Pire session</div><div class="metric-val down">-380 €</div><div class="metric-sub">-1.8R — 18 fév.</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Courbe P&L cumulée</div><div class="chart-wrap"><canvas id="chart-stats-pnl"></canvas></div></div>
+      <div class="card"><div class="card-title">Distribution des R</div><div class="chart-wrap"><canvas id="chart-stats-dist"></canvas></div></div>
+    </div>
+    <div class="card"><div class="card-title">Historique complet</div><table><thead><tr><th>Date</th><th>Inst.</th><th>Trades</th><th>P&L</th><th>R</th><th>Win%</th><th>Plan</th><th>Humeur</th><th>Type</th></tr></thead><tbody id="history-body2"></tbody></table></div>
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: CHECKLIST ═══ -->
+  <div class="page" id="page-checklist">
+  <div class="content">
+    <div class="card">
+      <div class="section-title">Checklist Pré-Open ATP</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--text3)" id="cl-status">0 / 16 items complétés</span>
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="resetChecklist()">Reset</button>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="cl-fill" style="width:0%"></div></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:'DM Mono',monospace" id="cl-sub">Commence ta checklist avant d'entrer en position</div>
+
+      <div class="section-title" style="font-size:12px;margin-bottom:8px;border:none;padding:0;color:var(--text2)">🧠 Mindset</div>
+      <div id="checklist-mindset"></div>
+      <div class="section-title" style="font-size:12px;margin:16px 0 8px;border:none;padding:0;color:var(--text2)">📊 Macro & Contexte</div>
+      <div id="checklist-macro"></div>
+      <div class="section-title" style="font-size:12px;margin:16px 0 8px;border:none;padding:0;color:var(--text2)">📈 Technique</div>
+      <div id="checklist-tech"></div>
+      <div class="section-title" style="font-size:12px;margin:16px 0 8px;border:none;padding:0;color:var(--text2)">⚠️ Risk Management</div>
+      <div id="checklist-risk"></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: JOURNAL ═══ -->
+  <div class="page" id="page-journal">
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-title">Nouvelle entrée</div>
+        <div class="form-group">
+          <label>Date</label><input type="date" id="j-date">
+        </div>
+        <div class="form-group">
+          <label>Catégorie</label>
+          <select id="j-cat">
+            <option>Technique</option><option>Psychologie</option><option>Macro</option><option>Risk</option><option>Autre</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Contenu</label>
+          <textarea id="j-text" placeholder="Réflexion, observation, apprentissage..." style="min-height:120px"></textarea>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveJournal()">Ajouter l'entrée</button>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:12px">Entrées récentes</div>
+        <div id="journal-entries">
+          <div class="journal-entry">
+            <div class="journal-date">22 mars 2026 · Psychologie</div>
+            <div class="journal-text">Bonne session aujourd'hui — j'ai respecté mon plan et ne pas entré sur le 3ème setup qui aurait été hors timing. Discipline en hausse.</div>
+          </div>
+          <div class="journal-entry">
+            <div class="journal-date">18 mars 2026 · Technique</div>
+            <div class="journal-text">Revu ma lecture du flux sur ES. Les faux breakouts sur VWAP sont récurrents en début de session. Ajouter une confirmation volume.</div>
+          </div>
+          <div class="journal-entry">
+            <div class="journal-date">15 mars 2026 · Macro</div>
+            <div class="journal-text">Semaine FOMC — positionning prudent. Réduire le sizing avant les annonces.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: PROP FIRM ═══ -->
+  <div class="page" id="page-propfirm">
+  <div class="content">
+
+    <!-- Config banner -->
+    <div id="pf-config-banner" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)">Configuration Prop Firm</div>
+        <span id="pf-config-badge" style="font-size:10px;font-family:'DM Mono',monospace;background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);border-radius:4px;padding:2px 8px">Configuré ✓</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px">
+        <div class="form-group" style="margin:0">
+          <label>Prop Firm</label>
+          <select id="pf-firm" onchange="updateProp()">
+            <option value="ftmo">FTMO</option><option value="topstep">TopStep</option><option value="apex">Apex Trader Funding</option><option value="e8">E8 Funding</option><option value="mff">My Forex Funds</option><option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Capital par compte</label>
+          <select id="pf-capital" onchange="updateProp()">
+            <option value="10000">10 000 €</option><option value="25000">25 000 €</option><option value="50000">50 000 €</option><option value="100000" selected>100 000 €</option><option value="200000">200 000 €</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Nombre de comptes</label>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
+            <button onclick="changeNbAccounts(-1)" style="width:32px;height:32px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
+            <span id="pf-nb-display" style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green);min-width:40px;text-align:center">3</span>
+            <button onclick="changeNbAccounts(1)" style="width:32px;height:32px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
+            <span style="font-size:11px;color:var(--text3)">comptes</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px">Type de compte</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <label id="pf-type-challenge" onclick="setPfType2('challenge')" style="background:var(--green-dim);border:1.5px solid var(--green);border-radius:8px;padding:10px 14px;cursor:pointer">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div style="width:16px;height:16px;border-radius:4px;background:var(--green);display:flex;align-items:center;justify-content:center"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg></div><span style="font-size:12px;font-weight:700;color:var(--green)">Challenge / Evaluation</span></div>
+            <div style="font-size:10px;color:var(--text3)">Phase 1 ou Phase 2</div>
+          </label>
+          <label id="pf-type-funded" onclick="setPfType2('funded')" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div style="width:16px;height:16px;border-radius:4px;background:var(--bg4);border:1px solid var(--border2)"></div><span style="font-size:12px;font-weight:700;color:var(--text2)">Compte Financé</span></div>
+            <div style="font-size:10px;color:var(--text3)">Compte live prop firm</div>
+          </label>
+          <label id="pf-type-personal" onclick="setPfType2('personal')" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div style="width:16px;height:16px;border-radius:4px;background:var(--bg4);border:1px solid var(--border2)"></div><span style="font-size:12px;font-weight:700;color:var(--text2)">Compte Personnel</span></div>
+            <div style="font-size:10px;color:var(--text3)">Pas de prop firm</div>
+          </label>
+        </div>
+      </div>
+      <div id="pf-phase-wrap2" style="margin-bottom:14px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px">Phase du challenge</div>
+        <div style="display:flex;gap:8px">
+          <button id="pf-ph1" onclick="setPfPhase2(1)" class="btn btn-primary" style="font-size:12px;padding:5px 16px">Phase 1</button>
+          <button id="pf-ph2" onclick="setPfPhase2(2)" class="btn btn-ghost" style="font-size:12px;padding:5px 16px">Phase 2</button>
+        </div>
+      </div>
+      <div id="pf-rules-wrap" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:12px">Règles du challenge</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px">
+          <div class="form-group" style="margin:0"><label>Objectif profit (%)</label><input type="number" id="pf-rule-profit" value="10" style="text-align:center" oninput="updateProp()"></div>
+          <div class="form-group" style="margin:0">
+            <label>Objectif (€)</label>
+            <div style="position:relative">
+              <input type="number" id="pf-rule-profit-eur" placeholder="Calculé" style="text-align:center;color:var(--green);font-weight:700;background:var(--bg4)" readonly>
+            </div>
+          </div>
+          <div class="form-group" style="margin:0"><label>Max daily loss (%)</label><input type="number" id="pf-rule-daily" value="5" style="text-align:center" oninput="updateProp()"></div>
+          <div class="form-group" style="margin:0"><label>Max overall loss (%)</label><input type="number" id="pf-rule-overall" value="10" style="text-align:center" oninput="updateProp()"></div>
+          <div class="form-group" style="margin:0"><label>Jours trading min</label><input type="number" id="pf-rule-days" value="4" style="text-align:center" oninput="updateProp()"></div>
+        </div>
+        <div style="margin-top:10px;padding:10px 12px;background:var(--bg4);border-radius:6px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <div style="font-size:11px;color:var(--text3)">Objectif profit total (tous comptes) :</div>
+          <div id="pf-total-profit-target" style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)">10 000 €</div>
+          <div style="font-size:11px;color:var(--text3);margin-left:8px">Max drawdown total :</div>
+          <div id="pf-total-dd-target" style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--red)">-10 000 €</div>
+        </div>
+      </div>
+      <!-- Résumé bar -->
+      <div style="background:var(--bg4);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+        <div><span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Prop firm</span><div style="font-size:14px;font-weight:800;color:var(--green);font-family:'DM Mono',monospace" id="sum-firm2">FTMO</div></div>
+        <div><span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Capital / compte</span><div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace" id="sum-cap2">100 000 €</div></div>
+        <div><span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Nb comptes</span><div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)" id="sum-nb2">×3</div></div>
+        <div><span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Capital total</span><div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace" id="sum-total2">300 000 €</div></div>
+        <div><span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Type</span><div id="sum-type2"><span style="font-size:11px;font-family:'DM Mono',monospace;background:rgba(34,197,94,.15);color:var(--green);border:1px solid var(--green-border);border-radius:4px;padding:2px 8px">Challenge P1</span></div></div>
+      </div>
+    </div>
+
+    <!-- Account cards -->
+    <div id="pf-accounts-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px"></div>
+
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: CALCULATEUR ═══ -->
+  <div class="page" id="page-calculateur">
+  <div class="content">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+        <!-- INPUTS -->
+        <div class="card">
+          <div class="card-title">Paramètres</div>
+
+          <div class="form-group">
+            <label>Contrat</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="rc-contracts">
+              <label id="rc-btn-mym" onclick="rcSetContract('MYM')" style="background:var(--green-dim);border:1.5px solid var(--green);border-radius:8px;padding:10px;cursor:pointer;text-align:center">
+                <div style="font-size:13px;font-weight:800;color:var(--green);font-family:'DM Mono',monospace">MYM</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">Micro Dow</div>
+                <div style="font-size:10px;color:var(--text2);margin-top:2px;font-family:'DM Mono',monospace">0.50 $/pt</div>
+              </label>
+              <label id="rc-btn-ym" onclick="rcSetContract('YM')" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;text-align:center">
+                <div style="font-size:13px;font-weight:800;color:var(--text2);font-family:'DM Mono',monospace">YM</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">Mini Dow</div>
+                <div style="font-size:10px;color:var(--text2);margin-top:2px;font-family:'DM Mono',monospace">5.00 $/pt</div>
+              </label>
+              <label id="rc-btn-mes" onclick="rcSetContract('MES')" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;text-align:center">
+                <div style="font-size:13px;font-weight:800;color:var(--text2);font-family:'DM Mono',monospace">MES</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">Micro S&P</div>
+                <div style="font-size:10px;color:var(--text2);margin-top:2px;font-family:'DM Mono',monospace">5.00 $/pt</div>
+              </label>
+              <label id="rc-btn-es" onclick="rcSetContract('ES')" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;text-align:center">
+                <div style="font-size:13px;font-weight:800;color:var(--text2);font-family:'DM Mono',monospace">ES</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">Mini S&P</div>
+                <div style="font-size:10px;color:var(--text2);margin-top:2px;font-family:'DM Mono',monospace">50.00 $/pt</div>
+              </label>
+              <label id="rc-btn-mnq" onclick="rcSetContract('MNQ')" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;text-align:center">
+                <div style="font-size:13px;font-weight:800;color:var(--text2);font-family:'DM Mono',monospace">MNQ</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">Micro NQ</div>
+                <div style="font-size:10px;color:var(--text2);margin-top:2px;font-family:'DM Mono',monospace">2.00 $/pt</div>
+              </label>
+              <label id="rc-btn-nq" onclick="rcSetContract('NQ')" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;text-align:center">
+                <div style="font-size:13px;font-weight:800;color:var(--text2);font-family:'DM Mono',monospace">NQ</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">Mini NQ</div>
+                <div style="font-size:10px;color:var(--text2);margin-top:2px;font-family:'DM Mono',monospace">20.00 $/pt</div>
+              </label>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+            <div class="form-group" style="margin:0">
+              <label>Taille du compte (€)</label>
+              <input type="number" id="rc-account" value="100000" oninput="rcCalc()" placeholder="ex: 100000">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>Risque max / trade (%)</label>
+              <div style="position:relative">
+                <input type="number" id="rc-risk-pct" value="1" step="0.1" min="0.1" max="5" oninput="rcCalc()" style="padding-right:28px">
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text3)">%</span>
+              </div>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>SL en points</label>
+              <input type="number" id="rc-sl-pts" value="25" oninput="rcCalc()" placeholder="ex: 25">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>Taux USD/EUR</label>
+              <input type="number" id="rc-fx" value="0.92" step="0.001" oninput="rcCalc()">
+            </div>
+          </div>
+
+          <div style="margin-top:14px;background:var(--bg3);border-radius:var(--radius-sm);padding:12px">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px">Specs contrat sélectionné</div>
+            <div style="display:flex;gap:20px;flex-wrap:wrap">
+              <div><div style="font-size:10px;color:var(--text3)">Valeur du point</div><div style="font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)" id="rc-spec-tick">0.50 $/pt</div></div>
+              <div><div style="font-size:10px;color:var(--text3)">Tick size</div><div style="font-size:13px;font-weight:700;font-family:'DM Mono',monospace" id="rc-spec-ticksize">1 pt</div></div>
+              <div><div style="font-size:10px;color:var(--text3)">Marge / contrat</div><div style="font-size:13px;font-weight:700;font-family:'DM Mono',monospace" id="rc-spec-margin">~50 $</div></div>
+              <div><div style="font-size:10px;color:var(--text3)">Type</div><div style="font-size:13px;font-weight:700;font-family:'DM Mono',monospace" id="rc-spec-type">Micro</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESULTS -->
+        <div class="card" style="display:flex;flex-direction:column;gap:0">
+          <div class="card-title">Résultats</div>
+
+          <!-- Main result -->
+          <div style="background:var(--green-dim);border:1px solid var(--green-border);border-radius:var(--radius-sm);padding:16px;margin-bottom:14px;text-align:center">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Nombre de contrats recommandé</div>
+            <div style="font-size:48px;font-weight:900;font-family:'DM Mono',monospace;color:var(--green);line-height:1" id="rc-nb-contracts">2</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px" id="rc-nb-label">contrats MYM</div>
+          </div>
+
+          <div class="stat-row"><span class="stat-key">Risque max autorisé</span><span class="stat-val text-red mono" id="rc-max-risk-eur">— €</span></div>
+          <div class="stat-row"><span class="stat-key">Valeur du SL (1 contrat)</span><span class="stat-val mono" id="rc-sl-val-1">— $</span></div>
+          <div class="stat-row"><span class="stat-key">Valeur du SL (nb contrats)</span><span class="stat-val text-red mono" id="rc-sl-val-n">— $</span></div>
+          <div class="stat-row"><span class="stat-key">Risque réel utilisé</span><span class="stat-val mono" id="rc-risk-used-pct">— %</span></div>
+          <div class="stat-row" style="border:none"><span class="stat-key">Marge totale requise</span><span class="stat-val mono" id="rc-margin-total">— $</span></div>
+
+          <!-- Simulation TP -->
+          <div style="margin-top:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Simulation TP</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:6px">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:4px">1R (SL×1)</div>
+                <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)" id="rc-tp-1r">—</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:6px">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:4px">2R (SL×2)</div>
+                <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)" id="rc-tp-2r">—</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:6px">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:4px">3R (SL×3)</div>
+                <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)" id="rc-tp-3r">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ATP ref note -->
+          <div style="margin-top:12px;padding:10px 12px;background:rgba(34,197,94,.05);border:1px solid var(--green-border);border-radius:6px;font-size:11px;color:var(--text3);line-height:1.5">
+            <span style="color:var(--green);font-weight:700">ATP :</span> SL de référence = <span style="font-family:'DM Mono',monospace;color:var(--text)">25 points</span>. Risque recommandé = <span style="font-family:'DM Mono',monospace;color:var(--text)">1%</span> du capital par trade.
+          </div>
+        </div>
+
+      </div>
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: COACHING ═══ -->
+  <div class="page" id="page-coaching">
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="section-title" style="margin:0;border:none;padding:0">Prochain RDV</div>
+          <a href="https://calendly.com/gael-atp" target="_blank" class="btn btn-primary" style="font-size:12px;text-decoration:none">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Prendre un RDV
+          </a>
+        </div>
+        <div class="rdv-card">
+          <div style="text-align:center;background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:52px">
+            <div style="font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text)">28</div>
+            <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase">Mars</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px">Session coaching — Semaine 13</div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:6px">14h00 · 60 min · Visio</div>
+            <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Revue de la semaine + plan Q2</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px">Reporter</button>
+            <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;border-color:rgba(239,68,68,.3);color:var(--red)">Annuler</button>
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <div style="font-size:12px;font-weight:600;margin-bottom:10px">Notes de préparation</div>
+          <textarea placeholder="Ce que tu veux aborder lors du prochain coaching..." style="min-height:100px"></textarea>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title">Objectifs en cours</div>
+        <div id="objectifs-list">
+          <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span style="font-size:12px;font-weight:600">Win Rate 65%+</span>
+              <span class="tag tag-red" style="font-size:9px">En cours</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:62%"></div></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">62% / 65%</div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span style="font-size:12px;font-weight:600">Profit Factor &gt; 1.8</span>
+              <span class="tag tag-red" style="font-size:9px">En cours</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">1.74 / 1.8</div>
+          </div>
+          <div style="padding:10px 0">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span style="font-size:12px;font-weight:600">Plan ATP &gt; 8/10</span>
+              <span class="tag tag-green" style="font-size:9px">Atteint ✓</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">8.8 / 10</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <div class="section-title">Historique des sessions</div>
+      <table>
+        <thead><tr><th>Date</th><th>Durée</th><th>Format</th><th>Sujet</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">14 mars</td><td>60 min</td><td>Visio</td><td>Gestion du risque & sizing</td><td style="color:var(--text3)">Plan d'action défini</td></tr>
+          <tr><td class="mono">28 fév</td><td>60 min</td><td>Visio</td><td>Analyse psychologique Q1</td><td style="color:var(--text3)">Travail sur patience</td></tr>
+          <tr><td class="mono">14 fév</td><td>90 min</td><td>Visio</td><td>Setup technique ES</td><td style="color:var(--text3)">Confluences VWAP</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: PROGRESSION ═══ -->
+  <div class="page" id="page-progression">
+  <div class="content">
+
+    <!-- KPI top row -->
+    <div class="grid-4" style="margin-bottom:16px">
+      <div class="card" style="padding:14px">
+        <div class="card-title">P&L cumulé</div>
+        <div class="metric-val up">+1 834 €</div>
+        <div class="metric-sub">Depuis jan 2026</div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="card-title">Progression WR</div>
+        <div class="metric-val up">+18pts</div>
+        <div class="metric-sub up">44% → 62% en 3 mois</div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="card-title">Meilleur mois</div>
+        <div class="metric-val up">+1 394 €</div>
+        <div class="metric-sub">Mars 2026 · PF 1.74</div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="card-title">Constance plan ATP</div>
+        <div class="metric-val up">7.0/10</div>
+        <div class="metric-sub up">↑ moy. 3 mois</div>
+      </div>
+    </div>
+
+    <!-- Charts row 1 -->
+    <div class="grid-2">
+      <div class="card"><div class="card-title">P&L mensuel</div><div class="chart-wrap"><canvas id="chart-progression-pnl"></canvas></div></div>
+      <div class="card"><div class="card-title">Win Rate mensuel</div><div class="chart-wrap"><canvas id="chart-progression-wr"></canvas></div></div>
+    </div>
+
+    <!-- Charts row 2 -->
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Profit Factor</div><div class="chart-wrap"><canvas id="chart-prog-pf"></canvas></div></div>
+      <div class="card"><div class="card-title">Respect plan ATP (%)</div><div class="chart-wrap"><canvas id="chart-prog-plan"></canvas></div></div>
+    </div>
+
+    <!-- Charts row 3 - extra stats -->
+    <div class="grid-3">
+      <div class="card"><div class="card-title">R moyen mensuel</div><div class="chart-wrap"><canvas id="chart-prog-r"></canvas></div></div>
+      <div class="card"><div class="card-title">Nb sessions / mois</div><div class="chart-wrap"><canvas id="chart-prog-sessions"></canvas></div></div>
+      <div class="card">
+        <div class="card-title">Meilleur / Pire trade (R)</div>
+        <div class="chart-wrap"><canvas id="chart-prog-bestworst"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Progression scores -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-title">Axes de progression</div>
+        <div class="stat-row">
+          <span class="stat-key">Discipline (plan ATP)</span>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end">
+            <div style="width:120px;height:6px;background:var(--bg3);border-radius:99px;overflow:hidden"><div style="width:70%;height:100%;background:var(--green);border-radius:99px"></div></div>
+            <span class="stat-val text-green">7.0/10</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">Gestion du risque</span>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end">
+            <div style="width:120px;height:6px;background:var(--bg3);border-radius:99px;overflow:hidden"><div style="width:80%;height:100%;background:var(--green);border-radius:99px"></div></div>
+            <span class="stat-val text-green">8.0/10</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">Lecture du marché</span>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end">
+            <div style="width:120px;height:6px;background:var(--bg3);border-radius:99px;overflow:hidden"><div style="width:62%;height:100%;background:var(--amber);border-radius:99px"></div></div>
+            <span class="stat-val text-amber">6.2/10</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <span class="stat-key">Psychologie</span>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end">
+            <div style="width:120px;height:6px;background:var(--bg3);border-radius:99px;overflow:hidden"><div style="width:65%;height:100%;background:var(--amber);border-radius:99px"></div></div>
+            <span class="stat-val text-amber">6.5/10</span>
+          </div>
+        </div>
+        <div class="stat-row" style="border:none">
+          <span class="stat-key">Constance</span>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end">
+            <div style="width:120px;height:6px;background:var(--bg3);border-radius:99px;overflow:hidden"><div style="width:55%;height:100%;background:var(--red);border-radius:99px"></div></div>
+            <span class="stat-val text-red">5.5/10</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Récapitulatif mensuel</div>
+        <table>
+          <thead><tr><th>Mois</th><th>Sess.</th><th>P&L</th><th>Win%</th><th>R moy.</th><th>PF</th><th>Plan</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">Mars 2026</td><td>14</td><td class="text-green mono">+1 394 €</td><td>62%</td><td class="mono">+2.1R</td><td>1.74</td><td>8.8/10</td></tr>
+            <tr><td class="mono">Fév 2026</td><td>12</td><td class="text-green mono">+820 €</td><td>58%</td><td class="mono">+1.8R</td><td>1.52</td><td>7.2/10</td></tr>
+            <tr><td class="mono">Jan 2026</td><td>10</td><td class="text-red mono">-380 €</td><td>44%</td><td class="mono">-0.5R</td><td>0.88</td><td>5.1/10</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div class="card-title">Points forts / Points à améliorer</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <span style="font-size:11px;background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);border-radius:4px;padding:3px 8px">↑ Profit Factor</span>
+            <span style="font-size:11px;background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);border-radius:4px;padding:3px 8px">↑ Win Rate</span>
+            <span style="font-size:11px;background:var(--green-dim);color:var(--green);border:1px solid var(--green-border);border-radius:4px;padding:3px 8px">↑ Risk discipline</span>
+            <span style="font-size:11px;background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.3);border-radius:4px;padding:3px 8px">↓ Constance</span>
+            <span style="font-size:11px;background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.3);border-radius:4px;padding:3px 8px">⚠ Patience</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: RESSOURCES ═══ -->
+  <div class="page" id="page-ressources">
+  <div class="content">
+    <div class="grid-2">
+      <div>
+        <div class="section-title">Replays & Vidéos</div>
+        <div class="resource-item"><div class="resource-icon" style="background:rgba(34,197,94,.1);color:var(--green)">▶</div><div><div style="font-size:13px;font-weight:600">Lecture du flux — ES Futures</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Session live · 1h24</div></div></div>
+        <div class="resource-item"><div class="resource-icon" style="background:rgba(34,197,94,.1);color:var(--green)">▶</div><div><div style="font-size:13px;font-weight:600">Psychologie de trading — module 3</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Formation · 45 min</div></div></div>
+        <div class="resource-item"><div class="resource-icon" style="background:rgba(34,197,94,.1);color:var(--green)">▶</div><div><div style="font-size:13px;font-weight:600">Setup VWAP + confluences</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Formation · 32 min</div></div></div>
+      </div>
+      <div>
+        <div class="section-title">Documents & PDF</div>
+        <div class="resource-item"><div class="resource-icon" style="background:rgba(96,165,250,.1);color:#60a5fa">📄</div><div><div style="font-size:13px;font-weight:600">Plan de trading ATP 2026</div><div style="font-size:11px;color:var(--text3);margin-top:2px">PDF · Mis à jour jan. 2026</div></div></div>
+        <div class="resource-item"><div class="resource-icon" style="background:rgba(96,165,250,.1);color:#60a5fa">📄</div><div><div style="font-size:13px;font-weight:600">Grille de scoring ATP</div><div style="font-size:11px;color:var(--text3);margin-top:2px">PDF · Méthode complète</div></div></div>
+        <div class="resource-item"><div class="resource-icon" style="background:rgba(96,165,250,.1);color:#60a5fa">📄</div><div><div style="font-size:13px;font-weight:600">Guide risk management</div><div style="font-size:11px;color:var(--text3);margin-top:2px">PDF · SL = 25 pts référence</div></div></div>
+        <div class="resource-item"><div class="resource-icon" style="background:rgba(245,158,11,.1);color:var(--amber)">🔗</div><div><div style="font-size:13px;font-weight:600">Discord ATP</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Communauté · 1 200 membres</div></div></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: CONTRAT ═══ -->
+  <div class="page" id="page-contrat">
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div class="section-title" style="margin:0;border:none;padding:0">Contrat de Coaching ATP</div>
+          <span id="contrat-status-tag" class="tag tag-red">A signer</span>
+        </div>
+        <div id="contrat-accept-section">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.6">En signant ce contrat vous acceptez les conditions du programme de coaching Alpha Trading Pro. Lisez attentivement chaque article avant de signer.</div>
+
+          <div style="margin-bottom:16px">
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px">
+              <input type="checkbox" id="check1" onchange="checkContrat()" style="width:auto;margin-top:2px;accent-color:var(--green)">
+              <span style="font-size:12px;color:var(--text2)">J'ai lu et accepte l'intégralité du contrat de coaching ATP</span>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px">
+              <input type="checkbox" id="check2" onchange="checkContrat()" style="width:auto;margin-top:2px;accent-color:var(--green)">
+              <span style="font-size:12px;color:var(--text2)">Je m'engage à respecter les engagements décrits dans les articles 4, 5 et 6</span>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+              <input type="checkbox" id="check3" onchange="checkContrat()" style="width:auto;margin-top:2px;accent-color:var(--green)">
+              <span style="font-size:12px;color:var(--text2)">Je comprends que cette signature est définitive et juridiquement engageante</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>Nom complet</label>
+            <input type="text" id="contrat-name" placeholder="Prénom Nom" oninput="checkContrat()">
+          </div>
+          <div class="form-group">
+            <label>Date de signature</label>
+            <input type="date" id="contrat-date-input">
+          </div>
+          <button id="contrat-btn" class="btn btn-primary" style="width:100%;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="signContrat()">Signer le contrat</button>
+        </div>
+
+        <div id="contrat-locked-section" style="display:none">
+          <div style="background:var(--green-dim);border:1px solid var(--green-border);border-radius:var(--radius-sm);padding:16px;text-align:center">
+            <div style="font-size:24px;margin-bottom:8px">✓</div>
+            <div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:6px">Contrat signé</div>
+            <div id="locked-name-display" style="font-size:12px;color:var(--text2)"></div>
+            <div id="locked-date-display" style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px"></div>
+          </div>
+          <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:12px" onclick="downloadContrat()">Télécharger le PDF</button>
+        </div>
+      </div>
+
+      <div class="card" style="overflow-y:auto;max-height:600px">
+        <div class="section-title">Articles du contrat</div>
+        <div class="contrat-article"><h4>Art. 1 — Objet</h4><p>Ce contrat établit les conditions du programme de coaching individuel Alpha Trading Pro entre Gaël (coach) et le trader (coaché). L'objectif est de rendre le trader rentable et autonome selon la méthodologie ATP.</p></div>
+        <div class="contrat-article"><h4>Art. 2 — Durée</h4><p>Le programme de coaching est établi pour une durée minimale de 3 mois, renouvelable par accord mutuel. Chaque mois comprend entre 2 et 4 sessions de coaching selon la formule choisie.</p></div>
+        <div class="contrat-article"><h4>Art. 3 — Tarifs & Paiement</h4><p>Le règlement s'effectue en début de mois. Toute session annulée moins de 24h à l'avance est due. Les paiements sont non remboursables sauf accord exceptionnel du coach.</p></div>
+        <div class="contrat-article"><h4>Art. 4 — Engagements du trader</h4><p>Le trader s'engage à : tenir son journal de trading, saisir ses sessions dans le dashboard ATP, respecter le plan de trading défini, assister aux sessions de coaching programmées et maintenir une communication transparente sur ses résultats.</p></div>
+        <div class="contrat-article"><h4>Art. 5 — Engagements du coach</h4><p>Gaël s'engage à : préparer chaque session, fournir un feedback structuré, être disponible entre les sessions pour les questions urgentes, adapter le programme selon la progression du trader.</p></div>
+        <div class="contrat-article"><h4>Art. 6 — Confidentialité</h4><p>Les performances, résultats et contenus partagés dans le cadre du coaching sont strictement confidentiels. Aucune information ne sera partagée sans accord écrit préalable.</p></div>
+        <div class="contrat-article"><h4>Art. 7 — Résultats</h4><p>Le trading comporte des risques. Les résultats passés ne garantissent pas les résultats futurs. Le coach s'engage à transmettre une méthode éprouvée mais ne peut garantir la rentabilité.</p></div>
+        <div class="contrat-article"><h4>Art. 8 — Litiges</h4><p>En cas de litige, les parties s'engagent à rechercher une solution amiable. Le droit français est applicable. Juridiction compétente : Tribunal de Basse-Terre, Guadeloupe.</p></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ═══ PAGE: COMPTE ═══ -->
+  <div class="page" id="page-compte">
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-title">Profil</div>
+        <div class="form-group"><label>Prénom</label><input type="text" value="Thomas"></div>
+        <div class="form-group"><label>Nom</label><input type="text" value="Kaminsky"></div>
+        <div class="form-group"><label>Email</label><input type="email" value="thomas@email.com"></div>
+        <div class="form-group">
+          <label>Expérience</label>
+          <select><option>Débutant (&lt; 1 an)</option><option selected>Intermédiaire (1-3 ans)</option><option>Avancé (3-5 ans)</option><option>Expert (5+ ans)</option></select>
+        </div>
+        <div class="form-group">
+          <label>Instrument principal</label>
+          <select><option selected>ES (S&P 500)</option><option>NQ (Nasdaq)</option><option>DAX</option><option>YM (Dow)</option></select>
+        </div>
+        <button class="btn btn-primary" onclick="showToast('Profil mis a jour ✓')">Enregistrer</button>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="section-title">Notifications</div>
+          <div class="stat-row"><span class="stat-key">Rappel checklist pre-open</span><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="stat-row"><span class="stat-key">Rappel saisie session</span><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="stat-row" style="border:none"><span class="stat-key">Messages de Gael</span><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="color:var(--red)">Zone danger</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6">Réinitialiser toutes les données locales du dashboard. Cette action est irréversible.</div>
+          <div class="form-group">
+            <label>Confirmer en tapant "RESET ATP"</label>
+            <input type="text" id="reset-confirm-input" placeholder="RESET ATP">
+          </div>
+          <button class="btn btn-red" onclick="confirmReset()">Réinitialiser</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+</main>
+
+<!-- ══ MODALS ══ -->
+<div id="cancel-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center">
+  <div class="modal-box">
+    <div class="modal-title">Annuler le RDV</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px" id="cancel-rdv-label">Confirmer l'annulation ?</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="document.getElementById('cancel-modal').style.display='none'">Retour</button>
+      <button class="btn btn-red" style="flex:1;justify-content:center" onclick="confirmCancel()">Confirmer l'annulation</button>
+    </div>
+  </div>
+</div>
+
+<div id="reset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:center;justify-content:center">
+  <div class="modal-box">
+    <div class="modal-title" style="color:var(--red)">Reinitialisation</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Toutes les donnees locales seront supprimees. Cette action est irreversible.</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="document.getElementById('reset-modal').style.display='none'">Annuler</button>
+      <button class="btn btn-red" style="flex:1;justify-content:center" onclick="doReset()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg"></span></div>
+
+<!-- ══ CHAT ══ -->
+<div id="chat-bubble" onclick="toggleChat()" style="position:fixed;bottom:2rem;right:2rem;width:52px;height:52px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:800;box-shadow:0 4px 20px rgba(34,197,94,.4)">
+  <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div id="chat-unread" style="position:absolute;top:4px;right:4px;width:10px;height:10px;background:var(--red);border-radius:50%;border:2px solid var(--bg)"></div>
+</div>
+<div id="chat-panel" style="display:none;position:fixed;bottom:6rem;right:2rem;width:320px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);z-index:800;box-shadow:0 8px 40px rgba(0,0,0,.5);flex-direction:column;overflow:hidden;max-height:440px">
+  <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div>
+    <span style="font-size:13px;font-weight:600">Gael — Coach ATP</span>
+    <button onclick="toggleChat()" style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">×</button>
+  </div>
+  <div id="chat-messages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:12px;min-height:200px;max-height:300px">
+    <div style="align-self:flex-start;max-width:85%">
+      <div style="background:var(--bg3);border-radius:10px 10px 10px 2px;padding:9px 12px;font-size:12px;color:var(--text);line-height:1.5">Bonne session hier ! Continue sur cette dynamique cette semaine.</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace">09h15</div>
+    </div>
+  </div>
+  <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px">
+    <input id="chat-input" type="text" placeholder="Message..." onkeydown="if(event.key==='Enter')sendChatMsg()" style="flex:1;padding:7px 10px;font-size:12px">
+    <button class="btn btn-primary" style="padding:7px 12px" onclick="sendChatMsg()">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ── NAVIGATION ──
+const PAGE_TITLES = {
+  dashboard:'Dashboard', session:'Saisie de session', stats:'Stats & Performance',
+  calculateur:'Calculateur de risque — Futures',
+  checklist:'Checklist pre-open', journal:'Journal', propfirm:'Prop Firm',
+  coaching:'Sessions coaching', progression:'Ma progression',
+  ressources:'Ressources ATP', contrat:'Contrat', compte:'Mon compte'
+};
+
+function nav(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-'+page);
+  if (pg) pg.classList.add('active');
+  if (el) el.classList.add('active');
+  const t = document.getElementById('page-title');
+  if (t) t.textContent = PAGE_TITLES[page] || page;
+  if (page==='stats') setTimeout(initStatsCharts, 100);
+  if (page==='progression') setTimeout(initProgressionCharts, 100);
+}
+
+// ── DATE ──
+const today = new Date();
+const dateEl = document.getElementById('current-date');
+if (dateEl) dateEl.textContent = today.toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const dateInput = document.getElementById('s-date');
+if (dateInput) dateInput.value = today.toISOString().split('T')[0];
+const jDateInput = document.getElementById('j-date');
+if (jDateInput) jDateInput.value = today.toISOString().split('T')[0];
+
+// ── PERIOD TABS ──
+function setPeriod(btn) {
+  btn.closest('.period-tabs').querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function setType(btn, val) {
+  btn.closest('.type-tabs').querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function setMood(btn) {
+  btn.closest('.mood-row').querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function setAcctMode(btn, mode) {
+  btn.closest('#acct-tabs').querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const wrap = document.getElementById('acct-select-wrap');
+  if (mode === 'select' || mode === 'one') {
+    wrap.style.display = 'block';
+    const nb = propState ? propState.nbAccounts : 1;
+    const cbs = document.getElementById('acct-checkboxes');
+    cbs.innerHTML = '';
+    for (let i=1; i<=nb; i++) {
+      const lbl = document.createElement('label');
+      lbl.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;padding:4px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;';
+      lbl.innerHTML = '<input type="'+(mode==='one'?'radio':'checkbox')+'" name="acct" style="accent-color:var(--green);width:auto"> Compte #'+i;
+      cbs.appendChild(lbl);
+    }
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+// ── SESSION FORM ──
+function updatePlan(val) {
+  document.getElementById('plan-val').textContent = val;
+  const tag = document.getElementById('plan-tag');
+  if (val >= 8) { tag.className='tag tag-green'; tag.textContent='Dans le plan'; }
+  else if (val >= 5) { tag.className='tag tag-amber'; tag.textContent='Partiel'; }
+  else { tag.className='tag tag-red'; tag.textContent='Hors plan'; }
+}
+const starLabels = ['','Session catastrophique','Session decevante','Session correcte','Bonne session','Session excellente'];
+function setStar(n) {
+  document.querySelectorAll('.star-btn').forEach((s,i) => s.classList.toggle('active', i < n));
+  document.getElementById('star-label').textContent = starLabels[n] || '';
+}
+function saveSession() {
+  showToast('Session enregistree avec succes ✓');
+  buildHistory();
+}
+// ── PROP FIRM STATE ──
+let propState = {
+  firm: 'ftmo', capital: 100000, nbAccounts: 3, type: 'challenge', phase: 1,
+  ruleProfit: 10, ruleDaily: 5, ruleOverall: 10, ruleDays: 4
+};
+const firmNames = {ftmo:'FTMO',mff:'My Forex Funds',topstep:'TopStep',apex:'Apex Trader Funding',e8:'E8 Funding',autre:'Perso'};
+
+// Mock per-account data
+const accountData = [
+  {pnl:394, dailyLoss:2.1, overallLoss:-0.6, days:8, ok:true},
+  {pnl:394, dailyLoss:0.8, overallLoss:-0.2, days:8, ok:true},
+  {pnl:-394, dailyLoss:3.9, overallLoss:-3.9, days:8, ok:false},
+  {pnl:280, dailyLoss:1.2, overallLoss:-0.5, days:6, ok:true},
+  {pnl:-180, dailyLoss:4.1, overallLoss:-2.1, days:5, ok:true},
+];
+
+function setPfType(btn, val) {}
+function setPfPhase(btn, val) {}
+function updatePropSummary() {}
+
+function setPfType2(type) {
+  propState.type = type;
+  ['challenge','funded','personal'].forEach(t => {
+    const el = document.getElementById('pf-type-'+t);
+    if (!el) return;
+    el.style.background = t===type ? 'var(--green-dim)' : 'var(--bg3)';
+    el.style.borderColor = t===type ? 'var(--green)' : 'var(--border)';
+    const span = el.querySelector('span:last-child');
+    if (span) span.style.color = t===type ? 'var(--green)' : 'var(--text2)';
+    const box = el.querySelector('div > div:first-child');
+    if (box && t===type) box.style.background='var(--green)';
+    else if (box) box.style.background='var(--bg4)';
+  });
+  const phaseWrap = document.getElementById('pf-phase-wrap2');
+  const rulesWrap = document.getElementById('pf-rules-wrap');
+  if (phaseWrap) phaseWrap.style.display = type==='challenge' ? 'block' : 'none';
+  if (rulesWrap) rulesWrap.style.display = type==='challenge' ? 'block' : 'none';
+  updateProp();
+}
+function setPfPhase2(ph) {
+  propState.phase = ph;
+  const b1=document.getElementById('pf-ph1'), b2=document.getElementById('pf-ph2');
+  if (b1) { b1.className = ph===1 ? 'btn btn-primary' : 'btn btn-ghost'; b1.style.fontSize='12px'; b1.style.padding='5px 16px'; }
+  if (b2) { b2.className = ph===2 ? 'btn btn-primary' : 'btn btn-ghost'; b2.style.fontSize='12px'; b2.style.padding='5px 16px'; }
+  updateProp();
+}
+function changeNbAccounts(delta) {
+  propState.nbAccounts = Math.max(1, Math.min(20, propState.nbAccounts + delta));
+  const el = document.getElementById('pf-nb-display');
+  if (el) el.textContent = propState.nbAccounts;
+  updateProp();
+}
+function updateProp() {
+  const firmEl = document.getElementById('pf-firm');
+  const capEl = document.getElementById('pf-capital');
+  if (firmEl) propState.firm = firmEl.value;
+  if (capEl) propState.capital = parseInt(capEl.value)||100000;
+  const rp=document.getElementById('pf-rule-profit'), rd=document.getElementById('pf-rule-daily');
+  const ro=document.getElementById('pf-rule-overall'), rday=document.getElementById('pf-rule-days');
+  if(rp) propState.ruleProfit=parseFloat(rp.value)||10;
+  if(rd) propState.ruleDaily=parseFloat(rd.value)||5;
+  if(ro) propState.ruleOverall=parseFloat(ro.value)||10;
+  if(rday) propState.ruleDays=parseInt(rday.value)||4;
+  // Compute EUR profit target
+  const profitEur = propState.capital * (propState.ruleProfit/100);
+  const ddEur = propState.capital * (propState.ruleOverall/100);
+  const profitEurEl = document.getElementById('pf-rule-profit-eur');
+  if (profitEurEl) profitEurEl.value = profitEur.toLocaleString('fr-FR')+' €';
+  const totalProfEl = document.getElementById('pf-total-profit-target');
+  const totalDdEl = document.getElementById('pf-total-dd-target');
+  if (totalProfEl) totalProfEl.textContent = (profitEur*propState.nbAccounts).toLocaleString('fr-FR')+' €';
+  if (totalDdEl) totalDdEl.textContent = '-'+(ddEur*propState.nbAccounts).toLocaleString('fr-FR')+' €';
+  // Update RC account size to match prop config
+  const rcAccEl = document.getElementById('rc-account');
+  if (rcAccEl) { rcAccEl.value = propState.capital; }
+  if (typeof rcCalc === 'function') rcCalc();
+  // Update summary bar
+  const sf=document.getElementById('sum-firm2'), sc=document.getElementById('sum-cap2');
+  const sn=document.getElementById('sum-nb2'), st=document.getElementById('sum-total2'), stype=document.getElementById('sum-type2');
+  if(sf) sf.textContent = firmNames[propState.firm]||propState.firm;
+  if(sc) sc.textContent = propState.capital.toLocaleString('fr-FR')+' €';
+  if(sn) sn.textContent = '×'+propState.nbAccounts;
+  if(st) st.textContent = (propState.capital*propState.nbAccounts).toLocaleString('fr-FR')+' €';
+  if(stype) stype.innerHTML = '<span style="font-size:11px;font-family:DM Mono,monospace;background:rgba(34,197,94,.15);color:var(--green);border:1px solid var(--green-border);border-radius:4px;padding:2px 8px">' + (propState.type==='challenge'?('Challenge P'+propState.phase):propState.type==='funded'?'Financé':'Personnel')+'</span>';
+  // Render account cards
+  renderAccountCards();
+}
+function renderAccountCards() {
+  const grid = document.getElementById('pf-accounts-grid');
+  if (!grid) return;
+  const nb = propState.nbAccounts;
+  const cols = nb <= 2 ? nb : nb <= 4 ? 2 : 3;
+  grid.style.gridTemplateColumns = 'repeat('+cols+',1fr)';
+  grid.innerHTML = '';
+  for (let i=0; i<nb; i++) {
+    const acc = accountData[i] || {pnl:0, dailyLoss:0, overallLoss:0, days:0, ok:true};
+    const pnlPct = propState.capital ? (acc.pnl/propState.capital*100) : 0;
+    const profitTarget = propState.ruleProfit;
+    const dailyLimit = propState.ruleDaily;
+    const overallLimit = propState.ruleOverall;
+    const daysMin = propState.ruleDays;
+    const profitProgress = Math.max(0, Math.min(100, Math.abs(pnlPct)/profitTarget*100));
+    const dailyAlert = Math.abs(acc.dailyLoss) > dailyLimit * 0.75;
+    const overallAlert = Math.abs(acc.overallLoss) > overallLimit * 0.7;
+    const borderColor = !acc.ok || overallAlert ? '#f59e0b' : 'var(--green)';
+    const typeLabel = propState.type==='challenge' ? 'Phase '+propState.phase : propState.type==='funded' ? 'Financé' : 'Perso';
+    const typeColor = propState.type==='funded' ? '#60a5fa' : propState.type==='personal' ? '#a78bfa' : 'var(--green)';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg2);border:1.5px solid '+borderColor+';border-radius:var(--radius);padding:18px;position:relative;';
+    card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
+      '<div style="font-size:14px;font-weight:700">Compte #'+(i+1)+'</div>'+
+      '<span style="font-size:10px;font-family:DM Mono,monospace;background:rgba(34,197,94,.12);color:'+typeColor+';border:1px solid rgba(34,197,94,.25);border-radius:4px;padding:2px 7px">'+typeLabel+'</span></div>'+
+      '<div style="font-size:11px;color:var(--text3);margin-bottom:12px">'+firmNames[propState.firm]+' — '+(propState.capital/1000)+'K €</div>'+
+      '<div class="stat-row"><span class="stat-key">P&L ce mois</span><span class="stat-val '+(acc.pnl>=0?'text-green':'text-red')+' mono">'+(acc.pnl>=0?'+':'')+acc.pnl+' €</span></div>'+
+      '<div class="stat-row"><span class="stat-key">Objectif profit</span><span class="stat-val mono">'+(Math.abs(pnlPct).toFixed(2))+'% / '+profitTarget+'%</span></div>'+
+      '<div class="progress-bar" style="margin:6px 0 12px"><div class="progress-fill" style="width:'+profitProgress+'%;background:'+(acc.pnl<0?'var(--red)':'var(--green)')+'"></div></div>'+
+      '<div class="stat-row"><span class="stat-key">Daily loss utilisé</span><span class="stat-val mono '+(dailyAlert?'text-amber':'')+'">'+Math.abs(acc.dailyLoss).toFixed(1)+'% / '+dailyLimit+'% '+(dailyAlert?'⚠':'')+'</span></div>'+
+      '<div class="stat-row" style="border:none"><span class="stat-key">Overall loss</span><span class="stat-val mono '+(overallAlert?'text-amber':'')+'">'+(acc.overallLoss).toFixed(1)+'% / '+overallLimit+'%'+(overallAlert?' ⚠':'')+'</span></div>';
+    grid.appendChild(card);
+  }
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── CHECKLIST ──
+const CHECKS = {
+  mindset: [
+    ['Je suis repose et dans un bon etat mental','Min. 7h de sommeil'],
+    ['Je n\'ai pas de distraction majeure aujourd\'hui',''],
+    ['Mon plan de trading est defini et ecrit','Setups, niveaux, conditions'],
+    ['Je connais mes limites pour aujourd\'hui','Daily loss max, nb trades max'],
+  ],
+  macro: [
+    ['J\'ai verifie le calendrier economique','News FOMC, NFP, CPI...'],
+    ['Je connais le contexte de marche dominant','Trend, range, breakout...'],
+    ['J\'ai identifie les niveaux cles du jour','Support, resistance, VWAP'],
+    ['J\'ai note les horaires a risque','Ouvertures, fermetures, news'],
+  ],
+  tech: [
+    ['Mon setup technique est identifie','Confluences validees'],
+    ['J\'ai defini mes zones d\'entree et de sortie','TP, SL, BE'],
+    ['J\'ai analyse le pre-marche','Futures, gap, overnight'],
+    ['Ma plateforme est prete et verifiee','Connexion, data, charts'],
+  ],
+  risk: [
+    ['Mon SL de reference est fixe a 25 pts ATP','Sizing calcule en consequence'],
+    ['Mon risque par trade est calcule','Max 1-2% du capital'],
+    ['Mon daily loss max est defini','Arret automatique si atteint'],
+    ['Je n\'essaierai pas de recuperer des pertes','Pas de revenge trading'],
+  ]
+};
+
+function buildChecklist() {
+  Object.entries(CHECKS).forEach(([cat, items]) => {
+    const container = document.getElementById('checklist-'+cat);
+    if (!container) return;
+    container.innerHTML = '';
+    items.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'check-item';
+      div.dataset.cat = cat;
+      div.dataset.idx = idx;
+      div.onclick = function() { toggleCheck(this); };
+      div.innerHTML = '<div class="check-box"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="check-text">'+item[0]+'</div>'+(item[1]?'<div class="check-sub">'+item[1]+'</div>':'')+'</div>';
+      container.appendChild(div);
+    });
+  });
+  updateCheckProgress();
+}
+
+function toggleCheck(item) {
+  item.classList.toggle('done');
+  updateCheckProgress();
+}
+
+function updateCheckProgress() {
+  const all = document.querySelectorAll('.check-item');
+  const done = document.querySelectorAll('.check-item.done');
+  const pct = all.length ? Math.round(done.length/all.length*100) : 0;
+  const fill = document.getElementById('cl-fill');
+  const status = document.getElementById('cl-status');
+  const sub = document.getElementById('cl-sub');
+  if (fill) fill.style.width = pct+'%';
+  if (status) status.textContent = done.length+' / '+all.length+' items completes';
+  const msgs = ['Commence ta checklist avant d\'entrer en position','Bon debut — continue !','Tu es a mi-chemin','Presque termine !','Checklist complete — bonne session !'];
+  const msgIdx = pct === 100 ? 4 : pct >= 75 ? 3 : pct >= 50 ? 2 : pct >= 25 ? 1 : 0;
+  if (sub) sub.textContent = msgs[msgIdx];
+}
+
+function resetChecklist() {
+  document.querySelectorAll('.check-item').forEach(i => i.classList.remove('done'));
+  updateCheckProgress();
+}
+
+// ── HEATMAP ──
+function buildHeatmap() {
+  const container = document.getElementById('heatmap');
+  if (!container) return;
+  // Each entry: [type, pnl, date_label]
+  const days = [
+    ['win',+312,'24 fev'],['win',+180,'25 fev'],['loss',-148,'26 fev'],['win',+210,'27 fev'],['be',0,'28 fev'],['win',+520,'1 mar'],['loss',-290,'2 mar'],
+    ['win',+395,'3 mar'],['win',+180,'4 mar'],['win',+310,'5 mar'],['loss',-95,'6 mar'],['win',+420,'7 mar'],['be',+12,'8 mar'],['win',+280,'9 mar'],
+    ['win',+190,'10 mar'],['loss',-148,'11 mar'],['win',+312,'12 mar'],['win',+520,'13 mar'],['win',+180,'14 mar'],['loss',-290,'15 mar'],['win',+395,'16 mar'],
+    ['be',+5,'17 mar'],['win',+210,'18 mar'],['win',+480,'19 mar'],['win',+312,'20 mar'],['win',+520,'21 mar'],['loss',-148,'22 mar'],['win',+390,'23 mar'],
+    ['today',+394,'24 mar'],
+  ];
+  container.innerHTML = '';
+  days.forEach(([t, pnl, lbl]) => {
+    const d = document.createElement('div');
+    d.className = 'hm-cell';
+    if (t==='win'||t==='today') d.classList.add('hm-win');
+    else if (t==='loss') d.classList.add('hm-loss');
+    else if (t==='be') d.classList.add('hm-be');
+    if (t==='today') d.classList.add('hm-today');
+    const sign = pnl >= 0 ? '+' : '';
+    d.setAttribute('data-tip', lbl + ' · ' + sign + pnl + '€');
+    // Show P&L amount inside cell
+    d.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+    const pnlEl = document.createElement('div');
+    pnlEl.className = 'hm-pnl';
+    pnlEl.style.cssText = 'font-size:14px;font-family:"DM Mono",monospace;font-weight:700;line-height:1;pointer-events:none;letter-spacing:-0.02em;';
+    pnlEl.textContent = (pnl >= 0 ? '+' : '') + pnl + '€';
+    d.appendChild(pnlEl);
+    container.appendChild(d);
+  });
+}
+
+// ── HISTORY TABLE ──
+const SESSIONS = [
+  {date:'22 mars',inst:'ES',nb:4,pnl:312,r:2.1,best:2.8,worst:-0.6,wr:75,plan:9,mood:'🎯',type:'Live'},
+  {date:'21 mars',inst:'NQ',nb:3,pnl:-148,r:-0.8,best:0.5,worst:-0.8,wr:33,plan:6,mood:'😬',type:'Live'},
+  {date:'20 mars',inst:'DAX',nb:5,pnl:520,r:3.2,best:3.8,worst:-0.4,wr:80,plan:8,mood:'😌',type:'Live'},
+  {date:'19 mars',inst:'ES',nb:2,pnl:0,r:0,best:1.0,worst:-1.0,wr:50,plan:7,mood:'😐',type:'Live'},
+  {date:'18 mars',inst:'NQ',nb:6,pnl:-290,r:-1.4,best:0.8,worst:-1.8,wr:33,plan:4,mood:'🔥',type:'Live'},
+  {date:'17 mars',inst:'ES',nb:3,pnl:210,r:1.5,best:1.8,worst:-0.5,wr:67,plan:8,mood:'😌',type:'Live'},
+  {date:'15 mars',inst:'DAX',nb:4,pnl:180,r:1.2,best:2.1,worst:-0.8,wr:75,plan:7,mood:'🎯',type:'Live'},
+  {date:'14 mars',inst:'NQ',nb:2,pnl:-95,r:-0.5,best:0.3,worst:-0.8,wr:50,plan:5,mood:'😬',type:'Live'},
+];
+
+function buildHistory() {
+  ['history-body','history-body2'].forEach(id => {
+    const tbody = document.getElementById(id);
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    SESSIONS.forEach(s => {
+      const pos = s.pnl >= 0;
+      tbody.innerHTML += '<tr><td class="mono">'+s.date+'</td><td>'+s.inst+'</td><td class="mono">'+s.nb+'</td><td class="mono '+(pos?'text-green':'text-red')+'">'+(pos?'+':'')+s.pnl+' €</td><td class="mono '+(s.r>=0?'text-green':'text-red')+'">'+(s.r>=0?'+':'')+s.r+'R</td><td>'+s.wr+'%</td><td><span class="tag '+(s.plan>=8?'tag-green':s.plan>=5?'':'tag-red')+'">'+s.plan+'/10</span></td><td>'+s.mood+'</td><td style="color:var(--text3)">'+s.type+'</td></tr>';
+    });
+  });
+}
+
+// ── CHARTS DASHBOARD ──
+function initDashboardCharts() {
+  const G='#22c55e',R='#ef4444',GRID='rgba(255,255,255,0.05)',TEXT='#4a5568';
+  const cumulEl = document.getElementById('chart-cumul');
+  if (cumulEl) {
+    const labels=['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13','S14'];
+    const data=[-380,-230,110,290,470,180,350,520,320,480,700,860,1040,1394];
+    new Chart(cumulEl, {
+      type:'line',
+      data:{labels,datasets:[{data,borderColor:G,backgroundColor:'rgba(34,197,94,0.08)',borderWidth:2.5,pointRadius:4,pointBackgroundColor:data.map(v=>v>=0?G:R),fill:true,tension:0.3}]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        layout:{padding:{top:8,bottom:4,left:4,right:8}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'  '+ctx.raw+'€'}}},
+        scales:{
+          x:{ticks:{color:TEXT,font:{size:9,family:'DM Mono'}},grid:{color:GRID}},
+          y:{ticks:{color:TEXT,font:{size:9,family:'DM Mono'},callback:v=>v+'€'},grid:{color:GRID}}
+        }
+      }
+    });
+  }
+  // ── BAR CHART: P&L par session ──
+  const barEl = document.getElementById('chart-bar-sessions');
+  if (barEl) {
+    const sLabels=['22/03','21/03','20/03','19/03','18/03','17/03','15/03','14/03'];
+    const sData=[312,-148,520,0,-290,210,180,-95];
+    new Chart(barEl, {
+      type:'bar',
+      data:{
+        labels: sLabels,
+        datasets:[{
+          data: sData,
+          backgroundColor: sData.map(v => v > 0 ? 'rgba(34,197,94,0.7)' : v < 0 ? 'rgba(239,68,68,0.7)' : 'rgba(245,158,11,0.6)'),
+          borderColor: sData.map(v => v > 0 ? 'rgba(34,197,94,1)' : v < 0 ? 'rgba(239,68,68,1)' : 'rgba(245,158,11,0.9)'),
+          borderWidth: 1,
+          borderRadius: 4,
+          borderSkipped: false
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        layout:{padding:{top:4,bottom:2,left:2,right:4}},
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:ctx=>(ctx.raw>=0?'+':'')+ctx.raw+'€'}}
+        },
+        scales:{
+          x:{ticks:{color:TEXT,font:{size:9,family:'DM Mono'}},grid:{display:false}},
+          y:{
+            ticks:{color:TEXT,font:{size:9,family:'DM Mono'},callback:v=>v+'€'},
+            grid:{color:GRID},
+            border:{dash:[3,3]}
+          }
+        }
+      }
+    });
+  }
+}
+
+// ── CHARTS STATS ──
+let _statsInited = false;
+function initStatsCharts() {
+  if (_statsInited) return; _statsInited = true;
+  const G='#22c55e',R='#ef4444',AMBER='#f59e0b',GRID='rgba(255,255,255,0.05)',TEXT='#4a5568';
+  const baseOpts = (yLabel) => ({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:TEXT,font:{size:9}},grid:{color:GRID}},
+      y:{ticks:{color:TEXT,font:{size:9},callback:v=>v+(yLabel||'')},grid:{color:GRID}}
+    }
+  });
+  const pnlEl = document.getElementById('chart-stats-pnl');
+  if (pnlEl) {
+    const labels=['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','S11','S12','S13','S14'];
+    const data=[-380,-230,110,290,470,180,350,520,320,480,700,860,1040,1394];
+    new Chart(pnlEl, {
+      type:'line',
+      data:{labels,datasets:[{data,borderColor:G,backgroundColor:'rgba(34,197,94,0.08)',borderWidth:2.5,pointRadius:3,pointBackgroundColor:data.map(v=>v>=0?G:R),fill:true,tension:0.3}]},
+      options:baseOpts('€')
+    });
+  }
+  const distEl = document.getElementById('chart-stats-dist');
+  if (distEl) {
+    new Chart(distEl, {
+      type:'bar',
+      data:{
+        labels:['<-2R','-2/-1','-1/0','0/1','1/2','2/3','>3R'],
+        datasets:[{data:[1,2,3,4,6,5,3],backgroundColor:['rgba(239,68,68,.7)','rgba(239,68,68,.5)','rgba(239,68,68,.35)','rgba(245,158,11,.5)','rgba(34,197,94,.4)','rgba(34,197,94,.6)','rgba(34,197,94,.8)'],borderRadius:4}]
+      },
+      options:baseOpts('')
+    });
+  }
+}
+
+// ── CHARTS PROGRESSION ──
+let _progInited = false;
+function initProgressionCharts() {
+  if (_progInited) return; _progInited = true;
+  const G='#22c55e',R='#ef4444',AMBER='#f59e0b',GRID='rgba(255,255,255,0.05)',TEXT='#4a5568';
+  const opts = (yLabel) => ({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TEXT,font:{size:10}},grid:{color:GRID}},y:{ticks:{color:TEXT,font:{size:10},callback:v=>v+(yLabel||'')},grid:{color:GRID}}}});
+  const months=['Jan','Fev','Mars'];
+  const pEl=document.getElementById('chart-progression-pnl');
+  if(pEl) new Chart(pEl,{type:'line',data:{labels:months,datasets:[{data:[-380,820,1394],borderColor:G,backgroundColor:'rgba(34,197,94,0.07)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:[-380,820,1394].map(v=>v>=0?G:R),fill:true,tension:0.3}]},options:opts('€')});
+  const wEl=document.getElementById('chart-progression-wr');
+  if(wEl) new Chart(wEl,{type:'line',data:{labels:months,datasets:[{data:[44,58,62],borderColor:AMBER,backgroundColor:'rgba(245,158,11,0.07)',borderWidth:2.5,pointRadius:5,fill:true,tension:0.3}]},options:opts('%')});
+  const pfEl=document.getElementById('chart-prog-pf');
+  if(pfEl) new Chart(pfEl,{type:'bar',data:{labels:months,datasets:[{data:[0.88,1.52,1.74],backgroundColor:[0.88,1.52,1.74].map(v=>v>=1.5?'rgba(34,197,94,0.7)':v>=1?'rgba(245,158,11,0.65)':'rgba(239,68,68,0.65)'),borderRadius:4}]},options:opts('')});
+  const plEl=document.getElementById('chart-prog-plan');
+  if(plEl) new Chart(plEl,{type:'bar',data:{labels:months,datasets:[{data:[50,65,72],backgroundColor:'rgba(34,197,94,0.6)',borderRadius:4}]},options:opts('%')});
+  // Extra charts
+  const rEl=document.getElementById('chart-prog-r');
+  if(rEl) new Chart(rEl,{type:'line',data:{labels:months,datasets:[{data:[-0.5,1.8,2.1],borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.07)',borderWidth:2,pointRadius:5,pointBackgroundColor:[-0.5,1.8,2.1].map(v=>v>=0?G:R),fill:true,tension:0.3}]},options:opts('R')});
+  const sessEl=document.getElementById('chart-prog-sessions');
+  if(sessEl) new Chart(sessEl,{type:'bar',data:{labels:months,datasets:[{data:[10,12,14],backgroundColor:'rgba(167,139,250,0.6)',borderRadius:4}]},options:opts('')});
+  const bwEl=document.getElementById('chart-prog-bestworst');
+  if(bwEl) new Chart(bwEl,{type:'bar',data:{labels:months,datasets:[
+    {label:'Best',data:[2.1,3.2,3.8],backgroundColor:'rgba(34,197,94,0.6)',borderRadius:4},
+    {label:'Worst',data:[-1.8,-1.2,-0.8],backgroundColor:'rgba(239,68,68,0.6)',borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TEXT,font:{size:9}}}},scales:{x:{ticks:{color:TEXT,font:{size:10}},grid:{color:GRID}},y:{ticks:{color:TEXT,font:{size:10},callback:v=>v+'R'},grid:{color:GRID}}}}});
+}
+
+// ── JOURNAL ──
+function saveJournal() {
+  const text = document.getElementById('j-text').value.trim();
+  const cat = document.getElementById('j-cat').value;
+  if (!text) return;
+  const entries = document.getElementById('journal-entries');
+  const div = document.createElement('div');
+  div.className = 'journal-entry';
+  div.innerHTML = '<div class="journal-date">'+today.toLocaleDateString('fr-FR', {day:'numeric',month:'long',year:'numeric'})+ ' · '+cat+'</div><div class="journal-text">'+text+'</div>';
+  entries.insertBefore(div, entries.firstChild);
+  document.getElementById('j-text').value = '';
+  showToast('Entree ajoutee ✓');
+}
+
+// ── RISK CALCULATOR ──
+const RC_CONTRACTS = {
+  MYM: {name:'Micro Dow',  tickVal:0.50, tickSize:1, margin:50,  type:'Micro'},
+  YM:  {name:'Mini Dow',   tickVal:5.00, tickSize:1, margin:500, type:'Mini'},
+  MES: {name:'Micro S&P',  tickVal:5.00, tickSize:0.25, margin:40, type:'Micro'},
+  ES:  {name:'Mini S&P',   tickVal:50.0, tickSize:0.25, margin:600, type:'Mini'},
+  MNQ: {name:'Micro NQ',   tickVal:2.00, tickSize:0.25, margin:100, type:'Micro'},
+  NQ:  {name:'Mini NQ',    tickVal:20.0, tickSize:0.25, margin:1000,type:'Mini'},
+};
+let rcContract = 'MYM';
+
+function rcSetContract(sym) {
+  rcContract = sym;
+  Object.keys(RC_CONTRACTS).forEach(k => {
+    const btn = document.getElementById('rc-btn-'+k.toLowerCase());
+    if (!btn) return;
+    if (k === sym) {
+      btn.style.background = 'var(--green-dim)';
+      btn.style.borderColor = 'var(--green)';
+      btn.querySelector('div').style.color = 'var(--green)';
+    } else {
+      btn.style.background = 'var(--bg3)';
+      btn.style.borderColor = 'var(--border)';
+      btn.querySelector('div').style.color = 'var(--text2)';
+    }
+  });
+  const spec = RC_CONTRACTS[sym];
+  const stv = document.getElementById('rc-spec-tick');
+  const sts = document.getElementById('rc-spec-ticksize');
+  const stm = document.getElementById('rc-spec-margin');
+  const stt = document.getElementById('rc-spec-type');
+  if (stv) stv.textContent = spec.tickVal.toFixed(2)+' $/pt';
+  if (sts) sts.textContent = spec.tickSize+' pt';
+  if (stm) stm.textContent = '~'+spec.margin+' $';
+  if (stt) stt.textContent = spec.type;
+  const lbl = document.getElementById('rc-nb-label');
+  if (lbl) lbl.textContent = 'contrats '+sym;
+  rcCalc();
+}
+
+function rcCalc() {
+  const spec = RC_CONTRACTS[rcContract];
+  const account = parseFloat(document.getElementById('rc-account').value) || 100000;
+  const riskPct = parseFloat(document.getElementById('rc-risk-pct').value) || 1;
+  const slPts   = parseFloat(document.getElementById('rc-sl-pts').value)   || 25;
+  const fx      = parseFloat(document.getElementById('rc-fx').value)       || 0.92;
+
+  const maxRiskEur = account * (riskPct / 100);
+  const maxRiskUsd = maxRiskEur / fx;
+
+  // SL value per contract in USD
+  const slVal1Usd = slPts * spec.tickVal;
+  const slVal1Eur = slVal1Usd * fx;
+
+  // Number of contracts = floor(maxRisk / slVal1)
+  const nbContracts = Math.max(1, Math.floor(maxRiskUsd / slVal1Usd));
+
+  const slValNUsd = slVal1Usd * nbContracts;
+  const slValNEur = slValNUsd * fx;
+  const riskUsedPct = (slValNEur / account * 100);
+  const marginTotal = spec.margin * nbContracts;
+
+  // TP simulation
+  const tp1r = slValNEur;
+  const tp2r = slValNEur * 2;
+  const tp3r = slValNEur * 3;
+
+  const fmt  = (v, cur) => (v >= 0 ? '+' : '') + Math.round(v).toLocaleString('fr-FR') + ' ' + (cur||'€');
+  const fmtU = v => Math.round(v).toLocaleString('fr-FR') + ' $';
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+  set('rc-nb-contracts', nbContracts);
+  set('rc-max-risk-eur', fmt(-maxRiskEur));
+  set('rc-sl-val-1',  fmtU(slVal1Usd) + ' ≈ ' + Math.round(slVal1Eur) + ' €');
+  set('rc-sl-val-n',  fmtU(slValNUsd) + ' ≈ ' + Math.round(slValNEur) + ' €');
+  set('rc-risk-used-pct', riskUsedPct.toFixed(2) + '%');
+  set('rc-margin-total', fmtU(marginTotal));
+  set('rc-tp-1r', fmt(tp1r));
+  set('rc-tp-2r', fmt(tp2r));
+  set('rc-tp-3r', fmt(tp3r));
+}
+
+// ── CONTRAT ──
+const CONTRAT_KEY = 'atp_contrat_v1';
+function checkContrat() {
+  const c1=document.getElementById('check1').checked;
+  const c2=document.getElementById('check2').checked;
+  const c3=document.getElementById('check3').checked;
+  const name=(document.getElementById('contrat-name').value||'').trim();
+  const btn=document.getElementById('contrat-btn');
+  const ready = c1 && c2 && c3 && name.length > 2;
+  if (btn) { btn.disabled=!ready; btn.style.opacity=ready?'1':'0.4'; btn.style.cursor=ready?'pointer':'not-allowed'; }
+}
+function signContrat() {
+  const name=document.getElementById('contrat-name').value.trim();
+  const dateVal=document.getElementById('contrat-date-input').value;
+  const d=new Date(dateVal);
+  const dateStr=d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  try { localStorage.setItem(CONTRAT_KEY, JSON.stringify({name,date:dateStr,ts:Date.now()})); } catch(e) {}
+  lockContrat(name, dateStr);
+  showToast('Contrat signe ✓');
+}
+function lockContrat(name, dateStr) {
+  const acc=document.getElementById('contrat-accept-section');
+  if(acc) acc.style.display='none';
+  const locked=document.getElementById('contrat-locked-section');
+  if(locked) locked.style.display='block';
+  const nd=document.getElementById('locked-name-display');
+  if(nd) nd.textContent='Signe par : '+name;
+  const dd=document.getElementById('locked-date-display');
+  if(dd) dd.textContent='Le '+dateStr;
+  const tag=document.getElementById('contrat-status-tag');
+  if(tag) { tag.textContent='Signe ✓'; tag.className='tag tag-green'; }
+  const badge=document.getElementById('contrat-badge');
+  if(badge) { badge.textContent='✓'; badge.style.background='rgba(34,197,94,0.15)'; badge.style.color='#22c55e'; badge.style.borderColor='rgba(34,197,94,0.3)'; }
+}
+function downloadContrat() { showToast('Telechargement du PDF...'); }
+function initContrat() {
+  const dateInp=document.getElementById('contrat-date-input');
+  if(dateInp) dateInp.value=today.toISOString().split('T')[0];
+  try {
+    const stored=localStorage.getItem(CONTRAT_KEY);
+    if(stored) { const data=JSON.parse(stored); lockContrat(data.name, data.date); }
+  } catch(e) {}
+}
+
+// ── CHAT ──
+let chatOpen = false;
+function toggleChat() {
+  chatOpen = !chatOpen;
+  const panel=document.getElementById('chat-panel');
+  if(panel) panel.style.display = chatOpen ? 'flex' : 'none';
+  if(chatOpen) {
+    const unread=document.getElementById('chat-unread');
+    if(unread) unread.style.display='none';
+    setTimeout(()=>{ const inp=document.getElementById('chat-input'); if(inp) inp.focus(); },50);
+  }
+}
+function sendChatMsg() {
+  const input=document.getElementById('chat-input');
+  const text=(input.value||'').trim();
+  if(!text) return;
+  const now=today.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const msgs=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.style.cssText='align-self:flex-end;max-width:80%;';
+  div.innerHTML='<div style="background:var(--green);border-radius:10px 10px 2px 10px;padding:9px 12px;font-size:12px;color:#fff;line-height:1.5;">'+text+'</div><div style="font-size:10px;color:var(--text3);margin-top:3px;text-align:right;font-family:monospace;">'+now+'</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+  input.value='';
+}
+
+// ── RESET ──
+function confirmReset() {
+  const val=(document.getElementById('reset-confirm-input').value||'').trim();
+  if(val==='RESET ATP') {
+    const modal=document.getElementById('reset-modal');
+    if(modal) { modal.style.display='flex'; }
+  } else {
+    showToast('Tape exactement "RESET ATP" pour confirmer');
+  }
+}
+function doReset() {
+  try { localStorage.clear(); } catch(e) {}
+  document.getElementById('reset-modal').style.display='none';
+  showToast('Donnees reinitalisees');
+}
+
+// ── CANCEL MODAL ──
+function openCancel(label) {
+  const modal=document.getElementById('cancel-modal');
+  const lbl=document.getElementById('cancel-rdv-label');
+  if(lbl) lbl.textContent='Annuler : '+label+' ?';
+  if(modal) modal.style.display='flex';
+}
+function confirmCancel() {
+  document.getElementById('cancel-modal').style.display='none';
+  showToast('RDV annule');
+}
+
+// ── INIT ──
+window.addEventListener('load', function() {
+  buildHistory();
+  buildHeatmap();
+  buildChecklist();
+  initDashboardCharts();
+  updateProp();
+  setPfType2('challenge');
+  rcSetContract('MYM');
+  rcCalc();
+  initContrat();
+});
+</script>
+</body>
+</html>
