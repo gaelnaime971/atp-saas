@@ -5,6 +5,7 @@ import DashboardSidebar from '@/components/dashboard/DashboardSidebar'
 import type { DashboardPage } from '@/components/dashboard/DashboardSidebar'
 import Dashboard from '@/components/dashboard/pages/Dashboard'
 import Session from '@/components/dashboard/pages/Session'
+import SessionsHistory from '@/components/dashboard/pages/SessionsHistory'
 import Stats from '@/components/dashboard/pages/Stats'
 import Checklist from '@/components/dashboard/pages/Checklist'
 import Journal from '@/components/dashboard/pages/Journal'
@@ -21,6 +22,7 @@ import TraderChatWidget from '@/components/chat/TraderChatWidget'
 const pageTitles: Record<DashboardPage, string> = {
   dashboard: 'Dashboard',
   session: 'Saisie de session',
+  'sessions-history': 'Sessions de trading',
   stats: 'Stats & Performance',
   checklist: 'Checklist pré-open',
   journal: 'Journal',
@@ -41,6 +43,7 @@ export default function TraderDashboard() {
     switch (activePage) {
       case 'dashboard': return <Dashboard />
       case 'session': return <Session />
+      case 'sessions-history': return <SessionsHistory />
       case 'stats': return <Stats />
       case 'checklist': return <Checklist />
       case 'journal': return <Journal />

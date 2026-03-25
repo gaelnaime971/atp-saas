@@ -31,15 +31,49 @@ interface TradersProps {
   onNewModalHandled?: () => void
 }
 
+type FilterMode = 'all' | 'day' | 'range' | 'month' | 'year'
+
+function getDateRange(mode: FilterMode, day: string, rangeFrom: string, rangeTo: string, month: string, year: string): { from: string; to: string } | null {
+  if (mode === 'all') return null
+  if (mode === 'day' && day) {
+    return { from: day, to: day }
+  }
+  if (mode === 'range' && rangeFrom && rangeTo) {
+    return { from: rangeFrom, to: rangeTo }
+  }
+  if (mode === 'month' && month) {
+    const [y, m] = month.split('-')
+    const lastDay = new Date(Number(y), Number(m), 0).getDate()
+    return { from: `${month}-01`, to: `${month}-${String(lastDay).padStart(2, '0')}` }
+  }
+  if (mode === 'year' && year) {
+    return { from: `${year}-01-01`, to: `${year}-12-31` }
+  }
+  return null
+}
+
 export default function Traders({ triggerNewModal, onNewModalHandled }: TradersProps) {
   const [traders, setTraders] = useState<TraderRow[]>([])
   const [loading, setLoading] = useState(true)
   const [showNewModal, setShowNewModal] = useState(false)
   const [selectedTrader, setSelectedTrader] = useState<TraderRow | null>(null)
   const [blurNames, setBlurNames] = useState(false)
+
+  // Date filter state
+  const [filterMode, setFilterMode] = useState<FilterMode>('all')
+  const [filterDay, setFilterDay] = useState(new Date().toISOString().split('T')[0])
+  const [filterRangeFrom, setFilterRangeFrom] = useState('')
+  const [filterRangeTo, setFilterRangeTo] = useState('')
+  const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [filterYear, setFilterYear] = useState(String(new Date().getFullYear()))
+
   const supabase = createClient()
 
   async function fetchTraders() {
+    setLoading(true)
+
+    const dateRange = getDateRange(filterMode, filterDay, filterRangeFrom, filterRangeTo, filterMonth, filterYear)
+
     const { data: profiles } = await supabase
       .from('profiles')
       .select('*, capital, nb_accounts')
@@ -50,10 +84,16 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
     if (profiles) {
       const enriched = await Promise.all(
         profiles.map(async (trader) => {
-          const { data: sessions } = await supabase
+          let query = supabase
             .from('trading_sessions')
             .select('pnl, result')
             .eq('trader_id', trader.id)
+
+          if (dateRange) {
+            query = query.gte('session_date', dateRange.from).lte('session_date', dateRange.to)
+          }
+
+          const { data: sessions } = await query
 
           const session_count = sessions?.length ?? 0
           const total_pnl = sessions?.reduce((sum, s) => sum + (s.pnl || 0), 0) ?? 0
@@ -92,7 +132,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
     setLoading(false)
   }
 
-  useEffect(() => { fetchTraders() }, [])
+  useEffect(() => { fetchTraders() }, [filterMode, filterDay, filterRangeFrom, filterRangeTo, filterMonth, filterYear])
 
   useEffect(() => {
     if (triggerNewModal) {
@@ -164,6 +204,95 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
         </div>
       </div>
 
+      {/* Date filter bar */}
+      <div
+        className="flex items-center gap-2 flex-wrap p-3 rounded-xl border"
+        style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+      >
+        <span className="text-xs font-medium mr-1" style={{ color: 'var(--text3)' }}>Période :</span>
+        {([
+          { id: 'all', label: 'Tout' },
+          { id: 'day', label: 'Jour' },
+          { id: 'range', label: 'Plage' },
+          { id: 'month', label: 'Mois' },
+          { id: 'year', label: 'Année' },
+        ] as { id: FilterMode; label: string }[]).map(f => (
+          <button
+            key={f.id}
+            onClick={() => setFilterMode(f.id)}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+            style={{
+              background: filterMode === f.id ? 'rgba(34,197,94,0.1)' : 'transparent',
+              color: filterMode === f.id ? '#22c55e' : 'var(--text3)',
+              border: filterMode === f.id ? '1px solid rgba(34,197,94,0.2)' : '1px solid transparent',
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+
+        <div className="h-5 w-px mx-1" style={{ background: 'var(--border)' }} />
+
+        {filterMode === 'day' && (
+          <input
+            type="date"
+            value={filterDay}
+            onChange={e => setFilterDay(e.target.value)}
+            className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none"
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+          />
+        )}
+        {filterMode === 'range' && (
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={filterRangeFrom}
+              onChange={e => setFilterRangeFrom(e.target.value)}
+              className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none"
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            />
+            <span className="text-xs" style={{ color: 'var(--text3)' }}>→</span>
+            <input
+              type="date"
+              value={filterRangeTo}
+              onChange={e => setFilterRangeTo(e.target.value)}
+              className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none"
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            />
+          </div>
+        )}
+        {filterMode === 'month' && (
+          <input
+            type="month"
+            value={filterMonth}
+            onChange={e => setFilterMonth(e.target.value)}
+            className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none"
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+          />
+        )}
+        {filterMode === 'year' && (
+          <select
+            value={filterYear}
+            onChange={e => setFilterYear(e.target.value)}
+            className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none"
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+          >
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        )}
+
+        {filterMode !== 'all' && (
+          <span className="text-xs ml-auto font-medium" style={{ color: 'var(--green)' }}>
+            {filterMode === 'day' && filterDay && new Date(filterDay + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {filterMode === 'range' && filterRangeFrom && filterRangeTo && `${new Date(filterRangeFrom + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} — ${new Date(filterRangeTo + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+            {filterMode === 'month' && filterMonth && new Date(filterMonth + '-01T00:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+            {filterMode === 'year' && filterYear}
+          </span>
+        )}
+      </div>
+
       {/* Stats cards */}
       <div className="grid grid-cols-6 gap-4">
         <Card>
@@ -183,7 +312,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
           <p className={`text-2xl font-bold font-mono ${totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)} $
           </p>
-          <p className="text-xs text-[#5a6a82] mt-1">{totalSessions} sessions au total</p>
+          <p className="text-xs text-[#5a6a82] mt-1">{totalSessions} session{totalSessions !== 1 ? 's' : ''}{filterMode !== 'all' ? ' (filtrées)' : ''}</p>
         </Card>
         <Card>
           <p className="text-xs text-[#5a6a82] mb-1 uppercase tracking-wider">Win Rate moyen</p>
