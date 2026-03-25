@@ -107,3 +107,13 @@ export interface InviteEmailProps {
   code: string
   plan_type: string
 }
+
+export interface Message {
+  id: string
+  sender_id: string
+  receiver_id: string
+  content: string | null
+  image_url: string | null
+  is_read: boolean
+  created_at: string
+}

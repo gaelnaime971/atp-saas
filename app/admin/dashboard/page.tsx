@@ -15,6 +15,7 @@ import Notes from '@/components/admin/pages/Notes'
 import Reports from '@/components/admin/pages/Reports'
 import Tasks from '@/components/admin/pages/Tasks'
 import Broadcast from '@/components/admin/pages/Broadcast'
+import AdminChatWidget from '@/components/chat/AdminChatWidget'
 
 type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks'
 
@@ -105,6 +106,7 @@ export default function AdminDashboard() {
           {renderPage()}
         </main>
       </div>
+      <AdminChatWidget />
     </div>
   )
 }

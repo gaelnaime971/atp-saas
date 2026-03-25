@@ -15,6 +15,7 @@ import Progression from '@/components/dashboard/pages/Progression'
 import Ressources from '@/components/dashboard/pages/Ressources'
 import Contrat from '@/components/dashboard/pages/Contrat'
 import Compte from '@/components/dashboard/pages/Compte'
+import TraderChatWidget from '@/components/chat/TraderChatWidget'
 
 const pageTitles: Record<DashboardPage, string> = {
   dashboard: 'Dashboard',
@@ -89,6 +90,7 @@ export default function TraderDashboard() {
           {renderPage()}
         </main>
       </div>
+      <TraderChatWidget />
     </div>
   )
 }
