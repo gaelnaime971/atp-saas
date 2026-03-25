@@ -5,6 +5,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Preview,
   Section,
   Text,
@@ -15,9 +16,11 @@ interface InviteEmailProps {
   code: string
   plan_type: string
   inviteUrl: string
+  appUrl?: string
 }
 
-export default function InviteEmail({ full_name, code, plan_type, inviteUrl }: InviteEmailProps) {
+export default function InviteEmail({ full_name, code, plan_type, inviteUrl, appUrl }: InviteEmailProps) {
+  const baseUrl = appUrl || inviteUrl.replace(/\/invite$/, '')
   return (
     <Html>
       <Head />
@@ -26,8 +29,12 @@ export default function InviteEmail({ full_name, code, plan_type, inviteUrl }: I
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
-            <Text style={logo}>ATP</Text>
-            <Text style={logoSub}>COACHING</Text>
+            <Img
+              src={`${baseUrl}/logo-atp-white.png`}
+              alt="Alpha Trading Pro"
+              height="28"
+              style={{ margin: '0 auto' }}
+            />
           </Section>
 
           {/* Content */}

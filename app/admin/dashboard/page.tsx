@@ -10,18 +10,27 @@ import Sessions from '@/components/admin/pages/Sessions'
 import Revenus from '@/components/admin/pages/Revenus'
 import Bibliotheque from '@/components/admin/pages/Bibliotheque'
 import Settings from '@/components/admin/pages/Settings'
+import CRM from '@/components/admin/pages/CRM'
+import Notes from '@/components/admin/pages/Notes'
+import Reports from '@/components/admin/pages/Reports'
+import Tasks from '@/components/admin/pages/Tasks'
+import Broadcast from '@/components/admin/pages/Broadcast'
 
-type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'settings'
+type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks'
 
 const pageTitles: Record<AdminPage, string> = {
   overview: 'Vue Globale',
   traders: 'Traders',
   results: 'Résultats',
+  crm: 'Vue CRM',
+  notes: 'Notes privées',
   calendar: 'Calendrier',
   sessions: 'Sessions',
   revenus: 'Revenus',
-  bibliotheque: 'Bibliothèque',
+  reports: 'Rapports mensuels',
+  tasks: 'Tâches',
   broadcast: 'Broadcast',
+  bibliotheque: 'Bibliothèque',
   settings: 'Paramètres',
 }
 
@@ -44,11 +53,15 @@ export default function AdminDashboard() {
         />
       )
       case 'results': return <Results />
+      case 'crm': return <CRM />
+      case 'notes': return <Notes />
       case 'calendar': return <Calendar />
       case 'sessions': return <Sessions />
       case 'revenus': return <Revenus />
+      case 'reports': return <Reports />
+      case 'tasks': return <Tasks />
+      case 'broadcast': return <Broadcast />
       case 'bibliotheque': return <Bibliotheque />
-      case 'broadcast': return <div className="text-[#5a6a82] text-sm">Broadcast — bientôt disponible</div>
       case 'settings': return <Settings />
       default: return <Overview />
     }

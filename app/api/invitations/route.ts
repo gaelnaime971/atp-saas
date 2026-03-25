@@ -82,8 +82,9 @@ export async function POST(request: NextRequest) {
 
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite`
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
     const emailHtml = await render(
-      InviteEmail({ full_name, code, plan_type, inviteUrl })
+      InviteEmail({ full_name, code, plan_type, inviteUrl, appUrl })
     )
 
     const { error: emailError } = await resend.emails.send({

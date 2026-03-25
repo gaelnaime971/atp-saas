@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PGPASSWORD=CFXbPVxGPi3JfKmz psql \"postgresql://postgres.tgupdzabmjnutlcbootv@aws-1-eu-west-3.pooler.supabase.com:5432/postgres\" -f \"/Users/gaelnaime/DEV/ATP Dashboard coaching/supabase/migrations/20260325000001_revenues_invoices.sql\")",
+      "Bash(node -e \"const fs = require\\(''''fs''''\\); const buf = fs.readFileSync\\(''''/Users/gaelnaime/DEV/ATP Dashboard coaching/public/logo-atp-white.png''''\\); console.log\\(''''data:image/png;base64,'''' + buf.toString\\(''''base64''''\\)\\)\")"
+    ]
+  }
+}

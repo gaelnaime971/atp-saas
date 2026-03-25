@@ -32,10 +32,9 @@ export async function proxy(request: NextRequest) {
   const publicRoutes = ['/login', '/admin/login', '/admin/setup', '/invite', '/logout']
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
   const isApiRoute = pathname.startsWith('/api')
-  const isStaticRoute = pathname === '/'
 
   // Not authenticated → redirect to appropriate login
-  if (!user && !isPublicRoute && !isApiRoute && !isStaticRoute) {
+  if (!user && !isPublicRoute && !isApiRoute && pathname !== '/') {
     if (pathname.startsWith('/admin')) {
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
@@ -51,8 +50,8 @@ export async function proxy(request: NextRequest) {
 
     const isAdmin = profile?.role === 'admin'
 
-    // Already logged in → redirect away from login pages
-    if (pathname === '/login' || pathname === '/admin/login') {
+    // Already logged in → redirect away from login/home pages
+    if (pathname === '/' || pathname === '/login' || pathname === '/admin/login') {
       return NextResponse.redirect(
         new URL(isAdmin ? '/admin/dashboard' : '/dashboard', request.url)
       )
@@ -75,5 +74,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    { source: '/' },
   ],
 }
