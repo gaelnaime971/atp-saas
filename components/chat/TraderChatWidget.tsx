@@ -9,7 +9,7 @@ import ChatPanel from './ChatPanel'
 export default function TraderChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
-  const [admin, setAdmin] = useState<{ id: string; full_name: string } | null>(null)
+  const [admin, setAdmin] = useState<{ id: string; full_name: string; avatar_url: string | null } | null>(null)
   const supabase = useRef(createClient()).current
   const { total } = useUnreadCount(userId)
 
@@ -21,7 +21,7 @@ export default function TraderChatWidget() {
 
       const { data } = await supabase
         .from('profiles')
-        .select('id, full_name')
+        .select('id, full_name, avatar_url')
         .eq('role', 'admin')
         .limit(1)
         .single()
@@ -42,8 +42,8 @@ export default function TraderChatWidget() {
             position: 'fixed',
             bottom: 90,
             right: 24,
-            width: 320,
-            height: 440,
+            width: 380,
+            height: 520,
             background: 'var(--bg2)',
             border: '1px solid var(--border)',
             borderRadius: 12,
@@ -96,7 +96,8 @@ export default function TraderChatWidget() {
             currentUserId={userId}
             partnerId={admin.id}
             partnerName={admin.full_name ?? 'Coach'}
-            messagesHeight={300}
+            partnerAvatar={admin.avatar_url}
+            messagesHeight={380}
           />
         </div>
       )}

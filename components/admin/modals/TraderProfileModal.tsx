@@ -40,6 +40,15 @@ interface ObjectiveRow {
   progress: number
 }
 
+interface PayoutRow {
+  id: string
+  amount: number
+  payout_date: string
+  propfirm_name: string | null
+  account_label: string | null
+  notes: string | null
+}
+
 function parseSetup(setup: string | null | undefined) {
   if (!setup) return null
   try { return JSON.parse(setup) } catch { return null }
@@ -50,6 +59,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
   const [journal, setJournal] = useState<JournalRow[]>([])
   const [coaching, setCoaching] = useState<CoachingRow[]>([])
   const [objectives, setObjectives] = useState<ObjectiveRow[]>([])
+  const [payouts, setPayouts] = useState<PayoutRow[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'overview' | 'sessions' | 'journal' | 'coaching'>('overview')
   const supabase = createClient()
@@ -58,16 +68,18 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
     if (!trader) return
     async function fetchAll() {
       setLoading(true)
-      const [sessRes, journalRes, coachRes, objRes] = await Promise.all([
+      const [sessRes, journalRes, coachRes, objRes, payRes] = await Promise.all([
         supabase.from('trading_sessions').select('*').eq('trader_id', trader!.id).order('session_date', { ascending: false }),
         supabase.from('journal_entries').select('*').eq('trader_id', trader!.id).order('entry_date', { ascending: false }).limit(20),
         supabase.from('coaching_sessions').select('*').eq('trader_id', trader!.id).order('scheduled_at', { ascending: false }),
         supabase.from('objectives').select('*').eq('trader_id', trader!.id),
+        supabase.from('payouts').select('*').eq('trader_id', trader!.id).order('payout_date', { ascending: false }),
       ])
       setSessions((sessRes.data ?? []) as SessionRow[])
       setJournal((journalRes.data ?? []) as JournalRow[])
       setCoaching((coachRes.data ?? []) as CoachingRow[])
       setObjectives((objRes.data ?? []) as ObjectiveRow[])
+      setPayouts((payRes.data ?? []) as PayoutRow[])
       setLoading(false)
     }
     fetchAll()
@@ -89,6 +101,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
     const scores = sessions.map(s => parseSetup(s.setup)?.plan_score).filter((v: any) => v != null) as number[]
     return scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length) : null
   })()
+  const totalPayouts = payouts.reduce((s, p) => s + Number(p.amount), 0)
   const avgRValue = (() => {
     const rValues = sessions.map(s => parseSetup(s.setup)?.r_value).filter((v: any) => v != null) as number[]
     return rValues.length > 0 ? (rValues.reduce((a, b) => a + b, 0) / rValues.length) : null
@@ -284,6 +297,43 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                       </div>
                     )}
                   </div>
+
+                  {/* Payouts */}
+                  {payouts.length > 0 && (
+                    <div className="rounded-lg p-4 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-medium" style={{ color: 'var(--text3)' }}>Payouts</p>
+                        <span className="text-xs font-bold font-mono" style={{ color: '#22c55e' }}>
+                          Total: +{totalPayouts.toLocaleString('fr-FR')} $
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {payouts.map(p => (
+                          <div key={p.id} className="flex items-center gap-3 py-1.5" style={{ borderBottom: '1px solid var(--border)' }}>
+                            <span className="text-xs font-mono w-16 shrink-0" style={{ color: 'var(--text3)' }}>
+                              {new Date(p.payout_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                            </span>
+                            <span className="text-xs font-mono font-bold" style={{ color: '#22c55e' }}>
+                              +{Number(p.amount).toLocaleString('fr-FR')} $
+                            </span>
+                            {p.propfirm_name && (
+                              <span className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--bg)', color: 'var(--text3)' }}>
+                                {p.propfirm_name}
+                              </span>
+                            )}
+                            {p.account_label && (
+                              <span className="text-xs" style={{ color: 'var(--text3)' }}>{p.account_label}</span>
+                            )}
+                            {p.notes && (
+                              <span className="text-xs ml-auto truncate" style={{ color: 'var(--text3)' }}>
+                                {p.notes}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <p className="text-xs" style={{ color: 'var(--text3)' }}>
                     Membre depuis le {new Date(trader.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}

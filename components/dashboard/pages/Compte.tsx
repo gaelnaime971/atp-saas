@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import AvatarUpload from '@/components/ui/AvatarUpload'
 import type { Profile } from '@/lib/types'
 
 const experienceOptions = [
@@ -22,6 +23,7 @@ const instrumentOptions = [
 
 export default function Compte() {
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
@@ -58,6 +60,7 @@ export default function Compte() {
         if (prof) {
           const p = prof as Profile
           setProfile(p)
+          setAvatarUrl(p.avatar_url)
           const parts = (p.full_name ?? '').split(' ')
           setFirstName(parts[0] ?? '')
           setLastName(parts.slice(1).join(' '))
@@ -150,6 +153,18 @@ export default function Compte() {
         <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 12, borderBottom: '1px solid var(--border, rgba(255,255,255,0.07))' }}>
           Profil
         </h2>
+
+        {profile && (
+          <div style={{ ...formGroupStyle, display: 'flex', justifyContent: 'center' }}>
+            <AvatarUpload
+              userId={profile.id}
+              currentUrl={avatarUrl}
+              name={profile.full_name}
+              size={80}
+              onUploaded={(url) => setAvatarUrl(url)}
+            />
+          </div>
+        )}
 
         <div style={formGroupStyle}>
           <label style={labelStyle}>Prenom</label>

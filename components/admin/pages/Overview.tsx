@@ -130,10 +130,66 @@ export default function Overview() {
   ]
 
   if (loading) {
+    const shimmer = {
+      background: 'linear-gradient(90deg, var(--bg3) 25%, rgba(255,255,255,0.04) 50%, var(--bg3) 75%)',
+      backgroundSize: '200% 100%',
+      animation: 'shimmer 1.5s infinite',
+      borderRadius: 8,
+    } as React.CSSProperties
+
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <>
+        <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
+        <div className="space-y-6">
+          {/* Title skeleton */}
+          <div>
+            <div style={{ ...shimmer, width: 180, height: 24, marginBottom: 8 }} />
+            <div style={{ ...shimmer, width: 260, height: 14 }} />
+          </div>
+
+          {/* KPI cards skeleton */}
+          <div className="grid grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div
+                key={i}
+                style={{
+                  background: 'var(--bg2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 12,
+                  padding: '20px 18px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ ...shimmer, width: 40, height: 40, borderRadius: 8 }} />
+                  <div style={{ ...shimmer, width: 36, height: 20, borderRadius: 10 }} />
+                </div>
+                <div style={{ ...shimmer, width: 100, height: 28, marginBottom: 6 }} />
+                <div style={{ ...shimmer, width: 80, height: 12 }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Table skeleton */}
+          <div
+            style={{
+              background: 'var(--bg2)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '20px 18px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div style={{ ...shimmer, width: 160, height: 16 }} />
+              <div style={{ ...shimmer, width: 80, height: 14 }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{ ...shimmer, width: '100%', height: 40 }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </>
     )
   }
 

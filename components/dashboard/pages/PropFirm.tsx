@@ -3,13 +3,15 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
+import Button from '@/components/ui/Button'
+import type { Payout } from '@/lib/types'
 
 const PROP_FIRMS = ['FTMO', 'TopStep', 'Apex', 'E8', 'My Forex Funds', 'Autre'] as const
 const CAPITALS = [10_000, 25_000, 50_000, 100_000, 200_000] as const
 type AccountType = 'challenge' | 'funded' | 'personal'
 
 const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  challenge: 'Challenge/Evaluation',
+  challenge: 'Challenge',
   funded: 'Compte Financé',
   personal: 'Compte Personnel',
 }
@@ -19,26 +21,71 @@ export default function PropFirm() {
   const [capital, setCapital] = useState<number>(CAPITALS[2])
   const [nbAccounts, setNbAccounts] = useState(1)
   const [accountType, setAccountType] = useState<AccountType>('challenge')
-  const [phase, setPhase] = useState<1 | 2>(1)
   const supabase = createClient()
 
   const [loaded, setLoaded] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [payouts, setPayouts] = useState<Payout[]>([])
+  const [showPayoutForm, setShowPayoutForm] = useState(false)
+  const [payoutAmount, setPayoutAmount] = useState('')
+  const [payoutDate, setPayoutDate] = useState(new Date().toISOString().split('T')[0])
+  const [payoutAccount, setPayoutAccount] = useState('Compte #1')
+  const [payoutNotes, setPayoutNotes] = useState('')
+  const [savingPayout, setSavingPayout] = useState(false)
+
+  async function fetchPayouts(uid: string) {
+    const { data } = await supabase
+      .from('payouts')
+      .select('*')
+      .eq('trader_id', uid)
+      .order('payout_date', { ascending: false })
+    setPayouts((data ?? []) as Payout[])
+  }
 
   // Load saved config from profile
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      setUserId(user.id)
       const { data: profile } = await supabase.from('profiles').select('capital, nb_accounts, propfirm_name').eq('id', user.id).single()
       if (profile) {
         if (Number(profile.capital) > 0) setCapital(Number(profile.capital))
         if (profile.nb_accounts && profile.nb_accounts > 0) setNbAccounts(profile.nb_accounts)
         if (profile.propfirm_name) setFirm(profile.propfirm_name)
       }
+      await fetchPayouts(user.id)
       setLoaded(true)
     }
     load()
   }, [])
+
+  async function handleAddPayout() {
+    if (!userId || !payoutAmount) return
+    setSavingPayout(true)
+    await supabase.from('payouts').insert({
+      trader_id: userId,
+      amount: parseFloat(payoutAmount),
+      payout_date: payoutDate,
+      propfirm_name: firm,
+      account_label: payoutAccount,
+      notes: payoutNotes || null,
+    })
+    await fetchPayouts(userId)
+    setPayoutAmount('')
+    setPayoutNotes('')
+    setPayoutAccount('Compte #1')
+    setShowPayoutForm(false)
+    setSavingPayout(false)
+  }
+
+  async function handleDeletePayout(id: string) {
+    if (!userId) return
+    await supabase.from('payouts').delete().eq('id', id)
+    await fetchPayouts(userId)
+  }
+
+  const totalPayouts = payouts.reduce((s, p) => s + Number(p.amount), 0)
 
   // Save capital & nb_accounts to profile on change (only after initial load)
   const saveToProfile = useCallback(async (cap: number, nb: number, firmName: string) => {
@@ -220,34 +267,6 @@ export default function PropFirm() {
           </div>
         </div>
 
-        {/* Phase buttons — only for challenge */}
-        {accountType === 'challenge' && (
-          <div className="mb-5">
-            <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text3)' }}>
-              Phase
-            </label>
-            <div className="flex gap-2">
-              {([1, 2] as const).map(p => {
-                const active = phase === p
-                return (
-                  <button
-                    key={p}
-                    onClick={() => setPhase(p)}
-                    className="px-5 py-2 rounded-lg text-sm font-medium transition-all"
-                    style={{
-                      background: active ? 'var(--green)' : 'var(--bg3, #1c2333)',
-                      color: active ? '#000' : 'var(--text2)',
-                      border: active ? '1px solid var(--green)' : '1px solid var(--border)',
-                    }}
-                  >
-                    Phase {p}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Challenge rules — only for challenge */}
         {accountType === 'challenge' && (
           <div className="mb-5">
@@ -418,6 +437,166 @@ export default function PropFirm() {
           )
         })}
       </div>
+
+      {/* ── Payouts ── */}
+      <Card>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
+              Payouts
+            </h2>
+            {totalPayouts > 0 && (
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-full font-mono"
+                style={{ background: 'rgba(34,197,94,0.1)', color: 'var(--green)', border: '1px solid rgba(34,197,94,0.2)' }}
+              >
+                Total: {formatEur(totalPayouts)}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setShowPayoutForm(!showPayoutForm)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+            style={{ background: 'var(--green)', color: '#0f1117' }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nouveau payout
+          </button>
+        </div>
+
+        {/* Payout form */}
+        {showPayoutForm && (
+          <div
+            className="rounded-xl p-4 mb-5 border"
+            style={{ background: 'var(--bg3)', borderColor: 'rgba(34,197,94,0.15)' }}
+          >
+            <div className="grid grid-cols-4 gap-3 mb-3">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>
+                  Montant ($)
+                </label>
+                <input
+                  type="number"
+                  value={payoutAmount}
+                  onChange={e => setPayoutAmount(e.target.value)}
+                  placeholder="500"
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--bg2)', color: 'var(--text)', border: '1px solid var(--border)' }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={payoutDate}
+                  onChange={e => setPayoutDate(e.target.value)}
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--bg2)', color: 'var(--text)', border: '1px solid var(--border)' }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>
+                  Compte
+                </label>
+                <select
+                  value={payoutAccount}
+                  onChange={e => setPayoutAccount(e.target.value)}
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--bg2)', color: 'var(--text)', border: '1px solid var(--border)' }}
+                >
+                  {Array.from({ length: nbAccounts }, (_, i) => (
+                    <option key={i} value={`Compte #${i + 1}`}>Compte #{i + 1}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>
+                  Notes (optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={payoutNotes}
+                  onChange={e => setPayoutNotes(e.target.value)}
+                  placeholder="Premier retrait..."
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--bg2)', color: 'var(--text)', border: '1px solid var(--border)' }}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="secondary" size="sm" onClick={() => setShowPayoutForm(false)}>
+                Annuler
+              </Button>
+              <Button size="sm" onClick={handleAddPayout} loading={savingPayout} disabled={!payoutAmount}>
+                Ajouter le payout
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Payouts list */}
+        {payouts.length === 0 ? (
+          <p className="text-center py-8 text-sm" style={{ color: 'var(--text3)' }}>
+            Aucun payout enregistré
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {payouts.map(p => (
+              <div
+                key={p.id}
+                className="flex items-center gap-4 p-3 rounded-lg border"
+                style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
+              >
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="#22c55e" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold font-mono" style={{ color: 'var(--green)' }}>
+                      +{Number(p.amount).toLocaleString('fr-FR')} $
+                    </span>
+                    <span className="text-xs font-mono" style={{ color: 'var(--text3)' }}>
+                      {new Date(p.payout_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {p.propfirm_name && (
+                      <span className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--bg2)', color: 'var(--text3)' }}>
+                        {p.propfirm_name}
+                      </span>
+                    )}
+                    {p.account_label && (
+                      <span className="text-xs" style={{ color: 'var(--text3)' }}>{p.account_label}</span>
+                    )}
+                    {p.notes && (
+                      <span className="text-xs truncate" style={{ color: 'var(--text3)' }}>— {p.notes}</span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeletePayout(p.id)}
+                  className="text-xs px-2 py-1 rounded-lg transition-all hover:bg-red-500/10"
+                  style={{ color: 'var(--text3)' }}
+                  title="Supprimer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   )
 }

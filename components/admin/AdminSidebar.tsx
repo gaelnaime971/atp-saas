@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Avatar from '@/components/ui/Avatar'
 
 type AdminPage =
   | 'overview'
@@ -16,6 +18,7 @@ type AdminPage =
   | 'tasks'
   | 'broadcast'
   | 'bibliotheque'
+  | 'bilan'
   | 'settings'
 
 interface AdminSidebarProps {
@@ -107,6 +110,11 @@ const sections: NavSection[] = [
         label: 'Bibliothèque',
         icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
       },
+      {
+        id: 'bilan',
+        label: 'Bilan compétences',
+        icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+      },
     ],
   },
   {
@@ -123,6 +131,34 @@ const sections: NavSection[] = [
 
 export default function AdminSidebar({ activePage, onPageChange }: AdminSidebarProps) {
   const router = useRouter()
+  const [adminName, setAdminName] = useState<string>('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    let userId: string | null = null
+
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      userId = user.id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', user.id)
+        .single()
+      if (profile?.full_name) setAdminName(profile.full_name)
+      if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
+    }
+    fetchProfile()
+
+    const handleAvatarUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail.userId === userId) setAvatarUrl(detail.url)
+    }
+    window.addEventListener('avatar-updated', handleAvatarUpdate)
+    return () => window.removeEventListener('avatar-updated', handleAvatarUpdate)
+  }, [])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -190,6 +226,12 @@ export default function AdminSidebar({ activePage, onPageChange }: AdminSidebarP
 
       {/* Footer */}
       <div className="px-3 pb-5 border-t border-[rgba(255,255,255,0.07)] pt-4">
+        {adminName && (
+          <div className="px-3 mb-3 flex items-center gap-3">
+            <Avatar url={avatarUrl} name={adminName} size={32} />
+            <p className="text-sm font-medium truncate text-[#e8edf5]">{adminName}</p>
+          </div>
+        )}
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#5a6a82] hover:text-red-400 hover:bg-red-500/5 transition-all duration-150"

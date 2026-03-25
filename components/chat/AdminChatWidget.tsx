@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import { useUnreadCount } from '@/lib/hooks/useUnreadCount'
 import ChatBubble from './ChatBubble'
 import ChatPanel from './ChatPanel'
+import Avatar from '@/components/ui/Avatar'
 import type { Profile } from '@/lib/types'
 
-interface TraderPreview extends Pick<Profile, 'id' | 'full_name'> {
+interface TraderPreview extends Pick<Profile, 'id' | 'full_name' | 'avatar_url'> {
   lastMessageAt?: string
 }
 
@@ -23,7 +24,7 @@ export default function AdminChatWidget() {
     // Fetch all traders
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, full_name')
+      .select('id, full_name, avatar_url')
       .eq('role', 'trader')
       .order('full_name')
 
@@ -94,8 +95,8 @@ export default function AdminChatWidget() {
             position: 'fixed',
             bottom: 90,
             right: 24,
-            width: 460,
-            height: 420,
+            width: 540,
+            height: 520,
             background: 'var(--bg2)',
             border: '1px solid var(--border)',
             borderRadius: 12,
@@ -150,7 +151,7 @@ export default function AdminChatWidget() {
             {/* Trader list */}
             <div
               style={{
-                width: 140,
+                width: 170,
                 borderRight: '1px solid var(--border)',
                 overflowY: 'auto',
                 padding: '8px 6px',
@@ -200,25 +201,7 @@ export default function AdminChatWidget() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div
-                        style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          background: 'rgba(34,197,94,0.1)',
-                          border: '1px solid rgba(34,197,94,0.2)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 7,
-                          fontWeight: 700,
-                          color: 'var(--green)',
-                          fontFamily: "'DM Mono', monospace",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {getInitials(t.full_name)}
-                      </div>
+                      <Avatar url={t.avatar_url} name={t.full_name} size={26} />
                       <span
                         style={{
                           fontSize: 11,
@@ -256,7 +239,8 @@ export default function AdminChatWidget() {
                   currentUserId={userId}
                   partnerId={selectedTrader.id}
                   partnerName={selectedTrader.full_name ?? 'Trader'}
-                  messagesHeight={280}
+                  partnerAvatar={selectedTrader.avatar_url}
+                  messagesHeight={380}
                 />
               ) : (
                 <div

@@ -36,7 +36,7 @@ export default function MessageBubble({ message, isMine }: MessageBubbleProps) {
             border: isMine ? 'none' : '1px solid var(--border)',
             borderRadius: isMine ? '10px 10px 2px 10px' : '10px 10px 10px 2px',
             padding: '8px 11px',
-            fontSize: 12,
+            fontSize: 13,
             color: isMine ? '#0f1117' : 'var(--text)',
             lineHeight: 1.5,
             wordBreak: 'break-word',
@@ -47,7 +47,7 @@ export default function MessageBubble({ message, isMine }: MessageBubbleProps) {
       )}
       <div
         style={{
-          fontSize: 10,
+          fontSize: 11,
           color: 'var(--text3)',
           marginTop: 3,
           textAlign: isMine ? 'right' : 'left',

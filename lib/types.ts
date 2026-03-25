@@ -108,6 +108,33 @@ export interface InviteEmailProps {
   plan_type: string
 }
 
+export interface Payout {
+  id: string
+  trader_id: string
+  amount: number
+  payout_date: string
+  propfirm_name: string | null
+  account_label: string | null
+  notes: string | null
+  created_at: string
+}
+
+export interface SkillItem {
+  id: string
+  title: string
+  description: string
+  sort_order: number
+  created_at: string
+}
+
+export interface SkillProgress {
+  id: string
+  trader_id: string
+  skill_item_id: string
+  completed: boolean
+  completed_at: string | null
+}
+
 export interface Message {
   id: string
   sender_id: string

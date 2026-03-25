@@ -15,6 +15,7 @@ import Progression from '@/components/dashboard/pages/Progression'
 import Ressources from '@/components/dashboard/pages/Ressources'
 import Contrat from '@/components/dashboard/pages/Contrat'
 import Compte from '@/components/dashboard/pages/Compte'
+import BilanCompetences from '@/components/dashboard/pages/BilanCompetences'
 import TraderChatWidget from '@/components/chat/TraderChatWidget'
 
 const pageTitles: Record<DashboardPage, string> = {
@@ -29,6 +30,7 @@ const pageTitles: Record<DashboardPage, string> = {
   progression: 'Ma progression',
   ressources: 'Ressources ATP',
   contrat: 'Contrat',
+  bilan: 'Bilan de compétences',
   compte: 'Mon compte',
 }
 
@@ -48,6 +50,7 @@ export default function TraderDashboard() {
       case 'progression': return <Progression />
       case 'ressources': return <Ressources />
       case 'contrat': return <Contrat />
+      case 'bilan': return <BilanCompetences />
       case 'compte': return <Compte />
       default: return <Dashboard />
     }

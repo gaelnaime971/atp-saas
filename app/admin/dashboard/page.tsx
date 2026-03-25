@@ -15,9 +15,10 @@ import Notes from '@/components/admin/pages/Notes'
 import Reports from '@/components/admin/pages/Reports'
 import Tasks from '@/components/admin/pages/Tasks'
 import Broadcast from '@/components/admin/pages/Broadcast'
+import BilanCompetences from '@/components/admin/pages/BilanCompetences'
 import AdminChatWidget from '@/components/chat/AdminChatWidget'
 
-type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks'
+type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks'
 
 const pageTitles: Record<AdminPage, string> = {
   overview: 'Vue Globale',
@@ -32,6 +33,7 @@ const pageTitles: Record<AdminPage, string> = {
   tasks: 'Tâches',
   broadcast: 'Broadcast',
   bibliotheque: 'Bibliothèque',
+  bilan: 'Bilan de compétences',
   settings: 'Paramètres',
 }
 
@@ -63,6 +65,7 @@ export default function AdminDashboard() {
       case 'tasks': return <Tasks />
       case 'broadcast': return <Broadcast />
       case 'bibliotheque': return <Bibliotheque />
+      case 'bilan': return <BilanCompetences />
       case 'settings': return <Settings />
       default: return <Overview />
     }

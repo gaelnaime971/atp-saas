@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useChat } from '@/lib/hooks/useChat'
 import MessageBubble from './MessageBubble'
+import Avatar from '@/components/ui/Avatar'
 import dynamic from 'next/dynamic'
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false })
@@ -12,6 +13,7 @@ interface ChatPanelProps {
   currentUserId: string
   partnerId: string
   partnerName: string
+  partnerAvatar?: string | null
   messagesHeight?: number
 }
 
@@ -19,6 +21,7 @@ export default function ChatPanel({
   currentUserId,
   partnerId,
   partnerName,
+  partnerAvatar,
   messagesHeight = 300,
 }: ChatPanelProps) {
   const { messages, loading, sendMessage, markAsRead } = useChat(currentUserId, partnerId)
@@ -104,30 +107,8 @@ export default function ChatPanel({
           background: 'var(--bg3)',
         }}
       >
-        <div
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: '50%',
-            background: 'rgba(34,197,94,0.1)',
-            border: '1px solid rgba(34,197,94,0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 9,
-            fontWeight: 700,
-            color: 'var(--green)',
-            fontFamily: "'DM Mono', monospace",
-          }}
-        >
-          {partnerName
-            .split(' ')
-            .map((w) => w[0])
-            .join('')
-            .slice(0, 2)
-            .toUpperCase()}
-        </div>
-        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)' }}>
+        <Avatar url={partnerAvatar} name={partnerName} size={30} />
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
           {partnerName}
         </span>
       </div>
@@ -284,11 +265,11 @@ export default function ChatPanel({
             border: '1px solid var(--border2)',
             borderRadius: 8,
             padding: '7px 10px',
-            fontSize: 12,
+            fontSize: 13,
             color: 'var(--text)',
             resize: 'none',
-            minHeight: 34,
-            maxHeight: 80,
+            minHeight: 38,
+            maxHeight: 90,
             fontFamily: "'Outfit', sans-serif",
             outline: 'none',
             lineHeight: 1.4,

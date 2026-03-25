@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import AvatarUpload from '@/components/ui/AvatarUpload'
 
 interface TraderInfo {
   id: string
@@ -54,6 +55,9 @@ export default function Settings() {
   const [config, setConfig] = useState<AppConfig>(defaultConfig)
   const [configSaved, setConfigSaved] = useState(false)
   const [tab, setTab] = useState<'traders' | 'invites' | 'config'>('traders')
+  const [adminId, setAdminId] = useState<string | null>(null)
+  const [adminName, setAdminName] = useState<string | null>(null)
+  const [adminAvatar, setAdminAvatar] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -63,6 +67,18 @@ export default function Settings() {
       const stored = localStorage.getItem(SETTINGS_KEY)
       if (stored) setConfig({ ...defaultConfig, ...JSON.parse(stored) })
     } catch {}
+    // Fetch admin profile
+    async function fetchAdmin() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      setAdminId(user.id)
+      const { data } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', user.id).single()
+      if (data) {
+        setAdminName(data.full_name)
+        setAdminAvatar(data.avatar_url)
+      }
+    }
+    fetchAdmin()
   }, [])
 
   async function fetchAll() {
@@ -170,9 +186,26 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-[#e8edf5]">Paramètres</h1>
-        <p className="text-[#5a6a82] text-sm mt-1">Gérer les traders, invitations et configuration</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-[#e8edf5]">Paramètres</h1>
+          <p className="text-[#5a6a82] text-sm mt-1">Gérer les traders, invitations et configuration</p>
+        </div>
+        {adminId && (
+          <div className="flex items-center gap-4">
+            <AvatarUpload
+              userId={adminId}
+              currentUrl={adminAvatar}
+              name={adminName}
+              size={48}
+              onUploaded={(url) => setAdminAvatar(url)}
+            />
+            <div>
+              <p className="text-sm font-medium text-[#e8edf5]">{adminName}</p>
+              <p className="text-xs text-[#5a6a82]">Modifier ma photo</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

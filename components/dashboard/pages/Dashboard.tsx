@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import type { TradingSession, Profile } from '@/lib/types'
+import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
 
@@ -21,7 +22,12 @@ export default function Dashboard() {
   const [kpis, setKpis] = useState<KPIs>({ totalPnl: 0, winRate: 0, profitFactor: 0, sessionCount: 0 })
   const [sessions, setSessions] = useState<TradingSession[]>([])
   const [loading, setLoading] = useState(true)
+  const [showWelcome, setShowWelcome] = useState(false)
+  const [nbAccounts, setNbAccounts] = useState(1)
+  const [viewMode, setViewMode] = useState<'solo' | 'global'>('solo')
   const supabase = createClient()
+
+  const multiplier = viewMode === 'global' ? nbAccounts : 1
 
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
@@ -45,7 +51,11 @@ export default function Dashboard() {
           .eq('id', user.id)
           .single()
 
-        if (prof) setProfile(prof as Profile)
+        if (prof) {
+          setProfile(prof as Profile)
+          if (!prof.onboarded) setShowWelcome(true)
+          if (prof.nb_accounts && prof.nb_accounts > 1) setNbAccounts(prof.nb_accounts)
+        }
 
         // Fetch all trading sessions for this trader
         const { data: allSessions } = await supabase
@@ -109,19 +119,19 @@ export default function Dashboard() {
     }
 
     return {
-      width: 48,
-      minHeight: 48,
+      width: 90,
+      minHeight: 90,
       display: 'flex',
       flexDirection: 'column' as const,
       alignItems: 'center',
       justifyContent: 'center',
       background: bg,
       border: `1px solid ${border}`,
-      borderRadius: 6,
+      borderRadius: 8,
       color,
-      fontSize: 10,
-      fontWeight: 600,
-      gap: 2,
+      fontSize: 16,
+      fontWeight: 700,
+      gap: 4,
       cursor: 'default',
       boxShadow: isToday ? `0 0 8px ${border}, 0 0 2px ${border}` : undefined,
       outline: isToday ? `2px solid ${border}` : undefined,
@@ -144,27 +154,142 @@ export default function Dashboard() {
   }
 
   if (loading) {
+    const shimmer = {
+      background: 'linear-gradient(90deg, var(--bg3) 25%, rgba(255,255,255,0.04) 50%, var(--bg3) 75%)',
+      backgroundSize: '200% 100%',
+      animation: 'shimmer 1.5s infinite',
+      borderRadius: 8,
+    } as React.CSSProperties
+
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: 'var(--text2)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 18, marginBottom: 8 }}>Chargement...</div>
+      <>
+        <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Welcome skeleton */}
+          <div>
+            <div style={{ ...shimmer, width: 260, height: 28, marginBottom: 8 }} />
+            <div style={{ ...shimmer, width: 180, height: 16 }} />
+          </div>
+
+          {/* KPI cards skeleton */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            {[1, 2, 3, 4].map(i => (
+              <div
+                key={i}
+                style={{
+                  background: 'var(--bg2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 12,
+                  padding: '20px 18px',
+                }}
+              >
+                <div style={{ ...shimmer, width: 80, height: 12, marginBottom: 12 }} />
+                <div style={{ ...shimmer, width: 120, height: 32 }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Heatmap skeleton */}
+          <div
+            style={{
+              background: 'var(--bg2)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '20px 18px',
+            }}
+          >
+            <div style={{ ...shimmer, width: 120, height: 18, marginBottom: 16 }} />
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {Array.from({ length: 14 }).map((_, i) => (
+                <div key={i} style={{ ...shimmer, width: 48, height: 48 }} />
+              ))}
+            </div>
+          </div>
+
+          {/* Charts skeleton */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+            {[1, 2].map(i => (
+              <div
+                key={i}
+                style={{
+                  background: 'var(--bg2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 12,
+                  padding: '20px 18px',
+                }}
+              >
+                <div style={{ ...shimmer, width: 140, height: 18, marginBottom: 16 }} />
+                <div style={{ ...shimmer, width: '100%', height: 200 }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Table skeleton */}
+          <div
+            style={{
+              background: 'var(--bg2)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '20px 18px',
+            }}
+          >
+            <div style={{ ...shimmer, width: 200, height: 18, marginBottom: 16 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{ ...shimmer, width: '100%', height: 36 }} />
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {showWelcome && profile && (
+        <WelcomeModal
+          userId={profile.id}
+          firstName={(profile.full_name ?? 'Trader').split(' ')[0]}
+          onClose={() => setShowWelcome(false)}
+        />
+      )}
       {/* Welcome bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-            Bonjour, {profile?.full_name ?? 'Trader'}
+            Bonjour, {profile?.full_name ?? 'Trader'} 👋
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text3)', margin: '4px 0 0 0', textTransform: 'capitalize' }}>
             {dateDisplay}
           </p>
         </div>
+        {nbAccounts > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: 3 }}>
+            {(['solo', 'global'] as const).map(mode => {
+              const active = viewMode === mode
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    background: active ? 'var(--green)' : 'transparent',
+                    color: active ? '#0f1117' : 'var(--text3)',
+                  }}
+                >
+                  {mode === 'solo' ? '1 compte' : `${nbAccounts} comptes`}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* KPI Cards */}
@@ -176,9 +301,9 @@ export default function Dashboard() {
           <div style={{
             fontSize: 28,
             fontWeight: 700,
-            color: kpis.totalPnl >= 0 ? 'var(--green)' : 'var(--red)',
+            color: kpis.totalPnl * multiplier >= 0 ? 'var(--green)' : 'var(--red)',
           }}>
-            {kpis.totalPnl >= 0 ? '+' : ''}{kpis.totalPnl.toFixed(2)}$
+            {kpis.totalPnl * multiplier >= 0 ? '+' : ''}{(kpis.totalPnl * multiplier).toFixed(2)}$
           </div>
         </Card>
 
@@ -220,9 +345,9 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text3)', fontSize: 13 }}>Aucune session enregistrée</p>
           ) : (
             heatmapSessions.map(s => (
-              <div key={s.id} style={getCellStyle(s)} title={`${s.session_date} — P&L: ${Number(s.pnl).toFixed(2)}$`}>
-                <span style={{ fontSize: 8, opacity: 0.7 }}>{formatDate(s.session_date)}</span>
-                <span>{formatPnl(Number(s.pnl))}</span>
+              <div key={s.id} style={getCellStyle(s)} title={`${s.session_date} — P&L: ${(Number(s.pnl) * multiplier).toFixed(2)}$`}>
+                <span style={{ fontSize: 12, opacity: 0.7 }}>{formatDate(s.session_date)}</span>
+                <span>{formatPnl(Number(s.pnl) * multiplier)}</span>
               </div>
             ))
           )}
@@ -240,7 +365,7 @@ export default function Dashboard() {
               const sorted = [...sessions].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
               const cumulative: number[] = []
-              sorted.reduce((acc, s) => { const v = acc + Number(s.pnl); cumulative.push(v); return v }, 0)
+              sorted.reduce((acc, s) => { const v = acc + Number(s.pnl) * multiplier; cumulative.push(v); return v }, 0)
               return (
                 <Line
                   data={{
@@ -282,7 +407,7 @@ export default function Dashboard() {
             {(() => {
               const sorted = [...sessions].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
-              const pnls = sorted.map(s => Number(s.pnl))
+              const pnls = sorted.map(s => Number(s.pnl) * multiplier)
               return (
                 <Bar
                   data={{
@@ -348,7 +473,7 @@ export default function Dashboard() {
                 </tr>
               ) : (
                 recentSessions.map(s => {
-                  const pnl = Number(s.pnl)
+                  const pnl = Number(s.pnl) * multiplier
                   const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--amber)'
                   const meta = parseSetup(s.setup)
                   const rValue = meta?.r_value
