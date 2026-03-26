@@ -119,6 +119,17 @@ export interface Payout {
   created_at: string
 }
 
+export interface TraderAccount {
+  id: string
+  trader_id: string
+  label: string
+  propfirm_name: string | null
+  capital: number
+  initial_balance: number
+  account_type: 'challenge' | 'funded' | 'personal'
+  created_at: string
+}
+
 export interface SkillItem {
   id: string
   title: string

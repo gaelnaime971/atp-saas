@@ -1,14 +1,49 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import { createClient } from '@/lib/supabase/client'
+import type { TraderAccount } from '@/lib/types'
 
-const INSTRUMENTS = ['ES', 'NQ', 'DAX', 'YM', 'MYM', 'MNQ']
-const SESSION_TYPES = ['Live', 'Paper', 'Backtest'] as const
-const ACCOUNT_MODES = ['Tous comptes', 'Sélection', 'Un seul'] as const
+const INSTRUMENTS = ['ES', 'NQ', 'DAX', 'YM', 'MYM', 'MNQ', 'GC', 'MGC']
 const MOODS = ['😴', '😬', '😐', '😌', '🎯', '🔥'] as const
+
+const TOOLTIPS: Record<string, string> = {
+  date: 'Date à laquelle tu as effectué ta session de trading.',
+  accounts: 'Sélectionne le(s) compte(s) sur lesquels tu as tradé pendant cette session.',
+  instrument: 'Le contrat futures que tu as tradé (ES = S&P 500, NQ = Nasdaq, etc.).',
+  trades_count: 'Le nombre total de trades (entrées) que tu as pris pendant cette session.',
+  pnl: 'Ton profit ou perte net(te) en dollars sur cette session, tous trades confondus.',
+  r_value: 'Le résultat exprimé en multiple de ton risque initial (R). Ex: si tu risquais 100$ et gagné 250$, tu as fait +2.5R.',
+  win_rate: 'Le pourcentage de trades gagnants sur cette session. Ex: 3 trades gagnants sur 5 = 60%.',
+  max_drawdown: 'La perte maximale atteinte en cours de session avant de remonter (en $).',
+  plan_score: 'À quel point tu as respecté ton plan de trading ATP (0 = pas du tout, 10 = parfaitement).',
+  mood: 'Ton état émotionnel général pendant la session.',
+  technical: 'Décris ta lecture du marché, les setups identifiés, les niveaux clés utilisés.',
+  psychological: 'Comment tu t\'es senti : stress, confiance, discipline, impulsivité, etc.',
+  improvement: 'Un point concret à améliorer pour ta prochaine session.',
+  rating: 'Ta note globale pour cette session (qualité d\'exécution, discipline, résultat).',
+}
+
+function Tooltip({ text }: { text: string }) {
+  return (
+    <span className="relative inline-block ml-1 group">
+      <span
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold cursor-help"
+        style={{ background: 'var(--bg3)', color: 'var(--text3)', border: '1px solid var(--border)' }}
+      >
+        ?
+      </span>
+      <span
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-50 w-56"
+        style={{ background: '#1c2333', color: 'var(--text)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
+      >
+        {text}
+      </span>
+    </span>
+  )
+}
 
 function getPlanTag(value: number): { label: string; color: string } {
   if (value < 5) return { label: 'Hors plan', color: '#ef4444' }
@@ -21,9 +56,9 @@ function todayISO() {
 }
 
 export default function Session() {
+  const [accounts, setAccounts] = useState<TraderAccount[]>([])
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([])
   const [date, setDate] = useState(todayISO())
-  const [sessionType, setSessionType] = useState<typeof SESSION_TYPES[number]>('Live')
-  const [accountMode, setAccountMode] = useState<typeof ACCOUNT_MODES[number]>('Tous comptes')
   const [instrument, setInstrument] = useState('ES')
   const [tradesCount, setTradesCount] = useState<number>(0)
   const [pnl, setPnl] = useState<number>(0)
@@ -39,20 +74,39 @@ export default function Session() {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function loadAccounts() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('trader_accounts').select('*').eq('trader_id', user.id).order('created_at', { ascending: true })
+      if (data) {
+        setAccounts(data as TraderAccount[])
+        setSelectedAccountIds(data.map((a: any) => a.id))
+      }
+    }
+    loadAccounts()
+  }, [])
+
+  const toggleAccount = (id: string) => {
+    setSelectedAccountIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
   const planTag = getPlanTag(planScore)
 
   async function handleSubmit() {
     setLoading(true)
     try {
-      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Non authentifié')
 
       const result: 'win' | 'loss' | 'breakeven' = pnl > 0 ? 'win' : pnl < 0 ? 'loss' : 'breakeven'
 
       const extraData = {
-        session_type: sessionType,
-        account_mode: accountMode,
+        account_ids: selectedAccountIds,
         r_value: rValue,
         win_rate: winRate,
         max_drawdown: maxDrawdown,
@@ -91,16 +145,18 @@ export default function Session() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '10px 14px',
-    background: '#0d1117',
+    background: 'var(--bg3, #1c2333)',
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: '8px',
     color: '#e8edf5',
     fontSize: '14px',
     outline: 'none',
+    colorScheme: 'dark',
   }
 
   const labelStyle: React.CSSProperties = {
-    display: 'block',
+    display: 'flex',
+    alignItems: 'center',
     fontSize: '13px',
     fontWeight: 500,
     color: '#a0aec0',
@@ -145,7 +201,7 @@ export default function Session() {
 
           {/* Date */}
           <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Date</label>
+            <label style={labelStyle}>Date <Tooltip text={TOOLTIPS.date} /></label>
             <input
               type="date"
               value={date}
@@ -154,64 +210,41 @@ export default function Session() {
             />
           </div>
 
-          {/* Session Type */}
+          {/* Accounts selection */}
           <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Type</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {SESSION_TYPES.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setSessionType(t)}
-                  style={{
-                    flex: 1,
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    border: sessionType === t ? '1px solid #22c55e' : '1px solid rgba(255,255,255,0.1)',
-                    background: sessionType === t ? 'rgba(34,197,94,0.15)' : '#0d1117',
-                    color: sessionType === t ? '#22c55e' : '#a0aec0',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Account Mode */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Compte</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {ACCOUNT_MODES.map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setAccountMode(m)}
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: accountMode === m ? '1px solid #22c55e' : '1px solid rgba(255,255,255,0.1)',
-                    background: accountMode === m ? 'rgba(34,197,94,0.15)' : '#0d1117',
-                    color: accountMode === m ? '#22c55e' : '#a0aec0',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
+            <label style={labelStyle}>Comptes tradés <Tooltip text={TOOLTIPS.accounts} /></label>
+            {accounts.length === 0 ? (
+              <p className="text-xs py-2" style={{ color: 'var(--text3)' }}>
+                Aucun compte configuré. Ajoute tes comptes dans la page Prop Firm.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {accounts.map(acc => {
+                  const selected = selectedAccountIds.includes(acc.id)
+                  const typeColor = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
+                  return (
+                    <button
+                      key={acc.id}
+                      onClick={() => toggleAccount(acc.id)}
+                      className="px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                      style={{
+                        background: selected ? `${typeColor}15` : 'var(--bg3, #1c2333)',
+                        border: `2px solid ${selected ? typeColor : 'rgba(255,255,255,0.1)'}`,
+                        color: selected ? typeColor : '#a0aec0',
+                      }}
+                    >
+                      {acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {/* Instrument + Trades count */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             <div>
-              <label style={labelStyle}>Instrument</label>
+              <label style={labelStyle}>Instrument <Tooltip text={TOOLTIPS.instrument} /></label>
               <select
                 value={instrument}
                 onChange={(e) => setInstrument(e.target.value)}
@@ -223,7 +256,7 @@ export default function Session() {
               </select>
             </div>
             <div>
-              <label style={labelStyle}>Nombre de trades</label>
+              <label style={labelStyle}>Nombre de trades <Tooltip text={TOOLTIPS.trades_count} /></label>
               <input
                 type="number"
                 min={0}
@@ -237,7 +270,7 @@ export default function Session() {
           {/* P&L + R */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             <div>
-              <label style={labelStyle}>P&L (€)</label>
+              <label style={labelStyle}>P&L ($) <Tooltip text={TOOLTIPS.pnl} /></label>
               <input
                 type="number"
                 value={pnl}
@@ -246,7 +279,7 @@ export default function Session() {
               />
             </div>
             <div>
-              <label style={labelStyle}>R obtenu</label>
+              <label style={labelStyle}>R obtenu <Tooltip text={TOOLTIPS.r_value} /></label>
               <input
                 type="number"
                 step={0.1}
@@ -257,34 +290,23 @@ export default function Session() {
             </div>
           </div>
 
-          {/* Win Rate + Max DD */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-            <div>
-              <label style={labelStyle}>Win Rate (%)</label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={winRate}
-                onChange={(e) => setWinRate(Number(e.target.value))}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Max Drawdown (€)</label>
-              <input
-                type="number"
-                value={maxDrawdown}
-                onChange={(e) => setMaxDrawdown(Number(e.target.value))}
-                style={inputStyle}
-              />
-            </div>
+          {/* Win Rate */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={labelStyle}>Win Rate (%) <Tooltip text={TOOLTIPS.win_rate} /></label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={winRate}
+              onChange={(e) => setWinRate(Number(e.target.value))}
+              style={inputStyle}
+            />
           </div>
 
           {/* Plan Score Slider */}
           <div style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label style={{ ...labelStyle, marginBottom: 0 }}>Respect du plan ATP</label>
+              <label style={{ ...labelStyle, marginBottom: 0 }}>Respect du plan ATP <Tooltip text={TOOLTIPS.plan_score} /></label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '16px', fontWeight: 700, color: '#e8edf5' }}>{planScore}</span>
                 <span style={{
@@ -315,7 +337,7 @@ export default function Session() {
 
           {/* Mood */}
           <div>
-            <label style={labelStyle}>Humeur du jour</label>
+            <label style={labelStyle}>Humeur du jour <Tooltip text={TOOLTIPS.mood} /></label>
             <div style={{ display: 'flex', gap: '8px' }}>
               {MOODS.map((m) => (
                 <button
@@ -326,7 +348,7 @@ export default function Session() {
                     padding: '10px 0',
                     borderRadius: '10px',
                     border: mood === m ? '2px solid #22c55e' : '1px solid rgba(255,255,255,0.1)',
-                    background: mood === m ? 'rgba(34,197,94,0.1)' : '#0d1117',
+                    background: mood === m ? 'rgba(34,197,94,0.1)' : 'var(--bg3, #1c2333)',
                     fontSize: '22px',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
@@ -348,7 +370,7 @@ export default function Session() {
 
           {/* Technical Analysis */}
           <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Analyse technique</label>
+            <label style={labelStyle}>Analyse technique <Tooltip text={TOOLTIPS.technical} /></label>
             <textarea
               value={technicalAnalysis}
               onChange={(e) => setTechnicalAnalysis(e.target.value)}
@@ -359,7 +381,7 @@ export default function Session() {
 
           {/* Psychological Analysis */}
           <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Analyse psychologique</label>
+            <label style={labelStyle}>Analyse psychologique <Tooltip text={TOOLTIPS.psychological} /></label>
             <textarea
               value={psychologicalAnalysis}
               onChange={(e) => setPsychologicalAnalysis(e.target.value)}
@@ -370,7 +392,7 @@ export default function Session() {
 
           {/* Improvement */}
           <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Point d&apos;amélioration</label>
+            <label style={labelStyle}>Point d&apos;amélioration <Tooltip text={TOOLTIPS.improvement} /></label>
             <textarea
               value={improvement}
               onChange={(e) => setImprovement(e.target.value)}
@@ -381,7 +403,7 @@ export default function Session() {
 
           {/* Star Rating */}
           <div style={{ marginBottom: '24px' }}>
-            <label style={labelStyle}>Note globale</label>
+            <label style={labelStyle}>Note globale <Tooltip text={TOOLTIPS.rating} /></label>
             <div style={{ display: 'flex', gap: '6px' }}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
