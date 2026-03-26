@@ -1,28 +1,37 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+
+type TaskStatus = 'todo' | 'in_progress' | 'done'
 
 interface AdminTask {
   id: string
   title: string
   trader_id: string | null
   due_date: string | null
-  done: boolean
+  status: TaskStatus
   created_at: string
   trader_name?: string
 }
+
+const COLUMNS: { id: TaskStatus; label: string; color: string; bgActive: string }[] = [
+  { id: 'todo', label: 'À faire', color: '#60a5fa', bgActive: 'rgba(96,165,250,0.08)' },
+  { id: 'in_progress', label: 'En cours', color: '#f59e0b', bgActive: 'rgba(245,158,11,0.08)' },
+  { id: 'done', label: 'Terminée', color: '#22c55e', bgActive: 'rgba(34,197,94,0.08)' },
+]
 
 export default function Tasks() {
   const [tasks, setTasks] = useState<AdminTask[]>([])
   const [traders, setTraders] = useState<{ id: string; full_name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [showCompleted, setShowCompleted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [form, setForm] = useState({ title: '', trader_id: '', due_date: '' })
+  const [form, setForm] = useState({ title: '', trader_id: '', due_date: '', status: 'todo' as TaskStatus })
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null)
   const supabase = createClient()
 
   const fetchData = useCallback(async () => {
@@ -30,14 +39,14 @@ export default function Tasks() {
       supabase
         .from('admin_tasks')
         .select('*, profiles(full_name)')
-        .order('done', { ascending: true })
-        .order('due_date', { ascending: true, nullsFirst: false }),
+        .order('created_at', { ascending: false }),
       supabase.from('profiles').select('id, full_name').eq('role', 'trader'),
     ])
 
     if (taskData) {
       setTasks(taskData.map((t: any) => ({
         ...t,
+        status: t.status || (t.done ? 'done' : 'todo'),
         trader_name: t.profiles?.full_name ?? null,
       })))
     }
@@ -57,42 +66,71 @@ export default function Tasks() {
       title: form.title.trim(),
       trader_id: form.trader_id || null,
       due_date: form.due_date || null,
-      done: false,
+      done: form.status === 'done',
+      status: form.status,
     })
-    setForm({ title: '', trader_id: '', due_date: '' })
+    setForm({ title: '', trader_id: '', due_date: '', status: 'todo' })
     setShowForm(false)
     setSubmitting(false)
     fetchData()
   }
 
-  async function toggleDone(task: AdminTask) {
-    await supabase.from('admin_tasks').update({ done: !task.done }).eq('id', task.id)
-    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, done: !t.done } : t))
+  async function updateStatus(id: string, status: TaskStatus) {
+    await supabase.from('admin_tasks').update({ status, done: status === 'done' }).eq('id', id)
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status, done: status === 'done' } : t))
   }
 
   async function deleteTask(id: string) {
+    if (!confirm('Supprimer cette tâche ?')) return
     await supabase.from('admin_tasks').delete().eq('id', id)
     setTasks(prev => prev.filter(t => t.id !== id))
   }
 
+  // Drag & Drop handlers
+  function onDragStart(e: React.DragEvent, taskId: string) {
+    setDraggedId(taskId)
+    e.dataTransfer.effectAllowed = 'move'
+    // Make drag image semi-transparent
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5'
+    }
+  }
+
+  function onDragEnd(e: React.DragEvent) {
+    setDraggedId(null)
+    setDragOverCol(null)
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1'
+    }
+  }
+
+  function onDragOver(e: React.DragEvent, colId: TaskStatus) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverCol(colId)
+  }
+
+  function onDragLeave() {
+    setDragOverCol(null)
+  }
+
+  function onDrop(e: React.DragEvent, colId: TaskStatus) {
+    e.preventDefault()
+    setDragOverCol(null)
+    if (draggedId) {
+      updateStatus(draggedId, colId)
+      setDraggedId(null)
+    }
+  }
+
   function dueDateColor(dateStr: string | null): string {
-    if (!dateStr) return 'text-[#5a6a82]'
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const due = new Date(dateStr)
-    due.setHours(0, 0, 0, 0)
-    if (due < today) return 'text-red-400'
-    if (due.getTime() === today.getTime()) return 'text-amber-400'
-    return 'text-green-400'
+    if (!dateStr) return '#5a6a82'
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const due = new Date(dateStr); due.setHours(0, 0, 0, 0)
+    if (due < today) return '#ef4444'
+    if (due.getTime() === today.getTime()) return '#f59e0b'
+    return '#5a6a82'
   }
-
-  function dueDateLabel(dateStr: string | null): string {
-    if (!dateStr) return ''
-    return new Date(dateStr).toLocaleDateString('fr-FR')
-  }
-
-  const pending = tasks.filter(t => !t.done)
-  const completed = tasks.filter(t => t.done)
 
   if (loading) {
     return (
@@ -108,7 +146,9 @@ export default function Tasks() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-[#e8edf5]">Tâches</h1>
-          <p className="text-[#5a6a82] text-sm mt-1">Gérez vos tâches administratives</p>
+          <p className="text-[#5a6a82] text-sm mt-1">
+            {tasks.filter(t => t.status !== 'done').length} en cours · {tasks.filter(t => t.status === 'done').length} terminée{tasks.filter(t => t.status === 'done').length !== 1 ? 's' : ''}
+          </p>
         </div>
         <Button onClick={() => setShowForm(!showForm)}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,7 +194,17 @@ export default function Tasks() {
                 className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               />
             </div>
-            <div className="col-span-2 flex gap-3 justify-end">
+            <div>
+              <label className="block text-xs text-[#5a6a82] mb-1.5">Colonne</label>
+              <select
+                value={form.status}
+                onChange={e => setForm(f => ({ ...f, status: e.target.value as TaskStatus }))}
+                className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+              >
+                {COLUMNS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+            </div>
+            <div className="flex items-end gap-3 justify-end">
               <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Annuler</Button>
               <Button type="submit" loading={submitting}>Ajouter</Button>
             </div>
@@ -162,108 +212,101 @@ export default function Tasks() {
         </Card>
       )}
 
-      {/* Pending tasks */}
-      <div>
-        <h2 className="text-sm font-semibold text-[#e8edf5] mb-3 flex items-center gap-2">
-          À faire
-          <span className="text-xs font-normal text-[#5a6a82]">({pending.length})</span>
-        </h2>
-        {pending.length === 0 ? (
-          <Card>
-            <p className="text-[#5a6a82] text-sm text-center py-6">Aucune tâche en cours</p>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {pending.map(task => (
-              <Card key={task.id} className="group flex items-center gap-3 py-3">
-                <button
-                  onClick={() => toggleDone(task)}
-                  className="w-5 h-5 rounded border border-[rgba(255,255,255,0.15)] flex items-center justify-center hover:border-green-500/50 transition-colors flex-shrink-0"
-                >
-                  {/* empty checkbox */}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#e8edf5]">{task.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {task.trader_name && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                        {task.trader_name}
-                      </span>
-                    )}
-                    {task.due_date && (
-                      <span className={`text-xs ${dueDateColor(task.due_date)}`}>
-                        {dueDateLabel(task.due_date)}
-                      </span>
-                    )}
-                  </div>
+      {/* Kanban board */}
+      <div className="grid grid-cols-3 gap-4" style={{ minHeight: 400 }}>
+        {COLUMNS.map(col => {
+          const colTasks = tasks.filter(t => t.status === col.id)
+          const isDragOver = dragOverCol === col.id
+          return (
+            <div
+              key={col.id}
+              onDragOver={e => onDragOver(e, col.id)}
+              onDragLeave={onDragLeave}
+              onDrop={e => onDrop(e, col.id)}
+              className="rounded-xl flex flex-col transition-all duration-200"
+              style={{
+                background: isDragOver ? col.bgActive : 'var(--bg2)',
+                border: `1px solid ${isDragOver ? col.color + '40' : 'var(--border)'}`,
+              }}
+            >
+              {/* Column header */}
+              <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: col.color }} />
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: col.color }}>
+                    {col.label}
+                  </span>
                 </div>
-                <button
-                  onClick={() => deleteTask(task.id)}
-                  className="opacity-0 group-hover:opacity-100 w-8 h-8 flex items-center justify-center rounded-lg text-[#5a6a82] hover:text-red-400 hover:bg-red-500/10 transition-all flex-shrink-0"
+                <span
+                  className="text-xs font-bold px-1.5 py-0.5 rounded"
+                  style={{ background: col.color + '15', color: col.color }}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                  {colTasks.length}
+                </span>
+              </div>
 
-      {/* Completed tasks */}
-      <div>
-        <button
-          onClick={() => setShowCompleted(!showCompleted)}
-          className="flex items-center gap-2 text-sm font-semibold text-[#5a6a82] hover:text-[#a0aec0] transition-colors mb-3"
-        >
-          <svg className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-          Terminées
-          <span className="text-xs font-normal">({completed.length})</span>
-        </button>
-
-        {showCompleted && (
-          <div className="space-y-2">
-            {completed.length === 0 ? (
-              <Card>
-                <p className="text-[#5a6a82] text-sm text-center py-6">Aucune tâche terminée</p>
-              </Card>
-            ) : (
-              completed.map(task => (
-                <Card key={task.id} className="group flex items-center gap-3 py-3 opacity-60">
-                  <button
-                    onClick={() => toggleDone(task)}
-                    className="w-5 h-5 rounded border border-green-500/30 bg-green-500/10 flex items-center justify-center flex-shrink-0"
+              {/* Tasks */}
+              <div className="flex-1 p-3 space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 340px)' }}>
+                {colTasks.length === 0 && (
+                  <div
+                    className="text-center py-8 rounded-lg border-2 border-dashed"
+                    style={{ borderColor: isDragOver ? col.color + '40' : 'var(--border)', color: 'var(--text3)' }}
                   >
-                    <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[#a0aec0] line-through">{task.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs">
+                      {isDragOver ? 'Déposer ici' : 'Aucune tâche'}
+                    </p>
+                  </div>
+                )}
+                {colTasks.map(task => (
+                  <div
+                    key={task.id}
+                    draggable
+                    onDragStart={e => onDragStart(e, task.id)}
+                    onDragEnd={onDragEnd}
+                    className="p-3 rounded-lg border group cursor-grab active:cursor-grabbing transition-all hover:border-[rgba(255,255,255,0.15)]"
+                    style={{
+                      background: 'var(--bg3)',
+                      borderColor: draggedId === task.id ? col.color + '40' : 'var(--border)',
+                    }}
+                  >
+                    <p
+                      className="text-sm font-medium mb-1.5"
+                      style={{
+                        color: col.id === 'done' ? 'var(--text3)' : 'var(--text)',
+                        textDecorationLine: col.id === 'done' ? 'line-through' : 'none',
+                      }}
+                    >
+                      {task.title}
+                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
                       {task.trader_name && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        <span
+                          className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                          style={{ background: 'rgba(96,165,250,0.1)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.2)' }}
+                        >
                           {task.trader_name}
                         </span>
                       )}
+                      {task.due_date && (
+                        <span className="text-[10px] font-mono" style={{ color: dueDateColor(task.due_date) }}>
+                          {new Date(task.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => deleteTask(task.id)}
+                        className="ml-auto opacity-0 group-hover:opacity-100 p-1 rounded transition-all hover:bg-[rgba(239,68,68,0.1)]"
+                      >
+                        <svg className="w-3 h-3" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    className="opacity-0 group-hover:opacity-100 w-8 h-8 flex items-center justify-center rounded-lg text-[#5a6a82] hover:text-red-400 hover:bg-red-500/10 transition-all flex-shrink-0"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </Card>
-              ))
-            )}
-          </div>
-        )}
+                ))}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

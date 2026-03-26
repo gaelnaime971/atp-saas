@@ -27,8 +27,6 @@ interface PendingInvite {
   expires_at: string
 }
 
-const SETTINGS_KEY = 'atp_admin_settings'
-
 interface AppConfig {
   calendly_url: string
   tva_rate: number
@@ -38,7 +36,7 @@ interface AppConfig {
 }
 
 const defaultConfig: AppConfig = {
-  calendly_url: 'https://calendly.com/gael-atp',
+  calendly_url: 'https://calendly.com/gael-n971/60min',
   tva_rate: 20,
   company_name: 'Omega Investment',
   company_address: '316 route de Néron, 97160 Le Moule, Guadeloupe',
@@ -62,11 +60,22 @@ export default function Settings() {
 
   useEffect(() => {
     fetchAll()
-    // Load config
-    try {
-      const stored = localStorage.getItem(SETTINGS_KEY)
-      if (stored) setConfig({ ...defaultConfig, ...JSON.parse(stored) })
-    } catch {}
+    // Load config from Supabase
+    async function loadConfig() {
+      const { data } = await supabase.from('app_settings').select('key, value')
+      if (data) {
+        const map: Record<string, string> = {}
+        data.forEach((r: { key: string; value: string }) => { map[r.key] = r.value })
+        setConfig({
+          calendly_url: map.calendly_url || defaultConfig.calendly_url,
+          tva_rate: parseFloat(map.tva_rate) || defaultConfig.tva_rate,
+          company_name: map.company_name || defaultConfig.company_name,
+          company_address: map.company_address || defaultConfig.company_address,
+          company_siren: map.company_siren || defaultConfig.company_siren,
+        })
+      }
+    }
+    loadConfig()
     // Fetch admin profile
     async function fetchAdmin() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -145,8 +154,17 @@ export default function Settings() {
     fetchAll()
   }
 
-  function saveConfig() {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(config))
+  async function saveConfig() {
+    const entries = [
+      { key: 'calendly_url', value: config.calendly_url },
+      { key: 'tva_rate', value: String(config.tva_rate) },
+      { key: 'company_name', value: config.company_name },
+      { key: 'company_address', value: config.company_address },
+      { key: 'company_siren', value: config.company_siren },
+    ]
+    for (const entry of entries) {
+      await supabase.from('app_settings').upsert(entry, { onConflict: 'key' })
+    }
     setConfigSaved(true)
     setTimeout(() => setConfigSaved(false), 2000)
   }
