@@ -30,6 +30,7 @@ export default function Tasks() {
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ title: '', trader_id: '', due_date: '', status: 'todo' as TaskStatus })
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null)
   const supabase = createClient()
@@ -58,19 +59,43 @@ export default function Tasks() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  function openEditTask(task: AdminTask) {
+    setEditingTaskId(task.id)
+    setForm({
+      title: task.title,
+      trader_id: task.trader_id ?? '',
+      due_date: task.due_date ?? '',
+      status: task.status,
+    })
+    setShowForm(true)
+  }
+
+  function resetTaskForm() {
+    setForm({ title: '', trader_id: '', due_date: '', status: 'todo' })
+    setEditingTaskId(null)
+    setShowForm(false)
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
     if (!form.title.trim()) return
     setSubmitting(true)
-    await supabase.from('admin_tasks').insert({
+
+    const payload = {
       title: form.title.trim(),
       trader_id: form.trader_id || null,
       due_date: form.due_date || null,
       done: form.status === 'done',
       status: form.status,
-    })
-    setForm({ title: '', trader_id: '', due_date: '', status: 'todo' })
-    setShowForm(false)
+    }
+
+    if (editingTaskId) {
+      await supabase.from('admin_tasks').update(payload).eq('id', editingTaskId)
+    } else {
+      await supabase.from('admin_tasks').insert(payload)
+    }
+
+    resetTaskForm()
     setSubmitting(false)
     fetchData()
   }
@@ -150,7 +175,7 @@ export default function Tasks() {
             {tasks.filter(t => t.status !== 'done').length} en cours · {tasks.filter(t => t.status === 'done').length} terminée{tasks.filter(t => t.status === 'done').length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
+        <Button onClick={() => { resetTaskForm(); setShowForm(true) }}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -161,7 +186,7 @@ export default function Tasks() {
       {/* Add task form */}
       {showForm && (
         <Card className="border border-green-500/20">
-          <h3 className="text-sm font-semibold text-[#e8edf5] mb-4">Ajouter une tâche</h3>
+          <h3 className="text-sm font-semibold text-[#e8edf5] mb-4">{editingTaskId ? 'Modifier la tâche' : 'Ajouter une tâche'}</h3>
           <form onSubmit={handleAdd} className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-xs text-[#5a6a82] mb-1.5">Titre</label>
@@ -205,8 +230,8 @@ export default function Tasks() {
               </select>
             </div>
             <div className="flex items-end gap-3 justify-end">
-              <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Annuler</Button>
-              <Button type="submit" loading={submitting}>Ajouter</Button>
+              <Button variant="secondary" type="button" onClick={resetTaskForm}>Annuler</Button>
+              <Button type="submit" loading={submitting}>{editingTaskId ? 'Mettre à jour' : 'Ajouter'}</Button>
             </div>
           </form>
         </Card>
@@ -292,14 +317,26 @@ export default function Tasks() {
                           {new Date(task.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
                         </span>
                       )}
-                      <button
-                        onClick={() => deleteTask(task.id)}
-                        className="ml-auto opacity-0 group-hover:opacity-100 p-1 rounded transition-all hover:bg-[rgba(239,68,68,0.1)]"
-                      >
-                        <svg className="w-3 h-3" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                      <div className="ml-auto flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => openEditTask(task)}
+                          className="p-1 rounded transition-all hover:bg-[rgba(255,255,255,0.05)]"
+                          title="Modifier"
+                        >
+                          <svg className="w-3 h-3" style={{ color: '#5a6a82' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => deleteTask(task.id)}
+                          className="p-1 rounded transition-all hover:bg-[rgba(239,68,68,0.1)]"
+                          title="Supprimer"
+                        >
+                          <svg className="w-3 h-3" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -19,6 +19,7 @@ type AdminPage =
   | 'broadcast'
   | 'bibliotheque'
   | 'bilan'
+  | 'recap-live'
   | 'settings'
 
 interface AdminSidebarProps {
@@ -99,6 +100,16 @@ const sections: NavSection[] = [
         id: 'broadcast',
         label: 'Broadcast',
         icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>,
+      },
+    ],
+  },
+  {
+    label: 'Trading',
+    items: [
+      {
+        id: 'recap-live',
+        label: 'Récap Trade Live',
+        icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-1.5M12 12.75l3 1.5M12 12.75V18" /></svg>,
       },
     ],
   },

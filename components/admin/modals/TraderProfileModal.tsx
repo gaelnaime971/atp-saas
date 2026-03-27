@@ -49,6 +49,16 @@ interface PayoutRow {
   notes: string | null
 }
 
+interface AccountRow {
+  id: string
+  label: string
+  propfirm_name: string | null
+  capital: number
+  initial_balance: number
+  account_type: string
+  created_at: string
+}
+
 function parseSetup(setup: string | null | undefined) {
   if (!setup) return null
   try { return JSON.parse(setup) } catch { return null }
@@ -60,26 +70,29 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
   const [coaching, setCoaching] = useState<CoachingRow[]>([])
   const [objectives, setObjectives] = useState<ObjectiveRow[]>([])
   const [payouts, setPayouts] = useState<PayoutRow[]>([])
+  const [accounts, setAccounts] = useState<AccountRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'overview' | 'sessions' | 'journal' | 'coaching'>('overview')
+  const [tab, setTab] = useState<'overview' | 'sessions' | 'journal' | 'coaching' | 'accounts'>('overview')
   const supabase = createClient()
 
   useEffect(() => {
     if (!trader) return
     async function fetchAll() {
       setLoading(true)
-      const [sessRes, journalRes, coachRes, objRes, payRes] = await Promise.all([
+      const [sessRes, journalRes, coachRes, objRes, payRes, accRes] = await Promise.all([
         supabase.from('trading_sessions').select('*').eq('trader_id', trader!.id).order('session_date', { ascending: false }),
         supabase.from('journal_entries').select('*').eq('trader_id', trader!.id).order('entry_date', { ascending: false }).limit(20),
         supabase.from('coaching_sessions').select('*').eq('trader_id', trader!.id).order('scheduled_at', { ascending: false }),
         supabase.from('objectives').select('*').eq('trader_id', trader!.id),
         supabase.from('payouts').select('*').eq('trader_id', trader!.id).order('payout_date', { ascending: false }),
+        supabase.from('trader_accounts').select('*').eq('trader_id', trader!.id).order('created_at', { ascending: true }),
       ])
       setSessions((sessRes.data ?? []) as SessionRow[])
       setJournal((journalRes.data ?? []) as JournalRow[])
       setCoaching((coachRes.data ?? []) as CoachingRow[])
       setObjectives((objRes.data ?? []) as ObjectiveRow[])
       setPayouts((payRes.data ?? []) as PayoutRow[])
+      setAccounts((accRes.data ?? []) as AccountRow[])
       setLoading(false)
     }
     fetchAll()
@@ -109,6 +122,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
 
   const tabs = [
     { id: 'overview' as const, label: 'Vue globale' },
+    { id: 'accounts' as const, label: `Comptes (${accounts.length})` },
     { id: 'sessions' as const, label: `Sessions (${sessions.length})` },
     { id: 'journal' as const, label: `Journal (${journal.length})` },
     { id: 'coaching' as const, label: `Coaching (${coaching.length})` },
@@ -338,6 +352,87 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                   <p className="text-xs" style={{ color: 'var(--text3)' }}>
                     Membre depuis le {new Date(trader.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
+                </div>
+              )}
+
+              {/* ACCOUNTS TAB */}
+              {tab === 'accounts' && (
+                <div className="space-y-4">
+                  {/* Summary */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-lg p-3 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+                      <p className="text-xs mb-1" style={{ color: 'var(--text3)' }}>Nb comptes</p>
+                      <p className="text-lg font-bold font-mono" style={{ color: 'var(--text)' }}>{accounts.length}</p>
+                    </div>
+                    <div className="rounded-lg p-3 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+                      <p className="text-xs mb-1" style={{ color: 'var(--text3)' }}>Capital total</p>
+                      <p className="text-lg font-bold font-mono" style={{ color: 'var(--text)' }}>
+                        {accounts.reduce((s, a) => s + Number(a.capital), 0).toLocaleString('fr-FR')} $
+                      </p>
+                    </div>
+                    <div className="rounded-lg p-3 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+                      <p className="text-xs mb-1" style={{ color: 'var(--text3)' }}>Balance totale</p>
+                      <p className="text-lg font-bold font-mono" style={{ color: accounts.reduce((s, a) => s + Number(a.initial_balance), 0) >= accounts.reduce((s, a) => s + Number(a.capital), 0) ? '#22c55e' : '#ef4444' }}>
+                        {accounts.reduce((s, a) => s + Number(a.initial_balance), 0).toLocaleString('fr-FR')} $
+                      </p>
+                    </div>
+                  </div>
+
+                  {accounts.length === 0 ? (
+                    <p className="text-sm text-center py-8" style={{ color: 'var(--text3)' }}>Aucun compte configuré par ce trader</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {accounts.map(acc => {
+                        const pnl = Number(acc.initial_balance) - Number(acc.capital)
+                        const pnlPct = Number(acc.capital) > 0 ? (pnl / Number(acc.capital)) * 100 : 0
+                        const typeColor = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
+                        const typeLabel = acc.account_type === 'funded' ? 'Financé' : acc.account_type === 'challenge' ? 'Challenge' : 'Personnel'
+                        return (
+                          <div key={acc.id} className="rounded-lg p-4 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)', borderLeft: `3px solid ${typeColor}` }}>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                                  {acc.label || `Compte ${acc.propfirm_name}`}
+                                </h4>
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background: `${typeColor}15`, color: typeColor }}>
+                                  {typeLabel}
+                                </span>
+                              </div>
+                              {acc.propfirm_name && (
+                                <span className="text-xs font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--bg)', color: 'var(--text3)' }}>
+                                  {acc.propfirm_name}
+                                </span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-4 gap-4">
+                              <div>
+                                <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Capital</p>
+                                <p className="text-sm font-bold font-mono" style={{ color: 'var(--text)' }}>{Number(acc.capital).toLocaleString('fr-FR')} $</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Balance</p>
+                                <p className="text-sm font-bold font-mono" style={{ color: Number(acc.initial_balance) >= Number(acc.capital) ? '#22c55e' : '#ef4444' }}>
+                                  {Number(acc.initial_balance).toLocaleString('fr-FR')} $
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>P&L</p>
+                                <p className="text-sm font-bold font-mono" style={{ color: pnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                                  {pnl >= 0 ? '+' : ''}{pnl.toLocaleString('fr-FR')} $
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Perf %</p>
+                                <p className="text-sm font-bold font-mono" style={{ color: pnlPct >= 0 ? '#22c55e' : '#ef4444' }}>
+                                  {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(1)}%
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 

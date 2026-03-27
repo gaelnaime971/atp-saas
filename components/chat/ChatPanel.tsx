@@ -122,8 +122,8 @@ export default function ChatPanel({
           display: 'flex',
           flexDirection: 'column',
           gap: 8,
-          minHeight: messagesHeight,
-          maxHeight: messagesHeight,
+          minHeight: 0,
+          maxHeight: imagePreview ? messagesHeight - 50 : messagesHeight,
         }}
       >
         {loading && (

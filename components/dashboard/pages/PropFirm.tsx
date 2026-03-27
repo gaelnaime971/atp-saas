@@ -80,7 +80,8 @@ export default function PropFirm() {
   }
 
   async function handleSave() {
-    if (!userId || !formCapital) return
+    if (!userId) return
+    if (!validate()) return
     setSaving(true)
 
     const payload = {
@@ -139,10 +140,24 @@ export default function PropFirm() {
   const typeLabel = (t: string) => ACCOUNT_TYPES.find(at => at.id === t)?.label ?? t
   const typeColor = (t: string) => ACCOUNT_TYPES.find(at => at.id === t)?.color ?? '#5a6a82'
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '8px 12px', background: 'var(--bg3)',
-    border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 13, outline: 'none',
+  // ─── VALIDATION ───
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  function validate(): boolean {
+    const errs: Record<string, string> = {}
+    if (!formLabel.trim()) errs.label = 'Requis. Ex: FTMO 50K #1'
+    if (!formCapital || isNaN(Number(formCapital)) || Number(formCapital) <= 0) errs.capital = 'Entrez un nombre positif (pas de virgule, utilisez un point). Ex: 50000'
+    else if (formCapital.includes(',')) errs.capital = 'Utilisez un point (.) et non une virgule (,). Ex: 50000'
+    if (formInitialBalance && isNaN(Number(formInitialBalance))) errs.balance = 'Entrez un nombre valide. Ex: 52340.50'
+    else if (formInitialBalance && formInitialBalance.includes(',')) errs.balance = 'Utilisez un point (.) et non une virgule (,). Ex: 52340.50'
+    setErrors(errs)
+    return Object.keys(errs).length === 0
   }
+
+  const inputStyle = (field?: string): React.CSSProperties => ({
+    width: '100%', padding: '8px 12px', background: 'var(--bg3)',
+    border: `1px solid ${field && errors[field] ? '#ef4444' : 'var(--border)'}`, borderRadius: 8, color: 'var(--text)', fontSize: 13, outline: 'none',
+  })
 
   if (loading) {
     return (
@@ -184,31 +199,42 @@ export default function PropFirm() {
           </h3>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs mb-1" style={{ color: 'var(--text3)' }}>Nom du compte</label>
+              <label className="block text-xs mb-1" style={{ color: errors.label ? '#ef4444' : 'var(--text3)' }}>
+                Nom du compte <span className="text-[10px] font-normal" style={{ color: 'var(--text3)' }}>(texte, majuscules acceptées)</span>
+              </label>
               <input
-                type="text" value={formLabel} onChange={e => setFormLabel(e.target.value)}
-                placeholder="ex: FTMO 50K #1" style={inputStyle}
+                type="text" value={formLabel} onChange={e => { setFormLabel(e.target.value); setErrors(prev => { const n = { ...prev }; delete n.label; return n }) }}
+                placeholder="ex: FTMO 50K #1" style={inputStyle('label')}
               />
+              {errors.label && <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{errors.label}</p>}
             </div>
             <div>
               <label className="block text-xs mb-1" style={{ color: 'var(--text3)' }}>Prop Firm</label>
-              <select value={formFirm} onChange={e => setFormFirm(e.target.value)} style={inputStyle}>
+              <select value={formFirm} onChange={e => setFormFirm(e.target.value)} style={inputStyle()}>
                 {PROP_FIRMS.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs mb-1" style={{ color: 'var(--text3)' }}>Capital du compte ($)</label>
+              <label className="block text-xs mb-1" style={{ color: errors.capital ? '#ef4444' : 'var(--text3)' }}>
+                Capital du compte ($) <span className="text-[10px] font-normal" style={{ color: 'var(--text3)' }}>(chiffre, point pour décimales)</span>
+              </label>
               <input
-                type="number" value={formCapital} onChange={e => setFormCapital(e.target.value)}
-                placeholder="50000" style={inputStyle}
+                type="text" inputMode="decimal" value={formCapital}
+                onChange={e => { setFormCapital(e.target.value); setErrors(prev => { const n = { ...prev }; delete n.capital; return n }) }}
+                placeholder="50000" style={inputStyle('capital')}
               />
+              {errors.capital && <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{errors.capital}</p>}
             </div>
             <div>
-              <label className="block text-xs mb-1" style={{ color: 'var(--text3)' }}>Balance actuelle ($)</label>
+              <label className="block text-xs mb-1" style={{ color: errors.balance ? '#ef4444' : 'var(--text3)' }}>
+                Balance actuelle ($) <span className="text-[10px] font-normal" style={{ color: 'var(--text3)' }}>(chiffre, point pour décimales)</span>
+              </label>
               <input
-                type="number" value={formInitialBalance} onChange={e => setFormInitialBalance(e.target.value)}
-                placeholder="52340" style={inputStyle}
+                type="text" inputMode="decimal" value={formInitialBalance}
+                onChange={e => { setFormInitialBalance(e.target.value); setErrors(prev => { const n = { ...prev }; delete n.balance; return n }) }}
+                placeholder="52340.50" style={inputStyle('balance')}
               />
+              {errors.balance && <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{errors.balance}</p>}
             </div>
           </div>
           <div className="mb-4">
@@ -338,7 +364,7 @@ export default function PropFirm() {
             <div className="grid grid-cols-4 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>Montant ($)</label>
-                <input type="number" value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} placeholder="500" style={inputStyle} />
+                <input type="number" value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} placeholder="500" style={inputStyle()} />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>Date</label>
@@ -346,7 +372,7 @@ export default function PropFirm() {
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>Compte</label>
-                <select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)} style={inputStyle}>
+                <select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)} style={inputStyle()}>
                   {accounts.map(a => (
                     <option key={a.id} value={a.id}>{a.label || `${a.propfirm_name} ${Number(a.capital).toLocaleString()}$`}</option>
                   ))}
@@ -354,7 +380,7 @@ export default function PropFirm() {
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>Notes</label>
-                <input type="text" value={payoutNotes} onChange={e => setPayoutNotes(e.target.value)} placeholder="Optionnel..." style={inputStyle} />
+                <input type="text" value={payoutNotes} onChange={e => setPayoutNotes(e.target.value)} placeholder="Optionnel..." style={inputStyle()} />
               </div>
             </div>
             <div className="flex gap-2 justify-end">

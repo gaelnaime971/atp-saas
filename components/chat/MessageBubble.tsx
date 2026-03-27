@@ -52,9 +52,25 @@ export default function MessageBubble({ message, isMine }: MessageBubbleProps) {
           marginTop: 3,
           textAlign: isMine ? 'right' : 'left',
           fontFamily: "'DM Mono', monospace",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: isMine ? 'flex-end' : 'flex-start',
+          gap: 4,
         }}
       >
         {time}
+        {isMine && (
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
+            {message.is_read ? (
+              <>
+                <path d="M1 5.5L4.5 9L11 2" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M5 5.5L8.5 9L15 2" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </>
+            ) : (
+              <path d="M1 5.5L4.5 9L11 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            )}
+          </svg>
+        )}
       </div>
     </div>
   )
