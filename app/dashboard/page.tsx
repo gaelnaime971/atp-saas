@@ -17,6 +17,10 @@ import Ressources from '@/components/dashboard/pages/Ressources'
 import Contrat from '@/components/dashboard/pages/Contrat'
 import Compte from '@/components/dashboard/pages/Compte'
 import BilanCompetences from '@/components/dashboard/pages/BilanCompetences'
+import RecapTradeLive from '@/components/dashboard/pages/RecapTradeLive'
+import Classement from '@/components/dashboard/pages/Classement'
+import SavedSetups from '@/components/dashboard/pages/SavedSetups'
+import PreMarket from '@/components/dashboard/pages/PreMarket'
 import TraderChatWidget from '@/components/chat/TraderChatWidget'
 
 const pageTitles: Record<DashboardPage, string> = {
@@ -25,11 +29,15 @@ const pageTitles: Record<DashboardPage, string> = {
   'sessions-history': 'Sessions de trading',
   stats: 'Stats & Performance',
   checklist: 'Checklist pré-open',
+  'pre-market': 'Routine pré-marché',
   journal: 'Journal',
   propfirm: 'Prop Firm',
   calculateur: 'Calculateur de risque — Futures',
   coaching: 'Sessions coaching',
+  'recap-live': 'Trades Live Coach',
   progression: 'Ma progression',
+  classement: 'Achievements',
+  'saved-setups': 'Bibliothèque de Setups',
   ressources: 'Ressources ATP',
   contrat: 'Contrat',
   bilan: 'Bilan de compétences',
@@ -49,8 +57,12 @@ export default function TraderDashboard() {
       case 'journal': return <Journal />
       case 'propfirm': return <PropFirm />
       case 'calculateur': return <Calculateur />
+      case 'pre-market': return <PreMarket />
       case 'coaching': return <Coaching />
+      case 'recap-live': return <RecapTradeLive />
       case 'progression': return <Progression />
+      case 'classement': return <Classement />
+      case 'saved-setups': return <SavedSetups />
       case 'ressources': return <Ressources />
       case 'contrat': return <Contrat />
       case 'bilan': return <BilanCompetences />

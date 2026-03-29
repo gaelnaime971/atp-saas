@@ -71,8 +71,11 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
   const [objectives, setObjectives] = useState<ObjectiveRow[]>([])
   const [payouts, setPayouts] = useState<PayoutRow[]>([])
   const [accounts, setAccounts] = useState<AccountRow[]>([])
+  const [privateNote, setPrivateNote] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [noteSaved, setNoteSaved] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'overview' | 'sessions' | 'journal' | 'coaching' | 'accounts'>('overview')
+  const [tab, setTab] = useState<'overview' | 'sessions' | 'journal' | 'coaching' | 'accounts' | 'notes'>('overview')
   const supabase = createClient()
 
   useEffect(() => {
@@ -93,6 +96,9 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
       setObjectives((objRes.data ?? []) as ObjectiveRow[])
       setPayouts((payRes.data ?? []) as PayoutRow[])
       setAccounts((accRes.data ?? []) as AccountRow[])
+      // Load private note from localStorage
+      const storedNote = localStorage.getItem(`admin_note_${trader!.id}`)
+      if (storedNote) setPrivateNote(storedNote)
       setLoading(false)
     }
     fetchAll()
@@ -120,12 +126,21 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
     return rValues.length > 0 ? (rValues.reduce((a, b) => a + b, 0) / rValues.length) : null
   })()
 
+  async function savePrivateNote() {
+    setSavingNote(true)
+    localStorage.setItem(`admin_note_${trader!.id}`, privateNote)
+    setNoteSaved(true)
+    setTimeout(() => setNoteSaved(false), 2000)
+    setSavingNote(false)
+  }
+
   const tabs = [
     { id: 'overview' as const, label: 'Vue globale' },
     { id: 'accounts' as const, label: `Comptes (${accounts.length})` },
     { id: 'sessions' as const, label: `Sessions (${sessions.length})` },
     { id: 'journal' as const, label: `Journal (${journal.length})` },
     { id: 'coaching' as const, label: `Coaching (${coaching.length})` },
+    { id: 'notes' as const, label: 'Notes privées' },
   ]
 
   return (
@@ -581,6 +596,41 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                       })}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* NOTES TAB */}
+              {tab === 'notes' && (
+                <div className="space-y-4">
+                  <div className="rounded-lg p-4 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Notes privées</p>
+                      <span className="text-xs" style={{ color: 'var(--text3)' }}>Visible uniquement par vous</span>
+                    </div>
+                    <textarea
+                      value={privateNote}
+                      onChange={e => setPrivateNote(e.target.value)}
+                      placeholder="Notes privées sur ce trader... (préparation coaching, points à aborder, observations...)"
+                      style={{
+                        width: '100%', minHeight: 200, padding: 12, background: 'var(--bg)',
+                        border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)',
+                        fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6,
+                      }}
+                    />
+                    <div className="flex items-center gap-3 mt-3">
+                      <button
+                        onClick={savePrivateNote}
+                        disabled={savingNote}
+                        className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
+                        style={{ background: 'var(--green)', color: '#0f1117' }}
+                      >
+                        {savingNote ? 'Sauvegarde...' : 'Sauvegarder'}
+                      </button>
+                      {noteSaved && (
+                        <span className="text-xs font-medium" style={{ color: '#22c55e' }}>Sauvegardé</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </>

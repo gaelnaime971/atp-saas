@@ -20,9 +20,16 @@ interface RecentSession {
   instrument: string
 }
 
+interface Alert {
+  type: 'warning' | 'info' | 'success'
+  message: string
+  detail?: string
+}
+
 export default function Overview() {
   const [kpis, setKpis] = useState<KPIData>({ monthlyRevenue: 0, activeTraders: 0, monthSessions: 0, winRate: 0 })
   const [recentSessions, setRecentSessions] = useState<RecentSession[]>([])
+  const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -79,6 +86,45 @@ export default function Overview() {
             instrument: s.instrument ?? 'N/A',
           })))
         }
+
+        // Build alerts
+        const newAlerts: Alert[] = []
+
+        // Inactive traders (no session in last 7 days)
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        const { data: allTraders } = await supabase.from('profiles').select('id, full_name').eq('role', 'trader')
+        if (allTraders) {
+          for (const t of allTraders) {
+            const { count } = await supabase.from('trading_sessions').select('*', { count: 'exact', head: true }).eq('trader_id', t.id).gte('session_date', sevenDaysAgo)
+            if ((count ?? 0) === 0) {
+              newAlerts.push({ type: 'warning', message: `${t.full_name ?? 'Un trader'} est inactif`, detail: 'Aucune session depuis 7 jours' })
+            }
+          }
+        }
+
+        // Unread messages
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { count: unread } = await supabase.from('messages').select('*', { count: 'exact', head: true }).eq('receiver_id', user.id).eq('is_read', false)
+          if (unread && unread > 0) {
+            newAlerts.push({ type: 'info', message: `${unread} message${unread > 1 ? 's' : ''} non lu${unread > 1 ? 's' : ''}` })
+          }
+        }
+
+        // Loss streak detection
+        if (allTraders) {
+          for (const t of allTraders) {
+            const { data: lastSessions } = await supabase.from('trading_sessions').select('result').eq('trader_id', t.id).order('session_date', { ascending: false }).limit(5)
+            if (lastSessions && lastSessions.length >= 3) {
+              const lossStreak = lastSessions.findIndex(s => s.result !== 'loss')
+              if (lossStreak === -1 || lossStreak >= 3) {
+                newAlerts.push({ type: 'warning', message: `${t.full_name ?? 'Un trader'} est en série de pertes`, detail: `${lossStreak === -1 ? lastSessions.length : lossStreak} losses consécutives` })
+              }
+            }
+          }
+        }
+
+        setAlerts(newAlerts)
       } finally {
         setLoading(false)
       }
@@ -219,6 +265,35 @@ export default function Overview() {
           </Card>
         ))}
       </div>
+
+      {/* Alerts */}
+      {alerts.length > 0 && (
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <h2 className="text-sm font-semibold text-[#e8edf5]">Notifications</h2>
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-mono">{alerts.length}</span>
+          </div>
+          <div className="space-y-2">
+            {alerts.map((alert, i) => {
+              const colors = alert.type === 'warning' ? { bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.15)', color: '#f59e0b', icon: '⚠️' }
+                : alert.type === 'success' ? { bg: 'rgba(34,197,94,0.06)', border: 'rgba(34,197,94,0.15)', color: '#22c55e', icon: '✅' }
+                : { bg: 'rgba(96,165,250,0.06)', border: 'rgba(96,165,250,0.15)', color: '#60a5fa', icon: '💬' }
+              return (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: colors.bg, border: `1px solid ${colors.border}` }}>
+                  <span className="text-sm">{colors.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium" style={{ color: colors.color }}>{alert.message}</p>
+                    {alert.detail && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{alert.detail}</p>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* Recent Sessions */}
       <Card>
