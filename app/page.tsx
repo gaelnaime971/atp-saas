@@ -47,9 +47,9 @@ export default function Home() {
           className="text-lg max-w-xl mb-12 leading-relaxed"
           style={{ color: 'var(--text2)' }}
         >
-          Suivez la progression de vos traders, analysez leurs performances,
-          planifiez vos sessions et centralisez toute votre activité depuis
-          un dashboard intuitif.
+          Suivez vos performances, gérez vos comptes prop firm,
+          progressez avec votre coach et atteignez vos objectifs
+          de trading depuis votre espace personnel.
         </p>
 
         {/* CTA */}
