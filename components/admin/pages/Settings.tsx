@@ -14,6 +14,7 @@ interface TraderInfo {
   propfirm_name: string | null
   capital: number
   nb_accounts: number
+  is_active: boolean
   created_at: string
 }
 
@@ -48,7 +49,7 @@ export default function Settings() {
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [loading, setLoading] = useState(true)
   const [editingTrader, setEditingTrader] = useState<TraderInfo | null>(null)
-  const [editForm, setEditForm] = useState({ plan_type: '', propfirm_name: '', capital: '', nb_accounts: '' })
+  const [editForm, setEditForm] = useState({ plan_type: '', propfirm_name: '', capital: '', nb_accounts: '', is_active: true })
   const [saving, setSaving] = useState(false)
   const [config, setConfig] = useState<AppConfig>(defaultConfig)
   const [configSaved, setConfigSaved] = useState(false)
@@ -93,7 +94,7 @@ export default function Settings() {
   async function fetchAll() {
     setLoading(true)
     const [{ data: traderData }, { data: inviteData }] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, email, plan_type, propfirm_name, capital, nb_accounts, created_at').eq('role', 'trader').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('id, full_name, email, plan_type, propfirm_name, capital, nb_accounts, is_active, created_at').eq('role', 'trader').order('created_at', { ascending: false }),
       supabase.from('invitations').select('*').is('used_at', null).gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }),
     ])
     if (traderData) setTraders(traderData as TraderInfo[])
@@ -108,6 +109,7 @@ export default function Settings() {
       propfirm_name: t.propfirm_name ?? '',
       capital: String(t.capital || 0),
       nb_accounts: String(t.nb_accounts || 1),
+      is_active: t.is_active !== false,
     })
   }
 
@@ -119,6 +121,7 @@ export default function Settings() {
       propfirm_name: editForm.propfirm_name || null,
       capital: parseFloat(editForm.capital) || 0,
       nb_accounts: parseInt(editForm.nb_accounts) || 1,
+      is_active: editForm.is_active,
     }).eq('id', editingTrader.id)
     setEditingTrader(null)
     setSaving(false)
@@ -460,9 +463,9 @@ export default function Settings() {
                   style={inputStyle}
                 >
                   <option value="">Aucun</option>
-                  <option value="1:1">1:1</option>
-                  <option value="group">Group</option>
-                  <option value="vip">VIP</option>
+                  <option value="coaching-annuel">Coaching Annuel</option>
+                  <option value="coaching-personnalise">Coaching Personnalisé</option>
+                  <option value="seminaire">Séminaire</option>
                 </select>
               </div>
               <div>
@@ -480,6 +483,26 @@ export default function Settings() {
                   <option value="My Forex Funds">My Forex Funds</option>
                   <option value="Autre">Autre</option>
                 </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Statut</label>
+                <div className="flex gap-2">
+                  {[{ value: true, label: 'Actif', color: '#22c55e' }, { value: false, label: 'Désactivé', color: '#ef4444' }].map(opt => (
+                    <button
+                      key={String(opt.value)}
+                      type="button"
+                      onClick={() => setEditForm(f => ({ ...f, is_active: opt.value }))}
+                      style={{
+                        flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                        background: editForm.is_active === opt.value ? `${opt.color}15` : '#1c2333',
+                        border: editForm.is_active === opt.value ? `1px solid ${opt.color}40` : '1px solid rgba(255,255,255,0.07)',
+                        color: editForm.is_active === opt.value ? opt.color : '#5a6a82',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

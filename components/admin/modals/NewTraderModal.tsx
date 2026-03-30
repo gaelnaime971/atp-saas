@@ -7,7 +7,7 @@ interface NewTraderModalProps {
   onSuccess: () => void
 }
 
-const PLANS = ['1:1 Mensuel', '1:1 Trimestriel', 'Groupe', 'Annuel']
+const PLANS = ['Coaching Annuel', 'Coaching Personnalisé', 'Séminaire']
 
 export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalProps) {
   const [form, setForm] = useState({
