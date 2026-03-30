@@ -18,9 +18,16 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Delete auth user (cascade will handle profile + related data)
-  const { error } = await adminSupabase.auth.admin.deleteUser(trader_id)
+  // Delete profile first (cascade will handle related data)
+  const { error: profileError } = await adminSupabase.from('profiles').delete().eq('id', trader_id)
+  if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // Then delete auth user
+  const { error: authError } = await adminSupabase.auth.admin.deleteUser(trader_id)
+  if (authError) {
+    // Auth deletion failed but profile is gone — log but don't block
+    console.error('Auth delete failed:', authError.message)
+  }
+
   return NextResponse.json({ success: true })
 }
