@@ -21,6 +21,7 @@ import RecapTradeLive from '@/components/dashboard/pages/RecapTradeLive'
 import Classement from '@/components/dashboard/pages/Classement'
 import SavedSetups from '@/components/dashboard/pages/SavedSetups'
 import PreMarket from '@/components/dashboard/pages/PreMarket'
+import TopbarStats from '@/components/dashboard/TopbarStats'
 import TraderChatWidget from '@/components/chat/TraderChatWidget'
 
 const pageTitles: Record<DashboardPage, string> = {
@@ -84,23 +85,27 @@ export default function TraderDashboard() {
             borderBottom: '1px solid var(--border)',
           }}
         >
-          <h1 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+          <h1 className="text-sm font-semibold shrink-0" style={{ color: 'var(--text)' }}>
             {pageTitles[activePage]}
           </h1>
-          <span
-            className="text-xs px-3 py-1.5 rounded-lg font-mono"
-            style={{
-              color: 'var(--text3)',
-              border: '1px solid var(--border)',
-              background: 'var(--bg2)',
-            }}
-          >
-            {new Date().toLocaleDateString('fr-FR', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
+          <div className="flex items-center gap-3 overflow-x-auto">
+            <TopbarStats />
+            <div className="h-5 w-px shrink-0" style={{ background: 'var(--border)' }} />
+            <span
+              className="text-xs px-3 py-1.5 rounded-lg font-mono shrink-0"
+              style={{
+                color: 'var(--text3)',
+                border: '1px solid var(--border)',
+                background: 'var(--bg2)',
+              }}
+            >
+              {new Date().toLocaleDateString('fr-FR', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
             })}
-          </span>
+            </span>
+          </div>
         </header>
 
         {/* Content */}

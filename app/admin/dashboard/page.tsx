@@ -17,6 +17,7 @@ import Tasks from '@/components/admin/pages/Tasks'
 import Broadcast from '@/components/admin/pages/Broadcast'
 import BilanCompetences from '@/components/admin/pages/BilanCompetences'
 import RecapTradeLive from '@/components/admin/pages/RecapTradeLive'
+import AdminTopbarStats from '@/components/admin/TopbarStats'
 import AdminChatWidget from '@/components/chat/AdminChatWidget'
 
 type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'recap-live' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks'
@@ -87,9 +88,11 @@ export default function AdminDashboard() {
           <h1 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
             {pageTitles[activePage]}
           </h1>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 overflow-x-auto">
+            <AdminTopbarStats />
+            <div className="h-5 w-px shrink-0" style={{ background: 'var(--border)' }} />
             <span
-              className="text-xs px-3 py-1.5 rounded-lg border font-mono"
+              className="text-xs px-3 py-1.5 rounded-lg border font-mono shrink-0"
               style={{ color: 'var(--text3)', borderColor: 'var(--border)', background: 'var(--bg2)' }}
             >
               {new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
