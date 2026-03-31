@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { TraderAccount } from '@/lib/types'
 
 interface SessionRow {
   id: string
@@ -46,6 +47,10 @@ export default function SessionsHistory() {
   const [editPsychological, setEditPsychological] = useState('')
   const [editImprovement, setEditImprovement] = useState('')
   const [editGlobalRating, setEditGlobalRating] = useState(0)
+  const [editAccountIds, setEditAccountIds] = useState<string[]>([])
+
+  // Accounts
+  const [accounts, setAccounts] = useState<TraderAccount[]>([])
 
   const supabase = createClient()
 
@@ -57,12 +62,12 @@ export default function SessionsHistory() {
   const fetchSessions = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data } = await supabase
-      .from('trading_sessions')
-      .select('*')
-      .eq('trader_id', user.id)
-      .order('session_date', { ascending: false })
-    if (data) setSessions(data)
+    const [{ data: sessData }, { data: accData }] = await Promise.all([
+      supabase.from('trading_sessions').select('*').eq('trader_id', user.id).order('session_date', { ascending: false }),
+      supabase.from('trader_accounts').select('*').eq('trader_id', user.id).order('created_at', { ascending: true }),
+    ])
+    if (sessData) setSessions(sessData)
+    if (accData) setAccounts(accData as TraderAccount[])
     setLoading(false)
   }
 
@@ -85,6 +90,7 @@ export default function SessionsHistory() {
     setEditPsychological(meta?.psychological_analysis ?? '')
     setEditImprovement(meta?.improvement ?? '')
     setEditGlobalRating(meta?.global_rating ?? 0)
+    setEditAccountIds(meta?.account_ids ?? [])
   }
 
   const handleSave = async () => {
@@ -94,6 +100,7 @@ export default function SessionsHistory() {
     const result: 'win' | 'loss' | 'breakeven' = editPnl > 0 ? 'win' : editPnl < 0 ? 'loss' : 'breakeven'
     const extraData = {
       session_type: editSessionType,
+      account_ids: editAccountIds,
       r_value: editRValue,
       win_rate: editWinRate,
       max_drawdown: editMaxDrawdown,
@@ -379,6 +386,34 @@ export default function SessionsHistory() {
                   </select>
                 </div>
               </div>
+
+              {/* Accounts */}
+              {accounts.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={labelStyle}>Comptes tradés</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {accounts.map(acc => {
+                      const selected = editAccountIds.includes(acc.id)
+                      const typeColor = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
+                      return (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => setEditAccountIds(prev => selected ? prev.filter(id => id !== acc.id) : [...prev, acc.id])}
+                          style={{
+                            padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                            background: selected ? `${typeColor}15` : 'var(--bg3)',
+                            border: `2px solid ${selected ? typeColor : 'rgba(255,255,255,0.08)'}`,
+                            color: selected ? typeColor : 'var(--text3)',
+                          }}
+                        >
+                          {acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Row 2: Trades, P&L, R, Win Rate */}
               <div className="grid grid-cols-4 gap-3">
