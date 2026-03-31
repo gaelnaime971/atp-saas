@@ -71,6 +71,10 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
   const [tiPnl, setTiPnl] = useState('')
   const [tiR, setTiR] = useState('')
 
+  // Mental & notes
+  const [mentalScore, setMentalScore] = useState(7)
+  const [sessionNote, setSessionNote] = useState('')
+
   const [levels, setLevels] = useState<Level[]>([])
   const [levelInput, setLevelInput] = useState('')
   const [levelType, setLevelType] = useState<'RES' | 'SUP' | 'VWAP' | 'POV'>('RES')
@@ -400,84 +404,128 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
         </div>
 
         {/* ── CENTER ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
-          {/* Risk + P&L */}
-          <div style={{ ...cardS, flex: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+          {/* P&L + Bars */}
+          <div style={cardS}>
             <div style={cardLabel}>{dot}Cockpit de risque</div>
-            <div style={{ textAlign: 'center' as const, padding: '12px 0 6px' }}>
-              <div style={{ fontFamily: mono, fontSize: 48, fontWeight: 700, lineHeight: 1, color: totalPnl > 0 ? GREEN : totalPnl < 0 ? '#ef4444' : TEXT, textShadow: totalPnl !== 0 ? `0 0 30px ${totalPnl > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` : 'none' }}>
+            <div style={{ textAlign: 'center' as const, padding: '8px 0 4px' }}>
+              <div style={{ fontFamily: mono, fontSize: 44, fontWeight: 700, lineHeight: 1, color: totalPnl > 0 ? GREEN : totalPnl < 0 ? '#ef4444' : TEXT, textShadow: totalPnl !== 0 ? `0 0 30px ${totalPnl > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` : 'none' }}>
                 {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)} €
               </div>
-              <div style={{ fontFamily: mono, fontSize: 11, color: TEXT3, marginTop: 4 }}>{trades.length} trades · {totalR >= 0 ? '+' : ''}{totalR.toFixed(1)}R</div>
+              <div style={{ fontFamily: mono, fontSize: 10, color: TEXT3, marginTop: 3 }}>{trades.length} trades · {totalR >= 0 ? '+' : ''}{totalR.toFixed(1)}R cumulé</div>
             </div>
             {/* Daily loss */}
-            <div style={{ margin: '10px 0 4px', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ margin: '8px 0 3px', display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 9, color: TEXT3, fontFamily: mono }}>Daily loss</span>
-              <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: riskPct >= 90 ? '#ef4444' : TEXT }}>{lossAmount.toFixed(0)} / {dailyLoss} €</span>
+              <span style={{ fontFamily: mono, fontSize: 10, fontWeight: 700, color: riskPct >= 90 ? '#ef4444' : TEXT }}>{lossAmount.toFixed(0)} / {dailyLoss} €</span>
             </div>
-            <div style={{ height: 10, background: BG3, borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: 8, background: BG3, borderRadius: 99, overflow: 'hidden' }}>
               <div style={{ height: '100%', borderRadius: 99, width: `${riskPct}%`, background: riskPct >= 90 ? '#ef4444' : riskPct >= 70 ? '#f59e0b' : GREEN, transition: 'width 0.5s' }} />
             </div>
             {/* Target */}
-            <div style={{ margin: '8px 0 4px', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ margin: '6px 0 3px', display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 9, color: TEXT3, fontFamily: mono }}>Objectif</span>
-              <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: GREEN }}>{totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)} / {target} €</span>
+              <span style={{ fontFamily: mono, fontSize: 10, fontWeight: 700, color: GREEN }}>{totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)} / {target} €</span>
             </div>
-            <div style={{ height: 10, background: BG3, borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: 8, background: BG3, borderRadius: 99, overflow: 'hidden' }}>
               <div style={{ height: '100%', borderRadius: 99, width: `${targetPct}%`, background: '#60a5fa', transition: 'width 0.5s' }} />
-            </div>
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginTop: 12 }}>
-              {[
-                { l: 'Trades', v: String(trades.length), c: TEXT },
-                { l: 'W / L', v: `${wins}W/${losses}L`, c: TEXT },
-                { l: 'R cumulé', v: `${totalR >= 0 ? '+' : ''}${totalR.toFixed(1)}R`, c: totalR >= 0 ? GREEN : '#ef4444' },
-                { l: 'Plan', v: `${planScore}/10`, c: planScore >= 7 ? GREEN : planScore >= 5 ? '#f59e0b' : '#ef4444' },
-              ].map(s => (
-                <div key={s.l} style={{ background: BG3, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '8px 6px', textAlign: 'center' as const }}>
-                  <div style={{ fontFamily: mono, fontSize: 16, fontWeight: 700, color: s.c, lineHeight: 1 }}>{s.v}</div>
-                  <div style={{ fontSize: 8, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 3 }}>{s.l}</div>
-                </div>
-              ))}
             </div>
           </div>
 
-          {/* Trade log */}
-          <div style={{ ...cardS, display: 'flex', flexDirection: 'column', maxHeight: 200 }}>
+          {/* Stats grid — 2 rows */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+            {[
+              { l: 'Trades', v: String(trades.length), c: TEXT },
+              { l: 'W / L', v: `${wins}W/${losses}L`, c: TEXT },
+              { l: 'R cumulé', v: `${totalR >= 0 ? '+' : ''}${totalR.toFixed(1)}R`, c: totalR >= 0 ? GREEN : '#ef4444' },
+              { l: 'Plan', v: `${planScore}/10`, c: planScore >= 7 ? GREEN : planScore >= 5 ? '#f59e0b' : '#ef4444' },
+              { l: 'Best', v: trades.length > 0 ? `+${Math.max(...trades.map(t => t.pnl)).toFixed(0)}€` : '—', c: GREEN },
+              { l: 'Worst', v: trades.length > 0 ? `${Math.min(...trades.map(t => t.pnl)).toFixed(0)}€` : '—', c: '#ef4444' },
+              { l: 'Avg', v: trades.length > 0 ? `${(totalPnl / trades.length).toFixed(0)}€` : '—', c: totalPnl >= 0 ? GREEN : '#ef4444' },
+              { l: 'Win%', v: trades.length > 0 ? `${Math.round((wins / trades.length) * 100)}%` : '—', c: wins > losses ? GREEN : '#ef4444' },
+            ].map(s => (
+              <div key={s.l} style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '7px 4px', textAlign: 'center' as const }}>
+                <div style={{ fontFamily: mono, fontSize: 14, fontWeight: 700, color: s.c, lineHeight: 1 }}>{s.v}</div>
+                <div style={{ fontSize: 7, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 2 }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* P&L mini chart */}
+          {trades.length > 0 && (
+            <div style={{ ...cardS, padding: '10px 18px' }}>
+              <div style={cardLabel}>{dot}Courbe P&L session</div>
+              <div style={{ display: 'flex', alignItems: 'end', gap: 3, height: 50 }}>
+                {(() => {
+                  const cum: number[] = []; let acc = 0
+                  trades.forEach(t => { acc += t.pnl; cum.push(acc) })
+                  const max = Math.max(...cum.map(Math.abs), 1)
+                  return cum.map((v, i) => (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: v >= 0 ? 'flex-end' : 'flex-start', height: '100%', position: 'relative' }}>
+                      <div style={{
+                        height: `${Math.abs(v) / max * 100}%`, minHeight: 2,
+                        background: v >= 0 ? GREEN : '#ef4444', borderRadius: 2,
+                        position: 'absolute', bottom: v >= 0 ? '50%' : undefined, top: v < 0 ? '50%' : undefined,
+                        left: 0, right: 0,
+                      }} />
+                    </div>
+                  ))
+                })()}
+              </div>
+              <div style={{ height: 1, background: TEXT3, opacity: 0.2, margin: '0 0 2px' }} />
+            </div>
+          )}
+
+          {/* Mental score */}
+          <div style={{ ...cardS, padding: '10px 18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div style={cardLabel}>{dot}État mental</div>
+              <span style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: mentalScore >= 7 ? GREEN : mentalScore >= 4 ? '#f59e0b' : '#ef4444' }}>
+                {mentalScore >= 8 ? 'ZEN' : mentalScore >= 6 ? 'FOCUS' : mentalScore >= 4 ? 'TENDU' : 'TILT'}
+              </span>
+            </div>
+            <input type="range" min={1} max={10} value={mentalScore} onChange={e => setMentalScore(Number(e.target.value))} style={{ width: '100%', accentColor: mentalScore >= 7 ? GREEN : mentalScore >= 4 ? '#f59e0b' : '#ef4444' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, fontFamily: mono, color: TEXT3, marginTop: 2 }}><span>TILT</span><span>ZEN</span></div>
+          </div>
+
+          {/* Trade log + input */}
+          <div style={{ ...cardS, display: 'flex', flexDirection: 'column' }}>
             <div style={cardLabel}>{dot}Journal de session</div>
-            <div style={{ flex: 1, overflowY: 'auto', minHeight: 40 }}>
+            <div style={{ overflowY: 'auto', maxHeight: 120, minHeight: 30 }}>
               {trades.length === 0 ? (
-                <div style={{ textAlign: 'center' as const, padding: 16, color: TEXT3, fontFamily: mono, fontSize: 10 }}>Aucun trade</div>
+                <div style={{ textAlign: 'center' as const, padding: 10, color: TEXT3, fontFamily: mono, fontSize: 10 }}>Aucun trade</div>
               ) : [...trades].reverse().map(t => (
-                <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '45px 50px auto 70px 50px', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${BORDER}`, fontFamily: mono, fontSize: 10, gap: 6 }}>
+                <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '42px 45px auto 65px 45px', alignItems: 'center', padding: '5px 0', borderBottom: `1px solid ${BORDER}`, fontFamily: mono, fontSize: 10, gap: 4 }}>
                   <span style={{ color: TEXT3 }}>{t.time}</span>
                   <span style={{ fontWeight: 700, color: TEXT }}>{t.instrument}</span>
-                  <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: t.direction === 'long' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.1)', color: t.direction === 'long' ? GREEN : '#ef4444', width: 'fit-content' }}>{t.direction.toUpperCase()}</span>
+                  <span style={{ fontSize: 9, padding: '1px 4px', borderRadius: 3, background: t.direction === 'long' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.1)', color: t.direction === 'long' ? GREEN : '#ef4444', width: 'fit-content' }}>{t.direction.toUpperCase()}</span>
                   <span style={{ fontWeight: 700, textAlign: 'right' as const, color: t.pnl >= 0 ? GREEN : '#ef4444' }}>{t.pnl >= 0 ? '+' : ''}{t.pnl}€</span>
                   <span style={{ color: TEXT3, textAlign: 'right' as const }}>{t.r >= 0 ? '+' : ''}{t.r}R</span>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 65px 55px', gap: 6, marginTop: 8 }}>
-              <select value={tiInst} onChange={e => setTiInst(e.target.value)} style={{ ...inputS, padding: '7px 8px', fontSize: 11 }}>{INSTRUMENTS.map(i => <option key={i}>{i}</option>)}</select>
-              <select value={tiDir} onChange={e => setTiDir(e.target.value as any)} style={{ ...inputS, padding: '7px 8px', fontSize: 11 }}><option value="long">LONG</option><option value="short">SHORT</option></select>
-              <input type="number" value={tiPnl} onChange={e => setTiPnl(e.target.value)} placeholder="P&L €" style={{ ...inputS, padding: '7px 8px', fontSize: 11 }} onKeyDown={e => e.key === 'Enter' && document.getElementById('slr')?.focus()} />
-              <input id="slr" type="number" value={tiR} onChange={e => setTiR(e.target.value)} placeholder="R" step="0.1" style={{ ...inputS, padding: '7px 8px', fontSize: 11 }} onKeyDown={e => e.key === 'Enter' && logTrade()} />
-              <button onClick={logTrade} style={{ background: GREEN, border: 'none', borderRadius: 8, color: '#000', fontFamily: disp, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>LOG</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 60px 50px', gap: 5, marginTop: 6 }}>
+              <select value={tiInst} onChange={e => setTiInst(e.target.value)} style={{ ...inputS, padding: '6px 6px', fontSize: 10 }}>{INSTRUMENTS.map(i => <option key={i}>{i}</option>)}</select>
+              <select value={tiDir} onChange={e => setTiDir(e.target.value as any)} style={{ ...inputS, padding: '6px 6px', fontSize: 10 }}><option value="long">LONG</option><option value="short">SHORT</option></select>
+              <input type="number" value={tiPnl} onChange={e => setTiPnl(e.target.value)} placeholder="P&L €" style={{ ...inputS, padding: '6px 6px', fontSize: 10 }} onKeyDown={e => e.key === 'Enter' && document.getElementById('slr')?.focus()} />
+              <input id="slr" type="number" value={tiR} onChange={e => setTiR(e.target.value)} placeholder="R" step="0.1" style={{ ...inputS, padding: '6px 6px', fontSize: 10 }} onKeyDown={e => e.key === 'Enter' && logTrade()} />
+              <button onClick={logTrade} style={{ background: GREEN, border: 'none', borderRadius: 6, color: '#000', fontFamily: disp, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>LOG</button>
             </div>
           </div>
 
-          {/* Timers */}
-          <div style={cardS}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div style={{ background: BG3, borderRadius: 6, padding: 10, textAlign: 'center' as const }}>
-                <div style={{ fontFamily: mono, fontSize: 24, fontWeight: 700, color: GREEN }}>{formatTime(elapsed)}</div>
-                <div style={{ fontSize: 8, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 2 }}>Session</div>
-              </div>
-              <div style={{ background: BG3, borderRadius: 6, padding: 10, textAlign: 'center' as const }}>
-                <div style={{ fontFamily: mono, fontSize: 24, fontWeight: 700, color: lastTradeTime && (Date.now() - lastTradeTime) > 1800000 ? '#f59e0b' : TEXT }}>{lastTradeElapsed}</div>
-                <div style={{ fontSize: 8, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 2 }}>Dernier trade</div>
-              </div>
+          {/* Timers + Note */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 8 }}>
+            <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
+              <div style={{ fontFamily: mono, fontSize: 22, fontWeight: 700, color: GREEN }}>{formatTime(elapsed)}</div>
+              <div style={{ fontSize: 7, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 2 }}>Session</div>
+            </div>
+            <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
+              <div style={{ fontFamily: mono, fontSize: 22, fontWeight: 700, color: lastTradeTime && (Date.now() - lastTradeTime) > 1800000 ? '#f59e0b' : TEXT }}>{lastTradeElapsed}</div>
+              <div style={{ fontSize: 7, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 2 }}>Dernier trade</div>
+            </div>
+            <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: 7, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Note de session</div>
+              <textarea value={sessionNote} onChange={e => setSessionNote(e.target.value)} placeholder="Observations, erreurs, ajustements..." style={{ flex: 1, background: 'transparent', border: 'none', color: TEXT2, fontFamily: mono, fontSize: 10, outline: 'none', resize: 'none', lineHeight: 1.4, minHeight: 28 }} />
             </div>
           </div>
         </div>
