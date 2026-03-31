@@ -37,15 +37,35 @@ export default function PropFirm() {
   const [payoutNotes, setPayoutNotes] = useState('')
   const [savingPayout, setSavingPayout] = useState(false)
 
+  // P&L per account computed from sessions
+  const [accountPnl, setAccountPnl] = useState<Record<string, number>>({})
+
   const supabase = createClient()
 
   async function fetchData(uid: string) {
-    const [{ data: accs }, { data: pays }] = await Promise.all([
+    const [{ data: accs }, { data: pays }, { data: sessions }] = await Promise.all([
       supabase.from('trader_accounts').select('*').eq('trader_id', uid).order('created_at', { ascending: true }),
       supabase.from('payouts').select('*').eq('trader_id', uid).order('payout_date', { ascending: false }),
+      supabase.from('trading_sessions').select('pnl, setup').eq('trader_id', uid),
     ])
     if (accs) setAccounts(accs as TraderAccount[])
     if (pays) setPayouts(pays as Payout[])
+
+    // Compute P&L per account
+    const pnlMap: Record<string, number> = {}
+    for (const s of sessions ?? []) {
+      try {
+        const setup = s.setup ? JSON.parse(s.setup) : null
+        const ids: string[] = setup?.account_ids ?? []
+        if (ids.length > 0) {
+          const pnlPerAccount = Number(s.pnl) / ids.length
+          for (const id of ids) {
+            pnlMap[id] = (pnlMap[id] ?? 0) + pnlPerAccount
+          }
+        }
+      } catch {}
+    }
+    setAccountPnl(pnlMap)
   }
 
   useEffect(() => {
@@ -317,20 +337,49 @@ export default function PropFirm() {
                 {acc.label || `Compte ${acc.propfirm_name}`}
               </h3>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Capital</p>
-                  <p className="text-sm font-bold font-mono" style={{ color: 'var(--text)' }}>
-                    {Number(acc.capital).toLocaleString('fr-FR')} $
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Balance</p>
-                  <p className="text-sm font-bold font-mono" style={{ color: Number(acc.initial_balance) >= Number(acc.capital) ? '#22c55e' : '#ef4444' }}>
-                    {Number(acc.initial_balance).toLocaleString('fr-FR')} $
-                  </p>
-                </div>
-              </div>
+              {(() => {
+                const pnl = accountPnl[acc.id] ?? 0
+                const balance = Number(acc.initial_balance) + pnl
+                const perfPct = Number(acc.initial_balance) > 0 ? (pnl / Number(acc.initial_balance)) * 100 : 0
+                return (
+                  <>
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Capital</p>
+                        <p className="text-sm font-bold font-mono" style={{ color: 'var(--text)' }}>
+                          {Number(acc.capital).toLocaleString('fr-FR')} $
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Début coaching</p>
+                        <p className="text-sm font-bold font-mono" style={{ color: 'var(--text2)' }}>
+                          {Number(acc.initial_balance).toLocaleString('fr-FR')} $
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Balance</p>
+                        <p className="text-sm font-bold font-mono" style={{ color: balance >= Number(acc.initial_balance) ? '#22c55e' : '#ef4444' }}>
+                          {balance.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} $
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg p-2" style={{ background: pnl >= 0 ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)', border: `1px solid ${pnl >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
+                        <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>P&L</p>
+                        <p className="text-sm font-bold font-mono" style={{ color: pnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                          {pnl >= 0 ? '+' : ''}{pnl.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} $
+                        </p>
+                      </div>
+                      <div className="rounded-lg p-2" style={{ background: perfPct >= 0 ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)', border: `1px solid ${perfPct >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
+                        <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Perf</p>
+                        <p className="text-sm font-bold font-mono" style={{ color: perfPct >= 0 ? '#22c55e' : '#ef4444' }}>
+                          {perfPct >= 0 ? '+' : ''}{perfPct.toFixed(2)}%
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
             </Card>
           ))}
         </div>

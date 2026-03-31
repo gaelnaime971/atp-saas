@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { TradingSession } from '@/lib/types'
+import type { TraderAccount } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
@@ -31,7 +32,9 @@ function formatPercent(value: number): string {
 }
 
 export default function Stats() {
-  const [sessions, setSessions] = useState<TradingSession[]>([])
+  const [allSessions, setAllSessions] = useState<TradingSession[]>([])
+  const [accounts, setAccounts] = useState<TraderAccount[]>([])
+  const [selectedAccount, setSelectedAccount] = useState<string>('all')
   const [period, setPeriod] = useState<Period>('7j')
   const [loading, setLoading] = useState(true)
 
@@ -46,18 +49,29 @@ export default function Stats() {
       const fromDate = new Date()
       fromDate.setDate(fromDate.getDate() - days)
 
-      const { data } = await supabase
-        .from('trading_sessions')
-        .select('*')
-        .eq('trader_id', user.id)
-        .gte('session_date', fromDate.toISOString().split('T')[0])
-        .order('session_date', { ascending: false })
+      const [{ data: sessData }, { data: accData }] = await Promise.all([
+        supabase.from('trading_sessions').select('*').eq('trader_id', user.id).gte('session_date', fromDate.toISOString().split('T')[0]).order('session_date', { ascending: false }),
+        supabase.from('trader_accounts').select('*').eq('trader_id', user.id).order('created_at', { ascending: true }),
+      ])
 
-      setSessions(data ?? [])
+      setAllSessions(sessData ?? [])
+      setAccounts(accData as TraderAccount[] ?? [])
       setLoading(false)
     }
     fetchSessions()
   }, [period])
+
+  // Filter sessions by selected account
+  const sessions = useMemo(() => {
+    if (selectedAccount === 'all') return allSessions
+    return allSessions.filter(s => {
+      try {
+        const setup = s.setup ? JSON.parse(s.setup) : null
+        const ids: string[] = setup?.account_ids ?? []
+        return ids.includes(selectedAccount)
+      } catch { return false }
+    })
+  }, [allSessions, selectedAccount])
 
   const metrics = useMemo(() => {
     if (sessions.length === 0) {
@@ -119,18 +133,62 @@ export default function Stats() {
         </p>
       </div>
 
-      {/* Period tabs */}
-      <div className="flex gap-2" style={{ marginBottom: 24 }}>
-        {periods.map(p => (
-          <Button
-            key={p}
-            variant={period === p ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => setPeriod(p)}
-          >
-            {p}
-          </Button>
-        ))}
+      {/* Filters */}
+      <div className="flex items-center gap-4 flex-wrap" style={{ marginBottom: 24 }}>
+        {/* Period */}
+        <div className="flex gap-2">
+          {periods.map(p => (
+            <Button
+              key={p}
+              variant={period === p ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setPeriod(p)}
+            >
+              {p}
+            </Button>
+          ))}
+        </div>
+
+        {/* Account filter */}
+        {accounts.length > 0 && (
+          <>
+            <div className="h-5 w-px" style={{ background: 'var(--border)' }} />
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium" style={{ color: 'var(--text3)' }}>Compte :</span>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => setSelectedAccount('all')}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    background: selectedAccount === 'all' ? 'rgba(34,197,94,0.1)' : 'var(--bg2)',
+                    color: selectedAccount === 'all' ? '#22c55e' : 'var(--text3)',
+                    border: `1px solid ${selectedAccount === 'all' ? 'rgba(34,197,94,0.2)' : 'var(--border)'}`,
+                  }}
+                >
+                  Tous
+                </button>
+                {accounts.map(acc => {
+                  const active = selectedAccount === acc.id
+                  const color = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
+                  return (
+                    <button
+                      key={acc.id}
+                      onClick={() => setSelectedAccount(acc.id)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      style={{
+                        background: active ? `${color}15` : 'var(--bg2)',
+                        color: active ? color : 'var(--text3)',
+                        border: `1px solid ${active ? `${color}40` : 'var(--border)'}`,
+                      }}
+                    >
+                      {acc.label || acc.propfirm_name || 'Compte'}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {loading ? (
