@@ -548,40 +548,41 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
         {/* ── RIGHT ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
           {/* Rules */}
-          <div style={cardS}>
-            <div style={cardLabel}>{dot}Règles ATP</div>
+          <div style={{ ...cardS, flex: 1 }}>
+            <div style={{ ...cardLabel, fontSize: 10, marginBottom: 16 }}>{dot}Règles ATP — Toujours actives</div>
             {DEFAULT_RULES.map((rule, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 0', borderBottom: i < DEFAULT_RULES.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
-                <div style={{ width: 20, height: 20, background: `${GREEN}12`, border: `1px solid ${GREEN}35`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: 9, fontWeight: 700, color: GREEN, flexShrink: 0 }}>{i + 1}</div>
-                <div style={{ fontSize: 11, color: TEXT2, lineHeight: 1.3 }}><strong style={{ color: TEXT, fontWeight: 600 }}>{rule.title}</strong> — {rule.desc}</div>
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: i < DEFAULT_RULES.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
+                <div style={{ width: 26, height: 26, background: `${GREEN}12`, border: `1px solid ${GREEN}35`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: 11, fontWeight: 700, color: GREEN, flexShrink: 0 }}>{i + 1}</div>
+                <div style={{ fontSize: 13, color: TEXT2, lineHeight: 1.5 }}><strong style={{ color: TEXT, fontWeight: 600 }}>{rule.title}</strong> — {rule.desc}</div>
               </div>
             ))}
           </div>
 
           {/* Checklist */}
-          <div style={cardS}>
-            <div style={cardLabel}>{dot}Checklist</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <div style={{ flex: 1, height: 3, background: BG3, borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{ height: '100%', background: GREEN, borderRadius: 99, width: `${(checkedCount / checks.length) * 100}%`, transition: 'width 0.3s' }} />
+          <div style={{ ...cardS, flex: 1 }}>
+            <div style={{ ...cardLabel, fontSize: 10, marginBottom: 12 }}>{dot}Checklist pré-session</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <div style={{ flex: 1, height: 5, background: BG3, borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: GREEN, borderRadius: 99, width: `${(checkedCount / checks.length) * 100}%`, transition: 'width 0.3s', boxShadow: checkedCount === checks.length ? `0 0 10px ${GREEN}60` : 'none' }} />
               </div>
-              <span style={{ fontFamily: mono, fontSize: 9, color: TEXT3 }}>{checkedCount}/{checks.length}</span>
+              <span style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: checkedCount === checks.length ? GREEN : TEXT3 }}>{checkedCount}/{checks.length}</span>
             </div>
             {checks.map((c, i) => (
-              <div key={i} onClick={() => setChecks(prev => prev.map((x, j) => j === i ? { ...x, done: !x.done } : x))} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: i < checks.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer', userSelect: 'none' as const }}>
-                <div style={{ width: 16, height: 16, border: `1.5px solid ${c.done ? GREEN : BORDER}`, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', background: c.done ? GREEN : 'transparent', flexShrink: 0, transition: 'all 0.15s' }}>
-                  {c.done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+              <div key={i} onClick={() => setChecks(prev => prev.map((x, j) => j === i ? { ...x, done: !x.done } : x))} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < checks.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer', userSelect: 'none' as const }}>
+                <div style={{ width: 22, height: 22, border: `2px solid ${c.done ? GREEN : 'rgba(255,255,255,0.12)'}`, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', background: c.done ? GREEN : 'transparent', flexShrink: 0, transition: 'all 0.15s', boxShadow: c.done ? `0 0 8px ${GREEN}40` : 'none' }}>
+                  {c.done && <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                 </div>
-                <span style={{ fontSize: 11, color: c.done ? TEXT3 : TEXT2, textDecoration: c.done ? 'line-through' : 'none' }}>{c.label}</span>
+                <span style={{ fontSize: 13, color: c.done ? TEXT3 : TEXT, textDecoration: c.done ? 'line-through' : 'none', fontWeight: c.done ? 400 : 500 }}>{c.label}</span>
               </div>
             ))}
           </div>
 
           {/* Buttons */}
-          <button onClick={startBreathe} style={{ width: '100%', padding: 12, background: `linear-gradient(135deg, ${GREEN}15, rgba(96,165,250,0.08))`, border: `1px solid ${GREEN}35`, borderRadius: 10, color: TEXT, fontFamily: disp, fontSize: 15, fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <button onClick={startBreathe} style={{ width: '100%', padding: 16, background: `linear-gradient(135deg, ${GREEN}15, rgba(96,165,250,0.08))`, border: `1px solid ${GREEN}35`, borderRadius: 12, color: TEXT, fontFamily: disp, fontSize: 16, fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" /><path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
             RESPIRE — Pause mentale
           </button>
-          <button onClick={onExit} style={{ width: '100%', padding: 10, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, color: '#ef4444', fontFamily: disp, fontSize: 13, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const }}>
+          <button onClick={onExit} style={{ width: '100%', padding: 14, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, color: '#ef4444', fontFamily: disp, fontSize: 14, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const }}>
             FIN DE SESSION
           </button>
         </div>
