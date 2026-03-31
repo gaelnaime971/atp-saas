@@ -15,7 +15,6 @@ interface CheckItem { label: string; done: boolean }
 
 interface Level { name: string; val: number | null; type: 'RES' | 'SUP' | 'VWAP' | 'POV' }
 
-interface EcoEvent { time: string; title: string; impact: 'high' | 'medium' | 'low' }
 
 const INSTRUMENTS = ['ES', 'MES', 'NQ', 'MNQ', 'YM', 'MYM', 'DAX', 'GC', 'MGC']
 
@@ -77,7 +76,6 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
   const [levelType, setLevelType] = useState<'RES' | 'SUP' | 'VWAP' | 'POV'>('RES')
 
   const [checks, setChecks] = useState<CheckItem[]>(DEFAULT_CHECKS)
-  const [ecoEvents, setEcoEvents] = useState<EcoEvent[]>([])
 
   const [alerts, setAlerts] = useState<{ id: number; type: 'info' | 'warning' | 'danger'; title: string; msg: string }[]>([])
   const alertIdRef = useRef(0)
@@ -103,28 +101,27 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
     setTimeout(() => setAlerts(prev => prev.filter(a => a.id !== id)), type === 'danger' ? 8000 : 5000)
   }, [])
 
-  // Fetch Finnhub economic calendar
+  // Eco calendar widget ref
+  const ecoWidgetRef = useRef<HTMLDivElement>(null)
+  const ecoWidgetLoaded = useRef(false)
+
   useEffect(() => {
-    async function fetchEco() {
-      try {
-        const today = new Date().toISOString().split('T')[0]
-        const res = await fetch(`https://finnhub.io/api/v1/calendar/economic?from=${today}&to=${today}&token=d75i9hhr01qk56kcsitgd75i9hhr01qk56kcsiu0`)
-        const data = await res.json()
-        if (data?.economicCalendar) {
-          const events: EcoEvent[] = data.economicCalendar
-            .filter((e: any) => e.country === 'US' || e.country === 'EU')
-            .slice(0, 8)
-            .map((e: any) => ({
-              time: e.time || '--:--',
-              title: `${e.country} — ${e.event}`,
-              impact: e.impact === 3 ? 'high' : e.impact === 2 ? 'medium' : 'low',
-            }))
-          setEcoEvents(events)
-        }
-      } catch {}
-    }
-    fetchEco()
-  }, [])
+    if (phase !== 'live' || ecoWidgetLoaded.current || !ecoWidgetRef.current) return
+    ecoWidgetLoaded.current = true
+    const script = document.createElement('script')
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js'
+    script.async = true
+    script.innerHTML = JSON.stringify({
+      colorTheme: 'dark',
+      isTransparent: true,
+      width: '100%',
+      height: '100%',
+      locale: 'fr',
+      importanceFilter: '-1,0,1',
+      countryFilter: 'us,eu,fr,de,gb',
+    })
+    ecoWidgetRef.current.appendChild(script)
+  }, [phase])
 
   const totalPnl = trades.reduce((s, t) => s + t.pnl, 0)
   const totalR = trades.reduce((s, t) => s + t.r, 0)
@@ -231,11 +228,6 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
   const mktStatusColor = marketStatus === 'open' ? GREEN : marketStatus === 'premarket' ? '#f59e0b' : '#ef4444'
   const mktStatusLabel = marketStatus === 'open' ? 'MARCHÉ OUVERT' : marketStatus === 'premarket' ? 'PRE-MARKET' : 'HORS SESSION'
   const mktColor = (s: string) => s === 'OUVERT' ? GREEN : s === 'PRE-MARKET' ? '#f59e0b' : TEXT3
-  const impactColors: Record<string, { bg: string; border: string; color: string; label: string }> = {
-    high: { bg: 'rgba(239,68,68,0.07)', border: 'rgba(239,68,68,0.2)', color: '#ef4444', label: 'HIGH' },
-    medium: { bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)', color: '#f59e0b', label: 'MED' },
-    low: { bg: BG3, border: BORDER, color: TEXT3, label: 'LOW' },
-  }
 
   const mono = "'JetBrains Mono', monospace"
   const disp = "'Rajdhani', 'Outfit', sans-serif"
@@ -374,23 +366,12 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
             </div>
           </div>
 
-          {/* Eco calendar */}
-          <div style={{ ...cardS, maxHeight: 200, overflowY: 'auto' }}>
+          {/* Eco calendar - TradingView widget */}
+          <div style={{ ...cardS, height: 220, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={cardLabel}>{dot}Calendrier éco</div>
-            {ecoEvents.length === 0 ? (
-              <div style={{ fontSize: 11, color: TEXT3, fontFamily: mono, textAlign: 'center' as const, padding: 12 }}>Aucun event aujourd&apos;hui</div>
-            ) : ecoEvents.map((ev, i) => {
-              const ic = impactColors[ev.impact]
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: 8, borderRadius: 6, marginBottom: 6, background: ic.bg, border: `1px solid ${ic.border}` }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, fontFamily: mono, padding: '2px 5px', borderRadius: 4, background: `${ic.color}25`, color: ic.color, whiteSpace: 'nowrap' as const }}>{ic.label}</span>
-                  <div>
-                    <div style={{ fontFamily: mono, fontSize: 10, fontWeight: 700, color: TEXT }}>{ev.time}</div>
-                    <div style={{ fontSize: 10, color: TEXT2, marginTop: 1, lineHeight: 1.3 }}>{ev.title}</div>
-                  </div>
-                </div>
-              )
-            })}
+            <div ref={ecoWidgetRef} className="tradingview-widget-container" style={{ flex: 1, overflow: 'hidden', borderRadius: 6 }}>
+              <div className="tradingview-widget-container__widget" style={{ height: '100%' }} />
+            </div>
           </div>
 
           {/* Levels */}
