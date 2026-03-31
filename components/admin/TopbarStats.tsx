@@ -127,10 +127,10 @@ export default function AdminTopbarStats() {
             className="flex flex-col items-center px-2.5 py-1 rounded-md"
             style={{ minWidth: 56 }}
           >
-            <span className="text-[9px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#5a6a82' }}>
+            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#5a6a82' }}>
               {item.label}
             </span>
-            <span className="text-[11px] font-bold font-mono leading-tight" style={{ color: item.color }}>
+            <span className="text-xs font-bold font-mono leading-tight" style={{ color: item.color }}>
               {item.value}
             </span>
           </div>
@@ -143,8 +143,8 @@ export default function AdminTopbarStats() {
         <>
           <div className="w-px h-5 shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
           <div className="flex flex-col items-center px-2.5 py-1 rounded-md" style={{ background: 'rgba(239,68,68,0.08)' }}>
-            <span className="text-[9px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#ef4444' }}>Messages</span>
-            <span className="text-[11px] font-bold font-mono leading-tight" style={{ color: '#ef4444' }}>{stats.unreadMessages}</span>
+            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#ef4444' }}>Messages</span>
+            <span className="text-xs font-bold font-mono leading-tight" style={{ color: '#ef4444' }}>{stats.unreadMessages}</span>
           </div>
         </>
       )}
@@ -152,8 +152,8 @@ export default function AdminTopbarStats() {
         <>
           <div className="w-px h-5 shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
           <div className="flex flex-col items-center px-2.5 py-1 rounded-md" style={{ background: 'rgba(245,158,11,0.08)' }}>
-            <span className="text-[9px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#f59e0b' }}>Invitations</span>
-            <span className="text-[11px] font-bold font-mono leading-tight" style={{ color: '#f59e0b' }}>{stats.pendingInvites}</span>
+            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#f59e0b' }}>Invitations</span>
+            <span className="text-xs font-bold font-mono leading-tight" style={{ color: '#f59e0b' }}>{stats.pendingInvites}</span>
           </div>
         </>
       )}

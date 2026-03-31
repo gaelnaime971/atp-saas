@@ -122,10 +122,10 @@ export default function TopbarStats() {
             className="flex flex-col items-center px-2.5 py-1 rounded-md"
             style={{ minWidth: 56 }}
           >
-            <span className="text-[9px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#5a6a82' }}>
+            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#5a6a82' }}>
               {item.label}
             </span>
-            <span className="text-[11px] font-bold font-mono leading-tight" style={{ color: item.color }}>
+            <span className="text-xs font-bold font-mono leading-tight" style={{ color: item.color }}>
               {item.value}
             </span>
           </div>
@@ -141,10 +141,10 @@ export default function TopbarStats() {
             className="flex flex-col items-center px-2.5 py-1 rounded-md"
             style={{ background: 'rgba(96,165,250,0.08)' }}
           >
-            <span className="text-[9px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#60a5fa' }}>
+            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#60a5fa' }}>
               Messages
             </span>
-            <span className="text-[11px] font-bold font-mono leading-tight" style={{ color: '#60a5fa' }}>
+            <span className="text-xs font-bold font-mono leading-tight" style={{ color: '#60a5fa' }}>
               {stats.unreadMessages}
             </span>
           </div>
