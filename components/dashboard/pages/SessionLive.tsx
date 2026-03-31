@@ -543,6 +543,17 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
               <textarea value={sessionNote} onChange={e => setSessionNote(e.target.value)} placeholder="Observations, erreurs, ajustements..." style={{ flex: 1, background: 'transparent', border: 'none', color: TEXT2, fontFamily: mono, fontSize: 12, outline: 'none', resize: 'none', lineHeight: 1.5, minHeight: 40 }} />
             </div>
           </div>
+
+          {/* Buttons */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <button onClick={startBreathe} style={{ padding: 14, background: `linear-gradient(135deg, ${GREEN}15, rgba(96,165,250,0.08))`, border: `1px solid ${GREEN}35`, borderRadius: 10, color: TEXT, fontFamily: disp, fontSize: 14, fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" /><path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+              RESPIRE
+            </button>
+            <button onClick={onExit} style={{ padding: 14, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, color: '#ef4444', fontFamily: disp, fontSize: 14, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const }}>
+              FIN DE SESSION
+            </button>
+          </div>
         </div>
 
         {/* ── RIGHT ── */}
@@ -577,14 +588,6 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
             ))}
           </div>
 
-          {/* Buttons */}
-          <button onClick={startBreathe} style={{ width: '100%', padding: 16, background: `linear-gradient(135deg, ${GREEN}15, rgba(96,165,250,0.08))`, border: `1px solid ${GREEN}35`, borderRadius: 12, color: TEXT, fontFamily: disp, fontSize: 16, fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" /><path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-            RESPIRE — Pause mentale
-          </button>
-          <button onClick={onExit} style={{ width: '100%', padding: 14, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, color: '#ef4444', fontFamily: disp, fontSize: 14, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const }}>
-            FIN DE SESSION
-          </button>
         </div>
       </div>
 
