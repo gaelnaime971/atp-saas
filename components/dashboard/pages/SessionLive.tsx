@@ -4,428 +4,568 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface TradeEntry {
   id: number
-  pnl: number
-  note: string
   time: string
+  instrument: string
+  direction: 'long' | 'short'
+  pnl: number
+  r: number
+  targetAlerted?: boolean
 }
 
+interface CheckItem {
+  label: string
+  done: boolean
+}
+
+interface Level {
+  name: string
+  val: number | null
+  type: 'RES' | 'SUP' | 'VWAP' | 'POV'
+}
+
+const INSTRUMENTS = ['ES', 'MES', 'NQ', 'MNQ', 'YM', 'MYM', 'DAX', 'GC', 'MGC']
+
 const DEFAULT_RULES = [
-  "Max 3 trades par jour",
-  "Stop loss = 1R maximum",
-  "Pas de revenge trading",
-  "Attendre la confirmation",
-  "Respecter le plan ATP",
+  { title: 'SL fixe 25 pts ATP', desc: "Défini avant l'entrée. Jamais élargi en cours de trade." },
+  { title: 'Risque 1% max', desc: 'Sizing calculé avant. Aucun trade sans calcul préalable.' },
+  { title: '3 pertes = pause', desc: '3 stops consécutifs imposent 30 min de pause obligatoire.' },
+  { title: 'Pas de revenge trading', desc: 'Une perte ne se récupère pas dans la même session.' },
+  { title: 'News = taille réduite', desc: '30 min avant/après toute news HIGH : sizing divisé par 2 ou pause.' },
 ]
 
+const DEFAULT_CHECKS: CheckItem[] = [
+  { label: 'Calendrier éco vérifié', done: false },
+  { label: 'Niveaux clés identifiés', done: false },
+  { label: 'Sizing calculé', done: false },
+  { label: 'Daily loss max défini', done: false },
+  { label: 'Mindset stable — pas de stress', done: false },
+  { label: 'Plan de session écrit', done: false },
+  { label: 'Environnement de travail prêt', done: false },
+]
+
+const levelTagClass: Record<string, string> = {
+  RES: 'rgba(239,68,68,0.15)',
+  SUP: 'rgba(34,197,94,0.15)',
+  VWAP: 'rgba(96,165,250,0.15)',
+  POV: 'rgba(167,139,250,0.15)',
+}
+const levelTagColor: Record<string, string> = {
+  RES: '#ef4444',
+  SUP: '#22c55e',
+  VWAP: '#60a5fa',
+  POV: '#a78bfa',
+}
+
 export default function SessionLive({ onExit }: { onExit: () => void }) {
-  const [startTime] = useState(() => Date.now())
+  // Setup phase
+  const [phase, setPhase] = useState<'setup' | 'live' | 'breathe'>('setup')
+  const [setupCapital, setSetupCapital] = useState('100000')
+  const [setupDailyLoss, setSetupDailyLoss] = useState('500')
+  const [setupTarget, setSetupTarget] = useState('300')
+  const [setupInstrument, setSetupInstrument] = useState('YM')
+  const [setupContext, setSetupContext] = useState('')
+
+  // Session state
+  const [startTime, setStartTime] = useState(0)
   const [elapsed, setElapsed] = useState(0)
   const [trades, setTrades] = useState<TradeEntry[]>([])
-  const [mentalScore, setMentalScore] = useState(8)
-  const [tradePnl, setTradePnl] = useState('')
-  const [tradeNote, setTradeNote] = useState('')
-  const [alert, setAlert] = useState<{ message: string; type: 'info' | 'warning' | 'danger' } | null>(null)
-  const [showEndConfirm, setShowEndConfirm] = useState(false)
-  const [maxLoss, setMaxLoss] = useState(-200)
-  const [maxTrades, setMaxTrades] = useState(3)
-  const [pauseReminder, setPauseReminder] = useState(30) // minutes
-  const alertTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [dailyLoss, setDailyLoss] = useState(500)
+  const [target, setTarget] = useState(300)
+  const [lastTradeTime, setLastTradeTime] = useState<number | null>(null)
+  const [lastTradeElapsed, setLastTradeElapsed] = useState('--:--')
+  const [consecutiveLosses, setConsecutiveLosses] = useState(0)
 
-  // Pre-market data
-  const [bias, setBias] = useState('')
-  const [support, setSupport] = useState('')
-  const [resistance, setResistance] = useState('')
-  const [pivot, setPivot] = useState('')
+  // Trade input
+  const [tiInst, setTiInst] = useState('YM')
+  const [tiDir, setTiDir] = useState<'long' | 'short'>('long')
+  const [tiPnl, setTiPnl] = useState('')
+  const [tiR, setTiR] = useState('')
 
-  useEffect(() => {
-    try {
-      const key = `premarket_${new Date().toISOString().split('T')[0]}`
-      const stored = localStorage.getItem(key)
-      if (stored) {
-        const data = JSON.parse(stored)
-        setBias(data.bias ?? '')
-        setSupport(data.support ?? '')
-        setResistance(data.resistance ?? '')
-        setPivot(data.pivot ?? '')
-      }
-    } catch {}
+  // Levels
+  const [levels, setLevels] = useState<Level[]>([
+    { name: 'Résistance 1', val: null, type: 'RES' },
+    { name: 'VWAP', val: null, type: 'VWAP' },
+    { name: 'Support 1', val: null, type: 'SUP' },
+    { name: 'POV', val: null, type: 'POV' },
+  ])
+  const [levelInput, setLevelInput] = useState('')
+  const [levelType, setLevelType] = useState<'RES' | 'SUP' | 'VWAP' | 'POV'>('RES')
+
+  // Checklist
+  const [checks, setChecks] = useState<CheckItem[]>(DEFAULT_CHECKS)
+
+  // Alerts
+  const [alerts, setAlerts] = useState<{ id: number; type: 'info' | 'warning' | 'danger'; title: string; msg: string }[]>([])
+  const alertIdRef = useRef(0)
+  const alertedRef = useRef({ at75: false, at90: false, at3loss: false, targetReached: false })
+
+  // Clock
+  const [clock, setClock] = useState('--:--:--')
+  const [dateStr, setDateStr] = useState('')
+
+  // Market status
+  const [marketStatus, setMarketStatus] = useState<'open' | 'premarket' | 'closed'>('closed')
+  const [mktUS, setMktUS] = useState('--')
+  const [mktCME, setMktCME] = useState('--')
+  const [mktDAX, setMktDAX] = useState('--')
+  const [mktLSE, setMktLSE] = useState('--')
+
+  // Breathe
+  const [breatheCount, setBreatheCount] = useState(60)
+  const [breathePhaseText, setBreathePhaseText] = useState('Inspire... 4 secondes')
+  const breatheIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const showAlert = useCallback((type: 'info' | 'warning' | 'danger', title: string, msg: string) => {
+    const id = ++alertIdRef.current
+    setAlerts(prev => [...prev, { id, type, title, msg }])
+    setTimeout(() => setAlerts(prev => prev.filter(a => a.id !== id)), type === 'danger' ? 8000 : 5000)
   }, [])
 
-  // Timer
-  useEffect(() => {
-    const interval = setInterval(() => setElapsed(Date.now() - startTime), 1000)
-    return () => clearInterval(interval)
-  }, [startTime])
-
-  // Periodic alerts
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const mins = Math.floor((Date.now() - startTime) / 60000)
-      if (mins > 0 && mins % pauseReminder === 0) {
-        showAlert('Fais une pause de 5 minutes. Respire.', 'info')
-      }
-      if (mins > 0 && mins % 15 === 0 && mins % pauseReminder !== 0) {
-        showAlert('Respectes-tu ton plan ?', 'info')
-      }
-    }, 60000)
-    return () => clearInterval(interval)
-  }, [startTime, pauseReminder])
-
-  const showAlert = useCallback((message: string, type: 'info' | 'warning' | 'danger') => {
-    setAlert({ message, type })
-    if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current)
-    alertTimeoutRef.current = setTimeout(() => setAlert(null), 6000)
-  }, [])
-
+  // Computed
   const totalPnl = trades.reduce((s, t) => s + t.pnl, 0)
+  const totalR = trades.reduce((s, t) => s + t.r, 0)
+  const wins = trades.filter(t => t.pnl > 0).length
+  const losses = trades.filter(t => t.pnl < 0).length
+  const lossAmount = trades.filter(t => t.pnl < 0).reduce((s, t) => s + Math.abs(t.pnl), 0)
+  const riskPct = Math.min(100, (lossAmount / dailyLoss) * 100)
+  const targetPct = Math.max(0, Math.min(100, (totalPnl / target) * 100))
+  const planScore = trades.length > 0 ? Math.round((wins / trades.length) * 10) : 0
+  const checkedCount = checks.filter(c => c.done).length
 
-  // Check limits after trades change
+  // Timer tick
   useEffect(() => {
-    if (trades.length > 0 && totalPnl <= maxLoss) {
-      showAlert('STOP — Limite de perte atteinte !', 'danger')
-    }
-    if (trades.length >= maxTrades) {
-      showAlert(`Max trades atteint (${maxTrades}). Arrête-toi.`, 'warning')
-    }
-  }, [trades.length, totalPnl, maxLoss, maxTrades, showAlert])
+    if (phase !== 'live') return
+    const interval = setInterval(() => {
+      const now = Date.now()
+      setElapsed(now - startTime)
+      // Clock
+      const d = new Date()
+      setClock(d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+      setDateStr(d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }))
+      // Last trade
+      if (lastTradeTime) {
+        const lt = Math.floor((now - lastTradeTime) / 1000)
+        setLastTradeElapsed(`${String(Math.floor(lt / 60)).padStart(2, '0')}:${String(lt % 60).padStart(2, '0')}`)
+      }
+      // Market status
+      const h = d.getHours()
+      const totalMin = h * 60 + d.getMinutes()
+      if (totalMin >= 15 * 60 + 30 && totalMin < 22 * 60) {
+        setMarketStatus('open'); setMktUS('OUVERT'); setMktCME('OUVERT')
+      } else if (totalMin >= 14 * 60 && totalMin < 15 * 60 + 30) {
+        setMarketStatus('premarket'); setMktUS('PRE-MARKET'); setMktCME('OUVERT')
+      } else {
+        setMarketStatus('closed'); setMktUS('FERMÉ'); setMktCME('OUVERT')
+      }
+      setMktDAX(totalMin >= 9 * 60 && totalMin < 17 * 60 + 30 ? 'OUVERT' : 'FERMÉ')
+      setMktLSE(totalMin >= 9 * 60 && totalMin < 17 * 60 + 30 ? 'OUVERT' : 'FERMÉ')
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [phase, startTime, lastTradeTime])
 
-  function addTrade() {
-    if (!tradePnl) return
-    const entry: TradeEntry = {
-      id: Date.now(),
-      pnl: parseFloat(tradePnl) || 0,
-      note: tradeNote,
-      time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+  // Risk alerts
+  useEffect(() => {
+    if (phase !== 'live') return
+    if (riskPct >= 75 && !alertedRef.current.at75) {
+      alertedRef.current.at75 = true
+      showAlert('warning', '⚠ 75% du daily loss', `Il te reste ${(dailyLoss - lossAmount).toFixed(0)} € avant la limite.`)
     }
-    setTrades(prev => [...prev, entry])
-    setTradePnl('')
-    setTradeNote('')
-    showAlert('Trade enregistré. Note ton ressenti.', 'info')
-  }
+    if (riskPct >= 90 && !alertedRef.current.at90) {
+      alertedRef.current.at90 = true
+      showAlert('danger', '🔴 90% — ATTENTION', 'Tu approches de ton daily loss max.')
+    }
+    if (totalPnl >= target && trades.length > 0 && !alertedRef.current.targetReached) {
+      alertedRef.current.targetReached = true
+      showAlert('info', '🎯 Objectif atteint !', `+${totalPnl.toFixed(0)} € — Excellent travail.`)
+    }
+  }, [riskPct, totalPnl, phase, dailyLoss, lossAmount, target, trades.length, showAlert])
 
   function formatTime(ms: number) {
     const s = Math.floor(ms / 1000)
-    const h = Math.floor(s / 3600)
-    const m = Math.floor((s % 3600) / 60)
-    const sec = s % 60
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
   }
 
-  const biasLabel: Record<string, { text: string; color: string }> = {
-    haussier: { text: 'HAUSSIER', color: '#22c55e' },
-    baissier: { text: 'BAISSIER', color: '#ef4444' },
-    neutre: { text: 'NEUTRE', color: '#f59e0b' },
-    none: { text: 'PAS DE BIAIS', color: '#5a6a82' },
+  function handleStart() {
+    setDailyLoss(parseFloat(setupDailyLoss) || 500)
+    setTarget(parseFloat(setupTarget) || 300)
+    setTiInst(setupInstrument)
+    setStartTime(Date.now())
+    setPhase('live')
+    showAlert('info', '⚡ Session lancée', `Bonne session ${setupInstrument} — Reste dans le plan ATP.`)
   }
 
-  const mentalColors = ['#ef4444', '#ef4444', '#f59e0b', '#f59e0b', '#f59e0b', '#eab308', '#22c55e', '#22c55e', '#22c55e', '#22c55e']
-  const mentalLabels = ['TILT', 'TILT', 'AGITÉ', 'TENDU', 'TENDU', 'NEUTRE', 'FOCUS', 'CALME', 'CALME', 'ZEN']
+  function logTrade() {
+    const pnl = parseFloat(tiPnl) || 0
+    const r = parseFloat(tiR) || 0
+    if (pnl === 0 && r === 0) return
+    const now = new Date()
+    const entry: TradeEntry = {
+      id: Date.now(), time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+      instrument: tiInst, direction: tiDir, pnl, r,
+    }
+    setTrades(prev => [...prev, entry])
+    setLastTradeTime(Date.now())
+    setTiPnl('')
+    setTiR('')
+    if (pnl < 0) {
+      const newConsec = consecutiveLosses + 1
+      setConsecutiveLosses(newConsec)
+      if (newConsec >= 3 && !alertedRef.current.at3loss) {
+        alertedRef.current.at3loss = true
+        showAlert('danger', '🔴 3 stops consécutifs', 'Règle ATP — Pause obligatoire de 30 minutes.')
+      }
+    } else {
+      setConsecutiveLosses(0)
+      alertedRef.current.at3loss = false
+    }
+  }
+
+  function addLevel() {
+    if (!levelInput) return
+    const empty = levels.findIndex(l => l.val === null)
+    if (empty >= 0) {
+      setLevels(prev => prev.map((l, i) => i === empty ? { name: levelType, val: parseFloat(levelInput), type: levelType } : l))
+    } else {
+      setLevels(prev => [...prev, { name: levelType, val: parseFloat(levelInput), type: levelType }])
+    }
+    setLevelInput('')
+  }
+
+  function toggleCheck(idx: number) {
+    setChecks(prev => prev.map((c, i) => i === idx ? { ...c, done: !c.done } : c))
+  }
+
+  function startBreathe() {
+    setPhase('breathe')
+    setBreatheCount(60)
+    setBreathePhaseText('Inspire... 4 secondes')
+    breatheIntervalRef.current = setInterval(() => {
+      setBreatheCount(prev => {
+        if (prev <= 1) { stopBreathe(); return 0 }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  function stopBreathe() {
+    if (breatheIntervalRef.current) clearInterval(breatheIntervalRef.current)
+    setPhase('live')
+    showAlert('info', '✅ Pause terminée', 'Tu peux reprendre avec un esprit clair.')
+  }
+
+  const mktStatusColor = marketStatus === 'open' ? '#22c55e' : marketStatus === 'premarket' ? '#f59e0b' : '#ef4444'
+  const mktStatusLabel = marketStatus === 'open' ? 'MARCHÉ OUVERT' : marketStatus === 'premarket' ? 'PRE-MARKET' : 'HORS SESSION'
+  const mktClass = (s: string) => s === 'OUVERT' ? '#22c55e' : s === 'PRE-MARKET' ? '#f59e0b' : '#52525b'
+
+  // ────────────── SETUP OVERLAY ──────────────
+  if (phase === 'setup') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(8,12,16,0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Rajdhani', 'Outfit', sans-serif" }}>
+        <div style={{ background: '#0d1219', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 40, maxWidth: 520, width: '90%' }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e', letterSpacing: '0.06em', marginBottom: 6 }}>DÉBUT DE SESSION</div>
+          <div style={{ fontSize: 14, color: '#445566', fontFamily: "'JetBrains Mono', monospace", marginBottom: 28 }}>ATP — Configure ta session avant de trader</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            {[
+              { label: 'Capital du compte (€)', value: setupCapital, set: setSetupCapital, type: 'number' },
+              { label: 'Daily loss max (€)', value: setupDailyLoss, set: setSetupDailyLoss, type: 'number' },
+            ].map(f => (
+              <div key={f.label}>
+                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#445566', fontFamily: "'JetBrains Mono', monospace", marginBottom: 6 }}>{f.label}</label>
+                <input type={f.type} value={f.value} onChange={e => f.set(e.target.value)} style={{ width: '100%', background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 14px', color: '#e2e8f4', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, outline: 'none' }} />
+              </div>
+            ))}
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#445566', fontFamily: "'JetBrains Mono', monospace", marginBottom: 6 }}>Instrument principal</label>
+              <select value={setupInstrument} onChange={e => setSetupInstrument(e.target.value)} style={{ width: '100%', background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 14px', color: '#e2e8f4', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, outline: 'none' }}>
+                {INSTRUMENTS.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#445566', fontFamily: "'JetBrains Mono', monospace", marginBottom: 6 }}>Objectif de session (€)</label>
+              <input type="number" value={setupTarget} onChange={e => setSetupTarget(e.target.value)} style={{ width: '100%', background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 14px', color: '#e2e8f4', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, outline: 'none' }} />
+            </div>
+          </div>
+          <div style={{ marginTop: 14 }}>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#445566', fontFamily: "'JetBrains Mono', monospace", marginBottom: 6 }}>Contexte du jour (optionnel)</label>
+            <input type="text" value={setupContext} onChange={e => setSetupContext(e.target.value)} placeholder="ex: Semaine FOMC, range ATH..." style={{ width: '100%', background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 14px', color: '#e2e8f4', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, outline: 'none' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+            <button onClick={onExit} style={{ flex: 1, padding: 16, background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#8899aa', fontFamily: "'Rajdhani', sans-serif", fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>ANNULER</button>
+            <button onClick={handleStart} style={{ flex: 2, padding: 16, background: '#22c55e', border: 'none', borderRadius: 10, color: '#000', fontFamily: "'Rajdhani', sans-serif", fontSize: 18, fontWeight: 800, letterSpacing: '0.08em', cursor: 'pointer', textTransform: 'uppercase' }}>⚡ LANCER LA SESSION</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ────────────── BREATHE OVERLAY ──────────────
+  if (phase === 'breathe') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(8,12,16,0.97)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', fontFamily: "'Rajdhani', sans-serif" }}>
+        <div style={{ width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,197,94,0.2), transparent 70%)', border: '1.5px solid rgba(34,197,94,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 32 }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(34,197,94,0.15)', border: '1.5px solid rgba(34,197,94,0.5)', animation: 'breathe-anim 14s ease-in-out infinite' }} />
+        </div>
+        <div style={{ fontSize: 32, fontWeight: 700, color: '#22c55e', letterSpacing: '0.08em' }}>RESPIRE</div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: '#445566', letterSpacing: '0.1em', marginTop: 4 }}>COHÉRENCE CARDIAQUE</div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: '#8899aa', marginTop: 8 }}>{breathePhaseText}</div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 48, fontWeight: 700, color: '#e2e8f4', marginTop: 24 }}>{breatheCount}</div>
+        <button onClick={stopBreathe} style={{ marginTop: 32, background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: '#445566', borderRadius: 6, padding: '8px 20px', fontFamily: "'JetBrains Mono', monospace", fontSize: 11, cursor: 'pointer', letterSpacing: '0.08em' }}>Terminer</button>
+        <style>{`@keyframes breathe-anim { 0%,100% { transform: scale(1); } 29% { transform: scale(1.8); } 57% { transform: scale(1.8); } 100% { transform: scale(1); } }`}</style>
+      </div>
+    )
+  }
+
+  // ────────────── MAIN COCKPIT ──────────────
+  const mono = "'JetBrains Mono', monospace"
+  const display = "'Rajdhani', 'Outfit', sans-serif"
+  const cardStyle: React.CSSProperties = { background: '#0d1219', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: 18, position: 'relative', overflow: 'hidden' }
+  const cardLabelStyle: React.CSSProperties = { fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#445566', fontFamily: mono, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 100, background: '#000',
-      display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      fontFamily: "'DM Mono', 'Outfit', monospace",
-    }}>
-      {/* Scanline overlay */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10,
-        background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px)',
-      }} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#080c10', fontFamily: display, overflow: 'hidden' }}>
+      {/* Scanline */}
+      <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)', pointerEvents: 'none', zIndex: 10 }} />
+      {/* Corners */}
+      {['top:12px;left:12px;border-width:1.5px 0 0 1.5px', 'top:12px;right:12px;border-width:1.5px 1.5px 0 0', 'bottom:12px;left:12px;border-width:0 0 1.5px 1.5px', 'bottom:12px;right:12px;border-width:0 1.5px 1.5px 0'].map((s, i) => (
+        <div key={i} style={{ position: 'fixed', width: 20, height: 20, borderColor: '#22c55e', borderStyle: 'solid', opacity: 0.4, zIndex: 100, ...Object.fromEntries(s.split(';').map(p => { const [k, v] = p.split(':'); return [k.trim(), v.trim()] })) } as any} />
+      ))}
 
-      {/* Alert banner */}
-      {alert && (
-        <div style={{
-          position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 20,
-          padding: '14px 32px', borderRadius: 12,
-          background: alert.type === 'danger' ? 'rgba(239,68,68,0.15)' : alert.type === 'warning' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.1)',
-          border: `1px solid ${alert.type === 'danger' ? 'rgba(239,68,68,0.4)' : alert.type === 'warning' ? 'rgba(245,158,11,0.4)' : 'rgba(34,197,94,0.3)'}`,
-          color: alert.type === 'danger' ? '#ef4444' : alert.type === 'warning' ? '#f59e0b' : '#22c55e',
-          fontSize: 14, fontWeight: 700, letterSpacing: '0.05em',
-          backdropFilter: 'blur(20px)',
-          animation: 'pulse 1.5s ease-in-out infinite',
-        }}>
-          {alert.message}
-        </div>
-      )}
+      {/* Alerts */}
+      <div style={{ position: 'fixed', bottom: 20, right: 20, width: 320, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 1000 }}>
+        {alerts.map(a => {
+          const colors = a.type === 'danger' ? { bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)', bar: '#ef4444', icon: '🔴' } : a.type === 'warning' ? { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', bar: '#f59e0b', icon: '⚠️' } : { bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)', bar: '#22c55e', icon: '🟢' }
+          return (
+            <div key={a.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px', borderRadius: 10, border: `1px solid ${colors.border}`, background: colors.bg, borderLeft: `3px solid ${colors.bar}`, animation: 'slideIn .3s ease' }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{colors.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: colors.bar, marginBottom: 3 }}>{a.title}</div>
+                <div style={{ fontSize: 11, color: '#8899aa', lineHeight: 1.4 }}>{a.msg}</div>
+              </div>
+              <button onClick={() => setAlerts(prev => prev.filter(x => x.id !== a.id))} style={{ background: 'none', border: 'none', color: '#445566', cursor: 'pointer', fontSize: 16, padding: 0 }}>×</button>
+            </div>
+          )
+        })}
+      </div>
 
-      {/* Top HUD bar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 24px',
-        borderBottom: '1px solid rgba(34,197,94,0.15)',
-        background: 'rgba(0,0,0,0.8)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <div>
-            <div style={{ fontSize: 9, color: '#22c55e', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Session Active</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e', fontFamily: "'DM Mono', monospace" }}>{formatTime(elapsed)}</div>
+      {/* Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 300px', gridTemplateRows: 'auto 1fr', minHeight: '100vh', padding: 20, gap: 16, maxWidth: 1400, margin: '0 auto' }}>
+
+        {/* ── TOPBAR ── */}
+        <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...cardStyle, padding: '12px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ fontFamily: display, fontSize: 20, fontWeight: 700, letterSpacing: '0.08em', color: '#22c55e' }}>α ATP</div>
+            <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 14px', borderRadius: 99, fontFamily: mono, fontSize: 11, fontWeight: 700, background: `${mktStatusColor}18`, border: `1px solid ${mktStatusColor}40`, color: mktStatusColor }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: mktStatusColor, boxShadow: `0 0 8px ${mktStatusColor}`, animation: marketStatus !== 'closed' ? 'pulseDot 1.5s infinite' : 'none' }} />
+              {mktStatusLabel}
+            </div>
           </div>
-          <div style={{ width: 1, height: 40, background: 'rgba(34,197,94,0.2)' }} />
-          <div>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Trades</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: trades.length >= maxTrades ? '#ef4444' : '#f0f0f3' }}>{trades.length}<span style={{ fontSize: 14, color: '#5a6a82' }}>/{maxTrades}</span></div>
-          </div>
-          <div style={{ width: 1, height: 40, background: 'rgba(34,197,94,0.2)' }} />
-          <div>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase' }}>P&L Running</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: totalPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: "'DM Mono', monospace" }}>
-              {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)}$
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            {lossAmount >= dailyLoss && (
+              <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#ef4444', fontFamily: mono, letterSpacing: '0.04em' }}>⛔ DAILY LOSS ATTEINT — STOP</div>
+            )}
+            <div style={{ textAlign: 'right' as const }}>
+              <div style={{ fontFamily: mono, fontSize: 22, fontWeight: 700, color: '#e2e8f4', letterSpacing: '0.08em' }}>{clock}</div>
+              <div style={{ fontFamily: mono, fontSize: 10, color: '#445566', letterSpacing: '0.08em' }}>{dateStr}</div>
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setShowEndConfirm(true)}
-          style={{
-            padding: '10px 20px', borderRadius: 8, fontSize: 12, fontWeight: 700,
-            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-            color: '#ef4444', cursor: 'pointer', letterSpacing: '0.1em', textTransform: 'uppercase',
-          }}
-        >
-          Fin de session
-        </button>
-      </div>
 
-      {/* Main grid */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: 1, background: 'rgba(34,197,94,0.05)', overflow: 'hidden' }}>
-
-        {/* Left panel — Context */}
-        <div style={{ background: '#0a0a0c', padding: 20, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-          {/* Bias */}
-          <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(34,197,94,0.1)' }}>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Biais du jour</div>
-            {bias ? (
-              <div style={{ fontSize: 20, fontWeight: 700, color: biasLabel[bias]?.color ?? '#5a6a82' }}>
-                {biasLabel[bias]?.text ?? bias.toUpperCase()}
-              </div>
-            ) : (
-              <div style={{ fontSize: 13, color: '#5a6a82' }}>Non défini — remplis la routine pré-marché</div>
-            )}
+        {/* ── LEFT COLUMN ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Markets */}
+          <div style={cardStyle}>
+            <div style={cardLabelStyle}><span style={{ width: 4, height: 4, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 6px #22c55e' }} />Statut des marchés</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[
+                { name: 'NYSE / NASDAQ', status: mktUS, hours: '09:30–16:00 ET' },
+                { name: 'CME Futures', status: mktCME, hours: '18:00–17:00 ET' },
+                { name: 'XETRA (DAX)', status: mktDAX, hours: '09:00–17:30 CET' },
+                { name: 'LSE', status: mktLSE, hours: '08:00–16:30 GMT' },
+              ].map(m => (
+                <div key={m.name} style={{ background: '#121820', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 7, padding: 10 }}>
+                  <div style={{ fontSize: 10, color: '#445566', fontFamily: mono, marginBottom: 4 }}>{m.name}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, fontFamily: mono, color: mktClass(m.status) }}>{m.status}</div>
+                  <div style={{ fontSize: 9, color: '#445566', fontFamily: mono, marginTop: 2 }}>{m.hours}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Key levels */}
-          <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(34,197,94,0.1)' }}>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Niveaux clés</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[
-                { label: 'Résistance', value: resistance, color: '#ef4444' },
-                { label: 'Pivot', value: pivot, color: '#f59e0b' },
-                { label: 'Support', value: support, color: '#22c55e' },
-              ].map(lvl => (
-                <div key={lvl.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: lvl.color, fontWeight: 600 }}>{lvl.label}</span>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: lvl.value ? '#f0f0f3' : '#333', fontFamily: "'DM Mono', monospace" }}>
-                    {lvl.value || '—'}
-                  </span>
-                </div>
-              ))}
+          <div style={cardStyle}>
+            <div style={cardLabelStyle}><span style={{ width: 4, height: 4, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 6px #22c55e' }} />Niveaux clés du jour</div>
+            {levels.filter(l => l.val !== null).map((l, i) => (
+              <div key={i} onClick={() => setLevels(prev => prev.filter((_, j) => j !== i))} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', fontFamily: mono, cursor: 'pointer' }} title="Cliquer pour supprimer">
+                <span style={{ fontSize: 10, color: '#445566' }}>{l.name}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f4' }}>{l.val!.toFixed(2)}</span>
+                <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: levelTagClass[l.type], color: levelTagColor[l.type] }}>{l.type}</span>
+              </div>
+            ))}
+            {levels.filter(l => l.val !== null).length === 0 && <div style={{ fontSize: 11, color: '#445566', fontFamily: mono, padding: '8px 0', textAlign: 'center' as const }}>Aucun niveau défini</div>}
+            <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+              <input type="number" value={levelInput} onChange={e => setLevelInput(e.target.value)} placeholder="5420.50" step="0.25" style={{ flex: 1, background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '6px 10px', color: '#e2e8f4', fontFamily: mono, fontSize: 12, outline: 'none' }} />
+              <select value={levelType} onChange={e => setLevelType(e.target.value as any)} style={{ background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '6px 8px', color: '#e2e8f4', fontFamily: mono, fontSize: 11, width: 80, outline: 'none' }}>
+                {['RES', 'SUP', 'VWAP', 'POV'].map(t => <option key={t}>{t}</option>)}
+              </select>
+              <button onClick={addLevel} style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontFamily: display, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>+ Niveau</button>
             </div>
           </div>
 
-          {/* Mental score */}
-          <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(34,197,94,0.1)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase' }}>État mental</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: mentalColors[mentalScore - 1] }}>
-                {mentalLabels[mentalScore - 1]}
-              </div>
+          {/* Context */}
+          {setupContext && (
+            <div style={cardStyle}>
+              <div style={cardLabelStyle}><span style={{ width: 4, height: 4, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 6px #22c55e' }} />Contexte</div>
+              <div style={{ fontSize: 12, color: '#8899aa', fontFamily: mono }}>{setupContext}</div>
             </div>
-            <input
-              type="range" min={1} max={10} value={mentalScore}
-              onChange={e => setMentalScore(Number(e.target.value))}
-              style={{ width: '100%', accentColor: mentalColors[mentalScore - 1] }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-              <span style={{ fontSize: 9, color: '#ef4444' }}>TILT</span>
-              <span style={{ fontSize: 9, color: '#22c55e' }}>ZEN</span>
-            </div>
-          </div>
-
-          {/* Settings */}
-          <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Paramètres session</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: '#a1a1aa' }}>Max trades</span>
-                <input type="number" value={maxTrades} onChange={e => setMaxTrades(Number(e.target.value))} style={{ width: 50, padding: '4px 8px', background: '#18181b', border: '1px solid #333', borderRadius: 6, color: '#f0f0f3', fontSize: 12, textAlign: 'center' as const, outline: 'none' }} />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: '#a1a1aa' }}>Perte max ($)</span>
-                <input type="number" value={maxLoss} onChange={e => setMaxLoss(Number(e.target.value))} style={{ width: 70, padding: '4px 8px', background: '#18181b', border: '1px solid #333', borderRadius: 6, color: '#f0f0f3', fontSize: 12, textAlign: 'center' as const, outline: 'none' }} />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: '#a1a1aa' }}>Rappel pause (min)</span>
-                <input type="number" value={pauseReminder} onChange={e => setPauseReminder(Number(e.target.value))} style={{ width: 50, padding: '4px 8px', background: '#18181b', border: '1px solid #333', borderRadius: 6, color: '#f0f0f3', fontSize: 12, textAlign: 'center' as const, outline: 'none' }} />
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Center panel — Rules + Trade log */}
-        <div style={{ background: '#070709', padding: 20, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-          {/* Rules */}
-          <div style={{ padding: 20, borderRadius: 12, background: 'rgba(34,197,94,0.03)', border: '1px solid rgba(34,197,94,0.12)' }}>
-            <div style={{ fontSize: 9, color: '#22c55e', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 14 }}>
-              Règles de trading
+        {/* ── CENTER COLUMN ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Risk + P&L */}
+          <div style={cardStyle}>
+            <div style={cardLabelStyle}><span style={{ width: 4, height: 4, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 6px #22c55e' }} />Cockpit de risque — Session live</div>
+            <div style={{ textAlign: 'center' as const, padding: '16px 0 8px' }}>
+              <div style={{ fontFamily: mono, fontSize: 52, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em', color: totalPnl > 0 ? '#22c55e' : totalPnl < 0 ? '#ef4444' : '#e2e8f4', textShadow: totalPnl !== 0 ? `0 0 30px ${totalPnl > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` : 'none' }}>
+                {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)} €
+              </div>
+              <div style={{ fontFamily: mono, fontSize: 12, color: '#445566', marginTop: 6 }}>P&L session — {trades.length} trade{trades.length !== 1 ? 's' : ''} · {totalR >= 0 ? '+' : ''}{totalR.toFixed(1)}R cumulé</div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {DEFAULT_RULES.map((rule, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px rgba(34,197,94,0.5)', flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, color: '#d4d4d8', fontWeight: 500 }}>{rule}</span>
+
+            {/* Daily loss bar */}
+            <div style={{ margin: '12px 0 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 10, color: '#445566', fontFamily: mono }}>Daily loss utilisé</div>
+              <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: riskPct >= 90 ? '#ef4444' : riskPct >= 70 ? '#f59e0b' : '#e2e8f4' }}>{lossAmount.toFixed(0)} / {dailyLoss} €</div>
+            </div>
+            <div style={{ height: 14, background: '#121820', borderRadius: 99, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ height: '100%', borderRadius: 99, width: `${riskPct}%`, background: riskPct >= 90 ? '#ef4444' : riskPct >= 70 ? '#f59e0b' : '#22c55e', transition: 'width 0.5s, background 0.5s' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontFamily: mono, fontSize: 9, color: '#445566' }}>
+              <span>0%</span><span style={{ color: '#f59e0b' }}>75% ⚠</span><span style={{ color: '#ef4444' }}>100% ⛔</span>
+            </div>
+
+            {/* Target bar */}
+            <div style={{ margin: '10px 0 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 10, color: '#445566', fontFamily: mono }}>Objectif session</div>
+              <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: '#22c55e' }}>{totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)} / {target} €</div>
+            </div>
+            <div style={{ height: 14, background: '#121820', borderRadius: 99, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ height: '100%', borderRadius: 99, width: `${targetPct}%`, background: '#60a5fa', transition: 'width 0.5s' }} />
+            </div>
+
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14 }}>
+              {[
+                { label: 'Trades', value: String(trades.length), color: '#e2e8f4' },
+                { label: 'Win / Loss', value: `${wins}W / ${losses}L`, color: '#e2e8f4' },
+                { label: 'R cumulé', value: `${totalR >= 0 ? '+' : ''}${totalR.toFixed(1)}R`, color: totalR >= 0 ? '#22c55e' : '#ef4444' },
+                { label: 'Plan ATP', value: `${planScore}/10`, color: planScore >= 7 ? '#22c55e' : planScore >= 5 ? '#f59e0b' : '#ef4444' },
+              ].map(s => (
+                <div key={s.label} style={{ background: '#121820', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 7, padding: '10px 12px', textAlign: 'center' as const }}>
+                  <div style={{ fontFamily: mono, fontSize: 18, fontWeight: 700, color: s.color, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
+                  <div style={{ fontSize: 9, color: '#445566', fontFamily: mono, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Add trade */}
-          <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Enregistrer un trade</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="number" value={tradePnl} onChange={e => setTradePnl(e.target.value)}
-                placeholder="P&L ($)" style={{ flex: 1, padding: '10px 12px', background: '#111', border: '1px solid #333', borderRadius: 8, color: '#f0f0f3', fontSize: 14, outline: 'none', fontFamily: "'DM Mono', monospace" }}
-              />
-              <input
-                type="text" value={tradeNote} onChange={e => setTradeNote(e.target.value)}
-                placeholder="Note rapide..." style={{ flex: 1.5, padding: '10px 12px', background: '#111', border: '1px solid #333', borderRadius: 8, color: '#f0f0f3', fontSize: 13, outline: 'none' }}
-                onKeyDown={e => e.key === 'Enter' && addTrade()}
-              />
-              <button
-                onClick={addTrade}
-                style={{
-                  padding: '10px 20px', borderRadius: 8, background: '#22c55e', color: '#000',
-                  fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', letterSpacing: '0.05em',
-                  boxShadow: '0 0 20px rgba(34,197,94,0.3)',
-                }}
-              >
-                ADD
-              </button>
             </div>
           </div>
 
           {/* Trade log */}
-          <div style={{ flex: 1, padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', overflowY: 'auto' }}>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Trade Log</div>
-            {trades.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 30, color: '#333', fontSize: 12 }}>
-                Aucun trade enregistré
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {trades.map((t, i) => (
-                  <div key={t.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8,
-                    background: t.pnl >= 0 ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
-                    border: `1px solid ${t.pnl >= 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'}`,
-                  }}>
-                    <span style={{ fontSize: 11, color: '#5a6a82', fontFamily: "'DM Mono', monospace", width: 20 }}>#{i + 1}</span>
-                    <span style={{ fontSize: 11, color: '#5a6a82', fontFamily: "'DM Mono', monospace", width: 45 }}>{t.time}</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: t.pnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: "'DM Mono', monospace", width: 70 }}>
-                      {t.pnl >= 0 ? '+' : ''}{t.pnl.toFixed(0)}$
-                    </span>
-                    <span style={{ fontSize: 11, color: '#71717a', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{t.note || '—'}</span>
+          <div style={{ ...cardStyle, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={cardLabelStyle}><span style={{ width: 4, height: 4, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 6px #22c55e' }} />Journal de session</div>
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 80, maxHeight: 200 }}>
+              {trades.length === 0 ? (
+                <div style={{ textAlign: 'center' as const, padding: 20, color: '#445566', fontFamily: mono, fontSize: 11 }}>Aucun trade enregistré</div>
+              ) : (
+                [...trades].reverse().map((t, i) => (
+                  <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '55px 70px 1fr 80px 60px', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', fontFamily: mono, fontSize: 11, gap: 8 }}>
+                    <span style={{ color: '#445566' }}>{t.time}</span>
+                    <span style={{ fontWeight: 700, color: '#e2e8f4' }}>{t.instrument}</span>
+                    <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, textAlign: 'center' as const, background: t.direction === 'long' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.12)', color: t.direction === 'long' ? '#22c55e' : '#ef4444', width: 'fit-content' }}>{t.direction.toUpperCase()}</span>
+                    <span style={{ fontWeight: 700, textAlign: 'right' as const, color: t.pnl >= 0 ? '#22c55e' : '#ef4444' }}>{t.pnl >= 0 ? '+' : ''}{t.pnl} €</span>
+                    <span style={{ color: '#445566', textAlign: 'right' as const }}>{t.r >= 0 ? '+' : ''}{t.r}R</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right panel — Stats live */}
-        <div style={{ background: '#0a0a0c', padding: 20, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-          {/* P&L display */}
-          <div style={{
-            padding: 24, borderRadius: 12, textAlign: 'center' as const,
-            background: totalPnl >= 0 ? 'rgba(34,197,94,0.03)' : 'rgba(239,68,68,0.03)',
-            border: `1px solid ${totalPnl >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}`,
-          }}>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 8 }}>P&L Session</div>
-            <div style={{
-              fontSize: 48, fontWeight: 700, fontFamily: "'DM Mono', monospace",
-              color: totalPnl >= 0 ? '#22c55e' : '#ef4444',
-              textShadow: totalPnl >= 0 ? '0 0 40px rgba(34,197,94,0.3)' : '0 0 40px rgba(239,68,68,0.3)',
-            }}>
-              {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)}$
+                ))
+              )}
+            </div>
+            {/* Input */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 80px 70px', gap: 8, marginTop: 10 }}>
+              <select value={tiInst} onChange={e => setTiInst(e.target.value)} style={{ background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '8px 10px', color: '#e2e8f4', fontFamily: mono, fontSize: 12, outline: 'none' }}>
+                {INSTRUMENTS.map(i => <option key={i}>{i}</option>)}
+              </select>
+              <select value={tiDir} onChange={e => setTiDir(e.target.value as any)} style={{ background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '8px 10px', color: '#e2e8f4', fontFamily: mono, fontSize: 12, outline: 'none' }}>
+                <option value="long">LONG</option>
+                <option value="short">SHORT</option>
+              </select>
+              <input type="number" value={tiPnl} onChange={e => setTiPnl(e.target.value)} placeholder="P&L (€)" style={{ background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '8px 10px', color: '#e2e8f4', fontFamily: mono, fontSize: 12, outline: 'none' }} onKeyDown={e => e.key === 'Enter' && document.getElementById('ti-r-input')?.focus()} />
+              <input id="ti-r-input" type="number" value={tiR} onChange={e => setTiR(e.target.value)} placeholder="R" step="0.1" style={{ background: '#121820', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '8px 10px', color: '#e2e8f4', fontFamily: mono, fontSize: 12, outline: 'none' }} onKeyDown={e => e.key === 'Enter' && logTrade()} />
+              <button onClick={logTrade} style={{ background: '#22c55e', border: 'none', borderRadius: 6, color: '#000', fontFamily: display, fontSize: 12, fontWeight: 700, padding: 8, cursor: 'pointer', letterSpacing: '0.04em' }}>LOG</button>
             </div>
           </div>
 
-          {/* Session stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {[
-              { label: 'Wins', value: trades.filter(t => t.pnl > 0).length, color: '#22c55e' },
-              { label: 'Losses', value: trades.filter(t => t.pnl < 0).length, color: '#ef4444' },
-              { label: 'Win Rate', value: trades.length > 0 ? `${Math.round((trades.filter(t => t.pnl > 0).length / trades.length) * 100)}%` : '—', color: '#f0f0f3' },
-              { label: 'Avg Trade', value: trades.length > 0 ? `${(totalPnl / trades.length).toFixed(0)}$` : '—', color: totalPnl >= 0 ? '#22c55e' : '#ef4444' },
-              { label: 'Best', value: trades.length > 0 ? `+${Math.max(...trades.map(t => t.pnl)).toFixed(0)}$` : '—', color: '#22c55e' },
-              { label: 'Worst', value: trades.length > 0 ? `${Math.min(...trades.map(t => t.pnl)).toFixed(0)}$` : '—', color: '#ef4444' },
-            ].map(stat => (
-              <div key={stat.label} style={{ padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', textAlign: 'center' as const }}>
-                <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>{stat.label}</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: stat.color, fontFamily: "'DM Mono', monospace" }}>{stat.value}</div>
+          {/* Timers */}
+          <div style={cardStyle}>
+            <div style={cardLabelStyle}><span style={{ width: 4, height: 4, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 6px #22c55e' }} />Timers</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ background: '#121820', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 7, padding: 12, textAlign: 'center' as const }}>
+                <div style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: '#22c55e', letterSpacing: '0.04em', lineHeight: 1, marginBottom: 4 }}>{formatTime(elapsed)}</div>
+                <div style={{ fontSize: 9, color: '#445566', fontFamily: mono, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Durée session</div>
+              </div>
+              <div style={{ background: '#121820', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 7, padding: 12, textAlign: 'center' as const }}>
+                <div style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: lastTradeTime && (Date.now() - lastTradeTime) > 1800000 ? '#f59e0b' : '#e2e8f4', letterSpacing: '0.04em', lineHeight: 1, marginBottom: 4 }}>{lastTradeElapsed}</div>
+                <div style={{ fontSize: 9, color: '#445566', fontFamily: mono, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Depuis dernier trade</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT COLUMN ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Rules */}
+          <div style={cardStyle}>
+            <div style={cardLabelStyle}><span style={{ width: 4, height: 4, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 6px #22c55e' }} />Règles ATP — Toujours actives</div>
+            {DEFAULT_RULES.map((rule, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: i < DEFAULT_RULES.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                <div style={{ width: 22, height: 22, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: 10, fontWeight: 700, color: '#22c55e', flexShrink: 0 }}>{i + 1}</div>
+                <div style={{ fontSize: 12, color: '#8899aa', lineHeight: 1.4 }}><strong style={{ color: '#e2e8f4', fontWeight: 600 }}>{rule.title}</strong> — {rule.desc}</div>
               </div>
             ))}
           </div>
 
-          {/* Limit bars */}
-          <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Limites</div>
-            {/* Trade limit */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 10, color: '#a1a1aa' }}>Trades</span>
-                <span style={{ fontSize: 10, color: trades.length >= maxTrades ? '#ef4444' : '#a1a1aa', fontFamily: "'DM Mono', monospace" }}>{trades.length}/{maxTrades}</span>
+          {/* Checklist */}
+          <div style={cardStyle}>
+            <div style={cardLabelStyle}><span style={{ width: 4, height: 4, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 6px #22c55e' }} />Checklist pré-session</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ flex: 1, height: 4, background: '#121820', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: '#22c55e', borderRadius: 99, width: `${(checkedCount / checks.length) * 100}%`, transition: 'width 0.3s', boxShadow: '0 0 8px rgba(34,197,94,0.4)' }} />
               </div>
-              <div style={{ height: 4, borderRadius: 2, background: '#18181b', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 2, width: `${Math.min((trades.length / maxTrades) * 100, 100)}%`, background: trades.length >= maxTrades ? '#ef4444' : '#22c55e', transition: 'width 0.3s' }} />
-              </div>
+              <div style={{ fontFamily: mono, fontSize: 10, color: '#445566', whiteSpace: 'nowrap' as const }}>{checkedCount}/{checks.length}</div>
             </div>
-            {/* Loss limit */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 10, color: '#a1a1aa' }}>Perte max</span>
-                <span style={{ fontSize: 10, color: totalPnl <= maxLoss ? '#ef4444' : '#a1a1aa', fontFamily: "'DM Mono', monospace" }}>{totalPnl < 0 ? totalPnl.toFixed(0) : '0'}/{maxLoss}$</span>
+            {checks.map((c, i) => (
+              <div key={i} onClick={() => toggleCheck(i)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < checks.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', cursor: 'pointer', userSelect: 'none' as const }}>
+                <div style={{ width: 18, height: 18, border: `1.5px solid ${c.done ? '#22c55e' : 'rgba(255,255,255,0.1)'}`, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', background: c.done ? '#22c55e' : 'transparent', boxShadow: c.done ? '0 0 8px rgba(34,197,94,0.3)' : 'none', flexShrink: 0, transition: 'all 0.15s' }}>
+                  {c.done && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                </div>
+                <span style={{ fontSize: 12, color: c.done ? '#445566' : '#8899aa', textDecoration: c.done ? 'line-through' : 'none' }}>{c.label}</span>
               </div>
-              <div style={{ height: 4, borderRadius: 2, background: '#18181b', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 2, width: `${Math.min((Math.abs(Math.min(totalPnl, 0)) / Math.abs(maxLoss)) * 100, 100)}%`, background: totalPnl <= maxLoss ? '#ef4444' : '#f59e0b', transition: 'width 0.3s' }} />
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Session duration breakdown */}
-          <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div style={{ fontSize: 9, color: '#5a6a82', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Durée</div>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#22c55e', fontFamily: "'DM Mono', monospace", textAlign: 'center' as const, textShadow: '0 0 30px rgba(34,197,94,0.2)' }}>
-              {formatTime(elapsed)}
-            </div>
-          </div>
+          {/* Buttons */}
+          <button onClick={startBreathe} style={{ width: '100%', padding: 14, background: 'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(96,165,250,0.08))', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, color: '#e2e8f4', fontFamily: display, fontSize: 16, fontWeight: 700, letterSpacing: '0.08em', cursor: 'pointer', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" /><path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+            RESPIRE — Pause mentale
+          </button>
+
+          <button onClick={onExit} style={{ width: '100%', padding: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, color: '#ef4444', fontFamily: display, fontSize: 14, fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', textTransform: 'uppercase' as const }}>
+            FIN DE SESSION
+          </button>
         </div>
       </div>
 
-      {/* End session confirm */}
-      {showEndConfirm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowEndConfirm(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 16, padding: 32, textAlign: 'center' as const, maxWidth: 400 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f3', marginBottom: 8 }}>Terminer la session ?</div>
-            <div style={{ fontSize: 13, color: '#71717a', marginBottom: 4 }}>Durée : {formatTime(elapsed)}</div>
-            <div style={{ fontSize: 13, color: '#71717a', marginBottom: 20 }}>{trades.length} trade{trades.length !== 1 ? 's' : ''} · P&L : <span style={{ color: totalPnl >= 0 ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)}$</span></div>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button onClick={() => setShowEndConfirm(false)} style={{ padding: '10px 24px', borderRadius: 8, background: '#222', border: '1px solid #333', color: '#a1a1aa', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                Continuer
-              </button>
-              <button onClick={onExit} style={{ padding: '10px 24px', borderRadius: 8, background: '#22c55e', border: 'none', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 20px rgba(34,197,94,0.3)' }}>
-                Terminer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
+        @keyframes pulseDot { 0%,100% { opacity:1;transform:scale(1) } 50% { opacity:0.5;transform:scale(0.85) } }
+        @keyframes slideIn { from { transform:translateX(100%);opacity:0 } to { transform:translateX(0);opacity:1 } }
       `}</style>
     </div>
   )
