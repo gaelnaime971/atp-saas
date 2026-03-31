@@ -33,6 +33,12 @@ export default function Compte() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  // Billing
+  const [billingCompany, setBillingCompany] = useState('')
+  const [billingAddress, setBillingAddress] = useState('')
+  const [billingSiren, setBillingSiren] = useState('')
+  const [billingVat, setBillingVat] = useState('')
+
   // Notification toggles (local state only)
   const [notifChecklist, setNotifChecklist] = useState(true)
   const [notifSaisie, setNotifSaisie] = useState(true)
@@ -64,6 +70,10 @@ export default function Compte() {
           const parts = (p.full_name ?? '').split(' ')
           setFirstName(parts[0] ?? '')
           setLastName(parts.slice(1).join(' '))
+          setBillingCompany((p as any).billing_company ?? '')
+          setBillingAddress((p as any).billing_address ?? '')
+          setBillingSiren((p as any).billing_siren ?? '')
+          setBillingVat((p as any).billing_vat ?? '')
         }
       } catch (err) {
         console.error('Compte fetch error:', err)
@@ -84,7 +94,13 @@ export default function Compte() {
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: fullName })
+        .update({
+          full_name: fullName,
+          billing_company: billingCompany.trim() || null,
+          billing_address: billingAddress.trim() || null,
+          billing_siren: billingSiren.trim() || null,
+          billing_vat: billingVat.trim() || null,
+        })
         .eq('id', profile.id)
 
       if (!error) {
@@ -259,6 +275,41 @@ export default function Compte() {
               </label>
             </div>
           ))}
+        </Card>
+
+        {/* Facturation */}
+        <Card>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 12, borderBottom: '1px solid var(--border, rgba(255,255,255,0.07))' }}>
+            Informations de facturation
+          </h2>
+          <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 14, lineHeight: 1.5 }}>
+            Si vous payez via une société, renseignez les informations ci-dessous. Elles apparaîtront sur vos factures.
+          </p>
+
+          <div style={formGroupStyle}>
+            <label style={labelStyle}>Nom de la société</label>
+            <input type="text" value={billingCompany} onChange={e => setBillingCompany(e.target.value)} placeholder="ex: Ma Société SAS" style={inputStyle} />
+          </div>
+
+          <div style={formGroupStyle}>
+            <label style={labelStyle}>Adresse</label>
+            <input type="text" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} placeholder="ex: 12 rue de Paris, 75001 Paris" style={inputStyle} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, ...formGroupStyle }}>
+            <div>
+              <label style={labelStyle}>SIREN / SIRET</label>
+              <input type="text" value={billingSiren} onChange={e => setBillingSiren(e.target.value)} placeholder="ex: 123456789" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>N° TVA intracommunautaire</label>
+              <input type="text" value={billingVat} onChange={e => setBillingVat(e.target.value)} placeholder="ex: FR12345678901" style={inputStyle} />
+            </div>
+          </div>
+
+          <Button variant="primary" onClick={handleSave} loading={saving}>
+            {saveSuccess ? 'Sauvegardé' : 'Enregistrer'}
+          </Button>
         </Card>
 
         {/* Zone danger */}

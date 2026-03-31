@@ -234,9 +234,32 @@ export async function POST(request: NextRequest) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(10)
     y += 6
-    doc.text(trader.full_name || 'Client', clientX, y, { align: 'right' })
+    if (trader.billing_company) {
+      doc.setFont('helvetica', 'bold')
+      doc.text(trader.billing_company, clientX, y, { align: 'right' })
+      doc.setFont('helvetica', 'normal')
+      y += 5
+      doc.text(trader.full_name || 'Client', clientX, y, { align: 'right' })
+    } else {
+      doc.text(trader.full_name || 'Client', clientX, y, { align: 'right' })
+    }
     y += 5
     doc.text(trader.email || '', clientX, y, { align: 'right' })
+    if (trader.billing_address) {
+      y += 5
+      doc.setFontSize(9)
+      doc.text(trader.billing_address, clientX, y, { align: 'right' })
+    }
+    if (trader.billing_siren) {
+      y += 5
+      doc.setFontSize(9)
+      doc.text(`SIREN : ${trader.billing_siren}`, clientX, y, { align: 'right' })
+    }
+    if (trader.billing_vat) {
+      y += 5
+      doc.setFontSize(9)
+      doc.text(`TVA : ${trader.billing_vat}`, clientX, y, { align: 'right' })
+    }
 
     // === GREEN SEPARATOR LINE ===
     y = 85
