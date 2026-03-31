@@ -123,7 +123,7 @@ export default function Compte() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '8px 12px',
-    background: 'var(--bg2, #1a1f2e)',
+    background: 'var(--bg2, #18181b)',
     border: '1px solid var(--border, rgba(255,255,255,0.07))',
     borderRadius: 8,
     color: 'var(--text)',
@@ -257,7 +257,7 @@ export default function Compte() {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  background: notif.value ? 'var(--green, #22c55e)' : 'var(--bg3, #222940)',
+                  background: notif.value ? 'var(--green, #22c55e)' : 'var(--bg3, #222225)',
                   borderRadius: 22,
                   transition: 'background 0.2s',
                 }}>

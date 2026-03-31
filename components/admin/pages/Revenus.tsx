@@ -186,7 +186,7 @@ export default function Revenus() {
               <select
                 value={form.trader_id}
                 onChange={e => setForm(f => ({ ...f, trader_id: e.target.value }))}
-                className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               >
                 <option value="">S&eacute;lectionner un trader</option>
                 {traders.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
@@ -197,7 +197,7 @@ export default function Revenus() {
               <select
                 value={form.payment_method}
                 onChange={e => setForm(f => ({ ...f, payment_method: e.target.value as PaymentMethod }))}
-                className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               >
                 <option value="virement">Virement bancaire</option>
                 <option value="stripe_comptant">Stripe comptant</option>
@@ -216,7 +216,7 @@ export default function Revenus() {
                   step="0.01"
                   value={form.amount}
                   onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                  className="flex-1 bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+                  className="flex-1 bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
                   placeholder="ex: 497"
                 />
                 <button
@@ -247,7 +247,7 @@ export default function Revenus() {
                 required
                 value={form.payment_date}
                 onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))}
-                className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               />
             </div>
             <div className="col-span-2">
@@ -256,7 +256,7 @@ export default function Revenus() {
                 type="text"
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
                 placeholder="ex: Coaching 1:1 - Mars 2025"
               />
             </div>
@@ -296,7 +296,7 @@ export default function Revenus() {
                       <td className="py-3 text-sm font-medium text-[#e8edf5]">{r.trader_name}</td>
                       <td className="py-3 text-sm text-[#a0aec0]">{r.description ?? '\u2014'}</td>
                       <td className="py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${PAYMENT_METHOD_COLORS[method] ?? 'bg-[#222940] text-[#a0aec0] border-[rgba(255,255,255,0.07)]'}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${PAYMENT_METHOD_COLORS[method] ?? 'bg-[#222225] text-[#a0aec0] border-[rgba(255,255,255,0.07)]'}`}>
                           {PAYMENT_METHOD_LABELS[method] ?? method}
                         </span>
                       </td>

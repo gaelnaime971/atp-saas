@@ -458,7 +458,7 @@ export default function Progression() {
             >
               <span style={{ fontSize: 12, color: 'var(--text2)' }}>{axis.label}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 120, height: 6, background: 'var(--bg3, #222940)', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ width: 120, height: 6, background: 'var(--bg3, #222225)', borderRadius: 99, overflow: 'hidden' }}>
                   <div style={{
                     width: `${axis.score * 10}%`,
                     height: '100%',

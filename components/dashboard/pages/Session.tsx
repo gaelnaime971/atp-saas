@@ -37,7 +37,7 @@ function Tooltip({ text }: { text: string }) {
       </span>
       <span
         className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-50 w-56"
-        style={{ background: '#1c2333', color: 'var(--text)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
+        style={{ background: '#18181b', color: 'var(--text)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
       >
         {text}
       </span>
@@ -145,7 +145,7 @@ export default function Session() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '10px 14px',
-    background: 'var(--bg3, #1c2333)',
+    background: 'var(--bg3, #18181b)',
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: '8px',
     color: '#e8edf5',
@@ -228,7 +228,7 @@ export default function Session() {
                       onClick={() => toggleAccount(acc.id)}
                       className="px-3 py-2 rounded-lg text-xs font-medium transition-all"
                       style={{
-                        background: selected ? `${typeColor}15` : 'var(--bg3, #1c2333)',
+                        background: selected ? `${typeColor}15` : 'var(--bg3, #18181b)',
                         border: `2px solid ${selected ? typeColor : 'rgba(255,255,255,0.1)'}`,
                         color: selected ? typeColor : '#a0aec0',
                       }}
@@ -348,7 +348,7 @@ export default function Session() {
                     padding: '10px 0',
                     borderRadius: '10px',
                     border: mood === m ? '2px solid #22c55e' : '1px solid rgba(255,255,255,0.1)',
-                    background: mood === m ? 'rgba(34,197,94,0.1)' : 'var(--bg3, #1c2333)',
+                    background: mood === m ? 'rgba(34,197,94,0.1)' : 'var(--bg3, #18181b)',
                     fontSize: '22px',
                     cursor: 'pointer',
                     transition: 'all 0.2s',

@@ -77,7 +77,7 @@ export default function Calculateur() {
                   onClick={() => setSelectedContract(key)}
                   className="rounded-xl px-3 py-3 text-left transition-all"
                   style={{
-                    background: active ? 'rgba(74,222,128,0.06)' : 'var(--bg3, #1c2333)',
+                    background: active ? 'rgba(74,222,128,0.06)' : 'var(--bg3, #18181b)',
                     border: active ? '2px solid var(--green)' : '2px solid var(--border)',
                   }}
                 >
@@ -128,7 +128,7 @@ export default function Calculateur() {
         {/* Specs box */}
         <div
           className="rounded-lg p-4"
-          style={{ background: 'var(--bg3, #1c2333)', border: '1px solid var(--border)' }}
+          style={{ background: 'var(--bg3, #18181b)', border: '1px solid var(--border)' }}
         >
           <p className="text-xs font-medium mb-2" style={{ color: 'var(--text3)' }}>
             Spécifications — {selectedContract}
@@ -202,7 +202,7 @@ export default function Calculateur() {
         {/* ATP reference */}
         <div
           className="rounded-lg p-3 text-center"
-          style={{ background: 'var(--bg3, #1c2333)', border: '1px solid var(--border)' }}
+          style={{ background: 'var(--bg3, #18181b)', border: '1px solid var(--border)' }}
         >
           <p className="text-xs" style={{ color: 'var(--text3)' }}>
             Calculs basés sur les paramètres de la méthode ATP.
@@ -238,7 +238,7 @@ function NumericInput({
         onChange={e => onChange(Number(e.target.value))}
         className="w-full rounded-lg px-3 py-2 text-sm outline-none"
         style={{
-          background: 'var(--bg3, #1c2333)',
+          background: 'var(--bg3, #18181b)',
           color: 'var(--text)',
           border: '1px solid var(--border)',
         }}
@@ -264,7 +264,7 @@ function StatRow({ label, value }: { label: string; value: string }) {
   return (
     <div
       className="flex items-center justify-between py-2 px-3 rounded-lg"
-      style={{ background: 'var(--bg3, #1c2333)' }}
+      style={{ background: 'var(--bg3, #18181b)' }}
     >
       <span className="text-xs" style={{ color: 'var(--text3)' }}>
         {label}

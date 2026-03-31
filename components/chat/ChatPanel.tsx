@@ -295,8 +295,8 @@ export default function ChatPanel({
           }}
         >
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-            <path d="M22 2L11 13" stroke="#0f1117" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M22 2L15 22l-4-9-9-4 20-7z" stroke="#0f1117" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M22 2L11 13" stroke="#09090b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M22 2L15 22l-4-9-9-4 20-7z" stroke="#09090b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </div>

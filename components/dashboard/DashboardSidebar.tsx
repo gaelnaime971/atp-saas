@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Avatar from '@/components/ui/Avatar'
-import ThemeToggle from '@/components/ui/ThemeToggle'
 
 export type DashboardPage =
   | 'dashboard'
@@ -326,7 +325,6 @@ export default function DashboardSidebar({ activePage, onPageChange }: Dashboard
             <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{userName}</p>
           </div>
         )}
-        <ThemeToggle />
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"

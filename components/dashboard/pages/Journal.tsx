@@ -127,7 +127,7 @@ export default function Journal() {
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  background: 'var(--bg3, #1a1f2e)',
+                  background: 'var(--bg3, #18181b)',
                   border: '1px solid var(--border, rgba(255,255,255,0.07))',
                   color: 'var(--text)',
                   outline: 'none',
@@ -147,7 +147,7 @@ export default function Journal() {
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  background: 'var(--bg3, #1a1f2e)',
+                  background: 'var(--bg3, #18181b)',
                   border: '1px solid var(--border, rgba(255,255,255,0.07))',
                   color: 'var(--text)',
                   outline: 'none',
@@ -173,7 +173,7 @@ export default function Journal() {
                   width: '100%',
                   minHeight: 120,
                   padding: '10px 12px',
-                  background: 'var(--bg3, #1a1f2e)',
+                  background: 'var(--bg3, #18181b)',
                   border: '1px solid var(--border, rgba(255,255,255,0.07))',
                   color: 'var(--text)',
                   outline: 'none',

@@ -225,7 +225,7 @@ export default function CRM() {
                     </span>
                     <span className="text-xs text-[#5a6a82]">{trader.email}</span>
                     {trader.plan_type && (
-                      <span className="px-2 py-0.5 bg-[#1c2333] rounded text-xs text-[#a0aec0] font-medium">
+                      <span className="px-2 py-0.5 bg-[#18181b] rounded text-xs text-[#a0aec0] font-medium">
                         {trader.plan_type}
                       </span>
                     )}

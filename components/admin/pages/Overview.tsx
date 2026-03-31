@@ -327,7 +327,7 @@ export default function Overview() {
                       {new Date(session.session_date).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="py-3 text-sm text-[#a0aec0]">
-                      <span className="px-2 py-0.5 bg-[#1c2333] rounded text-xs font-mono">
+                      <span className="px-2 py-0.5 bg-[#18181b] rounded text-xs font-mono">
                         {session.instrument}
                       </span>
                     </td>
@@ -340,7 +340,7 @@ export default function Overview() {
                           ? 'bg-green-500/10 text-green-400'
                           : session.result === 'loss'
                           ? 'bg-red-500/10 text-red-400'
-                          : 'bg-[#222940] text-[#a0aec0]'
+                          : 'bg-[#222225] text-[#a0aec0]'
                       }`}>
                         {session.result === 'win' ? 'Win' : session.result === 'loss' ? 'Loss' : 'Breakeven'}
                       </span>

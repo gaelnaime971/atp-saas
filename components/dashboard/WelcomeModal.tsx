@@ -192,7 +192,7 @@ export default function WelcomeModal({ userId, firstName, onClose }: WelcomeModa
             disabled={closing}
             style={{
               background: 'var(--green)',
-              color: '#0f1117',
+              color: '#09090b',
               border: 'none',
               borderRadius: 10,
               padding: '12px 32px',

@@ -622,7 +622,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                         onClick={savePrivateNote}
                         disabled={savingNote}
                         className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
-                        style={{ background: 'var(--green)', color: '#0f1117' }}
+                        style={{ background: 'var(--green)', color: '#09090b' }}
                       >
                         {savingNote ? 'Sauvegarde...' : 'Sauvegarder'}
                       </button>

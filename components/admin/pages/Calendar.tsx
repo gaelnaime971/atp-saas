@@ -167,7 +167,7 @@ export default function Calendar() {
             ) : (
               <div className="space-y-3">
                 {upcomingSessions.map(s => (
-                  <div key={s.id} className="p-3 bg-[#1c2333] rounded-lg border border-[rgba(255,255,255,0.05)]">
+                  <div key={s.id} className="p-3 bg-[#18181b] rounded-lg border border-[rgba(255,255,255,0.05)]">
                     <div className="flex items-start justify-between mb-1">
                       <p className="text-sm font-medium text-[#e8edf5]">{s.trader_name}</p>
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${

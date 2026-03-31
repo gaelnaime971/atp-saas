@@ -139,7 +139,7 @@ export default function Sessions() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '8px 12px',
-    background: '#1c2333',
+    background: '#18181b',
     border: '1px solid rgba(255,255,255,0.07)',
     borderRadius: 8,
     color: '#e8edf5',
@@ -250,7 +250,7 @@ export default function Sessions() {
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               statusFilter === f
                 ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                : 'text-[#5a6a82] hover:text-[#a0aec0] bg-[#1c2333] border border-[rgba(255,255,255,0.07)]'
+                : 'text-[#5a6a82] hover:text-[#a0aec0] bg-[#18181b] border border-[rgba(255,255,255,0.07)]'
             }`}
           >
             {f === 'all' ? `Tout (${sessions.length})` : f === 'planned' ? 'Planifié' : f === 'completed' ? 'Terminé' : 'Annulé'}
@@ -264,7 +264,7 @@ export default function Sessions() {
           onChange={e => setTraderFilter(e.target.value)}
           className="px-3 py-1.5 rounded-lg text-xs font-medium outline-none"
           style={{
-            background: traderFilter !== 'all' ? 'rgba(34,197,94,0.1)' : '#1c2333',
+            background: traderFilter !== 'all' ? 'rgba(34,197,94,0.1)' : '#18181b',
             color: traderFilter !== 'all' ? '#22c55e' : '#5a6a82',
             border: `1px solid ${traderFilter !== 'all' ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.07)'}`,
           }}
@@ -286,7 +286,7 @@ export default function Sessions() {
             {filtered.map(session => (
               <div
                 key={session.id}
-                className="flex items-center gap-4 p-4 bg-[#1c2333] rounded-xl border border-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.1)] transition-all group"
+                className="flex items-center gap-4 p-4 bg-[#18181b] rounded-xl border border-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.1)] transition-all group"
               >
                 <div className={`w-1 self-stretch rounded-full ${
                   session.status === 'completed' ? 'bg-green-500' :

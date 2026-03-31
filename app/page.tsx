@@ -14,7 +14,7 @@ export default function Home() {
         <Link
           href="/login"
           className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-          style={{ background: 'var(--green)', color: '#0f1117' }}
+          style={{ background: 'var(--green)', color: '#09090b' }}
         >
           Connexion
         </Link>
@@ -57,7 +57,7 @@ export default function Home() {
           <Link
             href="/login"
             className="px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: '#0f1117' }}
+            style={{ background: 'var(--green)', color: '#09090b' }}
           >
             Accéder à mon espace →
           </Link>

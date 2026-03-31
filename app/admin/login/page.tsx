@@ -97,7 +97,7 @@ export default function AdminLoginPage() {
               className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
               style={{
                 background: loading ? 'rgba(34,197,94,0.5)' : 'var(--green)',
-                color: '#0f1117',
+                color: '#09090b',
                 cursor: loading ? 'not-allowed' : 'pointer',
               }}
             >

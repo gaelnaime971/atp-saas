@@ -16,17 +16,6 @@
   --text3: #52525b;
 }
 
-[data-theme="light"] {
-  --bg: #f8f9fb;
-  --bg2: #ffffff;
-  --bg3: #f1f3f5;
-  --bg4: #e5e7eb;
-  --border: rgba(0, 0, 0, 0.08);
-  --text: #111113;
-  --text2: #52525b;
-  --text3: #a1a1aa;
-}
-
 * {
   box-sizing: border-box;
 }

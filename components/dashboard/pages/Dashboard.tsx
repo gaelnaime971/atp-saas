@@ -281,7 +281,7 @@ export default function Dashboard() {
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                     background: active ? 'var(--green)' : 'transparent',
-                    color: active ? '#0f1117' : 'var(--text3)',
+                    color: active ? '#09090b' : 'var(--text3)',
                   }}
                 >
                   {mode === 'solo' ? '1 compte' : `${nbAccounts} comptes`}

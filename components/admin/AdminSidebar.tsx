@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Avatar from '@/components/ui/Avatar'
-import ThemeToggle from '@/components/ui/ThemeToggle'
 
 type AdminPage =
   | 'overview'
@@ -179,7 +178,7 @@ export default function AdminSidebar({ activePage, onPageChange }: AdminSidebarP
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-56 bg-[#161b27] border-r border-[rgba(255,255,255,0.07)] flex flex-col z-40">
+    <aside className="fixed left-0 top-0 h-screen w-56 bg-[#111113] border-r border-[rgba(255,255,255,0.07)] flex flex-col z-40">
       {/* Logo + Admin badge */}
       <div className="px-5 py-4 border-b border-[rgba(255,255,255,0.07)]">
         <img src="/logo-atp.png" alt="Alpha Trading Pro" className="h-7" />
@@ -244,7 +243,6 @@ export default function AdminSidebar({ activePage, onPageChange }: AdminSidebarP
             <p className="text-sm font-medium truncate text-[#e8edf5]">{adminName}</p>
           </div>
         )}
-        <ThemeToggle />
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#5a6a82] hover:text-red-400 hover:bg-red-500/5 transition-all duration-150"

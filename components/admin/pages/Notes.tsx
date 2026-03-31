@@ -107,7 +107,7 @@ export default function Notes() {
               onChange={e => setSelectedTraderId(e.target.value || null)}
               className="w-full rounded-lg px-3 py-2 text-sm text-[#e8edf5] border transition-colors focus:outline-none focus:border-green-500/40"
               style={{
-                background: '#1c2333',
+                background: '#18181b',
                 borderColor: 'rgba(255,255,255,0.07)',
               }}
             >
@@ -133,7 +133,7 @@ export default function Notes() {
                   rows={5}
                   className="w-full rounded-lg px-3 py-2 text-sm text-[#e8edf5] border transition-colors focus:outline-none focus:border-green-500/40 resize-none mb-3"
                   style={{
-                    background: '#1c2333',
+                    background: '#18181b',
                     borderColor: 'rgba(255,255,255,0.07)',
                   }}
                 />
@@ -153,7 +153,7 @@ export default function Notes() {
           {!selectedTraderId ? (
             <Card>
               <div className="text-center py-16">
-                <div className="w-16 h-16 bg-[#1c2333] rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-[#18181b] rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-[#5a6a82]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
@@ -178,7 +178,7 @@ export default function Notes() {
                     {selectedTrader?.full_name ?? 'Trader'}
                   </span>
                   {selectedTrader?.plan_type && (
-                    <span className="ml-2 px-2 py-0.5 bg-[#1c2333] rounded text-xs text-[#a0aec0] font-medium">
+                    <span className="ml-2 px-2 py-0.5 bg-[#18181b] rounded text-xs text-[#a0aec0] font-medium">
                       {selectedTrader.plan_type}
                     </span>
                   )}

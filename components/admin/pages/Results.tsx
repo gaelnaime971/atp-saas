@@ -95,7 +95,7 @@ export default function Results() {
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               filter === f
                 ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                : 'text-[#5a6a82] hover:text-[#a0aec0] bg-[#1c2333] border border-[rgba(255,255,255,0.07)]'
+                : 'text-[#5a6a82] hover:text-[#a0aec0] bg-[#18181b] border border-[rgba(255,255,255,0.07)]'
             }`}
           >
             {f === 'all' ? 'Tout' : f === 'win' ? 'Wins' : f === 'loss' ? 'Losses' : 'Breakeven'}
@@ -140,7 +140,7 @@ export default function Results() {
                       {new Date(session.session_date).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="py-3">
-                      <span className="px-2 py-0.5 bg-[#1c2333] rounded text-xs font-mono text-[#a0aec0]">
+                      <span className="px-2 py-0.5 bg-[#18181b] rounded text-xs font-mono text-[#a0aec0]">
                         {session.instrument ?? 'N/A'}
                       </span>
                     </td>

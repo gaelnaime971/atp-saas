@@ -84,7 +84,7 @@ export default function Ressources() {
           alignItems: 'center',
           gap: 14,
           padding: '12px 14px',
-          background: 'var(--bg2, #1a1f2e)',
+          background: 'var(--bg2, #18181b)',
           border: '1px solid var(--border, rgba(255,255,255,0.07))',
           borderRadius: 10,
           cursor: 'pointer',
@@ -93,11 +93,11 @@ export default function Ressources() {
         }}
         onMouseEnter={e => {
           e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
-          e.currentTarget.style.background = 'var(--bg3, #222940)'
+          e.currentTarget.style.background = 'var(--bg3, #222225)'
         }}
         onMouseLeave={e => {
           e.currentTarget.style.borderColor = 'var(--border, rgba(255,255,255,0.07))'
-          e.currentTarget.style.background = 'var(--bg2, #1a1f2e)'
+          e.currentTarget.style.background = 'var(--bg2, #18181b)'
         }}
       >
         <div style={{

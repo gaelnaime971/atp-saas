@@ -175,7 +175,7 @@ export default function Settings() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '8px 12px',
-    background: '#1c2333',
+    background: '#18181b',
     border: '1px solid rgba(255,255,255,0.07)',
     borderRadius: 8,
     color: '#e8edf5',
@@ -237,7 +237,7 @@ export default function Settings() {
             onClick={() => setTab(t.id)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={{
-              background: tab === t.id ? 'rgba(34,197,94,0.1)' : '#1c2333',
+              background: tab === t.id ? 'rgba(34,197,94,0.1)' : '#18181b',
               color: tab === t.id ? '#22c55e' : '#5a6a82',
               border: `1px solid ${tab === t.id ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.07)'}`,
             }}
@@ -258,7 +258,7 @@ export default function Settings() {
                 <div
                   key={t.id}
                   className="flex items-center gap-4 p-4 rounded-xl border"
-                  style={{ background: '#1c2333', borderColor: 'rgba(255,255,255,0.05)' }}
+                  style={{ background: '#18181b', borderColor: 'rgba(255,255,255,0.05)' }}
                 >
                   {/* Avatar */}
                   <div className="w-9 h-9 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
@@ -277,10 +277,10 @@ export default function Settings() {
                       <span className="text-xs px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">{t.plan_type}</span>
                     )}
                     {t.propfirm_name && (
-                      <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: '#222940', color: '#a0aec0' }}>{t.propfirm_name}</span>
+                      <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: '#222225', color: '#a0aec0' }}>{t.propfirm_name}</span>
                     )}
                     {Number(t.capital) > 0 && (
-                      <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: '#222940', color: '#a0aec0' }}>
+                      <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: '#222225', color: '#a0aec0' }}>
                         {(Number(t.capital) * (t.nb_accounts || 1) / 1000).toFixed(0)}K
                       </span>
                     )}
@@ -330,7 +330,7 @@ export default function Settings() {
                   <div
                     key={inv.id}
                     className="flex items-center gap-4 p-4 rounded-xl border"
-                    style={{ background: '#1c2333', borderColor: 'rgba(255,255,255,0.05)' }}
+                    style={{ background: '#18181b', borderColor: 'rgba(255,255,255,0.05)' }}
                   >
                     <div className="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
                       <span className="text-amber-400 text-xs font-bold">{inv.full_name[0].toUpperCase()}</span>
@@ -443,7 +443,7 @@ export default function Settings() {
           style={{ background: 'rgba(0,0,0,0.7)' }}
           onClick={e => e.target === e.currentTarget && setEditingTrader(null)}
         >
-          <div className="w-full max-w-md rounded-xl border" style={{ background: '#161b27', borderColor: 'rgba(255,255,255,0.07)' }}>
+          <div className="w-full max-w-md rounded-xl border" style={{ background: '#111113', borderColor: 'rgba(255,255,255,0.07)' }}>
             <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
               <h2 className="text-sm font-semibold text-[#e8edf5]">
                 Modifier — {editingTrader.full_name}
@@ -494,7 +494,7 @@ export default function Settings() {
                       onClick={() => setEditForm(f => ({ ...f, is_active: opt.value }))}
                       style={{
                         flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                        background: editForm.is_active === opt.value ? `${opt.color}15` : '#1c2333',
+                        background: editForm.is_active === opt.value ? `${opt.color}15` : '#18181b',
                         border: editForm.is_active === opt.value ? `1px solid ${opt.color}40` : '1px solid rgba(255,255,255,0.07)',
                         color: editForm.is_active === opt.value ? opt.color : '#5a6a82',
                       }}

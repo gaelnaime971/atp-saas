@@ -130,7 +130,7 @@ export default function Broadcast() {
               type="text"
               value={subject}
               onChange={e => setSubject(e.target.value)}
-              className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+              className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
               placeholder="ex: Nouveau contenu disponible"
             />
           </div>
@@ -141,7 +141,7 @@ export default function Broadcast() {
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}
-              className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+              className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
               style={{ minHeight: '200px' }}
               placeholder="Rédigez votre message ici..."
             />
@@ -216,7 +216,7 @@ export default function Broadcast() {
       {showPreview && (subject.trim() || message.trim()) && (
         <Card className="border border-blue-500/20">
           <h3 className="text-xs text-[#5a6a82] uppercase tracking-wider mb-3">Aperçu email</h3>
-          <div className="bg-[#0d1117] rounded-lg p-5 border border-[rgba(255,255,255,0.05)]">
+          <div className="bg-[#111113] rounded-lg p-5 border border-[rgba(255,255,255,0.05)]">
             <p className="text-xs text-[#5a6a82] mb-1">Sujet:</p>
             <p className="text-sm font-medium text-[#e8edf5] mb-4">{subject || '(pas de sujet)'}</p>
             <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">

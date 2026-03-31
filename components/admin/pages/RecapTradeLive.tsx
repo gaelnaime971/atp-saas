@@ -246,7 +246,7 @@ export default function RecapTradeLive() {
   }, [dailyStatsAsc])
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '8px 12px', background: '#1c2333',
+    width: '100%', padding: '8px 12px', background: '#18181b',
     border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8,
     color: '#e8edf5', fontSize: 13, outline: 'none', colorScheme: 'dark',
   }
@@ -278,7 +278,7 @@ export default function RecapTradeLive() {
                 onClick={() => setTab(t.id)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                 style={{
-                  background: tab === t.id ? 'rgba(34,197,94,0.1)' : '#1c2333',
+                  background: tab === t.id ? 'rgba(34,197,94,0.1)' : '#18181b',
                   color: tab === t.id ? '#22c55e' : '#5a6a82',
                   border: `1px solid ${tab === t.id ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.07)'}`,
                 }}
@@ -327,7 +327,7 @@ export default function RecapTradeLive() {
                         onClick={() => setFormDirection(d)}
                         className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all"
                         style={{
-                          background: formDirection === d ? (d === 'long' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)') : '#1c2333',
+                          background: formDirection === d ? (d === 'long' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)') : '#18181b',
                           border: `2px solid ${formDirection === d ? (d === 'long' ? '#22c55e' : '#ef4444') : 'rgba(255,255,255,0.07)'}`,
                           color: formDirection === d ? (d === 'long' ? '#22c55e' : '#ef4444') : '#5a6a82',
                         }}
@@ -346,7 +346,7 @@ export default function RecapTradeLive() {
                         onClick={() => setFormResult(r)}
                         className="flex-1 py-2 rounded-lg text-[11px] font-semibold transition-all"
                         style={{
-                          background: formResult === r ? (r === 'win' ? 'rgba(34,197,94,0.1)' : r === 'loss' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)') : '#1c2333',
+                          background: formResult === r ? (r === 'win' ? 'rgba(34,197,94,0.1)' : r === 'loss' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)') : '#18181b',
                           border: `2px solid ${formResult === r ? (r === 'win' ? '#22c55e' : r === 'loss' ? '#ef4444' : '#f59e0b') : 'rgba(255,255,255,0.07)'}`,
                           color: formResult === r ? (r === 'win' ? '#22c55e' : r === 'loss' ? '#ef4444' : '#f59e0b') : '#5a6a82',
                         }}
@@ -407,7 +407,7 @@ export default function RecapTradeLive() {
               value={filterDate}
               onChange={e => setFilterDate(e.target.value)}
               className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none"
-              style={{ background: '#1c2333', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }}
+              style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }}
             />
             {filterDate && (
               <button onClick={() => setFilterDate('')} className="text-xs text-[#5a6a82] hover:text-[#e8edf5]">
@@ -510,7 +510,7 @@ export default function RecapTradeLive() {
       {tab === 'perf' && (
         <>
           {/* Period filter */}
-          <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border" style={{ background: '#161b27', borderColor: 'rgba(255,255,255,0.07)' }}>
+          <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border" style={{ background: '#111113', borderColor: 'rgba(255,255,255,0.07)' }}>
             <span className="text-xs font-medium mr-1" style={{ color: '#5a6a82' }}>Période :</span>
             {([
               { id: 'all' as PerfPeriod, label: 'Tout' },
@@ -535,20 +535,20 @@ export default function RecapTradeLive() {
             ))}
             <div className="h-5 w-px mx-1" style={{ background: 'rgba(255,255,255,0.07)' }} />
             {perfPeriod === 'day' && (
-              <input type="date" value={perfDay} onChange={e => setPerfDay(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#1c2333', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }} />
+              <input type="date" value={perfDay} onChange={e => setPerfDay(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }} />
             )}
             {perfPeriod === 'range' && (
               <div className="flex items-center gap-2">
-                <input type="date" value={perfRangeFrom} onChange={e => setPerfRangeFrom(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#1c2333', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }} />
+                <input type="date" value={perfRangeFrom} onChange={e => setPerfRangeFrom(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }} />
                 <span className="text-xs" style={{ color: '#5a6a82' }}>→</span>
-                <input type="date" value={perfRangeTo} onChange={e => setPerfRangeTo(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#1c2333', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }} />
+                <input type="date" value={perfRangeTo} onChange={e => setPerfRangeTo(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }} />
               </div>
             )}
             {perfPeriod === 'month' && (
-              <input type="month" value={perfMonth} onChange={e => setPerfMonth(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#1c2333', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }} />
+              <input type="month" value={perfMonth} onChange={e => setPerfMonth(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5', colorScheme: 'dark' }} />
             )}
             {perfPeriod === 'year' && (
-              <select value={perfYear} onChange={e => setPerfYear(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#1c2333', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5' }}>
+              <select value={perfYear} onChange={e => setPerfYear(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.07)', color: '#e8edf5' }}>
                 {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             )}
@@ -661,7 +661,7 @@ export default function RecapTradeLive() {
             <Card>
               <p className="text-xs font-semibold text-[#5a6a82] uppercase tracking-wider mb-3">Répartition</p>
               <div className="flex items-center gap-4 mb-3">
-                <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#1c2333' }}>
+                <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: '#18181b' }}>
                   {perfTrades.length > 0 && (
                     <div className="flex h-full">
                       <div style={{ width: `${(wins.length / perfTrades.length) * 100}%`, background: '#22c55e' }} />

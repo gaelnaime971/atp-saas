@@ -144,7 +144,7 @@ export default function Bibliotheque() {
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               filter === f
                 ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                : 'text-[#5a6a82] hover:text-[#a0aec0] bg-[#1c2333] border border-[rgba(255,255,255,0.07)]'
+                : 'text-[#5a6a82] hover:text-[#a0aec0] bg-[#18181b] border border-[rgba(255,255,255,0.07)]'
             }`}
           >
             {f === 'all' ? 'Tout' : f === 'video' ? '🎬 Vidéos' : f === 'pdf' ? '📄 PDFs' : '📝 Docs'}
@@ -164,7 +164,7 @@ export default function Bibliotheque() {
                 required
                 value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
                 placeholder="Titre de la ressource"
               />
             </div>
@@ -176,7 +176,7 @@ export default function Bibliotheque() {
                   setForm(f => ({ ...f, type: e.target.value as any, url: '' }))
                   setFile(null)
                 }}
-                className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               >
                 <option value="video">Vidéo</option>
                 <option value="pdf">PDF</option>
@@ -190,7 +190,7 @@ export default function Bibliotheque() {
                   <label className="block text-xs text-[#5a6a82] mb-1.5">Fichier</label>
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full bg-[#1c2333] border border-dashed border-[rgba(255,255,255,0.12)] rounded-lg px-4 py-6 text-center cursor-pointer hover:border-green-500/40 transition-colors"
+                    className="w-full bg-[#18181b] border border-dashed border-[rgba(255,255,255,0.12)] rounded-lg px-4 py-6 text-center cursor-pointer hover:border-green-500/40 transition-colors"
                   >
                     <input
                       ref={fileInputRef}
@@ -222,7 +222,7 @@ export default function Bibliotheque() {
                     required
                     value={form.url}
                     onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
-                    className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+                    className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
                     placeholder="https://youtube.com/..."
                   />
                 </>
@@ -235,7 +235,7 @@ export default function Bibliotheque() {
                 rows={2}
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full bg-[#1c2333] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82] resize-none"
+                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82] resize-none"
                 placeholder="Description de la ressource..."
               />
             </div>

@@ -241,7 +241,7 @@ export default function Reports() {
         <div className="flex items-center gap-3">
           <button
             onClick={goToPrevMonth}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#1c2333] border border-[rgba(255,255,255,0.07)] text-[#a0aec0] hover:text-[#e8edf5] hover:border-[rgba(255,255,255,0.15)] transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#18181b] border border-[rgba(255,255,255,0.07)] text-[#a0aec0] hover:text-[#e8edf5] hover:border-[rgba(255,255,255,0.15)] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -252,7 +252,7 @@ export default function Reports() {
           </span>
           <button
             onClick={goToNextMonth}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#1c2333] border border-[rgba(255,255,255,0.07)] text-[#a0aec0] hover:text-[#e8edf5] hover:border-[rgba(255,255,255,0.15)] transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#18181b] border border-[rgba(255,255,255,0.07)] text-[#a0aec0] hover:text-[#e8edf5] hover:border-[rgba(255,255,255,0.15)] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

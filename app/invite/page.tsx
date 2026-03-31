@@ -129,7 +129,7 @@ export default function InvitePage() {
                   className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
                   style={{
                     background: i === 0 || step === 'password' ? 'var(--green)' : 'var(--bg3)',
-                    color: i === 0 || step === 'password' ? '#0f1117' : 'var(--text3)',
+                    color: i === 0 || step === 'password' ? '#09090b' : 'var(--text3)',
                   }}
                 >
                   {i === 0 && step === 'password' ? '✓' : i + 1}
@@ -199,7 +199,7 @@ export default function InvitePage() {
               <button
                 type="submit"
                 className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
-                style={{ background: 'var(--green)', color: '#0f1117' }}
+                style={{ background: 'var(--green)', color: '#09090b' }}
               >
                 Valider le code →
               </button>
@@ -274,7 +274,7 @@ export default function InvitePage() {
                 className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
                 style={{
                   background: 'var(--green)',
-                  color: '#0f1117',
+                  color: '#09090b',
                   opacity: loading ? 0.7 : 1,
                 }}
               >

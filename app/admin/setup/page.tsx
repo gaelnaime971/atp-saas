@@ -206,7 +206,7 @@ export default function AdminSetupPage() {
                 className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
                 style={{
                   background: 'var(--green)',
-                  color: '#0f1117',
+                  color: '#09090b',
                   opacity: loading ? 0.7 : 1,
                   cursor: loading ? 'not-allowed' : 'pointer',
                 }}
