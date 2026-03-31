@@ -93,6 +93,10 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
   const [mktDAX, setMktDAX] = useState('--')
   const [mktLSE, setMktLSE] = useState('--')
 
+  // Trade en cours overlay
+  const [showTradeGuide, setShowTradeGuide] = useState(false)
+  const [tradeGuideStep, setTradeGuideStep] = useState(0)
+
   // Breathe
   const [breatheCount, setBreatheCount] = useState(60)
   const [breathePhase, setBreathePhase] = useState('Inspire...')
@@ -405,6 +409,24 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
 
         {/* ── CENTER ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+          {/* Trade en cours button */}
+          <button
+            onClick={() => { setShowTradeGuide(true); setTradeGuideStep(0) }}
+            style={{
+              width: '100%', padding: 14, borderRadius: 10,
+              background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(239,68,68,0.08))',
+              border: '1px solid rgba(245,158,11,0.3)',
+              color: '#f59e0b', fontFamily: disp, fontSize: 16, fontWeight: 700,
+              letterSpacing: '0.08em', cursor: 'pointer', textTransform: 'uppercase' as const,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              boxShadow: '0 0 20px rgba(245,158,11,0.1)',
+              transition: 'all 0.2s',
+            }}
+          >
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            TRADE EN COURS
+          </button>
+
           {/* P&L + Bars */}
           <div style={cardS}>
             <div style={cardLabel}>{dot}Cockpit de risque</div>
@@ -590,6 +612,92 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
 
         </div>
       </div>
+
+      {/* Trade Guide Overlay */}
+      {showTradeGuide && (() => {
+        const steps = [
+          { icon: '🎯', title: 'ENTRÉE EN POSITION', items: [
+            'Confirme ton signal — pas de FOMO',
+            'Vérifie que le setup correspond au plan',
+            'Identifie ton point d\'entrée précis',
+            'Place ton ordre avec le sizing calculé',
+          ], color: '#60a5fa' },
+          { icon: '🛡️', title: 'STOP LOSS', items: [
+            'Stop loss placé AVANT l\'entrée',
+            'SL = 25 pts ATP maximum',
+            'Ne jamais élargir le SL en cours de trade',
+            'Accepte la perte potentielle avant d\'entrer',
+          ], color: '#ef4444' },
+          { icon: '⚡', title: 'BREAKEVEN — 30 PTS', items: [
+            'Dès +30 pts, déplace ton SL au prix d\'entrée',
+            'Tu es maintenant en "free trade"',
+            'Pas de risque = trade serein',
+            'Continue à surveiller le prix',
+          ], color: '#f59e0b' },
+          { icon: '📈', title: 'STOP WIN — ACCOMPAGNE', items: [
+            'Remonte ton SL sous chaque nouveau creux (long)',
+            'Ou au-dessus de chaque sommet (short)',
+            'Objectif : capturer le maximum du mouvement',
+            'Laisse le prix respirer sans paniquer',
+          ], color: GREEN },
+          { icon: '🏁', title: 'SORTIE', items: [
+            'Take profit sur zone de résistance/support clé',
+            'Ou laisse le stop win faire son travail',
+            'Note immédiatement le résultat dans le journal',
+            'Analyse : ai-je respecté le plan ?',
+          ], color: '#a78bfa' },
+        ]
+        const step = steps[tradeGuideStep]
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: disp }} onClick={() => setShowTradeGuide(false)}>
+            <div onClick={e => e.stopPropagation()} style={{ background: BG2, border: `1px solid ${step.color}30`, borderRadius: 20, padding: '40px 48px', maxWidth: 560, width: '90%', position: 'relative' }}>
+              {/* Step indicators */}
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 32 }}>
+                {steps.map((s, i) => (
+                  <button key={i} onClick={() => setTradeGuideStep(i)} style={{
+                    width: i === tradeGuideStep ? 32 : 10, height: 10, borderRadius: 99, border: 'none', cursor: 'pointer',
+                    background: i === tradeGuideStep ? s.color : i < tradeGuideStep ? `${GREEN}60` : `${TEXT3}40`,
+                    transition: 'all 0.3s',
+                    boxShadow: i === tradeGuideStep ? `0 0 12px ${s.color}50` : 'none',
+                  }} />
+                ))}
+              </div>
+
+              {/* Content */}
+              <div style={{ textAlign: 'center' as const, marginBottom: 28 }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>{step.icon}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: step.color, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>{step.title}</div>
+                <div style={{ fontFamily: mono, fontSize: 11, color: TEXT3, marginTop: 6 }}>Étape {tradeGuideStep + 1} / {steps.length}</div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+                {step.items.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 10, background: `${step.color}08`, border: `1px solid ${step.color}18` }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${step.color}15`, border: `1px solid ${step.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: 12, fontWeight: 700, color: step.color, flexShrink: 0 }}>{i + 1}</div>
+                    <span style={{ fontSize: 14, color: TEXT, fontWeight: 500, lineHeight: 1.4 }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigation */}
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => tradeGuideStep > 0 ? setTradeGuideStep(tradeGuideStep - 1) : setShowTradeGuide(false)}
+                  style={{ flex: 1, padding: 14, borderRadius: 10, background: BG3, border: `1px solid ${BORDER}`, color: TEXT2, fontFamily: disp, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {tradeGuideStep > 0 ? '← Précédent' : 'Fermer'}
+                </button>
+                <button
+                  onClick={() => tradeGuideStep < steps.length - 1 ? setTradeGuideStep(tradeGuideStep + 1) : setShowTradeGuide(false)}
+                  style={{ flex: 1, padding: 14, borderRadius: 10, background: step.color, border: 'none', color: '#000', fontFamily: disp, fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: `0 0 20px ${step.color}30` }}
+                >
+                  {tradeGuideStep < steps.length - 1 ? 'Suivant →' : 'Compris ✓'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       <style>{`
         @keyframes pulseDot { 0%,100% { opacity:1;transform:scale(1) } 50% { opacity:0.5;transform:scale(0.85) } }
