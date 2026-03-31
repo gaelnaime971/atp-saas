@@ -433,7 +433,7 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
           </div>
 
           {/* Stats grid — 2 rows */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {[
               { l: 'Trades', v: String(trades.length), c: TEXT },
               { l: 'W / L', v: `${wins}W/${losses}L`, c: TEXT },
@@ -444,35 +444,50 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
               { l: 'Avg', v: trades.length > 0 ? `${(totalPnl / trades.length).toFixed(0)}€` : '—', c: totalPnl >= 0 ? GREEN : '#ef4444' },
               { l: 'Win%', v: trades.length > 0 ? `${Math.round((wins / trades.length) * 100)}%` : '—', c: wins > losses ? GREEN : '#ef4444' },
             ].map(s => (
-              <div key={s.l} style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '7px 4px', textAlign: 'center' as const }}>
-                <div style={{ fontFamily: mono, fontSize: 14, fontWeight: 700, color: s.c, lineHeight: 1 }}>{s.v}</div>
-                <div style={{ fontSize: 7, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 2 }}>{s.l}</div>
+              <div key={s.l} style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 6px', textAlign: 'center' as const }}>
+                <div style={{ fontFamily: mono, fontSize: 20, fontWeight: 700, color: s.c, lineHeight: 1 }}>{s.v}</div>
+                <div style={{ fontSize: 9, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 4, letterSpacing: '0.06em' }}>{s.l}</div>
               </div>
             ))}
           </div>
 
-          {/* P&L mini chart */}
-          {trades.length > 0 && (
-            <div style={{ ...cardS, padding: '10px 18px' }}>
+          {/* P&L curve */}
+          {trades.length > 1 && (
+            <div style={{ ...cardS, padding: '12px 18px' }}>
               <div style={cardLabel}>{dot}Courbe P&L session</div>
-              <div style={{ display: 'flex', alignItems: 'end', gap: 3, height: 50 }}>
+              <svg viewBox="0 0 400 100" style={{ width: '100%', height: 80 }} preserveAspectRatio="none">
                 {(() => {
-                  const cum: number[] = []; let acc = 0
+                  const cum: number[] = [0]; let acc = 0
                   trades.forEach(t => { acc += t.pnl; cum.push(acc) })
-                  const max = Math.max(...cum.map(Math.abs), 1)
-                  return cum.map((v, i) => (
-                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: v >= 0 ? 'flex-end' : 'flex-start', height: '100%', position: 'relative' }}>
-                      <div style={{
-                        height: `${Math.abs(v) / max * 100}%`, minHeight: 2,
-                        background: v >= 0 ? GREEN : '#ef4444', borderRadius: 2,
-                        position: 'absolute', bottom: v >= 0 ? '50%' : undefined, top: v < 0 ? '50%' : undefined,
-                        left: 0, right: 0,
-                      }} />
-                    </div>
-                  ))
+                  const minV = Math.min(...cum)
+                  const maxV = Math.max(...cum)
+                  const range = Math.max(maxV - minV, 1)
+                  const points = cum.map((v, i) => {
+                    const x = (i / (cum.length - 1)) * 400
+                    const y = 95 - ((v - minV) / range) * 90
+                    return `${x},${y}`
+                  })
+                  const line = points.join(' ')
+                  const lastVal = cum[cum.length - 1]
+                  const color = lastVal >= 0 ? GREEN : '#ef4444'
+                  const areaPath = `M0,95 L${points.map((p, i) => i === 0 ? p.split(',')[0] + ',' + p.split(',')[1] : p).join(' L')} L400,95 Z`
+                  return (
+                    <>
+                      {/* Zero line */}
+                      <line x1="0" y1={95 - ((0 - minV) / range) * 90} x2="400" y2={95 - ((0 - minV) / range) * 90} stroke={TEXT3} strokeWidth="0.5" strokeDasharray="4 4" opacity="0.3" />
+                      {/* Area fill */}
+                      <path d={areaPath} fill={`${color}15`} />
+                      {/* Line */}
+                      <polyline points={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                      {/* Dots */}
+                      {points.map((p, i) => {
+                        const [x, y] = p.split(',')
+                        return <circle key={i} cx={x} cy={y} r={i === points.length - 1 ? 4 : 2.5} fill={cum[i] >= 0 ? GREEN : '#ef4444'} stroke={BG2} strokeWidth="1" />
+                      })}
+                    </>
+                  )
                 })()}
-              </div>
-              <div style={{ height: 1, background: TEXT3, opacity: 0.2, margin: '0 0 2px' }} />
+              </svg>
             </div>
           )}
 
@@ -514,18 +529,18 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
           </div>
 
           {/* Timers + Note */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 8 }}>
-            <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
-              <div style={{ fontFamily: mono, fontSize: 22, fontWeight: 700, color: GREEN }}>{formatTime(elapsed)}</div>
-              <div style={{ fontSize: 7, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 2 }}>Session</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 10 }}>
+            <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 16, textAlign: 'center' as const }}>
+              <div style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: GREEN, letterSpacing: '0.04em' }}>{formatTime(elapsed)}</div>
+              <div style={{ fontSize: 9, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 4, letterSpacing: '0.08em' }}>Session</div>
             </div>
-            <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
-              <div style={{ fontFamily: mono, fontSize: 22, fontWeight: 700, color: lastTradeTime && (Date.now() - lastTradeTime) > 1800000 ? '#f59e0b' : TEXT }}>{lastTradeElapsed}</div>
-              <div style={{ fontSize: 7, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 2 }}>Dernier trade</div>
+            <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 16, textAlign: 'center' as const }}>
+              <div style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: lastTradeTime && (Date.now() - lastTradeTime) > 1800000 ? '#f59e0b' : TEXT, letterSpacing: '0.04em' }}>{lastTradeElapsed}</div>
+              <div style={{ fontSize: 9, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', marginTop: 4, letterSpacing: '0.08em' }}>Dernier trade</div>
             </div>
-            <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ fontSize: 7, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Note de session</div>
-              <textarea value={sessionNote} onChange={e => setSessionNote(e.target.value)} placeholder="Observations, erreurs, ajustements..." style={{ flex: 1, background: 'transparent', border: 'none', color: TEXT2, fontFamily: mono, fontSize: 10, outline: 'none', resize: 'none', lineHeight: 1.4, minHeight: 28 }} />
+            <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: 9, color: TEXT3, fontFamily: mono, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Note de session</div>
+              <textarea value={sessionNote} onChange={e => setSessionNote(e.target.value)} placeholder="Observations, erreurs, ajustements..." style={{ flex: 1, background: 'transparent', border: 'none', color: TEXT2, fontFamily: mono, fontSize: 12, outline: 'none', resize: 'none', lineHeight: 1.5, minHeight: 40 }} />
             </div>
           </div>
         </div>
