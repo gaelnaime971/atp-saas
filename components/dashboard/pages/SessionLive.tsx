@@ -402,7 +402,7 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
         {/* ── CENTER ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
           {/* Risk + P&L */}
-          <div style={cardS}>
+          <div style={{ ...cardS, flex: 2 }}>
             <div style={cardLabel}>{dot}Cockpit de risque</div>
             <div style={{ textAlign: 'center' as const, padding: '12px 0 6px' }}>
               <div style={{ fontFamily: mono, fontSize: 48, fontWeight: 700, lineHeight: 1, color: totalPnl > 0 ? GREEN : totalPnl < 0 ? '#ef4444' : TEXT, textShadow: totalPnl !== 0 ? `0 0 30px ${totalPnl > 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` : 'none' }}>
@@ -443,9 +443,9 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
           </div>
 
           {/* Trade log */}
-          <div style={{ ...cardS, flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ ...cardS, display: 'flex', flexDirection: 'column', maxHeight: 200 }}>
             <div style={cardLabel}>{dot}Journal de session</div>
-            <div style={{ flex: 1, overflowY: 'auto', minHeight: 80 }}>
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 40 }}>
               {trades.length === 0 ? (
                 <div style={{ textAlign: 'center' as const, padding: 16, color: TEXT3, fontFamily: mono, fontSize: 10 }}>Aucun trade</div>
               ) : [...trades].reverse().map(t => (
