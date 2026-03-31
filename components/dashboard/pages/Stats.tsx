@@ -34,7 +34,7 @@ function formatPercent(value: number): string {
 export default function Stats() {
   const [allSessions, setAllSessions] = useState<TradingSession[]>([])
   const [accounts, setAccounts] = useState<TraderAccount[]>([])
-  const [selectedAccount, setSelectedAccount] = useState<string>('all')
+  const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set(['all']))
   const [period, setPeriod] = useState<Period>('7j')
   const [loading, setLoading] = useState(true)
 
@@ -61,17 +61,29 @@ export default function Stats() {
     fetchSessions()
   }, [period])
 
-  // Filter sessions by selected account
+  function toggleAccount(id: string) {
+    setSelectedAccounts(prev => {
+      const next = new Set(prev)
+      if (id === 'all') return new Set(['all'])
+      next.delete('all')
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      if (next.size === 0) return new Set(['all'])
+      return next
+    })
+  }
+
+  // Filter sessions by selected accounts
   const sessions = useMemo(() => {
-    if (selectedAccount === 'all') return allSessions
+    if (selectedAccounts.has('all')) return allSessions
     return allSessions.filter(s => {
       try {
         const setup = s.setup ? JSON.parse(s.setup) : null
         const ids: string[] = setup?.account_ids ?? []
-        return ids.includes(selectedAccount)
+        return ids.some(id => selectedAccounts.has(id))
       } catch { return false }
     })
-  }, [allSessions, selectedAccount])
+  }, [allSessions, selectedAccounts])
 
   const metrics = useMemo(() => {
     if (sessions.length === 0) {
@@ -157,23 +169,23 @@ export default function Stats() {
               <span className="text-xs font-medium" style={{ color: 'var(--text3)' }}>Compte :</span>
               <div className="flex gap-1.5">
                 <button
-                  onClick={() => setSelectedAccount('all')}
+                  onClick={() => toggleAccount('all')}
                   className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
                   style={{
-                    background: selectedAccount === 'all' ? 'rgba(34,197,94,0.1)' : 'var(--bg2)',
-                    color: selectedAccount === 'all' ? '#22c55e' : 'var(--text3)',
-                    border: `1px solid ${selectedAccount === 'all' ? 'rgba(34,197,94,0.2)' : 'var(--border)'}`,
+                    background: selectedAccounts.has('all') ? 'rgba(34,197,94,0.1)' : 'var(--bg2)',
+                    color: selectedAccounts.has('all') ? '#22c55e' : 'var(--text3)',
+                    border: `1px solid ${selectedAccounts.has('all') ? 'rgba(34,197,94,0.2)' : 'var(--border)'}`,
                   }}
                 >
                   Tous
                 </button>
                 {accounts.map(acc => {
-                  const active = selectedAccount === acc.id
+                  const active = selectedAccounts.has(acc.id)
                   const color = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
                   return (
                     <button
                       key={acc.id}
-                      onClick={() => setSelectedAccount(acc.id)}
+                      onClick={() => toggleAccount(acc.id)}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
                       style={{
                         background: active ? `${color}15` : 'var(--bg2)',
