@@ -330,7 +330,7 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
         })}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 280px', gridTemplateRows: 'auto 1fr', height: '100vh', padding: 16, gap: 12, maxWidth: 1440, margin: '0 auto' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 300px', gridTemplateRows: 'auto 1fr', height: '100vh', padding: 16, gap: 12, maxWidth: 1600, margin: '0 auto' }}>
 
         {/* ── TOPBAR ── */}
         <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...cardS, padding: '10px 20px' }}>
@@ -367,7 +367,7 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
           </div>
 
           {/* Eco calendar - TradingView widget */}
-          <div style={{ ...cardS, height: 220, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ ...cardS, flex: 1, minHeight: 300, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={cardLabel}>{dot}Calendrier éco</div>
             <div ref={ecoWidgetRef} className="tradingview-widget-container" style={{ flex: 1, overflow: 'hidden', borderRadius: 6 }}>
               <div className="tradingview-widget-container__widget" style={{ height: '100%' }} />
@@ -377,7 +377,7 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
           {/* Levels */}
           <div style={cardS}>
             <div style={cardLabel}>{dot}Niveaux clés</div>
-            <div style={{ maxHeight: 120, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 180, overflowY: 'auto' }}>
               {levels.length === 0 && <div style={{ fontSize: 10, color: TEXT3, fontFamily: mono, textAlign: 'center' as const, padding: 8 }}>Aucun niveau</div>}
               {levels.map((l, i) => (
                 <div key={i} onClick={() => setLevels(prev => prev.filter((_, j) => j !== i))} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${BORDER}`, fontFamily: mono, cursor: 'pointer' }}>
@@ -443,9 +443,9 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
           </div>
 
           {/* Trade log */}
-          <div style={{ ...cardS, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 180, maxHeight: 280 }}>
+          <div style={{ ...cardS, flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div style={cardLabel}>{dot}Journal de session</div>
-            <div style={{ flex: 1, overflowY: 'auto', minHeight: 60 }}>
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 80 }}>
               {trades.length === 0 ? (
                 <div style={{ textAlign: 'center' as const, padding: 16, color: TEXT3, fontFamily: mono, fontSize: 10 }}>Aucun trade</div>
               ) : [...trades].reverse().map(t => (
