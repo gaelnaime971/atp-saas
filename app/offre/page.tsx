@@ -429,7 +429,7 @@ export default function OffrePage() {
           </div>
           <div className="tg stg" style={{ marginTop: 24 }}>
             {[
-              { r: '+3 386$ en 7j', t: "Gaël m'a aidé à comprendre pourquoi je perdais et à le corriger. La méthode est claire et le dashboard me permet de voir exactement où j'en suis.", v: '🎯', n: 'Gaël N.', rl: 'Compte propre' },
+              { r: '+3 386$ en 7j', t: "Le coaching m'a aidé à comprendre pourquoi je perdais et à le corriger. La méthode est claire et le dashboard me permet de voir exactement où j'en suis.", v: '🎯', n: 'Kevin D.', rl: 'Compte propre' },
               { r: 'Prop Firm validée', t: "J'avais raté 3 challenges. En 2 mois j'ai validé mon premier compte 50K. La gestion du risque enseignée ici est institutionnelle.", v: '🏆', n: 'Marcus L.', rl: 'Prop Trader' },
               { r: 'Edge mesurable', t: "Le dashboard a changé ma vision. Mon edge est enfin mesurable et cohérent. Je sais exactement ce qui fonctionne.", v: '📊', n: 'Thomas R.', rl: 'Futures YM/ES' },
             ].map(t => (
