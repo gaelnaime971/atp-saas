@@ -235,18 +235,15 @@ export default function OffrePage() {
 
         {/* ━━ HERO ━━ */}
         <section className="hero">
-          <div className="hero-pill">Sélection sur dossier — Places limitées</div>
-          <h1 className="hero-h">Trade au niveau des<br /><span>professionnels</span> de marché</h1>
-          <p className="hero-p">Le programme d&apos;accompagnement pour les traders qui veulent des <strong>résultats réels</strong>. Coaching 1v1, méthode institutionnelle, outils pro.</p>
+          <div className="hero-pill">🔴 2 places disponibles en mai 2026</div>
+          <h1 className="hero-h">J&apos;ai tradé 8 ans en salle de marché.<br /><span>Voilà ce que j&apos;enseigne.</span></h1>
+          <p className="hero-p">Le seul coaching trading avec <strong>méthode institutionnelle</strong>, dashboard SaaS exclusif et accompagnement psychologique en neurosciences. Sélection sur dossier — 2 places par mois.</p>
           <div className="hero-btns">
-            <a href="#offre" className="btn-g" style={{ padding: '14px 32px', fontSize: 15 }}>Découvrir l&apos;offre →</a>
-            <a href="#programme" className="btn-o" style={{ padding: '14px 32px', fontSize: 15 }}>Voir le programme</a>
+            <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" className="btn-g" style={{ padding: '14px 32px', fontSize: 15 }}>Réserver mon call gratuit →</a>
+            <a href="#programme" className="btn-o" style={{ padding: '14px 32px', fontSize: 15 }}>Voir le programme ↓</a>
           </div>
           <div className="hero-proof">
-            <div className="dots">
-              {['G', 'M', 'T', '+'].map((l, i) => <div key={i} className="dot">{l}</div>)}
-            </div>
-            <span>Rejoins les traders formés par ATP</span>
+            <span>📞 Call gratuit 30 min · Sans engagement · Réponse sous 24h</span>
           </div>
 
           {/* Dashboard screenshot */}
@@ -257,7 +254,7 @@ export default function OffrePage() {
 
           {/* Stats */}
           <div className="stats">
-            {[{ n: '1 200+', l: 'Membres Discord' }, { n: 'Ex-Banque', l: '& Hedge Fund' }, { n: '9 ans', l: "d'expérience" }, { n: '100%', l: 'Personnalisé' }].map(s => (
+            {[{ n: '8 ans', l: 'Banque & Hedge Fund' }, { n: '1 200+', l: 'Membres communauté' }, { n: '9 ans', l: "d'expérience marché" }, { n: 'SaaS', l: 'Dashboard propriétaire' }].map(s => (
               <div key={s.l} className="stat"><div className="stat-n">{s.n}</div><div className="stat-l">{s.l}</div></div>
             ))}
           </div>
@@ -295,13 +292,13 @@ export default function OffrePage() {
           <div className="fw a">
             <div className="fw-s fw-y">
               <div className="fw-tag">✓ Tu es prêt</div>
-              {['Tu trades déjà ou tu veux démarrer sérieusement', 'Tu veux une méthode claire et structurée', "Tu es prêt à investir dans ta progression", 'Tu veux des outils pro pour mesurer tes perfs', 'Tu vises ton capital ou une prop firm'].map(t => (
+              {['Tu trades depuis 3 mois ou plus et tu stagnes', 'Tu veux une méthode claire, codifiée et répétable', 'Tu vises une prop firm ou un capital propre significatif', "Tu es prêt à analyser tes erreurs et te remettre en question", 'Tu peux investir sérieusement dans ta formation'].map(t => (
                 <div key={t} className="fw-i"><span className="fw-ic" style={{ color: G }}>✓</span>{t}</div>
               ))}
             </div>
             <div className="fw-s fw-n">
               <div className="fw-tag">✕ Pas pour toi</div>
-              {["Tu cherches quelqu'un qui trade à ta place", 'Tu veux des résultats sans travailler', "Tu n'es pas prêt à te remettre en question", 'Tu attends des rendements garantis', "Tu n'as pas le temps de te former"].map(t => (
+              {['Tu cherches une méthode miracle sans effort', 'Tu veux des résultats garantis en quelques jours', "Tu n'es pas prêt à tenir un journal de trading", "Tu n'as pas le temps de te former 30 min par jour", "Tu attends qu'on trade à ta place"].map(t => (
                 <div key={t} className="fw-i"><span className="fw-ic" style={{ color: '#ef4444' }}>✕</span>{t}</div>
               ))}
             </div>
@@ -393,6 +390,40 @@ export default function OffrePage() {
 
         <div className="divider" />
 
+        {/* ━━ APPROCHE NEUROSCIENCES ━━ */}
+        <section className="ks">
+          <div className="ks-label a">Ce qui nous différencie</div>
+          <div className="ks-h a">L&apos;approche qui change <span>tout</span></div>
+          <div className="ks-p a" style={{ maxWidth: 700 }}>Trading + Neurosciences</div>
+          <div className="a" style={{ marginTop: 32, fontSize: 14, color: '#999', lineHeight: 1.8, maxWidth: 760 }}>
+            <p>ATP ULTRA est le seul programme qui combine m&eacute;thode institutionnelle et accompagnement psychologique bas&eacute; sur les neurosciences.</p>
+            <p style={{ marginTop: 16 }}>Vanille, coach certifi&eacute;e en neurosciences, travaille &agrave; mes c&ocirc;t&eacute;s pour identifier et corriger les biais cognitifs qui d&eacute;truisent ton trading : biais de r&eacute;cence, biais de confirmation, aversion &agrave; la perte, overconfidence.</p>
+            <p style={{ marginTop: 16 }}>Ce n&apos;est pas du d&eacute;veloppement personnel g&eacute;n&eacute;rique. C&apos;est de la <strong style={{ color: '#ccc' }}>psychologie appliqu&eacute;e au trading</strong>, en conditions r&eacute;elles.</p>
+          </div>
+          <div className="cg cg-2 stg" style={{ marginTop: 40 }}>
+            <div className="card sti" style={{ textAlign: 'center' }}>
+              <img src="/GAEL 12.jpg" alt="Gaël" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 16px', display: 'block', border: `2px solid ${accent(0.3)}` }} />
+              <div className="card-t">Ga&euml;l</div>
+              <div style={{ fontSize: 11, color: G, marginBottom: 10, fontWeight: 500 }}>M&eacute;thode | 8 ans en salle de march&eacute;</div>
+              <ul className="card-list" style={{ textAlign: 'left' }}>
+                <li><span className="card-ck">✓</span>Expertise sur ES, NQ, YM</li>
+                <li><span className="card-ck">✓</span>Dashboard SaaS propri&eacute;taire</li>
+              </ul>
+            </div>
+            <div className="card sti" style={{ textAlign: 'center' }}>
+              <img src="/vanille.png" alt="Vanille" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 16px', display: 'block', border: `2px solid ${accent(0.3)}` }} />
+              <div className="card-t">Vanille</div>
+              <div style={{ fontSize: 11, color: G, marginBottom: 10, fontWeight: 500 }}>Coach neurosciences certifi&eacute;e</div>
+              <ul className="card-list" style={{ textAlign: 'left' }}>
+                <li><span className="card-ck">✓</span>Biais cognitifs appliqu&eacute;s au trading</li>
+                <li><span className="card-ck">✓</span>Protocoles de gestion &eacute;motionnelle</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <div className="divider" />
+
         {/* ━━ PROCESS ━━ */}
         <section className="ks">
           <div className="ks-label a">Le parcours</div>
@@ -455,6 +486,7 @@ export default function OffrePage() {
                 <div className="offer-pr" style={{ fontSize: 36, color: '#fff' }}>ATP ULTRA</div>
                 <div className="offer-info" style={{ marginTop: 8 }}>Accompagnement complet &middot; Acc&egrave;s illimit&eacute; &agrave; Ga&euml;l</div>
                 <div className="offer-inst" style={{ marginTop: 14 }}>Prix communiqu&eacute; lors du call de pr&eacute;s&eacute;lection</div>
+                <div style={{ marginTop: 10, fontSize: 12, color: '#888', lineHeight: 1.6 }}>💳 Facilit&eacute;s de paiement disponibles &middot; L&apos;investissement ne doit pas &ecirc;tre un obstacle si tu es le bon profil.</div>
                 <ul className="offer-ul">
                   {['Coaching 1v1 personnalisé avec Gaël', 'Accès 12 mois au Dashboard ATP SaaS', 'Accès 12 mois Discord ATP (valeur 890€)', 'Formation vidéo complète', 'Review hebdomadaire de tes trades', 'Suivi WhatsApp permanent', 'Plan de trading personnalisé', 'Préparation prop firm'].map(item => (
                     <li key={item}><span className="ck" style={{ color: G }}>✓</span>{item}</li>
@@ -465,9 +497,8 @@ export default function OffrePage() {
                 <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" className="btn-g" style={{ textAlign: 'center', padding: '16px 24px', fontSize: 15, width: '100%', display: 'block' }}>Réserver un call gratuit →</a>
                 <div style={{ fontSize: 10, color: '#555', textAlign: 'center' }}>30 min · Sans engagement</div>
                 <div className="places">
-                  <div className="places-l">Places disponibles</div>
-                  <div className="places-d"><div className="pl-on" /><div className="pl-on" /><div className="pl-off" /><div className="pl-off" /><div className="pl-off" /></div>
-                  <div className="places-c"><em>2</em> places ce mois</div>
+                  <div className="places-c" style={{ marginTop: 0 }}>⚡ <em>2</em> places disponibles en mai 2026</div>
+                  <div style={{ fontSize: 11, color: '#555', marginTop: 6 }}>Les candidatures pour juin ouvrent le 1er juin.</div>
                 </div>
               </div>
             </div>
@@ -504,8 +535,8 @@ export default function OffrePage() {
         {/* ━━ CTA ━━ */}
         <div className="cta">
           <div className="cta-glow" />
-          <h2>Prêt à trader comme<br />un <span>professionnel</span> ?</h2>
-          <p>Le call de présélection est gratuit et sans engagement.</p>
+          <h2>Tu es à un call<br />de <span>distance.</span></h2>
+          <p>30 minutes pour savoir si ATP ULTRA est fait pour toi. Gratuit, sans engagement, sans pression.</p>
           <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" className="btn-g" style={{ padding: '16px 40px', fontSize: 16, position: 'relative', zIndex: 1 }}>Réserver mon call →</a>
           <div className="urg">2 places disponibles · Réponse sous 24h</div>
         </div>
