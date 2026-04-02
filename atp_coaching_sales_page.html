@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATP Coaching — Alpha Trading Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #22c55e;
+  --green-dim: rgba(34,197,94,0.12);
+  --green-glow: rgba(34,197,94,0.35);
+  --black: #040a04;
+  --black2: #080f08;
+  --surface: #0d150d;
+  --surface2: #111b11;
+  --border: rgba(34,197,94,0.15);
+  --text: #e8f5e8;
+  --muted: #6b8f6b;
+  --white: #ffffff;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--black);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  overflow-x:hidden;
+  line-height:1.6;
+}
+
+/* NOISE TEXTURE */
+body::before{
+  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.4;
+}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:20px 48px;
+  display:flex;align-items:center;justify-content:space-between;
+  backdrop-filter:blur(20px);
+  background:rgba(4,10,4,0.8);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{
+  display:flex;align-items:center;gap:12px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;letter-spacing:0.08em;color:var(--white);
+}
+.nav-logo img{height:36px;}
+.nav-badge{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--green);
+  background:var(--green-dim);
+  border:1px solid var(--border);
+  padding:6px 14px;border-radius:100px;
+  letter-spacing:0.1em;
+}
+
+/* HERO */
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;
+  padding:120px 48px 80px;
+  position:relative;
+  overflow:hidden;
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+  opacity:0.4;
+}
+.hero-glow{
+  position:absolute;
+  width:600px;height:600px;
+  background:radial-gradient(circle, var(--green-glow) 0%, transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-60%);
+  filter:blur(80px);
+  animation:pulse 6s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:0.6;transform:translate(-50%,-60%) scale(1);}
+  50%{opacity:1;transform:translate(-50%,-60%) scale(1.1);}
+}
+.hero-eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--green);
+  background:var(--green-dim);
+  border:1px solid var(--border);
+  padding:8px 20px;border-radius:100px;
+  display:inline-block;margin-bottom:32px;
+  position:relative;z-index:1;
+  animation:fadeUp 0.8s ease both;
+}
+.hero h1{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(64px,8vw,120px);
+  line-height:0.92;
+  letter-spacing:0.02em;
+  color:var(--white);
+  position:relative;z-index:1;
+  animation:fadeUp 0.8s 0.1s ease both;
+}
+.hero h1 span{
+  -webkit-text-stroke:2px var(--green);
+  color:transparent;
+}
+.hero-sub{
+  margin-top:28px;
+  font-size:18px;font-weight:300;color:var(--muted);
+  max-width:560px;
+  position:relative;z-index:1;
+  animation:fadeUp 0.8s 0.2s ease both;
+  line-height:1.7;
+}
+.hero-sub strong{color:var(--text);font-weight:500;}
+.hero-cta{
+  margin-top:48px;
+  display:flex;gap:16px;align-items:center;justify-content:center;
+  flex-wrap:wrap;
+  position:relative;z-index:1;
+  animation:fadeUp 0.8s 0.3s ease both;
+}
+.btn-primary{
+  background:var(--green);
+  color:var(--black);
+  font-weight:600;font-size:16px;
+  padding:16px 36px;border-radius:8px;
+  border:none;cursor:pointer;
+  text-decoration:none;
+  transition:all 0.2s;
+  letter-spacing:0.01em;
+}
+.btn-primary:hover{
+  background:#16a34a;
+  transform:translateY(-2px);
+  box-shadow:0 8px 32px var(--green-glow);
+}
+.btn-ghost{
+  color:var(--muted);font-size:14px;
+  display:flex;align-items:center;gap:8px;
+  text-decoration:none;
+  transition:color 0.2s;
+}
+.btn-ghost:hover{color:var(--text);}
+.hero-stats{
+  margin-top:72px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--border);
+  border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;
+  width:100%;max-width:800px;
+  position:relative;z-index:1;
+  animation:fadeUp 0.8s 0.4s ease both;
+}
+.stat{
+  background:var(--surface);
+  padding:24px 20px;text-align:center;
+}
+.stat-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:36px;color:var(--green);
+  letter-spacing:0.03em;
+}
+.stat-label{
+  font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.1em;
+  margin-top:4px;
+  font-family:'JetBrains Mono',monospace;
+}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(24px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* SECTIONS */
+section{
+  padding:120px 48px;
+  max-width:1200px;
+  margin:0 auto;
+  position:relative;z-index:1;
+}
+.section-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;letter-spacing:0.2em;color:var(--green);
+  text-transform:uppercase;margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-label::before{
+  content:'';width:24px;height:1px;background:var(--green);
+}
+.section-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(48px,5vw,72px);
+  line-height:1;color:var(--white);
+  letter-spacing:0.02em;
+}
+.section-title span{color:var(--green);}
+
+/* FOR WHO */
+.for-who-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:2px;
+  margin-top:60px;
+  background:var(--border);
+  border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+}
+.for-card{
+  background:var(--surface);
+  padding:40px;
+  position:relative;
+  overflow:hidden;
+}
+.for-card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+}
+.for-card.yes::before{background:var(--green);}
+.for-card.no::before{background:#ef4444;}
+.for-card-tag{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;letter-spacing:0.1em;
+  padding:4px 12px;border-radius:100px;
+  display:inline-block;margin-bottom:24px;
+}
+.for-card.yes .for-card-tag{color:var(--green);background:var(--green-dim);border:1px solid var(--border);}
+.for-card.no .for-card-tag{color:#ef4444;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);}
+.for-item{
+  display:flex;align-items:flex-start;gap:12px;
+  margin-bottom:16px;font-size:15px;color:var(--text);
+}
+.for-icon{font-size:16px;margin-top:2px;flex-shrink:0;}
+
+/* PROGRAMME */
+.programme-track{
+  margin-top:60px;
+  position:relative;
+}
+.programme-track::before{
+  content:'';
+  position:absolute;left:28px;top:0;bottom:0;width:1px;
+  background:linear-gradient(to bottom, var(--green) 0%, var(--border) 100%);
+}
+.phase{
+  display:grid;grid-template-columns:56px 1fr;
+  gap:32px;margin-bottom:2px;
+  position:relative;
+}
+.phase-dot{
+  width:56px;height:56px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;color:var(--green);
+  position:relative;z-index:1;
+  flex-shrink:0;
+  transition:all 0.3s;
+}
+.phase:hover .phase-dot{
+  background:var(--green-dim);
+  border-color:var(--green);
+  box-shadow:0 0 24px var(--green-glow);
+}
+.phase-content{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:32px;
+  margin-bottom:16px;
+  transition:all 0.3s;
+}
+.phase:hover .phase-content{
+  border-color:rgba(34,197,94,0.3);
+}
+.phase-week{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--green);
+  letter-spacing:0.1em;margin-bottom:8px;
+}
+.phase-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;color:var(--white);
+  letter-spacing:0.03em;margin-bottom:12px;
+}
+.phase-desc{font-size:15px;color:var(--muted);line-height:1.7;}
+.phase-pills{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;
+}
+.pill{
+  font-size:12px;color:var(--text);
+  background:var(--surface2);
+  border:1px solid var(--border);
+  padding:5px 14px;border-radius:100px;
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* SAAS SECTION */
+.saas-section{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:24px;
+  overflow:hidden;
+  margin-top:60px;
+}
+.saas-header{
+  padding:48px 48px 0;
+  display:grid;grid-template-columns:1fr auto;
+  align-items:start;gap:40px;
+}
+.saas-screen{
+  position:relative;
+  margin:48px;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid var(--border);
+  background:var(--black2);
+}
+.saas-screen-bar{
+  background:var(--surface2);
+  padding:12px 20px;
+  display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border);
+}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot.r{background:#ff5f56;}
+.dot.y{background:#ffbd2e;}
+.dot.g{background:#27c93f;}
+.saas-url{
+  flex:1;text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--muted);
+}
+.saas-mock{
+  padding:32px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+}
+.metric-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:20px;
+}
+.metric-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-family:'JetBrains Mono',monospace;}
+.metric-value{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;margin-top:8px;
+}
+.metric-value.green{color:var(--green);}
+.metric-value.red{color:#ef4444;}
+.metric-value.white{color:var(--white);}
+.saas-chart{
+  grid-column:1/-1;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:20px;
+  height:120px;
+  overflow:hidden;
+  position:relative;
+}
+.chart-line{
+  position:absolute;bottom:20px;left:20px;right:20px;
+  height:80px;
+}
+.saas-features{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--border);
+  border-top:1px solid var(--border);
+}
+.saas-feat{
+  background:var(--surface);
+  padding:28px 32px;
+}
+.saas-feat-icon{font-size:24px;margin-bottom:12px;}
+.saas-feat-title{
+  font-weight:600;font-size:15px;
+  color:var(--white);margin-bottom:6px;
+}
+.saas-feat-desc{font-size:13px;color:var(--muted);}
+
+/* OFFER */
+.offer-box{
+  margin-top:60px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:24px;
+  overflow:hidden;
+  position:relative;
+}
+.offer-glow{
+  position:absolute;top:-200px;right:-200px;
+  width:500px;height:500px;
+  background:radial-gradient(circle, var(--green-glow) 0%, transparent 70%);
+  filter:blur(80px);
+  pointer-events:none;
+}
+.offer-top{
+  padding:48px;
+  display:grid;grid-template-columns:1fr auto;
+  gap:48px;align-items:center;
+}
+.offer-price-old{
+  font-size:18px;color:var(--muted);
+  text-decoration:line-through;
+  margin-bottom:8px;
+}
+.offer-price{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:80px;color:var(--green);
+  line-height:1;letter-spacing:0.02em;
+}
+.offer-price sub{font-size:24px;font-family:'DM Sans',sans-serif;font-weight:400;color:var(--muted);}
+.offer-duration{
+  font-size:13px;color:var(--muted);margin-top:8px;
+  font-family:'JetBrains Mono',monospace;
+}
+.offer-installment{
+  margin-top:16px;
+  font-size:14px;color:var(--text);
+  background:var(--green-dim);
+  border:1px solid var(--border);
+  padding:10px 20px;border-radius:8px;
+  display:inline-block;
+}
+.offer-list{
+  list-style:none;
+}
+.offer-list li{
+  display:flex;align-items:center;gap:12px;
+  font-size:15px;color:var(--text);
+  padding:10px 0;
+  border-bottom:1px solid rgba(34,197,94,0.07);
+}
+.offer-list li:last-child{border-bottom:none;}
+.offer-list .check{color:var(--green);font-size:16px;}
+.offer-bottom{
+  background:var(--surface2);
+  border-top:1px solid var(--border);
+  padding:32px 48px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:24px;
+}
+.offer-bottom-text{font-size:14px;color:var(--muted);}
+.offer-bottom-text strong{color:var(--text);}
+
+/* TESTIMONIALS */
+.testi-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:16px;margin-top:60px;
+}
+.testi-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:32px;
+  position:relative;
+  overflow:hidden;
+}
+.testi-card::before{
+  content:'"';
+  position:absolute;top:-10px;right:20px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:120px;color:var(--green-dim);
+  line-height:1;
+}
+.testi-result{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:36px;color:var(--green);
+  letter-spacing:0.02em;margin-bottom:4px;
+}
+.testi-text{
+  font-size:14px;color:var(--muted);
+  line-height:1.7;margin-bottom:20px;
+}
+.testi-author{
+  display:flex;align-items:center;gap:12px;
+}
+.testi-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--green-dim);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+}
+.testi-name{font-weight:600;font-size:14px;color:var(--text);}
+.testi-role{font-size:12px;color:var(--muted);}
+
+/* FAQ */
+.faq-list{
+  margin-top:60px;
+  display:flex;flex-direction:column;gap:2px;
+}
+.faq-item{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+}
+.faq-q{
+  padding:24px 28px;
+  font-weight:500;font-size:16px;color:var(--text);
+  cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  gap:20px;
+  user-select:none;
+  transition:color 0.2s;
+}
+.faq-q:hover{color:var(--white);}
+.faq-arrow{
+  color:var(--green);font-size:18px;
+  transition:transform 0.3s;flex-shrink:0;
+}
+.faq-item.open .faq-arrow{transform:rotate(45deg);}
+.faq-a{
+  max-height:0;overflow:hidden;
+  transition:max-height 0.4s ease, padding 0.3s;
+  padding:0 28px;
+  font-size:14px;color:var(--muted);line-height:1.8;
+}
+.faq-item.open .faq-a{
+  max-height:200px;
+  padding:0 28px 24px;
+}
+
+/* CTA FINAL */
+.cta-final{
+  text-align:center;
+  padding:120px 48px;
+  position:relative;
+  overflow:hidden;
+}
+.cta-glow-final{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 60% at 50% 50%, rgba(34,197,94,0.15) 0%, transparent 100%);
+  pointer-events:none;
+}
+.cta-final h2{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(56px,6vw,88px);
+  color:var(--white);
+  line-height:0.95;
+  letter-spacing:0.02em;
+  margin-bottom:24px;
+  position:relative;z-index:1;
+}
+.cta-final h2 span{color:var(--green);}
+.cta-final p{
+  font-size:16px;color:var(--muted);
+  max-width:500px;margin:0 auto 40px;
+  position:relative;z-index:1;
+}
+.cta-final a{position:relative;z-index:1;}
+.urgency{
+  margin-top:20px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.urgency-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);
+  animation:blink 1.5s infinite;
+}
+@keyframes blink{
+  0%,100%{opacity:1;}
+  50%{opacity:0.3;}
+}
+
+/* FOOTER */
+footer{
+  border-top:1px solid var(--border);
+  padding:40px 48px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;z-index:1;
+}
+.footer-copy{
+  font-size:12px;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* DIVIDER */
+.divider{
+  width:100%;height:1px;
+  background:linear-gradient(to right, transparent, var(--border), transparent);
+  max-width:1200px;margin:0 auto;
+}
+
+/* SCROLL REVEAL */
+.reveal{
+  opacity:0;transform:translateY(32px);
+  transition:opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+/* SVG CHART */
+.chart-svg{position:absolute;bottom:0;left:0;right:0;top:0;}
+
+@media(max-width:768px){
+  nav{padding:16px 24px;}
+  section{padding:80px 24px;}
+  .hero{padding:100px 24px 60px;}
+  .hero-stats{grid-template-columns:repeat(2,1fr);}
+  .for-who-grid{grid-template-columns:1fr;}
+  .offer-top{grid-template-columns:1fr;}
+  .testi-grid{grid-template-columns:1fr;}
+  .saas-mock{grid-template-columns:1fr 1fr;}
+  .saas-features{grid-template-columns:1fr;}
+  .saas-header{grid-template-columns:1fr;}
+  .offer-bottom{flex-direction:column;text-align:center;}
+  footer{flex-direction:column;gap:16px;text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="6" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.3)" stroke-width="1"/>
+      <path d="M8 22V12L12 8V16L8 22Z" fill="#22c55e"/>
+      <path d="M14 24V8L18 4V20L14 24Z" fill="#22c55e" opacity="0.8"/>
+      <path d="M20 20V14L24 10V18L20 20Z" fill="#22c55e" opacity="0.6"/>
+    </svg>
+    ALPHA TRADING PRO
+  </div>
+  <div class="nav-badge">COACHING PRIVÉ — PLACES LIMITÉES</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  
+  <div class="hero-eyebrow">🎯 Programme Coaching 1-on-1 — Sélection sur dossier</div>
+  
+  <h1>TRADE COMME<br>UN <span>PROFESSIONNEL</span><br>DE MARCHÉ</h1>
+  
+  <p class="hero-sub">
+    Le seul coaching où tu apprends à trader comme un ex-prop trader, avec <strong>un suivi personnalisé sur 3 mois</strong> et accès à des outils professionnels exclusifs.
+  </p>
+  
+  <div class="hero-cta">
+    <a href="#offre" class="btn-primary">Réserver ma place →</a>
+    <a href="#programme" class="btn-ghost">
+      Voir le programme 
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3L13 8L8 13M3 8H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </a>
+  </div>
+  
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-num">+3 386$</div>
+      <div class="stat-label">P&L élève — 7j</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">Win Rate</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">6W</div>
+      <div class="stat-label">Streak actuel</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">+22R</div>
+      <div class="stat-label">R Moyen / session</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOR WHO -->
+<section>
+  <div class="section-label reveal">Pour qui</div>
+  <div class="section-title reveal">CE COACHING EST FAIT<br>POUR <span>TOI</span> SI...</div>
+  
+  <div class="for-who-grid reveal">
+    <div class="for-card yes">
+      <div class="for-card-tag">✓ Tu es prêt</div>
+      <div class="for-item"><span class="for-icon">📈</span>Tu trades déjà ou tu veux démarrer sérieusement sur les futures US</div>
+      <div class="for-item"><span class="for-icon">🎯</span>Tu veux une méthode structurée basée sur la psychologie et la structure de marché</div>
+      <div class="for-item"><span class="for-icon">💪</span>Tu es prêt à investir du temps et de l'argent dans ta progression</div>
+      <div class="for-item"><span class="for-icon">📊</span>Tu veux accéder à un dashboard professionnel pour suivre tes performances</div>
+      <div class="for-item"><span class="for-icon">🔥</span>Tu as l'ambition de trader ta propre capital ou de passer une prop firm</div>
+    </div>
+    <div class="for-card no">
+      <div class="for-card-tag">✗ Pas pour toi</div>
+      <div class="for-item"><span class="for-icon">❌</span>Tu cherches un signal trading ou quelqu'un qui trade à ta place</div>
+      <div class="for-item"><span class="for-icon">❌</span>Tu veux des résultats sans travailler ni pratiquer</div>
+      <div class="for-item"><span class="for-icon">❌</span>Tu n'es pas prêt à remettre en question tes habitudes de trading</div>
+      <div class="for-item"><span class="for-icon">❌</span>Tu attends des promesses de résultats garantis</div>
+      <div class="for-item"><span class="for-icon">❌</span>Tu n'as pas le temps de te former sérieusement au trading</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PROGRAMME -->
+<section id="programme">
+  <div class="section-label reveal">Le parcours</div>
+  <div class="section-title reveal">3 MOIS POUR<br><span>TOUT CHANGER</span></div>
+  <p style="color:var(--muted);font-size:16px;margin-top:16px;max-width:520px;" class="reveal">Un programme structuré en 4 phases progressives, avec des objectifs clairs à chaque étape.</p>
+  
+  <div class="programme-track">
+    
+    <div class="phase reveal">
+      <div class="phase-dot">1</div>
+      <div class="phase-content">
+        <div class="phase-week">Semaines 1–2 · Fondations</div>
+        <div class="phase-title">DIAGNOSTIC & STRUCTURE DE MARCHÉ</div>
+        <div class="phase-desc">Audit complet de ton trading actuel. On identifie les failles, les biais cognitifs et on pose les fondations de la méthode ATP. Tu apprends à lire le marché comme un institutionnel — order blocks, liquidity zones, sessions structure.</div>
+        <div class="phase-pills">
+          <span class="pill">Order Blocks</span>
+          <span class="pill">Sessions US/EU</span>
+          <span class="pill">Liquidity Hunting</span>
+          <span class="pill">Bilan psychologique</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="phase reveal">
+      <div class="phase-dot">2</div>
+      <div class="phase-content">
+        <div class="phase-week">Semaines 3–5 · Méthode</div>
+        <div class="phase-title">LA MÉTHODE ATP EN PROFONDEUR</div>
+        <div class="phase-desc">Transmission complète de ma méthode de trading développée après des années en banque d'investissement et hedge fund. Chaque setup est codifié, chaque règle d'entrée/sortie est claire. On traduit tout ça dans ton plan de trading personnalisé.</div>
+        <div class="phase-pills">
+          <span class="pill">Setup Complet</span>
+          <span class="pill">Risk Management</span>
+          <span class="pill">Plan de trading</span>
+          <span class="pill">Futures ES / NQ / YM</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="phase reveal">
+      <div class="phase-dot">3</div>
+      <div class="phase-content">
+        <div class="phase-week">Semaines 6–10 · Live trading</div>
+        <div class="phase-title">TRADING EN CONDITIONS RÉELLES</div>
+        <div class="phase-desc">Tu trades en direct pendant les sessions avec moi en observation. Review hebdomadaire de tes trades via le dashboard ATP. On affine ta lecture du marché, on travaille la gestion émotionnelle, et on optimise ton edge statistiquement.</div>
+        <div class="phase-pills">
+          <span class="pill">Sessions live</span>
+          <span class="pill">Review vidéo</span>
+          <span class="pill">Dashboard ATP</span>
+          <span class="pill">Psychologie</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="phase reveal">
+      <div class="phase-dot">4</div>
+      <div class="phase-content">
+        <div class="phase-week">Semaines 11–12 · Autonomie</div>
+        <div class="phase-title">INDÉPENDANCE & SCALING</div>
+        <div class="phase-desc">Tu es maintenant autonome. On prépare le passage prop firm si c'est ton objectif, ou on structure le scaling de ton compte perso. Tu repars avec un plan d'action sur 6 mois et toutes les ressources pour continuer à progresser seul.</div>
+        <div class="phase-pills">
+          <span class="pill">Prop Firm prep</span>
+          <span class="pill">Plan 6 mois</span>
+          <span class="pill">Accès ressources</span>
+          <span class="pill">Suivi post-coaching</span>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SAAS SECTION -->
+<section>
+  <div class="section-label reveal">Ton outil exclusif</div>
+  <div class="section-title reveal">LE DASHBOARD<br><span>ATP — TON EDGE</span></div>
+  
+  <div class="saas-section reveal">
+    <div class="saas-header">
+      <div>
+        <p style="font-size:16px;color:var(--muted);line-height:1.7;max-width:500px;">
+          J'ai développé un SaaS complet exclusivement pour mes élèves. Un outil professionnel de suivi de performance que tu ne trouveras nulle part ailleurs. Il remplace les tablettes Excel et te donne une vision institutionnelle de ton trading.
+        </p>
+        <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="pill" style="color:var(--green);">✓ Accès inclus dans le coaching</div>
+          <div class="pill">12 mois d'accès garantis</div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">Données réelles — élève ATP</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--green);line-height:1;">+3 386$</div>
+        <div style="font-size:12px;color:var(--muted);">En 7 jours · Win Rate 100%</div>
+      </div>
+    </div>
+    
+    <div class="saas-screen">
+      <div class="saas-screen-bar">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+        <div class="saas-url">app.alphatradingpro.com — Dashboard</div>
+      </div>
+      <div class="saas-mock">
+        <div class="metric-card">
+          <div class="metric-label">P&L Total</div>
+          <div class="metric-value green">+3 386$</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Win Rate</div>
+          <div class="metric-value white">100%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Profit Factor</div>
+          <div class="metric-value green">99.99</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Sessions</div>
+          <div class="metric-value white">6</div>
+        </div>
+        <div class="saas-chart">
+          <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-bottom:8px;">P&L Cumulé ↗</div>
+          <svg viewBox="0 0 800 80" preserveAspectRatio="none" style="width:100%;height:60px;">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#22c55e" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,75 L100,65 L180,55 L260,50 L340,35 L430,28 L520,15 L620,8 L720,4 L800,2" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M0,75 L100,65 L180,55 L260,50 L340,35 L430,28 L520,15 L620,8 L720,4 L800,2 L800,80 L0,80Z" fill="url(#g1)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    
+    <div class="saas-features">
+      <div class="saas-feat">
+        <div class="saas-feat-icon">📊</div>
+        <div class="saas-feat-title">Stats & Performance</div>
+        <div class="saas-feat-desc">P&L cumulé, Win Rate, Profit Factor, R moyen, drawdown — tout est calculé en temps réel</div>
+      </div>
+      <div class="saas-feat">
+        <div class="saas-feat-icon">🗓️</div>
+        <div class="saas-feat-title">Heatmap P&L</div>
+        <div class="saas-feat-desc">Visualise tes performances jour par jour. Identifie tes patterns gagnants et tes zones de faiblesse</div>
+      </div>
+      <div class="saas-feat">
+        <div class="saas-feat-icon">🧠</div>
+        <div class="saas-feat-title">Journal psychologique</div>
+        <div class="saas-feat-desc">Humeur, plan de trade, discipline — connecte ta psychologie à tes résultats</div>
+      </div>
+      <div class="saas-feat">
+        <div class="saas-feat-icon">🏆</div>
+        <div class="saas-feat-title">Prop Firm Tracker</div>
+        <div class="saas-feat-desc">Suivi de tes objectifs de challenge prop firm intégré directement dans le dashboard</div>
+      </div>
+      <div class="saas-feat">
+        <div class="saas-feat-icon">📈</div>
+        <div class="saas-feat-title">Ma progression</div>
+        <div class="saas-feat-desc">Radar de compétences, achievements, checklist pre-marché — gamifie ta progression</div>
+      </div>
+      <div class="saas-feat">
+        <div class="saas-feat-icon">🤖</div>
+        <div class="saas-feat-title">Assistant Trader IA</div>
+        <div class="saas-feat-desc">Analyse automatique de tes sessions et suggestions d'amélioration personnalisées</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OFFER -->
+<section id="offre">
+  <div class="section-label reveal">L'investissement</div>
+  <div class="section-title reveal">UNE SEULE OFFRE,<br><span>SANS COMPROMIS</span></div>
+  
+  <div class="offer-box reveal">
+    <div class="offer-glow"></div>
+    <div class="offer-top">
+      <div>
+        <div class="offer-price-old">Valeur réelle estimée : 3 500€</div>
+        <div class="offer-price">1 600€ <sub>/coaching</sub></div>
+        <div class="offer-duration">// 3 mois · accès illimité à Gaël</div>
+        <div class="offer-installment">💳 Paiement en 3×533€ disponible</div>
+        
+        <div style="margin-top:32px;">
+          <ul class="offer-list">
+            <li><span class="check">✓</span> 20h de coaching individuel avec Gaël (calls vidéo)</li>
+            <li><span class="check">✓</span> Accès 12 mois au dashboard ATP SaaS</li>
+            <li><span class="check">✓</span> Review hebdomadaire de tes trades</li>
+            <li><span class="check">✓</span> Accès aux sessions live quotidiennes Discord</li>
+            <li><span class="check">✓</span> Toutes les formations & ressources ATP</li>
+            <li><span class="check">✓</span> Suivi WhatsApp pendant 3 mois</li>
+            <li><span class="check">✓</span> Plan personnalisé + checklist de trading</li>
+            <li><span class="check">✓</span> Prep prop firm si objectif visé</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:280px;">
+        <a href="https://calendly.com" class="btn-primary" style="text-align:center;display:block;font-size:18px;padding:20px 32px;">
+          Réserver un call gratuit →
+        </a>
+        <div style="font-size:12px;color:var(--muted);text-align:center;font-family:'JetBrains Mono',monospace;">
+          ⏱ 30 min · Sans engagement · Sélection sur dossier
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;">Places disponibles</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div style="width:28px;height:28px;border-radius:4px;background:var(--green-dim);border:1px solid var(--green);"></div>
+            <div style="width:28px;height:28px;border-radius:4px;background:var(--green-dim);border:1px solid var(--green);"></div>
+            <div style="width:28px;height:28px;border-radius:4px;background:#1a1a1a;border:1px solid #333;"></div>
+            <div style="width:28px;height:28px;border-radius:4px;background:#1a1a1a;border:1px solid #333;"></div>
+            <div style="width:28px;height:28px;border-radius:4px;background:#1a1a1a;border:1px solid #333;"></div>
+          </div>
+          <div style="font-size:13px;color:var(--text);margin-top:12px;"><span style="color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:20px;">2</span> places restantes ce mois</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="offer-bottom">
+      <div class="offer-bottom-text">
+        🔒 <strong>Garantie confiance :</strong> Si après le 1er mois la collaboration ne te convient pas, remboursement intégral.
+      </div>
+      <div class="btn-primary" style="white-space:nowrap;padding:14px 28px;font-size:14px;cursor:pointer;" onclick="document.getElementById('faq').scrollIntoView({behavior:'smooth'})">
+        Voir la FAQ
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section>
+  <div class="section-label reveal">Résultats</div>
+  <div class="section-title reveal">ILS ONT FAIT<br>LE <span>CHOIX</span></div>
+  
+  <div class="testi-grid reveal">
+    <div class="testi-card">
+      <div class="testi-result">+3 386$ en 7j</div>
+      <div class="testi-text">"Avant le coaching je perdais de l'argent chaque mois. Gaël m'a aidé à comprendre pourquoi et à le corriger structurellement. La méthode est claire, applicable, et le dashboard me permet de voir exactement où j'en suis."</div>
+      <div class="testi-author">
+        <div class="testi-avatar">🎯</div>
+        <div>
+          <div class="testi-name">Gaël N.</div>
+          <div class="testi-role">Élève ATP · Compte propre</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-result">Prop Firm validée</div>
+      <div class="testi-text">"J'avais raté 3 challenges prop firm avant ATP. En 2 mois de coaching j'ai validé mon premier compte 50K. La gestion du risque et la psychologie enseignées ici sont au niveau institutionnel. Je ne savais pas que c'était possible."</div>
+      <div class="testi-author">
+        <div class="testi-avatar">🏆</div>
+        <div>
+          <div class="testi-name">Marcus L.</div>
+          <div class="testi-role">Élève ATP · Prop Trader</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-result">100% Win Rate — 6W</div>
+      <div class="testi-text">"Ce qui m'a le plus surpris c'est la qualité du dashboard. J'ai accès à mes stats comme un professionnel. Combiné au coaching, ça change tout. On voit les patterns, on comprend ce qui marche, on ajuste. C'est du vrai travail."</div>
+      <div class="testi-author">
+        <div class="testi-avatar">📊</div>
+        <div>
+          <div class="testi-name">Thomas R.</div>
+          <div class="testi-role">Élève ATP · Futures YM/ES</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="section-label reveal">FAQ</div>
+  <div class="section-title reveal">TES <span>QUESTIONS</span>,<br>MES RÉPONSES</div>
+  
+  <div class="faq-list reveal">
+    
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Comment se déroule le coaching concrètement ?
+        <span class="faq-arrow">+</span>
+      </div>
+      <div class="faq-a">On commence par un appel de diagnostic complet. Ensuite on organise des calls hebdomadaires de 1h à 1h30, avec des reviews de tes trades entre les sessions. Tu as accès à mon Discord privé et à mon numéro WhatsApp pour les questions urgentes. Tout est fait sur mesure selon ton niveau et tes objectifs.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Quel niveau faut-il avoir pour commencer ?
+        <span class="faq-arrow">+</span>
+      </div>
+      <div class="faq-a">Le coaching s'adresse aussi bien aux débutants sérieux qu'aux traders intermédiaires qui veulent passer un cap. L'important n'est pas le niveau actuel, c'est la motivation et la capacité à travailler. On adapte le programme à toi.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Pourquoi le coaching est limité à quelques places ?
+        <span class="faq-arrow">+</span>
+      </div>
+      <div class="faq-a">Je trade moi-même tous les jours et je refuse de déléguer la qualité. Je prends maximum 2-3 élèves par mois pour garantir un suivi de qualité institutionnelle. C'est mon standard, et ça ne changera pas.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Qu'est-ce qui est inclus dans le dashboard ATP ?
+        <span class="faq-arrow">+</span>
+      </div>
+      <div class="faq-a">Dashboard complet avec suivi P&L, win rate, profit factor, heatmap des performances, journal de trading psychologique, checklist pré-marché, tracker prop firm, radar de compétences, historique de sessions détaillé, et assistant IA pour l'analyse de tes trades. Accès pour 12 mois inclus.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Peut-on payer en plusieurs fois ?
+        <span class="faq-arrow">+</span>
+      </div>
+      <div class="faq-a">Oui, le paiement en 3 fois sans frais est disponible : 3×533€. Il est aussi possible de discuter d'autres arrangements lors du call de présélection. Mon objectif est que l'investissement ne soit pas un obstacle si tu es le bon profil.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Sur quels marchés/instruments tu travailles ?
+        <span class="faq-arrow">+</span>
+      </div>
+      <div class="faq-a">Je suis spécialisé sur les futures américains : ES (S&P500), NQ (Nasdaq), YM (Dow Jones), et RTY. Ce sont les marchés les plus liquides au monde, accessibles depuis la Guadeloupe ou n'importe où avec une bonne connexion.</div>
+    </div>
+    
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<div class="cta-final">
+  <div class="cta-glow-final"></div>
+  <h2>PRÊT À TRADER<br>COMME UN <span>PROFESSIONNEL</span> ?</h2>
+  <p>Le prochain call de sélection est disponible cette semaine. Les places se remplissent vite.</p>
+  <a href="https://calendly.com" class="btn-primary" style="font-size:18px;padding:20px 48px;">
+    Réserver mon call gratuit →
+  </a>
+  <div class="urgency">
+    <div class="urgency-dot"></div>
+    2 places disponibles · Réponse sous 24h
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+      <path d="M8 22V12L12 8V16L8 22Z" fill="#22c55e"/>
+      <path d="M14 24V8L18 4V20L14 24Z" fill="#22c55e" opacity="0.8"/>
+      <path d="M20 20V14L24 10V18L20 20Z" fill="#22c55e" opacity="0.6"/>
+    </svg>
+    <span style="font-family:'Bebas Neue',sans-serif;letter-spacing:0.05em;color:var(--text);">Alpha Trading Pro</span>
+  </div>
+  <div class="footer-copy">© 2026 ATP · Guadeloupe, France · Page réservée aux prospects qualifiés</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">trading@alphatradingpro.com</div>
+</footer>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting) e.target.classList.add('visible');
+  });
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+// FAQ
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>{
+    const item = q.parentElement;
+    document.querySelectorAll('.faq-item').forEach(i=>{
+      if(i!==item) i.classList.remove('open');
+    });
+  });
+});
+</script>
+
+</body>
+</html>

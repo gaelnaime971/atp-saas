@@ -1,480 +1,522 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 export default function OffrePage() {
   const [scrolled, setScrolled] = useState(false)
-  const heroRef = useRef<HTMLDivElement>(null)
-  const sectionsRef = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
-    // Scroll listener for navbar
-    const onScroll = () => setScrolled(window.scrollY > 40)
+    const onScroll = () => setScrolled(window.scrollY > 50)
     window.addEventListener('scroll', onScroll)
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('v') })
+    }, { threshold: 0.08 })
+    document.querySelectorAll('.a').forEach(el => obs.observe(el))
 
-    // GSAP animations
-    let gsapModule: any = null
+    // GSAP
     ;(async () => {
-      const mod = await import('gsap')
-      const { ScrollTrigger } = await import('gsap/ScrollTrigger')
-      gsapModule = mod.gsap
-      gsapModule.registerPlugin(ScrollTrigger)
-
-      // Hero entrance
-      gsapModule.fromTo('.hero-title', { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: 'power3.out' })
-      gsapModule.fromTo('.hero-sub', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, delay: 0.2, ease: 'power3.out' })
-      gsapModule.fromTo('.hero-cta', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, delay: 0.5, ease: 'power3.out' })
-      gsapModule.fromTo('.hero-badge', { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, delay: 0.3, ease: 'back.out(1.7)' })
-
-      // Scroll reveal sections
-      document.querySelectorAll('.reveal-section').forEach((el) => {
-        gsapModule.fromTo(el, { y: 80, opacity: 0 }, {
-          y: 0, opacity: 1, duration: 0.8, ease: 'power2.out',
-          scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' },
+      try {
+        const { gsap } = await import('gsap')
+        const { ScrollTrigger } = await import('gsap/ScrollTrigger')
+        gsap.registerPlugin(ScrollTrigger)
+        gsap.fromTo('.hero-pill', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' })
+        gsap.fromTo('.hero-h', { y: 32, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, delay: 0.08, ease: 'power3.out' })
+        gsap.fromTo('.hero-p', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, delay: 0.16, ease: 'power3.out' })
+        gsap.fromTo('.hero-btns', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, delay: 0.26, ease: 'power3.out' })
+        gsap.fromTo('.hero-proof', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, delay: 0.36, ease: 'power3.out' })
+        gsap.fromTo('.hero-visual', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, delay: 0.4, ease: 'power3.out' })
+        document.querySelectorAll('.stg').forEach(g => {
+          gsap.fromTo(g.querySelectorAll('.sti'), { y: 32, opacity: 0 }, {
+            y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: 'power2.out',
+            scrollTrigger: { trigger: g, start: 'top 82%' },
+          })
         })
-      })
-
-      // Cards stagger
-      document.querySelectorAll('.stagger-group').forEach((group) => {
-        const children = group.querySelectorAll('.stagger-item')
-        gsapModule.fromTo(children, { y: 50, opacity: 0 }, {
-          y: 0, opacity: 1, duration: 0.6, stagger: 0.12, ease: 'power2.out',
-          scrollTrigger: { trigger: group, start: 'top 80%', toggleActions: 'play none none none' },
-        })
-      })
-
-      // Parallax elements
-      document.querySelectorAll('.parallax-slow').forEach((el) => {
-        gsapModule.to(el, {
-          y: -60,
-          scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: 1.5 },
-        })
-      })
-
-      // Number counters
-      document.querySelectorAll('.counter').forEach((el) => {
-        const target = parseInt(el.getAttribute('data-target') || '0')
-        const suffix = el.getAttribute('data-suffix') || ''
-        gsapModule.to({ val: 0 }, {
-          val: target, duration: 2, ease: 'power1.out',
-          scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' },
-          onUpdate: function (this: any) {
-            (el as HTMLElement).textContent = Math.round(this.targets()[0].val) + suffix
-          },
-        })
-      })
+      } catch {}
     })()
-
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => { window.removeEventListener('scroll', onScroll); obs.disconnect() }
   }, [])
 
+  const [faqOpen, setFaqOpen] = useState<number | null>(null)
+
+  // Shared styles
   const G = '#22c55e'
-  const GD = 'rgba(34,197,94,0.15)'
+  const accent = (o: number) => `rgba(34,197,94,${o})`
 
   return (
-    <div style={{ background: '#040a04', color: '#f0f0f3', fontFamily: "'Outfit', sans-serif", overflowX: 'hidden' }}>
-
-      {/* ── NAV ── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        padding: '14px 40px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: scrolled ? 'rgba(4,10,4,0.8)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(34,197,94,0.1)' : '1px solid transparent',
-        transition: 'all 0.4s ease',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/logo-atp.png" alt="ATP" style={{ height: 28 }} />
-          <span style={{ fontSize: 14, fontWeight: 700, color: G, letterSpacing: '0.1em' }}>ULTRA</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          {['Programme', 'Resultats', 'Temoignages', 'Tarif'].map(item => (
-            <a key={item} href={`#${item.toLowerCase()}`} style={{
-              fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.6)', textDecoration: 'none',
-              transition: 'color 0.2s',
-            }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>
-              {item}
-            </a>
-          ))}
-          <a href="#tarif" style={{
-            padding: '10px 24px', borderRadius: 99, fontSize: 13, fontWeight: 700,
-            background: G, color: '#040a04', textDecoration: 'none',
-            transition: 'all 0.2s', boxShadow: `0 0 20px ${GD}`,
-          }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = `0 0 30px rgba(34,197,94,0.3)` }}
-             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = `0 0 20px ${GD}` }}>
-            Rejoindre ATP ULTRA
-          </a>
-        </div>
-      </nav>
-
-      {/* ── HERO ── */}
-      <section ref={heroRef} style={{
-        minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        textAlign: 'center', padding: '120px 24px 80px', position: 'relative',
-      }}>
-        {/* Glow orbs */}
-        <div className="parallax-slow" style={{ position: 'absolute', top: '15%', left: '20%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,197,94,0.08), transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none' }} />
-        <div className="parallax-slow" style={{ position: 'absolute', bottom: '10%', right: '15%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,197,94,0.05), transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none' }} />
-
-        <div className="hero-badge" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 20px', borderRadius: 99,
-          background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
-          fontSize: 12, fontWeight: 600, color: G, marginBottom: 32, letterSpacing: '0.06em',
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: G, boxShadow: `0 0 8px ${G}` }} />
-          PROGRAMME DE COACHING TRADING
-        </div>
-
-        <h1 className="hero-title" style={{
-          fontSize: 'clamp(48px, 7vw, 88px)', fontWeight: 800, lineHeight: 1.05,
-          letterSpacing: '-0.03em', maxWidth: 900, margin: '0 0 24px',
-        }}>
-          Deviens un trader<br />
-          <span style={{ background: `linear-gradient(135deg, ${G}, #16a34a)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            consistant et rentable
-          </span>
-        </h1>
-
-        <p className="hero-sub" style={{
-          fontSize: 'clamp(16px, 2vw, 20px)', color: 'rgba(255,255,255,0.5)', maxWidth: 600,
-          lineHeight: 1.7, margin: '0 0 40px',
-        }}>
-          Un accompagnement complet pour maitriser les futures et atteindre tes objectifs de trading avec une methode eprouvee.
-        </p>
-
-        <div className="hero-cta" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <a href="#tarif" style={{
-            padding: '16px 40px', borderRadius: 12, fontSize: 16, fontWeight: 700,
-            background: G, color: '#040a04', textDecoration: 'none',
-            boxShadow: `0 4px 30px rgba(34,197,94,0.3)`,
-            transition: 'all 0.3s',
-          }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 40px rgba(34,197,94,0.4)` }}
-             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 30px rgba(34,197,94,0.3)` }}>
-            Decouvrir le programme
-          </a>
-          <a href="#programme" style={{
-            padding: '16px 40px', borderRadius: 12, fontSize: 16, fontWeight: 600,
-            background: 'transparent', color: '#fff', textDecoration: 'none',
-            border: '1px solid rgba(255,255,255,0.15)',
-            transition: 'all 0.3s',
-          }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.background = 'transparent' }}>
-            En savoir plus
-          </a>
-        </div>
-
-        {/* Scroll indicator */}
-        <div style={{ position: 'absolute', bottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Scroll</span>
-          <div style={{ width: 1, height: 40, background: `linear-gradient(to bottom, ${G}, transparent)`, animation: 'scrollPulse 2s ease-in-out infinite' }} />
-        </div>
-      </section>
-
-      {/* ── SOCIAL PROOF BAR ── */}
-      <section className="reveal-section" style={{
-        padding: '40px 24px', borderTop: '1px solid rgba(34,197,94,0.08)', borderBottom: '1px solid rgba(34,197,94,0.08)',
-        background: 'rgba(34,197,94,0.02)',
-      }}>
-        <div className="stagger-group" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 40, textAlign: 'center' }}>
-          {[
-            { value: '150', suffix: '+', label: 'Traders formes' },
-            { value: '89', suffix: '%', label: 'Taux de reussite' },
-            { value: '3', suffix: 'M+', label: 'Profits cumules' },
-            { value: '5', suffix: ' ans', label: "D'experience" },
-          ].map(stat => (
-            <div key={stat.label} className="stagger-item">
-              <div className="counter" data-target={stat.value} data-suffix={stat.suffix} style={{
-                fontSize: 40, fontWeight: 800, color: G, fontFamily: "'DM Mono', monospace",
-                lineHeight: 1,
-              }}>0</div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 8, fontWeight: 500 }}>{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── PROGRAMME ── */}
-      <section id="programme" className="reveal-section" style={{ padding: '120px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: G, letterSpacing: '0.2em', textTransform: 'uppercase', display: 'block', marginBottom: 12 }}>Le programme</span>
-            <h2 style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-              Tout ce dont tu as besoin<br />pour <span style={{ color: G }}>performer</span>
-            </h2>
-          </div>
-
-          <div className="stagger-group" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-            {[
-              { icon: '📈', title: 'Methode ATP', desc: 'Un systeme de trading complet, teste et eprouve sur les futures indices US.' },
-              { icon: '🎯', title: 'Coaching individuel', desc: 'Sessions 1:1 pour analyser tes trades et accelerer ta progression.' },
-              { icon: '🖥️', title: 'Dashboard personnel', desc: 'Suivi en temps reel de tes stats, P&L, et objectifs depuis ton espace.' },
-              { icon: '📊', title: 'Trades live partages', desc: 'Observe les trades du coach en direct pour apprendre par l\'exemple.' },
-              { icon: '🧠', title: 'Psychologie du trader', desc: 'Gestion des emotions, discipline, et mindset de performance.' },
-              { icon: '💬', title: 'Support illimite', desc: 'Chat direct avec ton coach, reponses rapides, suivi permanent.' },
-            ].map(feature => (
-              <div key={feature.title} className="stagger-item" style={{
-                padding: 32, borderRadius: 16,
-                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-                transition: 'all 0.3s',
-                cursor: 'default',
-              }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(34,197,94,0.25)'; e.currentTarget.style.background = 'rgba(34,197,94,0.04)'; e.currentTarget.style.transform = 'translateY(-4px)' }}
-                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.transform = 'translateY(0)' }}>
-                <div style={{ fontSize: 32, marginBottom: 16 }}>{feature.icon}</div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{feature.title}</h3>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7 }}>{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── RESULTATS ── */}
-      <section id="resultats" className="reveal-section" style={{
-        padding: '120px 24px',
-        background: `linear-gradient(180deg, transparent, rgba(34,197,94,0.03), transparent)`,
-      }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: G, letterSpacing: '0.2em', textTransform: 'uppercase', display: 'block', marginBottom: 12 }}>Resultats</span>
-            <h2 style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-              Des resultats qui<br /><span style={{ color: G }}>parlent d&apos;eux-memes</span>
-            </h2>
-          </div>
-
-          <div className="stagger-group" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-            {[
-              { metric: '+847$', label: 'P&L moyen / mois', sub: 'Sur les 6 derniers mois' },
-              { metric: '63%', label: 'Win Rate moyen', sub: 'Tous traders confondus' },
-              { metric: '1.8', label: 'Profit Factor', sub: 'Performance globale' },
-            ].map(r => (
-              <div key={r.label} className="stagger-item" style={{
-                padding: 40, borderRadius: 16, textAlign: 'center',
-                background: 'rgba(34,197,94,0.03)', border: '1px solid rgba(34,197,94,0.1)',
-              }}>
-                <div style={{ fontSize: 48, fontWeight: 800, color: G, fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>{r.metric}</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginTop: 12 }}>{r.label}</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>{r.sub}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TEMOIGNAGES ── */}
-      <section id="temoignages" className="reveal-section" style={{ padding: '120px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: G, letterSpacing: '0.2em', textTransform: 'uppercase', display: 'block', marginBottom: 12 }}>Temoignages</span>
-            <h2 style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-              Ils ont rejoint<br /><span style={{ color: G }}>ATP ULTRA</span>
-            </h2>
-          </div>
-
-          <div className="stagger-group" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-            {[
-              { name: 'Thomas R.', text: "En 3 mois j'ai atteint la consistance que je cherchais depuis 2 ans. La methode ATP est claire et le coaching fait toute la difference.", role: 'Trader Futures' },
-              { name: 'Julien M.', text: "Le dashboard est incroyable. Voir mes stats en temps reel m'a permis d'identifier mes erreurs et de les corriger rapidement.", role: 'Prop Firm Trader' },
-              { name: 'Sarah L.', text: "L'accompagnement personnalise est top. Gael est toujours disponible et ses analyses sont d'une precision chirurgicale.", role: 'Trader Independante' },
-            ].map(t => (
-              <div key={t.name} className="stagger-item" style={{
-                padding: 32, borderRadius: 16,
-                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-                display: 'flex', flexDirection: 'column',
-              }}>
-                {/* Stars */}
-                <div style={{ display: 'flex', gap: 2, marginBottom: 16 }}>
-                  {[1, 2, 3, 4, 5].map(s => (
-                    <svg key={s} width="16" height="16" viewBox="0 0 24 24" fill={G}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                  ))}
-                </div>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, flex: 1 }}>&ldquo;{t.text}&rdquo;</p>
-                <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg, ${G}, #16a34a)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#040a04' }}>
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{t.name}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{t.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PRICING ── */}
-      <section id="tarif" className="reveal-section" style={{
-        padding: '120px 24px',
-        background: `linear-gradient(180deg, transparent, rgba(34,197,94,0.04), transparent)`,
-      }}>
-        <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: G, letterSpacing: '0.2em', textTransform: 'uppercase', display: 'block', marginBottom: 12 }}>Tarif</span>
-            <h2 style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-              Investis dans<br /><span style={{ color: G }}>ta reussite</span>
-            </h2>
-          </div>
-
-          <div className="stagger-group" style={{ display: 'flex', justifyContent: 'center' }}>
-            <div className="stagger-item" style={{
-              padding: 48, borderRadius: 24, width: '100%', maxWidth: 520,
-              background: 'rgba(34,197,94,0.04)', border: '2px solid rgba(34,197,94,0.2)',
-              textAlign: 'center', position: 'relative', overflow: 'hidden',
-            }}>
-              {/* Glow */}
-              <div style={{ position: 'absolute', top: -80, left: '50%', transform: 'translateX(-50%)', width: 300, height: 200, borderRadius: '50%', background: `radial-gradient(circle, rgba(34,197,94,0.12), transparent 70%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
-
-              <div style={{ position: 'relative' }}>
-                <div style={{
-                  display: 'inline-block', padding: '6px 16px', borderRadius: 99, marginBottom: 20,
-                  background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)',
-                  fontSize: 11, fontWeight: 700, color: G, letterSpacing: '0.1em',
-                }}>
-                  ATP ULTRA
-                </div>
-
-                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>A partir de</div>
-                <div style={{ fontSize: 56, fontWeight: 800, color: '#fff', lineHeight: 1 }}>
-                  <span style={{ fontSize: 28, verticalAlign: 'top', color: 'rgba(255,255,255,0.5)' }}>€</span>
-                  XXX
-                </div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>Prix a definir selon la formule</div>
-
-                <div style={{ margin: '32px 0', height: 1, background: 'rgba(255,255,255,0.06)' }} />
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left', marginBottom: 36 }}>
-                  {[
-                    'Methode ATP complete (videos + PDF)',
-                    'Sessions de coaching individuelles',
-                    'Dashboard de suivi personnel',
-                    'Trades live partages par le coach',
-                    'Assistant Trader (cockpit de session)',
-                    'Chat direct avec le coach',
-                    'Acces a vie aux mises a jour',
-                    'Communaute privee de traders',
-                  ].map(item => (
-                    <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: `${G}18`, border: `1px solid ${G}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke={G} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      </div>
-                      <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" style={{
-                  display: 'block', padding: '18px 40px', borderRadius: 14, fontSize: 16, fontWeight: 700,
-                  background: G, color: '#040a04', textDecoration: 'none',
-                  boxShadow: `0 4px 30px rgba(34,197,94,0.3)`,
-                  transition: 'all 0.3s',
-                }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 40px rgba(34,197,94,0.4)` }}
-                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 30px rgba(34,197,94,0.3)` }}>
-                  Reserver un appel decouverte
-                </a>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 12 }}>Appel gratuit et sans engagement — 30 min</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FAQ ── */}
-      <section className="reveal-section" style={{ padding: '120px 24px' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: G, letterSpacing: '0.2em', textTransform: 'uppercase', display: 'block', marginBottom: 12 }}>FAQ</span>
-            <h2 style={{ fontSize: 'clamp(32px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-0.02em' }}>Questions frequentes</h2>
-          </div>
-
-          <div className="stagger-group" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              { q: 'A qui s\'adresse ATP ULTRA ?', a: 'Aux traders debutants ou intermediaires qui veulent structurer leur approche et devenir consistants sur les futures indices US.' },
-              { q: 'Combien de temps dure le programme ?', a: 'Le coaching est un accompagnement sur la duree. La plupart des traders voient des resultats significatifs en 3 a 6 mois.' },
-              { q: 'Faut-il un capital minimum ?', a: 'Non. Tu peux commencer avec un compte prop firm (pas de capital personnel requis) ou un petit compte de simulation.' },
-              { q: 'Le coaching est-il individuel ?', a: 'Oui. Chaque session est en 1:1 et adaptee a ton niveau, tes objectifs et tes erreurs specifiques.' },
-              { q: 'Comment se passe un appel decouverte ?', a: 'On fait le point sur ta situation, tes objectifs et on voit ensemble si le programme est adapte. Sans engagement.' },
-            ].map((faq, i) => (
-              <FAQItem key={i} q={faq.q} a={faq.a} green={G} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA FINAL ── */}
-      <section className="reveal-section" style={{
-        padding: '120px 24px', textAlign: 'center',
-        background: `radial-gradient(ellipse at center, rgba(34,197,94,0.06), transparent 70%)`,
-      }}>
-        <h2 style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2, maxWidth: 600, margin: '0 auto 20px' }}>
-          Pret a passer au<br /><span style={{ color: G }}>niveau superieur</span> ?
-        </h2>
-        <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)', maxWidth: 500, margin: '0 auto 36px', lineHeight: 1.7 }}>
-          Rejoins ATP ULTRA et commence ta transformation en tant que trader.
-        </p>
-        <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" style={{
-          display: 'inline-block', padding: '18px 48px', borderRadius: 14, fontSize: 16, fontWeight: 700,
-          background: G, color: '#040a04', textDecoration: 'none',
-          boxShadow: `0 4px 30px rgba(34,197,94,0.3)`,
-          transition: 'all 0.3s',
-        }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)' }}
-           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}>
-          Reserver mon appel decouverte
-        </a>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer style={{
-        padding: '40px 24px', borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 1100, margin: '0 auto',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/logo-atp.png" alt="ATP" style={{ height: 20 }} />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Alpha Trading Pro — Tous droits reserves</span>
-        </div>
-        <div style={{ display: 'flex', gap: 24 }}>
-          <Link href="/login" style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}>Connexion</Link>
-          <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: G, textDecoration: 'none', fontWeight: 600 }}>Contact</a>
-        </div>
-      </footer>
-
+    <>
       <style>{`
-        @keyframes scrollPulse { 0%,100% { opacity:0.3; transform:scaleY(1) } 50% { opacity:1; transform:scaleY(1.2) } }
-        html { scroll-behavior: smooth; }
-        ::selection { background: rgba(34,197,94,0.3); }
-      `}</style>
-    </div>
-  )
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+.kp *{margin:0;padding:0;box-sizing:border-box;}
+.kp{background:#050505;color:#fff;font-family:'Inter',sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
 
-// FAQ Accordion
-function FAQItem({ q, a, green }: { q: string; a: string; green: string }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div
-      className="stagger-item"
-      onClick={() => setOpen(!open)}
-      style={{
-        padding: '20px 24px', borderRadius: 14, cursor: 'pointer',
-        background: open ? 'rgba(34,197,94,0.04)' : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${open ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)'}`,
-        transition: 'all 0.3s',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 15, fontWeight: 600, color: open ? '#fff' : 'rgba(255,255,255,0.8)' }}>{q}</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ transform: open ? 'rotate(45deg)' : 'rotate(0)', transition: 'transform 0.3s', flexShrink: 0, marginLeft: 16 }}>
-          <path d="M12 5v14M5 12h14" stroke={open ? green : 'rgba(255,255,255,0.4)'} strokeWidth="2" strokeLinecap="round" />
-        </svg>
+/* Nav */
+.kn{position:fixed;top:0;left:0;right:0;z-index:100;transition:all 0.35s;}
+.kn-in{max-width:1200px;margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
+.kn-l{display:flex;align-items:center;gap:8px;}
+.kn-l img{height:26px;}
+.kn-l span{font-weight:700;font-size:15px;letter-spacing:0.03em;}
+.kn-m{display:flex;gap:28px;}
+.kn-m a{font-size:13px;font-weight:400;color:#888;text-decoration:none;transition:color 0.2s;}
+.kn-m a:hover{color:#fff;}
+.kn-r{display:flex;gap:10px;align-items:center;}
+.btn-g{padding:10px 22px;border-radius:10px;font-size:13px;font-weight:600;background:${G};color:#050505;text-decoration:none;border:none;cursor:pointer;transition:all 0.25s;}
+.btn-g:hover{box-shadow:0 4px 20px ${accent(0.35)};transform:translateY(-1px);}
+.btn-o{padding:10px 22px;border-radius:10px;font-size:13px;font-weight:500;background:transparent;color:#ccc;text-decoration:none;border:1px solid rgba(255,255,255,0.1);transition:all 0.25s;}
+.btn-o:hover{border-color:rgba(255,255,255,0.2);color:#fff;background:rgba(255,255,255,0.03);}
+
+/* Section */
+.ks{max-width:1200px;margin:0 auto;padding:100px 32px;}
+.ks-label{font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:${G};margin-bottom:14px;}
+.ks-h{font-size:clamp(32px,4vw,52px);font-weight:800;line-height:1.12;letter-spacing:-0.025em;color:#fff;}
+.ks-h span{color:${G};}
+.ks-p{font-size:16px;color:#888;max-width:540px;margin-top:14px;line-height:1.7;font-weight:300;}
+.divider{max-width:1200px;margin:0 auto;height:1px;background:rgba(255,255,255,0.06);}
+
+/* Hero */
+.hero{max-width:1200px;margin:0 auto;padding:140px 32px 80px;text-align:center;position:relative;}
+.hero-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:100px;background:${accent(0.08)};border:1px solid ${accent(0.15)};font-size:12px;font-weight:500;color:${G};margin-bottom:28px;}
+.hero-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:${G};box-shadow:0 0 8px ${G};animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+.hero-h{font-size:clamp(40px,6vw,72px);font-weight:800;line-height:1.05;letter-spacing:-0.035em;max-width:800px;margin:0 auto;}
+.hero-h span{color:${G};}
+.hero-p{font-size:17px;color:#777;max-width:560px;margin:22px auto 0;line-height:1.7;font-weight:300;}
+.hero-p strong{color:#ccc;font-weight:500;}
+.hero-btns{margin-top:36px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.hero-proof{margin-top:32px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:#666;}
+.hero-proof .dots{display:flex;gap:-4px;}
+.hero-proof .dot{width:28px;height:28px;border-radius:50%;background:${accent(0.12)};border:2px solid #111;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${G};}
+.hero-proof .dot:first-child{margin-left:0;}
+
+/* Visual mockup */
+.hero-visual{margin-top:56px;background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:16px;overflow:hidden;max-width:900px;margin-left:auto;margin-right:auto;}
+.hv-bar{padding:10px 16px;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.06);background:#080808;}
+.hv-d{width:8px;height:8px;border-radius:50%;}.hv-r{background:#ff5f56;}.hv-y{background:#ffbd2e;}.hv-g{background:#27c93f;}
+.hv-url{flex:1;text-align:center;font-size:10px;color:#444;}
+.hv-body{padding:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.hv-card{background:#0e0e0e;border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:16px;}
+.hv-card-l{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.08em;}
+.hv-card-v{font-size:22px;font-weight:800;margin-top:4px;}
+.hv-card-v.green{color:${G};}.hv-card-v.white{color:#fff;}
+.hv-chart{grid-column:1/-1;background:#0e0e0e;border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:16px;height:80px;}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;margin-top:48px;}
+.stat{background:#0a0a0a;padding:28px 16px;text-align:center;}
+.stat-n{font-size:28px;font-weight:800;color:${G};}
+.stat-l{font-size:11px;color:#555;margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;}
+
+/* Cards grid */
+.cg{display:grid;gap:14px;margin-top:40px;}
+.cg-2{grid-template-columns:1fr 1fr;}
+.cg-3{grid-template-columns:repeat(3,1fr);}
+.cg-4{grid-template-columns:repeat(4,1fr);}
+.card{background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:28px;transition:all 0.3s;}
+.card:hover{border-color:rgba(255,255,255,0.1);background:#0c0c0c;transform:translateY(-3px);}
+.card-icon{font-size:28px;margin-bottom:14px;}
+.card-t{font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;}
+.card-d{font-size:13px;color:#777;line-height:1.65;}
+.card-full{grid-column:1/-1;}
+.card-list{list-style:none;margin-top:14px;}
+.card-list li{display:flex;align-items:center;gap:8px;font-size:12px;color:#ccc;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.card-list li:last-child{border-bottom:none;}
+.card-ck{color:${G};font-size:13px;flex-shrink:0;}
+.card-num{position:absolute;top:16px;right:20px;font-size:40px;font-weight:800;color:rgba(255,255,255,0.03);line-height:1;}
+
+/* For who */
+.fw{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;margin-top:40px;}
+.fw-s{background:#0a0a0a;padding:32px;}
+.fw-s::before{content:'';display:block;height:2px;margin-bottom:20px;border-radius:2px;}
+.fw-y::before{background:${G};}.fw-n::before{background:#ef4444;}
+.fw-tag{font-size:11px;font-weight:600;letter-spacing:0.06em;padding:4px 12px;border-radius:100px;display:inline-block;margin-bottom:18px;}
+.fw-y .fw-tag{color:${G};background:${accent(0.1)};border:1px solid ${accent(0.2)};}
+.fw-n .fw-tag{color:#ef4444;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);}
+.fw-i{display:flex;gap:10px;margin-bottom:12px;font-size:13px;color:#ccc;line-height:1.5;}
+.fw-ic{flex-shrink:0;margin-top:1px;}
+
+/* Steps */
+.steps{margin-top:40px;display:flex;flex-direction:column;gap:12px;}
+.step{display:grid;grid-template-columns:48px 1fr;gap:20px;align-items:start;}
+.step-n{width:48px;height:48px;border-radius:12px;background:#0e0e0e;border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:${G};flex-shrink:0;transition:all 0.3s;}
+.step:hover .step-n{background:${accent(0.1)};border-color:${accent(0.25)};box-shadow:0 0 16px ${accent(0.15)};}
+.step-b{background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:24px;transition:all 0.3s;}
+.step:hover .step-b{border-color:rgba(255,255,255,0.1);}
+.step-tag{font-size:11px;font-weight:600;color:${G};letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;}
+.step-t{font-size:17px;font-weight:700;color:#fff;margin-bottom:6px;}
+.step-d{font-size:13px;color:#777;line-height:1.65;}
+
+/* Offer */
+.offer{background:#0a0a0a;border:1px solid ${accent(0.15)};border-radius:20px;margin-top:40px;overflow:hidden;position:relative;}
+.offer-glow{position:absolute;top:-120px;right:-120px;width:350px;height:350px;background:radial-gradient(circle,${accent(0.2)},transparent 70%);filter:blur(80px);pointer-events:none;}
+.offer-top{padding:40px;display:grid;grid-template-columns:1fr 300px;gap:36px;align-items:start;}
+.offer-old{font-size:14px;color:#555;text-decoration:line-through;margin-bottom:4px;}
+.offer-pr{font-size:56px;font-weight:800;color:${G};line-height:1;}
+.offer-pr sub{font-size:16px;font-weight:400;color:#555;}
+.offer-info{font-size:12px;color:#555;margin-top:6px;}
+.offer-inst{display:inline-block;margin-top:12px;padding:7px 16px;border-radius:8px;font-size:12px;color:#ccc;background:${accent(0.08)};border:1px solid ${accent(0.15)};}
+.offer-ul{list-style:none;margin-top:24px;}
+.offer-ul li{display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.offer-ul li:last-child{border-bottom:none;}
+.offer-ul .ck{color:${G};font-size:14px;flex-shrink:0;}
+.offer-side{display:flex;flex-direction:column;gap:12px;}
+.offer-bot{border-top:1px solid rgba(255,255,255,0.06);padding:24px 40px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#080808;}
+.offer-bot-t{font-size:12px;color:#666;}.offer-bot-t strong{color:#ccc;}
+.places{background:#0e0e0e;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px;}
+.places-l{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;}
+.places-d{display:flex;gap:5px;}
+.pl-on{width:22px;height:22px;border-radius:4px;background:${accent(0.12)};border:1px solid ${G};}
+.pl-off{width:22px;height:22px;border-radius:4px;background:#111;border:1px solid rgba(255,255,255,0.06);}
+.places-c{font-size:12px;color:#ccc;margin-top:8px;}.places-c em{color:${G};font-style:normal;font-size:16px;font-weight:800;}
+
+/* Testimonials */
+.tg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:40px;}
+.tc{background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:28px;display:flex;flex-direction:column;}
+.tc-r{font-size:24px;font-weight:800;color:${G};margin-bottom:8px;}
+.tc-t{font-size:13px;color:#777;line-height:1.7;flex:1;margin-bottom:16px;}
+.tc-a{display:flex;align-items:center;gap:10px;}
+.tc-av{width:32px;height:32px;border-radius:50%;background:${accent(0.1)};border:1px solid ${accent(0.15)};display:flex;align-items:center;justify-content:center;font-size:12px;}
+.tc-nm{font-size:12px;font-weight:600;color:#ccc;}
+.tc-rl{font-size:10px;color:#555;}
+
+/* FAQ */
+.faq{margin-top:40px;display:flex;flex-direction:column;gap:6px;}
+.faq-i{background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;}
+.faq-q{padding:20px 22px;font-size:14px;font-weight:500;color:#ccc;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;transition:color 0.2s;user-select:none;}
+.faq-q:hover{color:#fff;}
+.faq-arr{color:${G};font-size:16px;transition:transform 0.3s;flex-shrink:0;}
+.faq-i.open .faq-arr{transform:rotate(45deg);}
+.faq-a{max-height:0;overflow:hidden;transition:max-height 0.4s ease,padding 0.3s;padding:0 22px;font-size:13px;color:#666;line-height:1.8;}
+.faq-i.open .faq-a{max-height:300px;padding:0 22px 20px;}
+
+/* CTA Final */
+.cta{text-align:center;padding:100px 32px;position:relative;overflow:hidden;}
+.cta-glow{position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 50% 50%,${accent(0.08)},transparent);pointer-events:none;}
+.cta h2{font-size:clamp(32px,4.5vw,56px);font-weight:800;letter-spacing:-0.03em;line-height:1.1;margin-bottom:16px;position:relative;z-index:1;}
+.cta h2 span{color:${G};}
+.cta p{font-size:15px;color:#666;max-width:460px;margin:0 auto 32px;line-height:1.7;position:relative;z-index:1;}
+.urg{margin-top:16px;font-size:11px;color:#555;display:flex;align-items:center;justify-content:center;gap:6px;position:relative;z-index:1;}
+.urg::before{content:'';width:5px;height:5px;border-radius:50%;background:${G};animation:blink 1.5s infinite;}
+
+/* Footer */
+.ft{border-top:1px solid rgba(255,255,255,0.06);max-width:1200px;margin:0 auto;padding:32px;display:flex;align-items:center;justify-content:space-between;}
+.ft-c{font-size:10px;color:#444;}
+
+/* Reveal */
+.a{opacity:0;transform:translateY(24px);transition:opacity 0.65s ease,transform 0.65s ease;}
+.a.v{opacity:1;transform:translateY(0);}
+
+@media(max-width:768px){
+  .kn-m{display:none;}.hero{padding:110px 20px 60px;}
+  .ks{padding:72px 20px;}.stats{grid-template-columns:repeat(2,1fr);}
+  .cg-2,.cg-3,.cg-4,.fw,.tg{grid-template-columns:1fr;}
+  .hv-body{grid-template-columns:1fr 1fr;}.offer-top{grid-template-columns:1fr;}
+  .offer-bot{flex-direction:column;text-align:center;}
+  .ft{flex-direction:column;gap:12px;text-align:center;}
+  .card-full{grid-column:1;}
+}
+      `}</style>
+
+      <div className="kp">
+        {/* NAV */}
+        <nav className="kn" style={{ background: scrolled ? 'rgba(5,5,5,0.85)' : 'transparent', backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none', borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent' }}>
+          <div className="kn-in">
+            <div className="kn-l"><img src="/logo-atp.png" alt="ATP" /></div>
+            <div className="kn-m">
+              <a href="#programme">Programme</a>
+              <a href="#resultats">Résultats</a>
+              <a href="#offre">Tarif</a>
+              <a href="#faq">FAQ</a>
+            </div>
+            <div className="kn-r">
+              <a href="#offre" className="btn-g">Rejoindre</a>
+            </div>
+          </div>
+        </nav>
+
+        {/* ━━ HERO ━━ */}
+        <section className="hero">
+          <div className="hero-pill">Sélection sur dossier — Places limitées</div>
+          <h1 className="hero-h">Trade au niveau des<br /><span>professionnels</span> de marché</h1>
+          <p className="hero-p">Le programme d&apos;accompagnement pour les traders qui veulent des <strong>résultats réels</strong>. Coaching 1v1, méthode institutionnelle, outils pro.</p>
+          <div className="hero-btns">
+            <a href="#offre" className="btn-g" style={{ padding: '14px 32px', fontSize: 15 }}>Découvrir l&apos;offre →</a>
+            <a href="#programme" className="btn-o" style={{ padding: '14px 32px', fontSize: 15 }}>Voir le programme</a>
+          </div>
+          <div className="hero-proof">
+            <div className="dots">
+              {['G', 'M', 'T', '+'].map((l, i) => <div key={i} className="dot">{l}</div>)}
+            </div>
+            <span>Rejoins les traders formés par ATP</span>
+          </div>
+
+          {/* Dashboard screenshot */}
+          <div className="hero-visual" style={{ padding: 0 }}>
+            <div className="hv-bar"><div className="hv-d hv-r" /><div className="hv-d hv-y" /><div className="hv-d hv-g" /><div className="hv-url">alphatradingpro-coaching.fr — Dashboard</div></div>
+            <img src="/dashboard-screenshot.png" alt="Dashboard ATP — Stats & Performance" style={{ width: '100%', display: 'block' }} />
+          </div>
+
+          {/* Stats */}
+          <div className="stats">
+            {[{ n: '1 200+', l: 'Membres Discord' }, { n: 'Ex-Banque', l: '& Hedge Fund' }, { n: '9 ans', l: "d'expérience" }, { n: '100%', l: 'Personnalisé' }].map(s => (
+              <div key={s.l} className="stat"><div className="stat-n">{s.n}</div><div className="stat-l">{s.l}</div></div>
+            ))}
+          </div>
+        </section>
+
+        <div className="divider" />
+
+        {/* ━━ PROBLÈME ━━ */}
+        <section className="ks">
+          <div className="ks-label a">Le constat</div>
+          <div className="ks-h a">Pourquoi la plupart des traders <span>échouent</span></div>
+          <div className="ks-p a">Ce n&apos;est pas un problème de marché. C&apos;est un problème de méthode, de suivi et d&apos;accompagnement.</div>
+          <div className="cg cg-2 stg" style={{ marginTop: 40 }}>
+            {[
+              { i: '🎰', t: 'Pas de méthode structurée', d: "Tu passes d'une stratégie à l'autre chaque semaine. Scalping le lundi, swing le mercredi, une nouvelle formation le week-end. Résultat : aucune edge mesurable, aucune consistance. Tu trades tes émotions et tes intuitions au lieu de trader le marché avec un plan clair et répétable." },
+              { i: '📉', t: 'Aucun suivi de performance', d: "Tu ne connais pas ton vrai win rate. Tu n'as aucun journal de trading sérieux. Tu ne sais pas quels setups fonctionnent et lesquels te coûtent de l'argent. Sans données, tu répètes les mêmes erreurs semaine après semaine sans jamais t'en rendre compte — et tu appelles ça de la malchance." },
+              { i: '🧠', t: 'Psychologie non travaillée', d: "Revenge trading après une perte. FOMO quand le prix part sans toi. Déplacement de stop loss en plein trade. Overtrading en fin de journée pour \"se refaire\". Tu sais que tout ça est destructeur — mais tu continues. Parce que personne ne t'a donné les outils concrets pour gérer ta psychologie en conditions réelles." },
+              { i: '🏝️', t: 'Seul face au marché', d: "Pas de mentor pour te dire quand tu fais fausse route. Pas de feedback sur tes trades. Pas de communauté de traders sérieux avec qui échanger. Tu galères seul devant tes charts, tu regardes des vidéos YouTube contradictoires, et tu n'as aucune idée de si tu progresses ou si tu stagnes." },
+            ].map(c => (
+              <div key={c.t} className="card sti">
+                <div className="card-icon">{c.i}</div>
+                <div className="card-t">{c.t}</div>
+                <div className="card-d">{c.d}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="divider" />
+
+        {/* ━━ POUR QUI ━━ */}
+        <section className="ks">
+          <div className="ks-label a">Pour qui</div>
+          <div className="ks-h a">ATP ULTRA est fait pour <span>toi</span> si...</div>
+          <div className="fw a">
+            <div className="fw-s fw-y">
+              <div className="fw-tag">✓ Tu es prêt</div>
+              {['Tu trades déjà ou tu veux démarrer sérieusement', 'Tu veux une méthode claire et structurée', "Tu es prêt à investir dans ta progression", 'Tu veux des outils pro pour mesurer tes perfs', 'Tu vises ton capital ou une prop firm'].map(t => (
+                <div key={t} className="fw-i"><span className="fw-ic" style={{ color: G }}>✓</span>{t}</div>
+              ))}
+            </div>
+            <div className="fw-s fw-n">
+              <div className="fw-tag">✕ Pas pour toi</div>
+              {["Tu cherches quelqu'un qui trade à ta place", 'Tu veux des résultats sans travailler', "Tu n'es pas prêt à te remettre en question", 'Tu attends des rendements garantis', "Tu n'as pas le temps de te former"].map(t => (
+                <div key={t} className="fw-i"><span className="fw-ic" style={{ color: '#ef4444' }}>✕</span>{t}</div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <div className="divider" />
+
+        {/* ━━ PROP FIRM ━━ */}
+        <section className="ks">
+          <div className="ks-label a">Accès au capital</div>
+          <div className="ks-h a">Trader avec <span>le capital des autres</span></div>
+          <div className="ks-p a">Tu n&apos;as pas besoin de 50 000€ ou 100 000€ de capital personnel pour vivre du trading. Les prop firms te donnent acc&egrave;s &agrave; leur capital — et tu gardes une partie des profits.</div>
+
+          <div className="cg cg-2 stg" style={{ marginTop: 40 }}>
+            {/* What is a prop firm */}
+            <div className="card sti" style={{ position: 'relative' }}>
+              <div className="card-icon">🏦</div>
+              <div className="card-t">C&apos;est quoi une Prop Firm ?</div>
+              <div className="card-d" style={{ lineHeight: 1.8 }}>
+                Une <strong style={{ color: '#fff' }}>Proprietary Trading Firm</strong> (prop firm) est une soci&eacute;t&eacute; qui met &agrave; disposition son propre capital pour que des traders ind&eacute;pendants le fassent fructifier. Le principe est simple :
+                <br /><br />
+                <strong style={{ color: '#ccc' }}>1.</strong> Tu passes un <strong style={{ color: '#ccc' }}>challenge</strong> (une &eacute;valuation sur compte de simulation) pour prouver que tu sais trader de mani&egrave;re disciplin&eacute;e et rentable.
+                <br />
+                <strong style={{ color: '#ccc' }}>2.</strong> Si tu r&eacute;ussis, la prop firm te donne acc&egrave;s &agrave; un <strong style={{ color: '#ccc' }}>compte financ&eacute;</strong> — 25K, 50K, 100K, voire 200K+ de capital r&eacute;el.
+                <br />
+                <strong style={{ color: '#ccc' }}>3.</strong> Tu trades ce capital et tu gardes entre <strong style={{ color: G }}>70% et 90% des profits</strong> g&eacute;n&eacute;r&eacute;s.
+                <br /><br />
+                C&apos;est le mod&egrave;le utilis&eacute; par des milliers de traders dans le monde pour acc&eacute;der &agrave; des capitaux importants sans risquer leur propre argent.
+              </div>
+            </div>
+
+            {/* Why it matters */}
+            <div className="card sti" style={{ position: 'relative' }}>
+              <div className="card-icon">💰</div>
+              <div className="card-t">Pourquoi c&apos;est un game changer</div>
+              <div className="card-d" style={{ marginBottom: 16 }}>
+                Avec une m&eacute;thode solide et un suivi rigoureux, le passage en prop firm te permet de g&eacute;n&eacute;rer des revenus significatifs <strong style={{ color: '#fff' }}>sans capital personnel</strong>. C&apos;est exactement ce qu&apos;ATP ULTRA te pr&eacute;pare &agrave; faire.
+              </div>
+              <ul className="card-list">
+                <li><span className="card-ck">✓</span>Pas besoin de capital — le co&ucirc;t d&apos;un challenge va de 100€ &agrave; 500€</li>
+                <li><span className="card-ck">✓</span>Acc&egrave;s &agrave; 50K, 100K, 200K+ de capital &agrave; trader</li>
+                <li><span className="card-ck">✓</span>Tu gardes 70 &agrave; 90% de tes profits</li>
+                <li><span className="card-ck">✓</span>Aucun risque de perte de ton argent personnel</li>
+                <li><span className="card-ck">✓</span>Possibilit&eacute; de cumuler plusieurs comptes</li>
+                <li><span className="card-ck">✓</span>Retraits r&eacute;guliers (payouts) vers ton compte bancaire</li>
+              </ul>
+              <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 10, background: accent(0.06), border: `1px solid ${accent(0.12)}`, fontSize: 13, color: '#ccc', lineHeight: 1.6 }}>
+                <strong style={{ color: G }}>ATP ULTRA inclut la pr&eacute;paration prop firm</strong> — on travaille ensemble ta strat&eacute;gie de passage de challenge, la gestion du drawdown, et le plan pour scaler tes comptes financ&eacute;s.
+              </div>
+            </div>
+          </div>
+
+          {/* Prop firm logos / examples */}
+          <div className="a" style={{ marginTop: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, flexWrap: 'wrap' }}>
+            {['TopStep', 'Apex', 'FTMO', 'E8 Funding'].map(name => (
+              <div key={name} style={{ padding: '10px 24px', borderRadius: 10, background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', fontSize: 13, fontWeight: 600, color: '#666', letterSpacing: '0.02em' }}>
+                {name}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="divider" />
+
+        {/* ━━ 6 PILIERS ━━ */}
+        <section className="ks" id="programme">
+          <div className="ks-label a">Ce qui est inclus</div>
+          <div className="ks-h a">Les 6 piliers d&apos;<span>ATP ULTRA</span></div>
+          <div className="cg cg-2 stg" style={{ marginTop: 40 }}>
+            {[
+              { i: '🎯', t: 'Coaching 1v1 personnalisé', st: 'Ton coach à disposition', d: "Calls individuels avec Gaël pour travailler ta méthode, ta psychologie et tes trades en temps réel. Pas de groupe, pas de template générique.", items: ['Calls vidéo dédiés avec Gaël', 'Review de tes trades réels', 'Plan de trading personnalisé', 'Suivi WhatsApp permanent'] },
+              { i: '🎬', t: 'Formation vidéo exclusive', st: 'La méthode complète en replay', d: "Tout le contenu vidéo de la méthode ATP accessible en illimité. Structure de marché, setups codifiés, psychologie appliquée.", items: ['Replay illimité à vie', 'Méthode ATP complète', 'Psychologie du trading', 'Futures US : ES, NQ, YM'] },
+              { i: '🖥️', t: 'Dashboard SaaS ATP', st: '12 mois d\'accès inclus', d: "Outil pro développé par Gaël, exclusif aux élèves. Suivi de performance temps réel comme en salle de marché.", items: ['P&L, Win Rate, Profit Factor, Heatmap', 'Journal psychologique intégré', 'Prop Firm Tracker', 'Assistant Trader IA'] },
+              { i: '💬', t: 'Discord ATP Premium', st: '12 mois — Valeur 890€', d: "Accès complet au Discord normalement payant. Une communauté de traders tous formés à la même méthode.", items: ['Lives trading lundi–vendredi', 'Sections Crypto, Forex, Actions', 'Plans d\'analyse quotidiens', 'Replays de toutes les sessions'] },
+              { i: '📊', t: 'Suivi de performance continu', st: 'Tes résultats mesurés', d: "Reviews régulières de tes trades via le dashboard. On identifie ce qui fonctionne, ce qui ne fonctionne pas, et on ajuste.", items: ['Review hebdomadaire des trades', 'Analyse de tes patterns', 'Optimisation de ton edge', 'Feedback actionnable à chaque session'] },
+              { i: '🚀', t: "Accompagnement jusqu'au résultat", st: 'À ton rythme, sans pression', d: "Pas de durée imposée. On travaille ensemble jusqu'à ce que tu aies un edge réel et la confiance pour trader seul.", items: ['Sans pression de temps', 'Objectifs concrets et mesurables', 'Préparation prop firm', 'Mises à jour à vie'] },
+            ].map(p => (
+              <div key={p.t} className="card sti" style={{ position: 'relative' }}>
+                <div className="card-icon">{p.i}</div>
+                <div className="card-t">{p.t}</div>
+                <div style={{ fontSize: 11, color: G, marginBottom: 6, fontWeight: 500 }}>{p.st}</div>
+                <div className="card-d">{p.d}</div>
+                <ul className="card-list">{p.items.map(item => <li key={item}><span className="card-ck">✓</span>{item}</li>)}</ul>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="divider" />
+
+        {/* ━━ PROCESS ━━ */}
+        <section className="ks">
+          <div className="ks-label a">Le parcours</div>
+          <div className="ks-h a">4 étapes vers <span>l&apos;autonomie</span></div>
+          <div className="steps stg">
+            {[
+              { n: 1, tag: 'Diagnostic', t: 'Audit complet & fondations', d: "On commence par un audit détaillé de ton trading actuel : tes entrées, tes sorties, ta gestion du risque, ta psychologie. On identifie précisément les failles, les biais cognitifs qui te font perdre, et les points forts sur lesquels construire. C'est la base de tout ce qu'on va faire ensemble." },
+              { n: 2, tag: 'Transmission', t: 'La méthode ATP en profondeur', d: "Tu apprends la méthode ATP dans sa totalité. Structure de marché, order blocks, liquidity zones, sessions US/EU — chaque setup est codifié, chaque règle d'entrée et de sortie est claire. On traduit tout ça dans ton plan de trading personnalisé que tu pourras appliquer immédiatement." },
+              { n: 3, tag: 'Live trading', t: 'Trading en conditions réelles', d: "Tu trades en direct avec moi en observation. Review détaillée de chaque session via le dashboard ATP. On affine ta lecture du marché, on travaille ta gestion émotionnelle en temps réel, et on optimise ton edge de manière mesurable. C'est ici que la théorie devient de la pratique rentable." },
+              { n: 4, tag: 'Autonomie', t: 'Indépendance & scaling', d: "Tu es maintenant autonome et profitable. On prépare la suite selon tes objectifs : passage en prop firm avec un plan d'attaque clair, scaling de ton compte personnel, ou structuration de ta gestion de capital. Tu repars avec un plan d'action concret et toutes les ressources pour continuer seul." },
+            ].map(s => (
+              <div key={s.n} className="step sti">
+                <div className="step-n">{s.n}</div>
+                <div className="step-b">
+                  <div className="step-tag">{s.tag}</div>
+                  <div className="step-t">{s.t}</div>
+                  <div className="step-d">{s.d}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="divider" />
+
+        {/* ━━ RÉSULTATS ━━ */}
+        <section className="ks" id="resultats">
+          <div className="ks-label a">Preuves</div>
+          <div className="ks-h a">Ils ont fait le <span>choix</span></div>
+          <div className="stats a" style={{ marginTop: 32 }}>
+            {[{ n: '+3 386$', l: 'P&L en 7 jours' }, { n: '100%', l: 'Win Rate' }, { n: '6W', l: 'Streak' }, { n: '+22R', l: 'R / session' }].map(s => (
+              <div key={s.l} className="stat"><div className="stat-n">{s.n}</div><div className="stat-l">{s.l}</div></div>
+            ))}
+          </div>
+          <div className="tg stg" style={{ marginTop: 24 }}>
+            {[
+              { r: '+3 386$ en 7j', t: "Gaël m'a aidé à comprendre pourquoi je perdais et à le corriger. La méthode est claire et le dashboard me permet de voir exactement où j'en suis.", v: '🎯', n: 'Gaël N.', rl: 'Compte propre' },
+              { r: 'Prop Firm validée', t: "J'avais raté 3 challenges. En 2 mois j'ai validé mon premier compte 50K. La gestion du risque enseignée ici est institutionnelle.", v: '🏆', n: 'Marcus L.', rl: 'Prop Trader' },
+              { r: 'Edge mesurable', t: "Le dashboard a changé ma vision. Mon edge est enfin mesurable et cohérent. Je sais exactement ce qui fonctionne.", v: '📊', n: 'Thomas R.', rl: 'Futures YM/ES' },
+            ].map(t => (
+              <div key={t.n} className="tc sti">
+                <div className="tc-r">{t.r}</div>
+                <div className="tc-t">&ldquo;{t.t}&rdquo;</div>
+                <div className="tc-a"><div className="tc-av">{t.v}</div><div><div className="tc-nm">{t.n}</div><div className="tc-rl">Élève ATP · {t.rl}</div></div></div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="divider" />
+
+        {/* ━━ OFFRE ━━ */}
+        <section className="ks" id="offre">
+          <div className="ks-label a">L&apos;investissement</div>
+          <div className="ks-h a">Un seul programme. <span>Sans compromis.</span></div>
+          <div className="offer a">
+            <div className="offer-glow" />
+            <div className="offer-top">
+              <div>
+                <div className="offer-pr" style={{ fontSize: 36, color: '#fff' }}>ATP ULTRA</div>
+                <div className="offer-info" style={{ marginTop: 8 }}>Accompagnement complet &middot; Acc&egrave;s illimit&eacute; &agrave; Ga&euml;l</div>
+                <div className="offer-inst" style={{ marginTop: 14 }}>Prix communiqu&eacute; lors du call de pr&eacute;s&eacute;lection</div>
+                <ul className="offer-ul">
+                  {['Coaching 1v1 personnalisé avec Gaël', 'Accès 12 mois au Dashboard ATP SaaS', 'Accès 12 mois Discord ATP (valeur 890€)', 'Formation vidéo complète', 'Review hebdomadaire de tes trades', 'Suivi WhatsApp permanent', 'Plan de trading personnalisé', 'Préparation prop firm'].map(item => (
+                    <li key={item}><span className="ck" style={{ color: G }}>✓</span>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="offer-side">
+                <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" className="btn-g" style={{ textAlign: 'center', padding: '16px 24px', fontSize: 15, width: '100%', display: 'block' }}>Réserver un call gratuit →</a>
+                <div style={{ fontSize: 10, color: '#555', textAlign: 'center' }}>30 min · Sans engagement</div>
+                <div className="places">
+                  <div className="places-l">Places disponibles</div>
+                  <div className="places-d"><div className="pl-on" /><div className="pl-on" /><div className="pl-off" /><div className="pl-off" /><div className="pl-off" /></div>
+                  <div className="places-c"><em>2</em> places ce mois</div>
+                </div>
+              </div>
+            </div>
+            <div className="offer-bot">
+              <div className="offer-bot-t">🔒 <strong>Garantie :</strong> Call gratuit — si on n&apos;est pas alignés, aucun engagement.</div>
+              <a href="#faq" className="btn-o" style={{ padding: '10px 20px', fontSize: 12 }}>FAQ</a>
+            </div>
+          </div>
+        </section>
+
+        <div className="divider" />
+
+        {/* ━━ FAQ ━━ */}
+        <section className="ks" id="faq">
+          <div className="ks-label a">FAQ</div>
+          <div className="ks-h a">Tes <span>questions</span></div>
+          <div className="faq a">
+            {[
+              { q: 'Comment se déroule le coaching concrètement ?', a: "On commence par un appel de diagnostic complet où on fait le point sur ton trading actuel, tes objectifs et tes blocages. Ensuite on organise des calls individuels réguliers en visio. Entre les sessions, je review tes trades via le dashboard ATP et tu as accès à mon WhatsApp pour les questions urgentes. Tout est adapté à ton rythme et à ton niveau — il n'y a pas de programme figé, on avance ensemble." },
+              { q: 'Quel niveau faut-il pour commencer ?', a: "Le coaching s'adresse aussi bien aux débutants sérieux qu'aux traders intermédiaires qui veulent passer un cap. L'important n'est pas ton niveau actuel, c'est ta motivation et ta capacité à travailler. Si tu es prêt à t'investir, on peut travailler ensemble. On adapte entièrement le programme à ta situation." },
+              { q: 'Pourquoi si peu de places par mois ?', a: "Je trade moi-même tous les jours sur les marchés. Je refuse de déléguer la qualité de l'accompagnement. Chaque élève bénéficie de mon attention personnelle complète — reviews de trades, calls, WhatsApp. Pour maintenir ce niveau de qualité institutionnelle, je limite à 2-3 élèves maximum par mois. C'est mon standard et ça ne changera pas." },
+              { q: 'Le dashboard ATP est-il vraiment inclus ?', a: "Oui, 12 mois d'accès complet au Dashboard ATP SaaS sont inclus dans le programme. C'est un outil que j'ai développé moi-même exclusivement pour mes élèves. Il inclut le suivi P&L, win rate, profit factor, heatmap, journal psychologique, tracker prop firm, assistant trader IA, achievements — tout ce dont tu as besoin pour suivre ta progression comme un professionnel." },
+              { q: 'Comment fonctionne le paiement ?', a: "Le tarif et les modalités de paiement sont communiqués lors du call de présélection. Des facilités de paiement sont disponibles. Mon objectif est que le financement ne soit pas un obstacle si tu es le bon profil pour le programme — on trouve toujours une solution ensemble." },
+              { q: 'Sur quels marchés et instruments tu travailles ?', a: "Je suis spécialisé sur les futures américains : ES (S&P 500), NQ (Nasdaq), YM (Dow Jones). Ce sont les marchés les plus liquides au monde, avec les meilleures conditions d'exécution. La méthode ATP est optimisée pour ces instruments mais les principes de structure de marché s'appliquent à tous les actifs." },
+            ].map((f, i) => (
+              <div key={i} className={`faq-i ${faqOpen === i ? 'open' : ''}`}>
+                <div className="faq-q" onClick={() => setFaqOpen(faqOpen === i ? null : i)}>{f.q}<span className="faq-arr">+</span></div>
+                <div className="faq-a">{f.a}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ━━ CTA ━━ */}
+        <div className="cta">
+          <div className="cta-glow" />
+          <h2>Prêt à trader comme<br />un <span>professionnel</span> ?</h2>
+          <p>Le call de présélection est gratuit et sans engagement.</p>
+          <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" className="btn-g" style={{ padding: '16px 40px', fontSize: 16, position: 'relative', zIndex: 1 }}>Réserver mon call →</a>
+          <div className="urg">2 places disponibles · Réponse sous 24h</div>
+        </div>
+
+        {/* Footer */}
+        <footer className="ft">
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>Alpha Trading Pro</span>
+          <div className="ft-c">© 2026 ATP · Guadeloupe</div>
+          <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#444', textDecoration: 'none' }}>Contact</a>
+        </footer>
       </div>
-      <div style={{
-        maxHeight: open ? 200 : 0, overflow: 'hidden', transition: 'max-height 0.4s ease, margin 0.3s ease',
-        marginTop: open ? 12 : 0,
-      }}>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7 }}>{a}</p>
-      </div>
-    </div>
+    </>
   )
 }
