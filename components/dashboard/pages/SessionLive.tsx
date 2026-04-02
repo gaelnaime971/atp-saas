@@ -113,22 +113,37 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
   const ecoWidgetRef = useRef<HTMLDivElement>(null)
   const ecoWidgetLoaded = useRef(false)
 
+  // X/Twitter feed ref
+  const xFeedRef = useRef<HTMLDivElement>(null)
+  const xFeedLoaded = useRef(false)
+
   useEffect(() => {
-    if (phase !== 'live' || ecoWidgetLoaded.current || !ecoWidgetRef.current) return
-    ecoWidgetLoaded.current = true
-    const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js'
-    script.async = true
-    script.innerHTML = JSON.stringify({
-      colorTheme: 'dark',
-      isTransparent: true,
-      width: '100%',
-      height: '100%',
-      locale: 'fr',
-      importanceFilter: '-1,0,1',
-      countryFilter: 'us,eu,fr,de,gb',
-    })
-    ecoWidgetRef.current.appendChild(script)
+    if (phase !== 'live') return
+    // TradingView eco widget
+    if (!ecoWidgetLoaded.current && ecoWidgetRef.current) {
+      ecoWidgetLoaded.current = true
+      const script = document.createElement('script')
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js'
+      script.async = true
+      script.innerHTML = JSON.stringify({
+        colorTheme: 'dark',
+        isTransparent: true,
+        width: '100%',
+        height: '100%',
+        locale: 'fr',
+        importanceFilter: '-1,0,1',
+        countryFilter: 'us,eu,fr,de,gb',
+      })
+      ecoWidgetRef.current.appendChild(script)
+    }
+    // X/Twitter timeline
+    if (!xFeedLoaded.current && xFeedRef.current) {
+      xFeedLoaded.current = true
+      const script = document.createElement('script')
+      script.src = 'https://platform.twitter.com/widgets.js'
+      script.async = true
+      document.body.appendChild(script)
+    }
   }, [phase])
 
   const totalPnl = trades.reduce((s, t) => s + t.pnl, 0)
@@ -379,6 +394,23 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
             <div style={cardLabel}>{dot}Calendrier éco</div>
             <div ref={ecoWidgetRef} className="tradingview-widget-container" style={{ flex: 1, overflow: 'hidden', borderRadius: 6 }}>
               <div className="tradingview-widget-container__widget" style={{ height: '100%' }} />
+            </div>
+          </div>
+
+          {/* Breaking News — @DeItaone */}
+          <div style={{ ...cardS, flex: 1, minHeight: 250, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={cardLabel}>{dot}Breaking News — @DeItaone</div>
+            <div ref={xFeedRef} style={{ flex: 1, overflowY: 'auto', borderRadius: 6 }}>
+              <a
+                className="twitter-timeline"
+                data-theme="dark"
+                data-chrome="noheader nofooter noborders transparent"
+                data-height="400"
+                data-tweet-limit="15"
+                href="https://twitter.com/DeItaone"
+              >
+                Chargement des news...
+              </a>
             </div>
           </div>
 
