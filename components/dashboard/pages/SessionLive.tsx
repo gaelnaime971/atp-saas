@@ -113,6 +113,10 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
   const ecoWidgetRef = useRef<HTMLDivElement>(null)
   const ecoWidgetLoaded = useRef(false)
 
+  // News timeline widget ref
+  const newsWidgetRef = useRef<HTMLDivElement>(null)
+  const newsWidgetLoaded = useRef(false)
+
 
   useEffect(() => {
     if (phase !== 'live') return
@@ -132,6 +136,23 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
         countryFilter: 'us,eu,fr,de,gb',
       })
       ecoWidgetRef.current.appendChild(script)
+    }
+    // TradingView news timeline
+    if (!newsWidgetLoaded.current && newsWidgetRef.current) {
+      newsWidgetLoaded.current = true
+      const script2 = document.createElement('script')
+      script2.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js'
+      script2.async = true
+      script2.innerHTML = JSON.stringify({
+        feedMode: 'all_symbols',
+        colorTheme: 'dark',
+        isTransparent: true,
+        displayMode: 'compact',
+        width: '100%',
+        height: '100%',
+        locale: 'fr',
+      })
+      newsWidgetRef.current.appendChild(script2)
     }
   }, [phase])
 
@@ -386,21 +407,14 @@ export default function SessionLive({ onExit }: { onExit: () => void }) {
             </div>
           </div>
 
-          {/* Breaking News — @DeItaone via syndication iframe */}
+          {/* Breaking News — TradingView Timeline */}
           <div style={{ ...cardS, flex: 1, minHeight: 250, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ ...cardLabel, marginBottom: 8 }}>
               {dot}Breaking News
               <a href="https://x.com/DeItaone" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: 9, color: TEXT3, textDecoration: 'none', fontWeight: 400 }}>@DeItaone ↗</a>
             </div>
-            <div style={{ flex: 1, borderRadius: 6, overflow: 'hidden', position: 'relative' }}>
-              <iframe
-                src="https://syndication.twitter.com/srv/timeline-profile/screen-name/DeItaone?dnt=true&embedId=twitter-widget-0&features=eyJ0ZndfdGltZWxpbmVfbGlzdCI6eyJidWNrZXQiOltdLCJ2ZXJzaW9uIjpudWxsfX0%3D&frame=false&hideBorder=true&hideFooter=true&hideHeader=true&hideScrollBar=false&lang=fr&maxHeight=600&origin=https%3A%2F%2Falphatradingpro-coaching.fr&theme=dark&transparent=true&widgetsVersion=1"
-                style={{ width: '100%', height: '100%', border: 'none', background: 'transparent', colorScheme: 'dark' }}
-                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                title="@DeItaone Breaking News"
-              />
-              {/* Dark overlay to blend with theme */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 30, background: `linear-gradient(transparent, ${BG2})`, pointerEvents: 'none' }} />
+            <div ref={newsWidgetRef} className="tradingview-widget-container" style={{ flex: 1, overflow: 'hidden', borderRadius: 6 }}>
+              <div className="tradingview-widget-container__widget" style={{ height: '100%' }} />
             </div>
           </div>
 
