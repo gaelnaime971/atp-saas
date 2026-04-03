@@ -16,11 +16,12 @@ import Reports from '@/components/admin/pages/Reports'
 import Tasks from '@/components/admin/pages/Tasks'
 import Broadcast from '@/components/admin/pages/Broadcast'
 import BilanCompetences from '@/components/admin/pages/BilanCompetences'
+import Prospects from '@/components/admin/pages/Prospects'
 import RecapTradeLive from '@/components/admin/pages/RecapTradeLive'
 import AdminTopbarStats from '@/components/admin/TopbarStats'
 import AdminChatWidget from '@/components/chat/AdminChatWidget'
 
-type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'recap-live' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks'
+type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'recap-live' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks' | 'prospects'
 
 const pageTitles: Record<AdminPage, string> = {
   overview: 'Vue Globale',
@@ -33,6 +34,7 @@ const pageTitles: Record<AdminPage, string> = {
   revenus: 'Revenus',
   reports: 'Rapports mensuels',
   tasks: 'Tâches',
+  prospects: 'Prospects',
   broadcast: 'Broadcast',
   bibliotheque: 'Bibliothèque',
   bilan: 'Bilan de compétences',
@@ -66,6 +68,7 @@ export default function AdminDashboard() {
       case 'revenus': return <Revenus />
       case 'reports': return <Reports />
       case 'tasks': return <Tasks />
+      case 'prospects': return <Prospects />
       case 'broadcast': return <Broadcast />
       case 'bibliotheque': return <Bibliotheque />
       case 'bilan': return <BilanCompetences />

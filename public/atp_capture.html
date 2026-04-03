@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ma Méthode de Trading — Alpha Trading Pro</title>
+<meta name="description" content="Accède gratuitement à la méthode de trading institutionnelle de Gaël — ex banque d'investissement et hedge fund.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  background:#050505;
+  color:#fff;
+  font-family:'Inter',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  min-height:100vh;
+}
+
+/* GLOW BG */
+body::before{
+  content:'';
+  position:fixed;
+  top:-200px; left:50%;
+  transform:translateX(-50%);
+  width:800px; height:600px;
+  background:radial-gradient(ellipse, rgba(34,197,94,0.07) 0%, transparent 70%);
+  pointer-events:none; z-index:0;
+}
+
+.wrap{
+  position:relative; z-index:1;
+  max-width:560px;
+  margin:0 auto;
+  padding:60px 24px 80px;
+}
+
+/* NAV */
+nav{
+  display:flex; align-items:center; justify-content:center;
+  padding:20px 0 48px;
+}
+.nav-logo{
+  display:flex; align-items:center; gap:8px;
+}
+.nav-logo img{
+  height:24px; filter:brightness(0) invert(1);
+}
+.nav-logo span{
+  font-size:14px; font-weight:700; letter-spacing:0.03em; color:#fff;
+}
+
+/* PILL */
+.pill{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 18px; border-radius:100px;
+  background:rgba(34,197,94,0.08);
+  border:1px solid rgba(34,197,94,0.15);
+  font-size:12px; font-weight:500; color:#22c55e;
+  margin-bottom:28px;
+}
+.pill-dot{
+  width:6px; height:6px; border-radius:50%;
+  background:#22c55e;
+  box-shadow:0 0 8px #22c55e;
+  animation:blink 2s infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+/* HERO TEXT */
+h1{
+  font-size:clamp(32px,5vw,48px);
+  font-weight:800;
+  line-height:1.08;
+  letter-spacing:-0.03em;
+  margin-bottom:18px;
+}
+h1 span{color:#22c55e;}
+
+.sub{
+  font-size:16px;
+  color:#777;
+  line-height:1.7;
+  font-weight:300;
+  margin-bottom:32px;
+}
+.sub strong{color:#ccc; font-weight:500;}
+
+/* WHAT YOU GET */
+.wyg{
+  background:#0a0a0a;
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:14px;
+  padding:20px 22px;
+  margin-bottom:32px;
+}
+.wyg-title{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  color:#22c55e;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+.wyg-item{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  font-size:13px;
+  color:#ccc;
+  line-height:1.55;
+  padding:7px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.wyg-item:last-child{border-bottom:none;}
+.wyg-ck{color:#22c55e; flex-shrink:0; margin-top:1px;}
+
+/* FORM */
+.form-wrap{
+  background:#0a0a0a;
+  border:1px solid rgba(34,197,94,0.15);
+  border-radius:16px;
+  padding:28px;
+  position:relative;
+  overflow:hidden;
+}
+.form-wrap::before{
+  content:'';
+  position:absolute;
+  top:-80px; right:-80px;
+  width:240px; height:240px;
+  background:radial-gradient(circle, rgba(34,197,94,0.12), transparent 70%);
+  pointer-events:none;
+}
+
+.form-title{
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+  margin-bottom:6px;
+}
+.form-sub{
+  font-size:12px;
+  color:#555;
+  margin-bottom:22px;
+  line-height:1.6;
+}
+
+.field{margin-bottom:14px;}
+.field label{
+  display:block;
+  font-size:11px;
+  font-weight:600;
+  color:#555;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  margin-bottom:7px;
+}
+.field input,
+.field select{
+  width:100%;
+  background:#0e0e0e;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px;
+  padding:13px 16px;
+  font-size:14px;
+  color:#fff;
+  font-family:'Inter',sans-serif;
+  outline:none;
+  transition:border-color 0.2s;
+  -webkit-appearance:none;
+}
+.field input::placeholder{color:#444;}
+.field input:focus,
+.field select:focus{
+  border-color:rgba(34,197,94,0.4);
+}
+.field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 14px center;
+  cursor:pointer;
+  color:#777;
+}
+.field select.filled{color:#fff;}
+.field select option{background:#0e0e0e; color:#fff;}
+
+.field-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.btn-submit{
+  width:100%;
+  padding:16px;
+  background:#22c55e;
+  color:#050505;
+  border:none;
+  border-radius:10px;
+  font-size:15px;
+  font-weight:700;
+  font-family:'Inter',sans-serif;
+  cursor:pointer;
+  transition:all 0.25s;
+  margin-top:6px;
+  letter-spacing:0.01em;
+}
+.btn-submit:hover{
+  box-shadow:0 4px 24px rgba(34,197,94,0.4);
+  transform:translateY(-1px);
+}
+.btn-submit:active{transform:translateY(0);}
+
+.form-footer{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  margin-top:14px;
+  font-size:11px;
+  color:#444;
+}
+.form-footer::before{
+  content:'🔒';
+  font-size:10px;
+}
+
+/* SOCIAL PROOF */
+.proof{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:28px;
+  font-size:12px;
+  color:#555;
+}
+.proof-avatars{
+  display:flex;
+}
+.proof-av{
+  width:26px; height:26px;
+  border-radius:50%;
+  background:rgba(34,197,94,0.12);
+  border:2px solid #050505;
+  margin-left:-8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:700; color:#22c55e;
+}
+.proof-av:first-child{margin-left:0;}
+
+/* DIVIDER */
+.or{
+  display:flex; align-items:center; gap:12px;
+  margin:16px 0;
+  font-size:11px; color:#333;
+}
+.or::before,.or::after{
+  content:''; flex:1; height:1px; background:rgba(255,255,255,0.05);
+}
+
+/* ALREADY CLIENT */
+.already{
+  text-align:center;
+  font-size:12px;
+  color:#444;
+  margin-top:20px;
+}
+.already a{
+  color:#22c55e;
+  text-decoration:none;
+  font-weight:500;
+}
+.already a:hover{text-decoration:underline;}
+
+/* SUCCESS STATE */
+.success{
+  display:none;
+  text-align:center;
+  padding:40px 24px;
+}
+.success.show{display:block;}
+.success-icon{
+  font-size:48px;
+  margin-bottom:20px;
+}
+.success h2{
+  font-size:24px;
+  font-weight:800;
+  margin-bottom:10px;
+}
+.success p{
+  font-size:14px;
+  color:#777;
+  line-height:1.7;
+  margin-bottom:24px;
+}
+.success .btn-submit{
+  max-width:280px;
+  margin:0 auto;
+  display:block;
+  text-decoration:none;
+  text-align:center;
+  background:#22c55e;
+  color:#050505;
+  padding:14px;
+  border-radius:10px;
+  font-weight:700;
+  font-size:14px;
+}
+
+@media(max-width:480px){
+  .wrap{padding:40px 16px 60px;}
+  .field-row{grid-template-columns:1fr;}
+  h1{font-size:28px;}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">
+      <img src="data:image/png;base64,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" alt="ATP">
+      <span>ALPHA TRADING PRO</span>
+    </div>
+  </nav>
+
+  <!-- FORM SUCCESS STATE -->
+  <div class="success" id="success">
+    <div class="success-icon">🎯</div>
+    <h2>C'est parti !</h2>
+    <p>Ta méthode est prête.<br>
+    Accède maintenant à la vidéo complète — <strong style="color:#ccc">ma méthode de trading de A à Z</strong>, telle que je l'applique chaque matin avant l'open US.</p>
+    <a href="#" class="btn-submit" id="video-link">Accéder à la vidéo →</a>
+    <div style="margin-top:16px;font-size:11px;color:#444;">Tu recevras aussi un email de confirmation dans quelques minutes.</div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="main-content">
+
+    <div class="pill">
+      <div class="pill-dot"></div>
+      Accès gratuit · Immédiat
+    </div>
+
+    <h1>Ma méthode de trading<br><span>de A à Z.</span></h1>
+
+    <p class="sub">
+      J'ai tradé 8 ans en banque d'investissement et hedge fund.<br>
+      <strong>Voilà exactement comment je prépare et exécute chaque session.</strong><br>
+      Gratuit. Sans engagement.
+    </p>
+
+    <!-- WHAT YOU GET -->
+    <div class="wyg">
+      <div class="wyg-title">Ce que tu vas apprendre</div>
+      <div class="wyg-item">
+        <span class="wyg-ck">✓</span>
+        <span>Comment je prépare mes sessions avant l'open US — analyse multi-timeframes en 20 minutes</span>
+      </div>
+      <div class="wyg-item">
+        <span class="wyg-ck">✓</span>
+        <span>Les 3 setups que je trade exclusivement — et pourquoi je refuse tout le reste</span>
+      </div>
+      <div class="wyg-item">
+        <span class="wyg-ck">✓</span>
+        <span>Ma gestion du risque exacte — sizing, SL, TP et drawdown maximum</span>
+      </div>
+      <div class="wyg-item">
+        <span class="wyg-ck">✓</span>
+        <span>Comment j'évalue une session — le débriefing qui m'a rendu profitable sur la durée</span>
+      </div>
+      <div class="wyg-item">
+        <span class="wyg-ck">✓</span>
+        <span>Les erreurs psychologiques que je vois chez 90% des traders — et comment les corriger</span>
+      </div>
+    </div>
+
+    <!-- SOCIAL PROOF -->
+    <div class="proof">
+      <div class="proof-avatars">
+        <div class="proof-av">J</div>
+        <div class="proof-av">M</div>
+        <div class="proof-av">A</div>
+        <div class="proof-av">T</div>
+        <div class="proof-av">+</div>
+      </div>
+      <span>+1 200 traders ont déjà rejoint la communauté ATP</span>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-wrap">
+      <div class="form-title">Accède à la méthode gratuitement</div>
+      <div class="form-sub">Remplis le formulaire — accès immédiat à la vidéo.</div>
+
+      <form id="capture-form" onsubmit="handleSubmit(event)">
+
+        <div class="field-row">
+          <div class="field">
+            <label>Prénom</label>
+            <input type="text" name="prenom" placeholder="Thomas" required autocomplete="given-name">
+          </div>
+          <div class="field">
+            <label>Nom</label>
+            <input type="text" name="nom" placeholder="Dupont" required autocomplete="family-name">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Email</label>
+          <input type="email" name="email" placeholder="thomas@email.com" required autocomplete="email">
+        </div>
+
+        <div class="field">
+          <label>WhatsApp</label>
+          <input type="tel" name="whatsapp" placeholder="+33 6 XX XX XX XX" required autocomplete="tel">
+        </div>
+
+        <div class="field">
+          <label>Depuis combien de temps tu trades ?</label>
+          <select name="experience" required onchange="this.classList.add('filled')">
+            <option value="" disabled selected>Sélectionne ton niveau</option>
+            <option value="debutant">Je débute — moins de 6 mois</option>
+            <option value="intermediaire">6 mois à 2 ans</option>
+            <option value="confirme">Plus de 2 ans</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Ton principal objectif</label>
+          <select name="objectif" required onchange="this.classList.add('filled')">
+            <option value="" disabled selected>Qu'est-ce que tu vises ?</option>
+            <option value="methode">Avoir une méthode structurée</option>
+            <option value="propfirm">Passer un challenge prop firm</option>
+            <option value="consistance">Devenir consistant et profitable</option>
+            <option value="vivre">Vivre du trading</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submit-btn">
+          Accéder à ma méthode gratuitement →
+        </button>
+
+      </form>
+
+      <div class="form-footer">
+        Tes informations sont confidentielles · Zéro spam
+      </div>
+    </div>
+
+    <div class="already">
+      Tu es déjà élève ATP ?
+      <a href="https://www.alphatradingpro-coaching.fr/login">Accéder à ton espace →</a>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function handleSubmit(e) {
+  e.preventDefault();
+  
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = 'Envoi en cours...';
+  btn.disabled = true;
+  
+  const form = e.target;
+  const data = {
+    prenom: form.prenom.value,
+    nom: form.nom.value,
+    email: form.email.value,
+    whatsapp: form.whatsapp.value,
+    experience: form.experience.value,
+    objectif: form.objectif.value,
+    source: 'landing-capture',
+    date: new Date().toISOString()
+  };
+  
+  // Remplace cette URL par ton endpoint GHL webhook
+  const GHL_WEBHOOK = 'VOTRE_WEBHOOK_GHL_ICI';
+  
+  // Envoi vers GHL (si webhook configuré)
+  if (GHL_WEBHOOK !== 'VOTRE_WEBHOOK_GHL_ICI') {
+    fetch(GHL_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).catch(console.error);
+  }
+  
+  // Log local pour debug
+  console.log('Lead capturé:', data);
+  
+  // Afficher success state après 800ms
+  setTimeout(() => {
+    document.getElementById('main-content').style.display = 'none';
+    const success = document.getElementById('success');
+    success.classList.add('show');
+    
+    // Remplace # par l'URL de ta vidéo value asset
+    document.getElementById('video-link').href = '#VIDEO_URL_ICI';
+    
+    window.scrollTo(0, 0);
+  }, 800);
+}
+</script>
+
+</body>
+</html>

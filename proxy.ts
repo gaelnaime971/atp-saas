@@ -29,7 +29,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Public routes
-  const publicRoutes = ['/login', '/admin/login', '/admin/setup', '/invite', '/logout', '/offre']
+  const publicRoutes = ['/login', '/admin/login', '/admin/setup', '/invite', '/logout', '/offre', '/methode-atp']
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
   const isApiRoute = pathname.startsWith('/api')
 
