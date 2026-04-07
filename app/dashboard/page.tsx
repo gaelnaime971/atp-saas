@@ -133,7 +133,11 @@ export default function TraderDashboard() {
         </main>
       </div>
       <TraderChatWidget />
-      {sessionLive && <SessionLive onExit={() => setSessionLive(false)} />}
+      {sessionLive && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }}>
+          <SessionLive onExit={() => setSessionLive(false)} />
+        </div>
+      )}
     </div>
   )
 }
