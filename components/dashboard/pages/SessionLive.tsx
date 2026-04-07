@@ -388,11 +388,9 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
   }
 
   // End session
-  const endSession = () => {
-    const d = Math.floor((new Date().getTime() - sessionStart.current.getTime()) / 1000)
-    alert(`═══ BILAN SESSION ATP ═══\n\nDurée: ${pad(Math.floor(d / 3600))}h${pad(Math.floor((d % 3600) / 60))}m\nTrades: ${trades.length} (${wins}W / ${losses}L)\nP&L: ${(totalPnl >= 0 ? '+' : '') + totalPnl.toFixed(2)}€\nR∑: ${(totalR >= 0 ? '+' : '') + totalR.toFixed(1)}R\n\n═══════════════════\nBonne fin de session.`)
-    onExit?.()
-  }
+  const [showEndModal, setShowEndModal] = useState(false)
+  const endSession = () => setShowEndModal(true)
+  const confirmEnd = () => { setShowEndModal(false); onExit?.() }
 
   // Add level
   const addLevel = () => {
@@ -934,6 +932,40 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
           <div className="sbi" style={{ marginLeft: 'auto' }}><span className="sbv">ATP TERMINAL v4.0 © 2026</span></div>
         </div>
       </div>
+
+      {/* END SESSION MODAL */}
+      {showEndModal && (() => {
+        const d = Math.floor((new Date().getTime() - sessionStart.current.getTime()) / 1000)
+        const duration = `${pad(Math.floor(d / 3600))}h${pad(Math.floor((d % 3600) / 60))}m`
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 30000, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowEndModal(false)}>
+            <div style={{ background: '#050905', border: '1px solid var(--border)', borderRadius: 4, padding: '32px 40px', maxWidth: 420, width: '90%', textAlign: 'center', position: 'relative', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+              <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, background: 'radial-gradient(circle, rgba(0,255,136,0.08), transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{ fontFamily: 'var(--orb)', fontSize: 12, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--g)', marginBottom: 20 }}>═══ BILAN SESSION ATP ═══</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+                {[
+                  { l: 'DURÉE', v: duration },
+                  { l: 'TRADES', v: `${trades.length} (${wins}W / ${losses}L)` },
+                  { l: 'P&L', v: `${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}€`, c: totalPnl >= 0 ? 'var(--g)' : 'var(--red)' },
+                  { l: 'R TOTAL', v: `${totalR >= 0 ? '+' : ''}${totalR.toFixed(1)}R`, c: totalR >= 0 ? 'var(--g)' : 'var(--red)' },
+                  { l: 'WIN RATE', v: trades.length > 0 ? winPct + '%' : '—' },
+                  { l: 'DISCIPLINE', v: discScore + '%', c: discScore >= 70 ? 'var(--g)' : discScore >= 40 ? 'var(--amber)' : 'var(--red)' },
+                ].map(s => (
+                  <div key={s.l} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 7, letterSpacing: '0.14em', color: 'var(--muted)', marginBottom: 4 }}>{s.l}</div>
+                    <div style={{ fontFamily: 'var(--orb)', fontSize: 18, fontWeight: 700, color: s.c || 'var(--text)' }}>{s.v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.6 }}>Bonne fin de session. Pense à documenter tes observations dans ton journal.</div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setShowEndModal(false)} style={{ flex: 1, padding: '10px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', cursor: 'pointer' }}>← CONTINUER</button>
+                <button onClick={confirmEnd} style={{ flex: 1, padding: '10px', background: 'rgba(255,51,85,0.08)', border: '1px solid rgba(255,51,85,0.25)', borderRadius: 2, color: 'var(--red)', fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', cursor: 'pointer' }}>■ QUITTER SESSION</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </>
   )
 }
