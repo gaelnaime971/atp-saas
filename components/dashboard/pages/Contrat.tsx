@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import { downloadContractPdf } from '@/lib/generateContractPdf'
 
 interface Invoice {
   id: string
@@ -30,42 +31,57 @@ const articles = [
   {
     num: 1,
     title: 'Objet',
-    content: "Ce contrat etablit les conditions du programme de coaching individuel Alpha Trading Pro entre Gael (coach) et le trader (coache). L'objectif est de rendre le trader rentable et autonome selon la methodologie ATP.",
+    content: "Le présent contrat établit les conditions du programme de coaching individuel Alpha Trading Pro entre Gaël Naime, représentant légal d'Omega Investment (SIREN : 919 495 424), ci-après \"le Coach\", et le trader soussigné, ci-après \"le Coaché\". L'objectif est d'accompagner le Coaché vers une pratique du trading rentable, disciplinée et autonome, selon la méthodologie ATP.",
   },
   {
     num: 2,
-    title: 'Duree',
-    content: 'Le programme de coaching est etabli pour une duree minimale de 3 mois, renouvelable par accord mutuel. Chaque mois comprend entre 2 et 4 sessions de coaching selon la formule choisie.',
+    title: 'Contenu du programme',
+    content: "Le programme ATP ULTRA comprend : des sessions de coaching individuelles en visioconférence avec Gaël Naime ; un suivi personnalisé par WhatsApp entre les sessions ; un accès au SaaS Alpha Trading Pro (dashboard, journal, cockpit, calculateur de risque) pour une durée de 12 mois ; un accès au Discord ATP Élite Pro (lives quotidiens, replays, analyses) pour une durée de 12 mois ; un accès à la bibliothèque de formations vidéo en replay illimité ; un accompagnement psychologique appliqué au trading animé par Vanille, coach certifiée en neurosciences.",
   },
   {
     num: 3,
-    title: 'Tarifs & Paiement',
-    content: "Le reglement s'effectue en debut de mois. Toute session annulee moins de 24h a l'avance est due. Les paiements sont non remboursables sauf accord exceptionnel du coach.",
+    title: 'Durée',
+    content: "Le programme ATP ULTRA ne fixe pas de durée minimale d'engagement. L'accompagnement se poursuit jusqu'à l'atteinte d'un niveau d'autonomie satisfaisant, défini conjointement par les deux parties. Les quatre phases du programme sont : Diagnostic, Transmission, Live trading et Autonomie.",
   },
   {
     num: 4,
-    title: 'Engagements du trader',
-    content: "Le trader s'engage a : tenir son journal de trading, saisir ses sessions dans le dashboard ATP, respecter le plan de trading defini, assister aux sessions de coaching programmees et maintenir une communication transparente sur ses resultats.",
+    title: 'Tarifs et paiement',
+    content: "Le montant de l'investissement est défini lors du call de présélection et formalisé dans l'annexe tarifaire. Le paiement peut s'effectuer en une fois ou de manière échelonnée selon un calendrier convenu. Tout paiement est définitivement acquis. En cas de paiement échelonné, le non-respect d'une échéance entraîne la suspension immédiate de l'accès aux outils dans un délai de 7 jours, jusqu'à régularisation.",
   },
   {
     num: 5,
-    title: 'Engagements du coach',
-    content: "Gael s'engage a : preparer chaque session, fournir un feedback structure, etre disponible entre les sessions pour les questions urgentes, adapter le programme selon la progression du trader.",
+    title: 'Engagements du Coaché',
+    content: "Le Coaché s'engage à : tenir son journal de trading de manière régulière et honnête ; saisir ses sessions dans le dashboard ATP ; respecter le plan de trading et les règles définies conjointement (gestion du risque, règle des 3 SL consécutifs) ; assister aux sessions de coaching planifiées ; maintenir une communication transparente sur ses résultats et ses difficultés ; s'acquitter des paiements aux échéances convenues.",
   },
   {
     num: 6,
-    title: 'Confidentialite',
-    content: "Les performances, resultats et contenus partages dans le cadre du coaching sont strictement confidentiels. Aucune information ne sera partagee sans accord ecrit prealable.",
+    title: 'Engagements du Coach',
+    content: "Gaël Naime s'engage à : fournir un accompagnement personnalisé et de qualité adapté au profil du Coaché ; préparer chaque session de coaching ; être disponible par WhatsApp pour les questions urgentes entre les sessions ; assurer la disponibilité des outils digitaux et signaler toute interruption technique ; respecter la confidentialité des informations personnelles et financières du Coaché.",
   },
   {
     num: 7,
-    title: 'Resultats',
-    content: "Le trading comporte des risques. Les resultats passes ne garantissent pas les resultats futurs. Le coach s'engage a transmettre une methode eprouvee mais ne peut garantir la rentabilite.",
+    title: 'Droit de rétractation',
+    content: "Conformément à l'article L.221-18 du Code de la consommation, le Coaché dispose d'un délai de 14 jours calendaires à compter de la signature du présent contrat pour exercer son droit de rétractation, sans justification ni pénalité. La rétractation doit être notifiée par écrit à contact@alphatradingpro.fr. Passé ce délai, aucun remboursement ne peut être accordé pour les services déjà fournis.",
   },
   {
     num: 8,
-    title: 'Litiges',
-    content: "En cas de litige, les parties s'engagent a rechercher une solution amiable. Le droit francais est applicable. Juridiction competente : Tribunal de Basse-Terre, Guadeloupe.",
+    title: 'Confidentialité et propriété intellectuelle',
+    content: "Les performances, résultats et contenus partagés dans le cadre du coaching sont strictement confidentiels. Aucune information ne sera divulguée à des tiers sans accord écrit préalable. L'ensemble des contenus du programme (méthode, vidéos, supports, outils SaaS) sont la propriété exclusive d'Omega Investment. Le Coaché s'interdit de reproduire, diffuser, revendre ou enseigner ces contenus à des tiers. Toute violation expose le Coaché à des poursuites judiciaires et à la résiliation immédiate du contrat sans remboursement.",
+  },
+  {
+    num: 9,
+    title: 'Absence de garantie de résultats',
+    content: "Omega Investment et Gaël Naime ne garantissent aucun résultat financier spécifique. Le trading sur les marchés financiers comporte des risques importants de perte en capital. Les performances passées présentées à titre illustratif ne préjugent pas des résultats futurs. Le Coaché reconnaît avoir été informé de ces risques avant la signature du présent contrat.",
+  },
+  {
+    num: 10,
+    title: 'Résiliation',
+    content: "Le contrat peut être résilié par accord mutuel écrit avec un préavis de 15 jours ; par le Coach en cas de manquement grave du Coaché (non-paiement persistant, violation de la propriété intellectuelle) avec effet immédiat par notification écrite ; par le Coaché dans le cadre du droit de rétractation légal. En dehors du délai légal, les sommes versées restent acquises au titre des services déjà fournis.",
+  },
+  {
+    num: 11,
+    title: 'Loi applicable',
+    content: "Le présent contrat est soumis au droit français. En cas de litige, les parties s'engagent à rechercher une solution amiable dans un délai de 30 jours. À défaut, tout litige sera soumis aux juridictions compétentes du ressort du domicile du Prestataire. Le Coaché peut également recourir à la médiation de la consommation (DGCCRF).",
   },
 ]
 
@@ -91,17 +107,32 @@ export default function Contrat() {
   const supabase = createClient()
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const data: ContratState = JSON.parse(stored)
-        if (data.signed) {
+    // Load contract signature from Supabase first, fallback to localStorage
+    async function loadContract() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('contract_signed_at, contract_signed_name').eq('id', user.id).single()
+        if (profile?.contract_signed_at && profile?.contract_signed_name) {
           setSigned(true)
-          setSignedName(data.name)
-          setSignedDate(data.date)
+          setSignedName(profile.contract_signed_name)
+          setSignedDate(profile.contract_signed_at.split('T')[0])
+          return
         }
       }
-    } catch {}
+      // Fallback localStorage
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        if (stored) {
+          const data: ContratState = JSON.parse(stored)
+          if (data.signed) {
+            setSigned(true)
+            setSignedName(data.name)
+            setSignedDate(data.date)
+          }
+        }
+      } catch {}
+    }
+    loadContract()
 
     // Fetch invoices
     async function fetchInvoices() {
@@ -121,13 +152,22 @@ export default function Contrat() {
 
   const canSign = check1 && check2 && check3 && name.trim().length > 0
 
-  function handleSign() {
+  async function handleSign() {
     if (!canSign) return
-    const state: ContratState = { signed: true, name: name.trim(), date }
+    const trimName = name.trim()
+    const state: ContratState = { signed: true, name: trimName, date }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     setSigned(true)
-    setSignedName(name.trim())
+    setSignedName(trimName)
     setSignedDate(date)
+    // Save to Supabase
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('profiles').update({
+        contract_signed_at: new Date(date).toISOString(),
+        contract_signed_name: trimName,
+      }).eq('id', user.id)
+    }
   }
 
   const checkboxStyle: React.CSSProperties = {
@@ -180,15 +220,15 @@ export default function Contrat() {
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>
                 <input type="checkbox" checked={check1} onChange={e => setCheck1(e.target.checked)} style={checkboxStyle} />
-                <span style={{ fontSize: 12, color: 'var(--text2)' }}>J&apos;ai lu et accepte l&apos;integralite du contrat de coaching ATP</span>
+                <span style={{ fontSize: 12, color: 'var(--text2)' }}>J&apos;ai lu et j&apos;accepte l&apos;intégralité des 11 articles du contrat de coaching ATP ULTRA</span>
               </label>
               <label style={labelStyle}>
                 <input type="checkbox" checked={check2} onChange={e => setCheck2(e.target.checked)} style={checkboxStyle} />
-                <span style={{ fontSize: 12, color: 'var(--text2)' }}>Je m&apos;engage a respecter les engagements decrits dans les articles 4, 5 et 6</span>
+                <span style={{ fontSize: 12, color: 'var(--text2)' }}>Je m&apos;engage à respecter les engagements décrits à l&apos;article 5 et j&apos;ai pris connaissance de l&apos;article 9 (absence de garantie de résultats)</span>
               </label>
               <label style={{ ...labelStyle, marginBottom: 0 }}>
                 <input type="checkbox" checked={check3} onChange={e => setCheck3(e.target.checked)} style={checkboxStyle} />
-                <span style={{ fontSize: 12, color: 'var(--text2)' }}>Je comprends que cette signature est definitive et juridiquement engageante</span>
+                <span style={{ fontSize: 12, color: 'var(--text2)' }}>Je comprends que cette signature est définitive et juridiquement engageante</span>
               </label>
             </div>
 
@@ -266,9 +306,9 @@ export default function Contrat() {
             <Button
               variant="ghost"
               style={{ width: '100%', justifyContent: 'center', marginTop: 12 }}
-              onClick={() => {/* PDF download placeholder */}}
+              onClick={() => downloadContractPdf(signedName, signedDate)}
             >
-              Telecharger le PDF
+              Télécharger le PDF
             </Button>
           </>
         )}

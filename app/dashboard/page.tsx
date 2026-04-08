@@ -7,8 +7,7 @@ import Dashboard from '@/components/dashboard/pages/Dashboard'
 import Session from '@/components/dashboard/pages/Session'
 import SessionsHistory from '@/components/dashboard/pages/SessionsHistory'
 import Stats from '@/components/dashboard/pages/Stats'
-import Checklist from '@/components/dashboard/pages/Checklist'
-import Journal from '@/components/dashboard/pages/Journal'
+import Backtest from '@/components/dashboard/pages/Backtest'
 import PropFirm from '@/components/dashboard/pages/PropFirm'
 import Calculateur from '@/components/dashboard/pages/Calculateur'
 import Coaching from '@/components/dashboard/pages/Coaching'
@@ -19,7 +18,7 @@ import Compte from '@/components/dashboard/pages/Compte'
 import BilanCompetences from '@/components/dashboard/pages/BilanCompetences'
 import RecapTradeLive from '@/components/dashboard/pages/RecapTradeLive'
 import Classement from '@/components/dashboard/pages/Classement'
-import SavedSetups from '@/components/dashboard/pages/SavedSetups'
+
 import PreMarket from '@/components/dashboard/pages/PreMarket'
 import SessionLive from '@/components/dashboard/pages/SessionLive'
 import TopbarStats from '@/components/dashboard/TopbarStats'
@@ -30,16 +29,14 @@ const pageTitles: Record<DashboardPage, string> = {
   session: 'Saisie de session',
   'sessions-history': 'Sessions de trading',
   stats: 'Stats & Performance',
-  checklist: 'Checklist pré-open',
   'pre-market': 'Routine pré-marché',
-  journal: 'Journal',
+  backtest: 'Backtest',
   propfirm: 'Prop Firm',
   calculateur: 'Calculateur de risque — Futures',
   coaching: 'Sessions coaching',
   'recap-live': 'Trades Live Coach',
   progression: 'Ma progression',
   classement: 'Achievements',
-  'saved-setups': 'Bibliothèque de Setups',
   ressources: 'Ressources ATP',
   contrat: 'Contrat',
   bilan: 'Bilan de compétences',
@@ -56,8 +53,7 @@ export default function TraderDashboard() {
       case 'session': return <Session />
       case 'sessions-history': return <SessionsHistory />
       case 'stats': return <Stats />
-      case 'checklist': return <Checklist />
-      case 'journal': return <Journal />
+      case 'backtest': return <Backtest />
       case 'propfirm': return <PropFirm />
       case 'calculateur': return <Calculateur />
       case 'pre-market': return <PreMarket />
@@ -65,7 +61,6 @@ export default function TraderDashboard() {
       case 'recap-live': return <RecapTradeLive />
       case 'progression': return <Progression />
       case 'classement': return <Classement />
-      case 'saved-setups': return <SavedSetups />
       case 'ressources': return <Ressources />
       case 'contrat': return <Contrat />
       case 'bilan': return <BilanCompetences />

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
+import { downloadContractPdf } from '@/lib/generateContractPdf'
 
 interface TraderProfileModalProps {
   trader: Profile | null
@@ -75,7 +76,8 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
   const [savingNote, setSavingNote] = useState(false)
   const [noteSaved, setNoteSaved] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'overview' | 'sessions' | 'journal' | 'coaching' | 'accounts' | 'notes'>('overview')
+  const [tab, setTab] = useState<'overview' | 'sessions' | 'journal' | 'coaching' | 'accounts' | 'notes' | 'contrat'>('overview')
+  const [contractInfo, setContractInfo] = useState<{ signed_at: string | null; signed_name: string | null }>({ signed_at: null, signed_name: null })
   const supabase = createClient()
 
   useEffect(() => {
@@ -99,6 +101,9 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
       // Load private note from localStorage
       const storedNote = localStorage.getItem(`admin_note_${trader!.id}`)
       if (storedNote) setPrivateNote(storedNote)
+      // Load contract info
+      const { data: prof } = await supabase.from('profiles').select('contract_signed_at, contract_signed_name').eq('id', trader!.id).single()
+      if (prof) setContractInfo({ signed_at: prof.contract_signed_at, signed_name: prof.contract_signed_name })
       setLoading(false)
     }
     fetchAll()
@@ -141,6 +146,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
     { id: 'journal' as const, label: `Journal (${journal.length})` },
     { id: 'coaching' as const, label: `Coaching (${coaching.length})` },
     { id: 'notes' as const, label: 'Notes privées' },
+    { id: 'contrat' as const, label: contractInfo.signed_at ? 'Contrat ✓' : 'Contrat' },
   ]
 
   return (
@@ -631,6 +637,35 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* CONTRAT TAB */}
+              {tab === 'contrat' && (
+                <div className="space-y-4">
+                  {contractInfo.signed_at && contractInfo.signed_name ? (
+                    <div className="rounded-lg p-6 border text-center" style={{ background: 'rgba(34,197,94,0.06)', borderColor: 'rgba(34,197,94,0.2)' }}>
+                      <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+                      <p className="text-sm font-bold" style={{ color: '#22c55e', marginBottom: 4 }}>Contrat signé</p>
+                      <p className="text-sm" style={{ color: 'var(--text)' }}>{contractInfo.signed_name}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text3)', fontFamily: "'DM Mono', monospace" }}>
+                        {new Date(contractInfo.signed_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                      <button
+                        onClick={() => downloadContractPdf(contractInfo.signed_name!, contractInfo.signed_at!.split('T')[0])}
+                        className="mt-4 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+                        style={{ background: 'var(--green)', color: '#09090b' }}
+                      >
+                        Télécharger le PDF du contrat
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg p-6 border text-center" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+                      <div style={{ fontSize: 32, marginBottom: 12 }}>📄</div>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--text2)' }}>Contrat non signé</p>
+                      <p className="text-xs mt-2" style={{ color: 'var(--text3)' }}>Ce trader n&apos;a pas encore signé son contrat de coaching ATP ULTRA.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </>

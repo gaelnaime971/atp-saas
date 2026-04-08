@@ -191,6 +191,23 @@ export default function SessionsHistory() {
 
   return (
     <div>
+      {/* Explanatory banner */}
+      <div
+        style={{
+          background: 'var(--bg3)',
+          border: '1px solid var(--border)',
+          borderLeft: '4px solid #22c55e',
+          borderRadius: '10px',
+          padding: '14px 18px',
+          marginBottom: '20px',
+          fontSize: '13px',
+          lineHeight: '1.6',
+          color: '#a0aec0',
+        }}
+      >
+        📊 Historique de toutes tes sessions de trading enregistrées. Consulte, modifie ou supprime tes sessions passées pour suivre ta progression.
+      </div>
+
       {/* Toast */}
       {toast && (
         <div style={{

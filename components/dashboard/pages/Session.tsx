@@ -165,13 +165,30 @@ export default function Session() {
 
   const textareaStyle: React.CSSProperties = {
     ...inputStyle,
-    minHeight: '100px',
+    minHeight: '140px',
     resize: 'vertical' as const,
     fontFamily: 'inherit',
   }
 
   return (
     <div>
+      {/* Explanatory banner */}
+      <div
+        style={{
+          background: 'var(--bg3)',
+          border: '1px solid var(--border)',
+          borderLeft: '4px solid #22c55e',
+          borderRadius: '10px',
+          padding: '14px 18px',
+          marginBottom: '20px',
+          fontSize: '13px',
+          lineHeight: '1.6',
+          color: '#a0aec0',
+        }}
+      >
+        📝 Enregistre ici le bilan de ta session de trading — pas trade par trade, mais le résultat global de ta session. Remplis les données clés (P&L, nombre de trades, R) et détaille ton analyse dans les notes.
+      </div>
+
       {/* Toast */}
       {toast && (
         <div style={{
