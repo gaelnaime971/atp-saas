@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATP — Pilotage Contenu</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g:#22c55e;--g2:#16a34a;--g3:rgba(34,197,94,0.1);--g4:rgba(34,197,94,0.06);
+  --bg:#0a0a0a;--bg2:#111;--bg3:#161616;--bg4:#1a1a1a;
+  --border:rgba(255,255,255,0.07);--border2:rgba(34,197,94,0.25);
+  --text:#e5e5e5;--muted:#666;--dim:#2a2a2a;
+  --amber:#f59e0b;--red:#ef4444;--discord:#5865f2;
+  --mono:'JetBrains Mono',monospace;--orb:'Orbitron',sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;}
+
+/* TOPBAR */
+.topbar{
+  display:flex;align-items:center;padding:0 20px;gap:14px;height:50px;
+  background:rgba(0,0,0,0.9);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:200;
+}
+.tb-logo{font-family:var(--orb);font-size:13px;font-weight:900;color:var(--g);letter-spacing:0.15em;}
+.tb-sep{width:1px;height:18px;background:var(--border);}
+.tb-title{font-size:11px;color:var(--muted);letter-spacing:0.12em;}
+.tb-right{margin-left:auto;display:flex;gap:8px;}
+.tb-stat{padding:4px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;font-size:10px;}
+.tb-stat span{color:var(--g);font-weight:700;margin-left:4px;}
+
+/* MAIN */
+.page{padding:20px;display:flex;flex-direction:column;gap:18px;}
+
+/* GLOBAL PROGRESS */
+.gp{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.gp-item{text-align:center;min-width:60px;}
+.gp-val{font-family:var(--orb);font-size:18px;font-weight:900;}
+.gp-lbl{font-size:7px;letter-spacing:0.12em;color:var(--muted);margin-top:2px;}
+.gp-sep{width:1px;height:36px;background:var(--border);}
+.gp-bar-wrap{flex:1;min-width:200px;}
+.gp-bar-lbl{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);margin-bottom:5px;}
+.gp-bar{height:5px;background:var(--dim);border-radius:3px;overflow:hidden;}
+.gp-bar-fill{height:100%;background:linear-gradient(90deg,var(--g2),var(--g));border-radius:3px;transition:width .5s;}
+
+/* SECTION */
+.sh{font-size:9px;font-weight:700;letter-spacing:0.2em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.sh::before{content:'▸';color:var(--g);}
+
+/* SETUP */
+.setup-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.setup-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px;}
+.setup-card-title{font-size:10px;font-weight:700;letter-spacing:0.1em;margin-bottom:10px;}
+.setup-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--dim);cursor:pointer;}
+.setup-item:last-child{border-bottom:none;}
+.sbox{width:13px;height:13px;border-radius:3px;border:1px solid var(--dim);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:9px;transition:all .12s;}
+.setup-item.done .sbox{background:var(--g);border-color:var(--g);color:#000;}
+.setup-item.done .slbl{color:var(--muted);text-decoration:line-through;}
+.slbl{font-size:10px;line-height:1.4;}
+
+/* FILTERS */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.fbtn{padding:5px 11px;border-radius:4px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:0.08em;cursor:pointer;transition:all .12s;border:1px solid var(--border);background:var(--bg2);color:var(--muted);}
+.fbtn:hover,.fbtn.active{border-color:var(--border2);color:var(--g);background:var(--g4);}
+.fbtn.fi.active{background:rgba(225,48,108,0.1);border-color:rgba(225,48,108,0.3);color:#e1306c;}
+.fbtn.fx.active{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.2);color:#ccc;}
+.fbtn.fd.active{background:rgba(88,101,242,0.1);border-color:rgba(88,101,242,0.3);color:var(--discord);}
+.fbtn.fw.active{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:var(--amber);}
+
+/* WEEK BLOCK */
+.week-block{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px;}
+.week-head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--bg3);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
+.week-head:hover{background:var(--bg4);}
+.wh-left{}
+.wh-label{font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--text);}
+.wh-dates{font-size:9px;color:var(--muted);margin-top:2px;}
+.wh-right{display:flex;align-items:center;gap:12px;}
+.wh-wip{font-size:8px;color:var(--amber);}
+.wh-bar{width:70px;height:3px;background:var(--dim);border-radius:2px;overflow:hidden;}
+.wh-bar-fill{height:100%;background:var(--g);border-radius:2px;transition:width .4s;}
+.wh-prog{font-size:9px;color:var(--muted);}
+.wh-arrow{font-size:11px;color:var(--muted);transition:transform .2s;}
+.wh-arrow.open{transform:rotate(90deg);}
+
+/* DAYS GRID */
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+.day-col{border-right:1px solid var(--border);min-height:100px;}
+.day-col:last-child{border-right:none;}
+.day-col.dim{opacity:0.2;pointer-events:none;}
+.day-head{padding:7px 8px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.25);text-align:center;}
+.day-name{font-size:8px;letter-spacing:0.1em;color:var(--muted);}
+.day-date{font-size:10px;font-weight:700;margin-top:1px;}
+.day-date.today{color:var(--g);}
+.day-date.past{color:var(--dim);}
+.day-items{padding:5px;display:flex;flex-direction:column;gap:3px;}
+
+/* CONTENT ITEM */
+.ci{
+  padding:6px 7px;border-radius:4px;border-left:3px solid;
+  background:rgba(255,255,255,0.03);position:relative;
+  transition:filter .12s;
+}
+.ci:hover{filter:brightness(1.15);}
+.ci-insta{border-left-color:#e1306c;}
+.ci-x{border-left-color:#aaa;}
+.ci-discord{border-left-color:var(--discord);}
+.ci-top{display:flex;align-items:center;gap:4px;margin-bottom:3px;}
+.ci-plat{font-size:7px;font-weight:700;letter-spacing:0.06em;}
+.ci-type{font-size:7px;padding:1px 4px;border-radius:2px;background:rgba(255,255,255,0.06);color:var(--muted);}
+.ci-title{font-size:9px;color:var(--text);line-height:1.4;padding-right:28px;}
+.ci-hook{font-size:8px;color:var(--muted);font-style:italic;margin-top:2px;line-height:1.35;}
+.ci-notes{font-size:8px;color:#555;margin-top:2px;line-height:1.35;}
+
+/* STATUS */
+.ci-status{display:inline-flex;align-items:center;gap:3px;font-size:7px;font-weight:700;letter-spacing:0.06em;padding:2px 6px;border-radius:3px;margin-top:4px;cursor:pointer;transition:all .12s;}
+.st-todo{background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--dim);}
+.st-wip{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.25);}
+.st-pub{background:rgba(34,197,94,0.1);color:var(--g);border:1px solid rgba(34,197,94,0.25);}
+.ci.st-pub-item .ci-title{text-decoration:line-through;opacity:0.5;}
+
+/* ACTIONS hover */
+.ci-acts{position:absolute;top:4px;right:4px;display:flex;gap:2px;opacity:0;transition:opacity .15s;}
+.ci:hover .ci-acts{opacity:1;}
+.ci-act{width:16px;height:16px;border-radius:2px;border:1px solid var(--dim);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--muted);transition:all .12s;}
+.ci-act:hover{border-color:var(--border2);color:var(--g);}
+.ci-act.del:hover{border-color:rgba(239,68,68,0.4);color:var(--red);}
+
+/* PROMPT BLOCK */
+.ci-prompt{display:none;margin-top:6px;padding:6px 8px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.12);border-radius:3px;font-size:8px;color:#8be5a0;line-height:1.6;white-space:pre-wrap;}
+.ci.prompt-open .ci-prompt{display:block;}
+.copy-btn{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:3px 8px;border-radius:3px;background:var(--g3);border:1px solid var(--border2);color:var(--g);font-family:var(--mono);font-size:8px;cursor:pointer;transition:all .12s;}
+.copy-btn:hover{background:rgba(34,197,94,0.18);}
+
+/* ADD */
+.add-btn{width:100%;padding:4px;border:1px dashed var(--dim);border-radius:3px;background:transparent;color:var(--muted);font-size:9px;cursor:pointer;transition:all .12s;margin-top:2px;font-family:var(--mono);}
+.add-btn:hover{border-color:var(--border2);color:var(--g);}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:none;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:22px;width:440px;max-width:92vw;}
+.modal-title{font-size:12px;font-weight:700;margin-bottom:14px;color:var(--text);}
+.frow{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+.flbl{font-size:8px;letter-spacing:0.12em;color:var(--muted);}
+.finp,.fsel,.fta{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:6px 9px;font-family:var(--mono);font-size:10px;color:var(--text);outline:none;width:100%;transition:border-color .12s;}
+.finp:focus,.fsel:focus,.fta:focus{border-color:var(--border2);}
+.fta{resize:vertical;min-height:54px;}
+.fsel option{background:var(--bg2);}
+.mbtns{display:flex;gap:7px;margin-top:14px;}
+.mcancel{flex:1;padding:7px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;}
+.msave{flex:2;padding:7px;background:var(--g);border:none;border-radius:4px;color:#000;font-family:var(--mono);font-size:10px;font-weight:700;cursor:pointer;letter-spacing:0.06em;}
+
+/* LEGEND */
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+.leg{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);}
+.leg-dot{width:8px;height:8px;border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <span class="tb-logo">ATP</span>
+  <div class="tb-sep"></div>
+  <span class="tb-title">PILOTAGE CONTENU</span>
+  <div class="tb-right">
+    <div class="tb-stat">PUBLIÉS <span id="s-pub">0</span></div>
+    <div class="tb-stat">EN COURS <span id="s-wip" style="color:var(--amber)">0</span></div>
+    <div class="tb-stat">TOTAL <span id="s-tot">0</span></div>
+    <div class="tb-stat">AVANCEMENT <span id="s-pct">0%</span></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- PROGRESS GLOBAL -->
+  <div class="gp">
+    <div class="gp-item"><div class="gp-val" id="gp-pub" style="color:var(--g)">0</div><div class="gp-lbl">PUBLIÉS</div></div>
+    <div class="gp-sep"></div>
+    <div class="gp-item"><div class="gp-val" id="gp-i" style="color:#e1306c">0</div><div class="gp-lbl">INSTAGRAM</div></div>
+    <div class="gp-sep"></div>
+    <div class="gp-item"><div class="gp-val" id="gp-x" style="color:#aaa">0</div><div class="gp-lbl">X / TWITTER</div></div>
+    <div class="gp-sep"></div>
+    <div class="gp-item"><div class="gp-val" id="gp-d" style="color:var(--discord)">0</div><div class="gp-lbl">DISCORD</div></div>
+    <div class="gp-sep"></div>
+    <div class="gp-bar-wrap">
+      <div class="gp-bar-lbl"><span>PROGRESSION GLOBALE</span><span id="gp-pct">0%</span></div>
+      <div class="gp-bar"><div class="gp-bar-fill" id="gp-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div>
+    <div class="sh">SETUP AVANT LANCEMENT — À FAIRE AVANT LE 20 AVRIL</div>
+    <div class="setup-grid">
+      <div class="setup-card">
+        <div class="setup-card-title" style="color:#e1306c">📸 INSTAGRAM — PROFIL</div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Changer la bio → "Trader institutionnel | Guadeloupe | Coach ATP"</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Ajouter lien /offre ou Linktree dans la bio</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Passer en compte professionnel (créateur)</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Supprimer ou archiver les posts perso non cohérents</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Créer highlight "MÉTHODE ATP" (vide pour l'instant)</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Créer highlight "RÉSULTATS"</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Créer highlight "SÉMINAIRE 2026"</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Photo de profil : photo pro (pas lifestyle)</span></div>
+      </div>
+      <div class="setup-card">
+        <div class="setup-card-title" style="color:#ccc">✕ X / TWITTER — PROFIL</div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Mettre à jour la bio X → crédibilité institutionnelle</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Ajouter lien vers /offre dans la bio</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Photo de profil identique Instagram</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Bannière X → branding ATP (vert + terminal)</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Épingler un thread de présentation</span></div>
+      </div>
+      <div class="setup-card">
+        <div class="setup-card-title" style="color:var(--discord)">💬 DISCORD + PRODUCTION</div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Créer canal #contenu-live dans le Discord ATP</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Préparer templates Canva carrousels (fond noir, vert ATP)</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Préparer presets CapCut (couleurs, musique, transitions)</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Acheter/tester micro DJI Mic ou Rode pour séminaire</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Charger iPhone 100% + libérer stockage avant séminaire</span></div>
+        <div class="setup-item" onclick="tS(this)"><div class="sbox"></div><span class="slbl">Shot list séminaire imprimée (guide existant)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLANNING -->
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="sh" style="margin-bottom:0">PLANNING CONTENU — 20 AVRIL → 20 MAI</div>
+      <div class="legend">
+        <div class="leg"><div class="leg-dot" style="background:#e1306c"></div>Instagram</div>
+        <div class="leg"><div class="leg-dot" style="background:#aaa"></div>X</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--discord)"></div>Discord</div>
+      </div>
+    </div>
+    <div class="filters">
+      <button class="fbtn active" onclick="fBy('all',this)">TOUT</button>
+      <button class="fbtn fi" onclick="fBy('insta',this)">📸 INSTAGRAM</button>
+      <button class="fbtn fx" onclick="fBy('x',this)">✕ X</button>
+      <button class="fbtn fd" onclick="fBy('discord',this)">💬 DISCORD</button>
+      <button class="fbtn" onclick="fBy('todo',this)">○ À FAIRE</button>
+      <button class="fbtn fw" onclick="fBy('wip',this)">◑ EN COURS</button>
+      <button class="fbtn" onclick="fBy('pub',this)" style="color:var(--g)">● PUBLIÉS</button>
+    </div>
+    <div id="weeks"></div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-title" id="m-ttl">+ AJOUTER</div>
+    <div class="frow"><label class="flbl">PLATEFORME</label>
+      <select class="fsel" id="m-pl"><option value="insta">📸 Instagram</option><option value="x">✕ X / Twitter</option><option value="discord">💬 Discord</option></select>
+    </div>
+    <div class="frow"><label class="flbl">FORMAT</label>
+      <select class="fsel" id="m-ty">
+        <option>Carrousel</option><option>Reel</option><option>Story</option><option>Thread</option>
+        <option>Post résultats</option><option>Récap hebdo</option><option>Annonce Discord</option>
+        <option>Live</option><option>Alpha Talk</option><option>B-roll</option>
+      </select>
+    </div>
+    <div class="frow"><label class="flbl">STATUT</label>
+      <select class="fsel" id="m-st"><option value="todo">○ À faire</option><option value="wip">◑ En cours</option><option value="pub">● Publié</option></select>
+    </div>
+    <div class="frow"><label class="flbl">TITRE / SUJET</label><input class="finp" id="m-ti" placeholder="Titre du contenu"></div>
+    <div class="frow"><label class="flbl">HOOK (ACCROCHE)</label><textarea class="fta" id="m-ho" placeholder="L'accroche qui donne envie de lire..."></textarea></div>
+    <div class="frow"><label class="flbl">NOTES DE PRODUCTION</label><textarea class="fta" id="m-no" placeholder="Indications de tournage, montage, references..." style="min-height:44px"></textarea></div>
+    <input type="hidden" id="m-dk"><input type="hidden" id="m-ei">
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeM()">ANNULER</button>
+      <button class="msave" id="m-sv" onclick="saveM()">AJOUTER ▸</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const PC = { insta:'#e1306c', x:'#aaa', discord:'#5865f2' };
+const PL = { insta:'INSTA', x:'X', discord:'DISCORD' };
+const SC = {
+  todo:{ lbl:'○ À FAIRE', cls:'st-todo' },
+  wip: { lbl:'◑ EN COURS', cls:'st-wip' },
+  pub: { lbl:'● PUBLIÉ', cls:'st-pub' },
+};
+const DAYS = ['LUN','MAR','MER','JEU','VEN','SAM','DIM'];
+const WEEK_LABELS = ['PRÉ-SÉMINAIRE','SÉMINAIRE EN LIVE','EXPLOITATION SÉMINAIRE','CONTENU ÉDUCATIF','ACTIVATION COACHING'];
+
+// ─── PROMPTS DÉTAILLÉS ────────────────────────────────────────────────────────
+// Chaque contenu a un prompt Claude prêt à copier-coller
+const PROMPTS = {
+  'carrousel-hedge': `Tu es un expert en copywriting pour réseaux sociaux.
+Crée un carrousel Instagram de 8 slides pour le compte gael_omega, trader institutionnel.
+
+SUJET : "5 choses que le hedge fund m'a appris que les traders retail ignorent"
+HOOK SLIDE 1 : "J'ai tradé pour un hedge fund. Voici ce qu'aucun formateur ne vous dira."
+TON : Professionnel, direct, crédible. Pas de hype. Parle comme un insider.
+FORMAT : Titre accrocheur par slide + 2-3 lignes de contenu max.
+BRANDING : Fond noir, texte blanc/vert #22c55e, police Orbitron pour les titres.
+CTA LAST SLIDE : "Rejoins la communauté ATP → lien en bio"
+Génère le texte complet de chaque slide.`,
+
+  'thread-quitte-salle': `Tu es un expert en copywriting X/Twitter.
+Écris un thread de 8 tweets pour le compte gael_omega, trader institutionnel basé en Guadeloupe.
+
+SUJET : Pourquoi il a quitté la salle de marché après 8 ans
+HOOK TWEET 1 : "J'ai tradé 8 ans pour des banques d'investissement et un hedge fund. Voilà pourquoi j'ai tout arrêté :"
+TON : Storytelling personnel, honnête, sans bullshit. Pas de promesses.
+STRUCTURE : 1 hook fort → 5-6 révélations/apprentissages → 1 CTA Discord ATP
+Chaque tweet doit être autonome et donner envie de lire le suivant.
+MAX 280 caractères par tweet.`,
+
+  'post-resultats': `Tu es expert en copywriting trading pour réseaux sociaux.
+Écris un post de résultats quotidien pour X (Twitter) et Discord.
+
+CONTEXTE : Gaël Naime, trader institutionnel, partage ses résultats de session de trading après sa session quotidienne du lundi au vendredi.
+FORMAT X : Post court percutant (max 200 caractères) avec les chiffres clés, emoji minimal.
+FORMAT DISCORD : Version légèrement plus longue avec contexte marché si pertinent.
+TON : Factuel, professionnel. Pas de hype. Montrer le travail, pas le rêve.
+VARIABLES À REMPLIR : [P&L EN €], [INSTRUMENT : YM/NQ/ES], [NB TRADES], [WIN RATE SESSION], [OBSERVATION MARCHÉ]
+Génère les 2 versions (X + Discord) avec les variables entre crochets à remplir.`,
+
+  'recap-hebdo': `Tu es expert en copywriting trading.
+Écris un récap hebdomadaire de résultats de trading pour Discord et X.
+
+CONTEXTE : Récap du vendredi soir pour la communauté ATP. Gaël partage sa semaine de trading.
+FORMAT DISCORD : Message structuré avec emoji, stats de la semaine, 1 leçon retenue.
+FORMAT X : Thread de 3 tweets (récap chiffres + leçon + CTA)
+TON : Transparent, éducatif, authentique. Montrer les bons ET les mauvais trades.
+STRUCTURE DISCORD :
+📊 RÉCAP SEMAINE [DATE]
+• P&L semaine : [CHIFFRE]€
+• Sessions : [NB] | Wins : [NB] | Losses : [NB]
+• Win rate : [%]
+• Meilleure session : [CHIFFRE]€ ([INSTRUMENT])
+• Leçon de la semaine : [LEÇON]
+Génère le template complet avec variables entre crochets.`,
+
+  'reel-broll': `Tu es un expert en production vidéo courte et copywriting Instagram.
+Écris le script et les indications de tournage pour un Reel B-roll lifestyle.
+
+SUJET : Setup trading + lifestyle Guadeloupe
+DURÉE CIBLE : 30-45 secondes
+SÉQUENCES À FILMER (liste) :
+1. Plan desk avec écrans (3 sec)
+2. Main sur le clavier / plateforme de trading (3 sec)
+3. Vue depuis la fenêtre / Guadeloupe (4 sec)
+4. Café du matin (2 sec)
+5. Plan visage concentré (2 sec)
+TEXTE OVERLAY (à intégrer en CapCut) : Génère 3-4 textes percutants à afficher.
+MUSIQUE : Style lo-fi/focus ou trap instrumental calme.
+CAPTION INSTAGRAM : Hook + corps + hashtags pertinents (trading, finance, guadeloupe).`,
+
+  'carrousel-methode': `Tu es expert en pédagogie trading et copywriting Instagram.
+Crée un carrousel Instagram de 10 slides présentant la Méthode ATP en 7 piliers.
+
+SUJET : "La méthode que j'ai mis 8 ans à construire — les 7 piliers ATP"
+HOOK SLIDE 1 : "Ma méthode en 7 étapes. Celle que j'ai mis 8 ans à construire."
+LES 7 PILIERS ATP :
+1. Analyse multi-timeframes (Hebdo → M15)
+2. Identification des Order Blocks
+3. Fair Value Gap et déséquilibres
+4. Confluence Fibonacci
+5. Gestion du risque (SL fixe 25 pts)
+6. Gestion de position et scaling
+7. Psychologie et discipline (règle des 3 SL)
+FORMAT : 1 slide par pilier + slide intro + slide CTA
+TON : Professionnel, pédagogique, concis. Max 40 mots par slide.
+CTA : "Programme ATP ULTRA → lien en bio"`,
+
+  'thread-retail-instit': `Tu es expert en copywriting X/Twitter pour le trading.
+Écris un thread de 10 tweets comparant trader retail vs institutionnel.
+
+HOOK : "Pourquoi 95% des traders retail perdent. Ce que j'ai vu en 8 ans en salle de marché :"
+STRUCTURE :
+- Tweet 1 : Hook choc
+- Tweets 2-8 : Comparaisons concrètes (mindset, risk management, analyse, patience, sizing...)
+- Tweet 9 : La vraie leçon
+- Tweet 10 : CTA Discord ATP
+TON : Expert, sans condescendance. Éduquer, pas vendre.
+COMPTE : gael_omega — trader institutionnel, fondateur Alpha Trading Pro.`,
+
+  'alphatalk': `Tu es expert en montage vidéo et storytelling pour Instagram.
+Écris les questions d'interview et la structure d'un Alpha Talk (interview 1v1 trader).
+
+FORMAT : Interview assis face caméra, 20-40 minutes, à couper en extraits.
+QUESTIONS À POSER (dans l'ordre) :
+1. Présente-toi et ton parcours en trading avant ATP
+2. Quel était ton plus grand blocage avant de rejoindre ?
+3. Qu'est-ce qui a changé concrètement dans ta façon de trader ?
+4. Donne-moi un exemple concret de trade que tu n'aurais pas pris avant
+5. Comment tu décrirait l'impact psychologique du programme ?
+6. Quels sont tes résultats depuis le début ?
+7. Qu'est-ce que tu dirais à quelqu'un qui hésite ?
+EXTRAITS INSTAGRAM (Reels) : Identifie les 3 moments les plus percutants à extraire en 60-90 sec.
+CAPTION : Génère une caption avec hook pour accompagner l'extrait Reel.`,
+
+  'seminaire-live': `Tu es expert en storytelling Instagram et content marketing.
+Génère le plan de stories pour documenter le séminaire ATP en live (6 jours).
+
+FORMAT : Stories quotidiennes (7-10 par jour), 15 secondes chacune.
+OBJECTIF : Créer de la FOMO, montrer la transformation, humaniser Gaël.
+PLAN PAR JOUR :
+J1 (27 avril) : Arrivées, premier repas, setup
+J2 (28 avril) : Première session trading live, réactions
+J3 (29 avril) : Atelier psychologie Vanille, breakthroughs
+J4 (30 avril) : Lifestyle Guadeloupe, moments off
+J5 (1er mai) : Alpha Talks interviews
+J6 (2 mai) : Clôture, émotions, au-revoirs
+Pour chaque jour : liste des séquences à filmer + texte overlay suggéré.
+HASHTAGS : Liste complète pour maximiser la portée.`,
+
+  'activation-coaching': `Tu es expert en copywriting high-ticket et acquisition.
+Écris le contenu d'activation coaching pour la dernière semaine (18-20 mai).
+
+OBJECTIF : Annoncer 2 places disponibles en coaching ATP ULTRA (1600€) sans être pushy.
+FORMAT INSTAGRAM : Carrousel 6 slides "Ce que le programme change concrètement"
+FORMAT X : Thread 5 tweets annonçant l'ouverture des places
+FORMAT DISCORD : Annonce sobre et directe pour la communauté existante
+TON : Exclusif, rare, orienté résultats. Pas de promesses de gains. Preuve sociale (résultats élèves séminaire).
+CTA : Call gratuit 30 min de qualification → Calendly
+Génère les 3 versions complètes.`,
+};
+
+// ─── CONTENT DATA ─────────────────────────────────────────────────────────────
+// Résultats quotidiens LUN-VEN pour toutes les semaines
+function getResultsForDay(dateStr) {
+  const d = new Date(dateStr);
+  const dow = d.getDay(); // 1=Lun, 5=Ven, 0=Dim
+  if (dow < 1 || dow > 5) return [];
+  const isFriday = dow === 5;
+  const items = [
+    { platform:'x', type:'Post résultats', title:'Résultats session du jour', hook:'Session fermée. Voilà les chiffres.', notes:'Remplir P&L, instrument, nb trades après la session', prompt:'post-resultats' },
+    { platform:'discord', type:'Post résultats', title:'Récap session communauté ATP', hook:'Session du jour — voici ce qui s\'est passé sur les marchés.', notes:'Version Discord légèrement plus longue', prompt:'post-resultats' },
+  ];
+  if (isFriday) {
+    items.push({ platform:'x', type:'Récap hebdo', title:'Récap hebdomadaire résultats', hook:'5 jours de trading. Voici le bilan.', notes:'Récap de toute la semaine + leçon retenue', prompt:'recap-hebdo' });
+    items.push({ platform:'discord', type:'Récap hebdo', title:'Récap hebdo communauté ATP', hook:'Récap de la semaine — chiffres et leçons.', notes:'Version Discord complète avec stats de la semaine', prompt:'recap-hebdo' });
+  }
+  return items;
+}
+
+const PRE = {
+  "2026-04-20": [
+    { platform:'insta', type:'Story', title:'Repositionnement compte — nouvelle bio', hook:'Mon compte change. Trader institutionnel. La suite va changer.', notes:'Filmer écran montrant la nouvelle bio', prompt:'reel-broll' },
+    { platform:'x', type:'Thread', title:'Pourquoi j\'ai quitté la salle de marché', hook:'J\'ai tradé 8 ans pour des banques d\'investissement. Voilà pourquoi j\'ai tout arrêté :', notes:'Thread storytelling personnel — clé pour le lancement', prompt:'thread-quitte-salle' },
+    { platform:'discord', type:'Annonce Discord', title:'Annonce : contenu quotidien à venir', hook:'Nouveauté — je vais documenter le séminaire en live. Restez connectés.', notes:'Message sobre, créer de l\'anticipation', prompt:'post-resultats' },
+  ],
+  "2026-04-21": [
+    { platform:'insta', type:'Carrousel', title:'5 choses que le hedge fund m\'a appris', hook:'J\'ai tradé pour un hedge fund. Voici ce qu\'aucun formateur ne vous dira.', notes:'8 slides. Template Canva noir/vert', prompt:'carrousel-hedge' },
+    { platform:'x', type:'Post', title:'Règle n°1 des traders institutionnels', hook:'Un institutionnel ne trade JAMAIS sans ce process. Lequel ?', notes:'Post court avec réponse dans les commentaires → engagement', prompt:'thread-retail-instit' },
+  ],
+  "2026-04-22": [
+    { platform:'insta', type:'Reel', title:'B-roll setup trading — lifestyle Guadeloupe', hook:'Mon setup au quotidien depuis la Guadeloupe.', notes:'Filmer matin : desk, écrans, café, vue fenêtre. Musique lo-fi.', prompt:'reel-broll' },
+    { platform:'discord', type:'Live', title:'Live trading quotidien + annonce séminaire', hook:'Session ouverte — je vous montre mon analyse avant l\'open US.', notes:'Mentionner le séminaire en fin de live', prompt:'post-resultats' },
+  ],
+  "2026-04-23": [
+    { platform:'x', type:'Thread', title:'Retail vs Institutionnel : la vraie différence', hook:'Pourquoi 95% des traders retail perdent. Ce que j\'ai vu en 8 ans en salle de marché :', notes:'Thread éducatif — fort potentiel viral', prompt:'thread-retail-instit' },
+    { platform:'insta', type:'Carrousel', title:'Méthode ATP — Les 7 piliers', hook:'Ma méthode en 7 étapes. Celle que j\'ai mis 8 ans à construire.', notes:'10 slides. 1 pilier par slide + intro + CTA', prompt:'carrousel-methode' },
+  ],
+  "2026-04-24": [
+    { platform:'insta', type:'Story', title:'Countdown séminaire J-3', hook:'Dans 3 jours. 8 traders. 1 semaine. Guadeloupe.', notes:'Texte sur fond noir + countdown timer', prompt:'seminaire-live' },
+    { platform:'discord', type:'Annonce Discord', title:'Récap semaine + teaser séminaire', hook:'Récap de la semaine. Ce weekend ça change tout.', notes:'Créer de l\'anticipation pour le séminaire', prompt:'post-resultats' },
+  ],
+  "2026-04-25": [
+    { platform:'insta', type:'Story', title:'Teaser séminaire — J-2', hook:'Ils arrivent demain. 8 traders. Une semaine. Guadeloupe.', notes:'Stories d\'anticipation, flou sur les détails', prompt:'seminaire-live' },
+  ],
+  "2026-04-26": [
+    { platform:'insta', type:'Story', title:'Accueil des traders — début séminaire', hook:'La semaine commence. 8 traders. 1 villa. On part.', notes:'Filmer les arrivées à l\'aéroport ou à la villa', prompt:'seminaire-live' },
+    { platform:'x', type:'Post', title:'Début séminaire Guadeloupe', hook:'Ça commence aujourd\'hui. 8 traders sur l\'île. Je documente tout.', notes:'Lancer le live-tweet du séminaire', prompt:'post-resultats' },
+  ],
+  "2026-04-27": [
+    { platform:'insta', type:'Story', title:'J1 — Morning routine des traders', hook:'6h30. Les traders sont debout. La session commence.', notes:'Filmer : réveil, café, installation, analyse pré-marché', prompt:'seminaire-live' },
+    { platform:'discord', type:'Annonce Discord', title:'J1 séminaire — recap live', hook:'Jour 1 terminé. Voilà ce qu\'on a fait.', notes:'Recap sobre, créer de la curiosité', prompt:'post-resultats' },
+  ],
+  "2026-04-28": [
+    { platform:'insta', type:'Reel', title:'J2 — Session de trading en live', hook:'Un trader qui passe de perdant à profitable. En direct.', notes:'Filmer les écrans + réactions des traders. Montage dynamique.', prompt:'reel-broll' },
+    { platform:'x', type:'Thread', title:'Ce que j\'observe en coaching live', hook:'Jour 2. Les 3 erreurs que font tous les traders quand je les regarde trader en live :', notes:'Thread éducatif tiré de l\'observation réelle', prompt:'thread-retail-instit' },
+  ],
+  "2026-04-29": [
+    { platform:'insta', type:'Story', title:'J3 — Atelier psychologie avec Vanille', hook:'La psychologie change tout. Vanille leur montre pourquoi.', notes:'Filmer l\'atelier, réactions, prises de notes', prompt:'seminaire-live' },
+    { platform:'insta', type:'Carrousel', title:'Avant/après mindset — 3 jours de coaching', hook:'3 jours de coaching. Voici le changement que j\'observe.', notes:'Avant/après concret, citations anonymes des traders', prompt:'carrousel-hedge' },
+  ],
+  "2026-04-30": [
+    { platform:'insta', type:'Reel', title:'J4 — B-roll sunset Guadeloupe', hook:'On trade depuis la Guadeloupe. Et ça marche.', notes:'Coucher de soleil, plage, villa, moments de détente', prompt:'reel-broll' },
+    { platform:'discord', type:'Annonce Discord', title:'Mi-séminaire recap + résultats', hook:'Jour 4. Voilà les résultats des sessions de la semaine.', notes:'Partager les stats anonymisées des traders du séminaire', prompt:'post-resultats' },
+  ],
+  "2026-05-01": [
+    { platform:'insta', type:'Alpha Talk', title:'J5 — Alpha Talk interview trader #1', hook:'"Il perdait depuis 2 ans. Voilà ce qui a changé en 5 jours."', notes:'Interview 1v1 assis, 20-30 min. Extraire 90 sec pour Reel.', prompt:'alphatalk' },
+    { platform:'x', type:'Thread', title:'Alpha Talk : témoignage trader séminaire', hook:'"Je ne savais pas que mon vrai problème était psychologique." — récit d\'un trader du séminaire', notes:'Thread racontant l\'histoire d\'un trader (anonymisé si besoin)', prompt:'alphatalk' },
+  ],
+  "2026-05-02": [
+    { platform:'insta', type:'Reel', title:'J6 — Clôture séminaire', hook:'6 jours. 8 traders. Ce qui s\'est passé ici ne se décrit pas.', notes:'Montage émotionnel des 6 jours. Au-revoirs. Moments forts.', prompt:'seminaire-live' },
+    { platform:'insta', type:'Story', title:'Fin séminaire — remerciements', hook:'C\'était la semaine la plus intense de l\'année. Merci à eux.', notes:'Stories de clôture, teaser prochain séminaire', prompt:'seminaire-live' },
+    { platform:'discord', type:'Annonce Discord', title:'Bilan séminaire + annonce prochaine cohorte', hook:'Le séminaire est terminé. Pour la prochaine édition, voilà le process.', notes:'Créer de la FOMO pour la prochaine édition', prompt:'activation-coaching' },
+  ],
+  "2026-05-04": [
+    { platform:'insta', type:'Carrousel', title:'Les 5 leçons du séminaire 2026', hook:'1 semaine. 8 traders. Voici les 5 vérités que j\'ai (re)confirmées.', notes:'Carrousel post-séminaire — fort pour la preuve sociale', prompt:'carrousel-hedge' },
+    { platform:'x', type:'Thread', title:'Bilan séminaire — ce que j\'ai appris', hook:'6 jours de coaching intensif. Voici ce que j\'ai appris en observant 8 traders trader en live.', notes:'Thread de synthèse — éducatif et engageant', prompt:'thread-retail-instit' },
+  ],
+  "2026-05-05": [
+    { platform:'insta', type:'Reel', title:'Alpha Talk #1 — extrait interview', hook:'"J\'ai tout perdu avant de comprendre." Son histoire en 90 secondes.', notes:'Extraire le moment le plus fort de l\'interview J5', prompt:'alphatalk' },
+    { platform:'discord', type:'Live', title:'Live débrief post-séminaire', hook:'Je reviens sur les 6 jours. Questions ouvertes.', notes:'Live communauté — transparence sur le bilan', prompt:'post-resultats' },
+  ],
+  "2026-05-06": [
+    { platform:'insta', type:'Carrousel', title:'L\'erreur que faisaient tous les 8 traders', hook:'Sur 8 traders, 8 faisaient la même erreur. La voilà.', notes:'Carrousel éducatif — très partageable', prompt:'carrousel-methode' },
+    { platform:'x', type:'Post', title:'Résultats post-séminaire J+3', hook:'J+3 après le séminaire. Les traders m\'envoient leurs résultats.', notes:'Partager résultats anonymisés avec leur accord', prompt:'post-resultats' },
+  ],
+  "2026-05-07": [
+    { platform:'insta', type:'Reel', title:'Alpha Talk #2 — extrait interview', hook:'"En 6 jours j\'ai compris ce que 3 ans de YouTube n\'ont pas pu m\'apprendre."', notes:'Deuxième extrait d\'Alpha Talk — outro fort', prompt:'alphatalk' },
+  ],
+  "2026-05-08": [
+    { platform:'insta', type:'Carrousel', title:'Order Block expliqué simplement', hook:'L\'outil n°1 que j\'utilise sur YM et NQ. Expliqué en 5 slides.', notes:'Carrousel éducatif sur l\'OB — pilier ATP', prompt:'carrousel-methode' },
+    { platform:'x', type:'Thread', title:'Mon process d\'analyse en 3 minutes', hook:'Mon process d\'analyse du YM avant l\'open US. En 3 étapes. Thread ↓', notes:'Thread éducatif rapide — fort potentiel d\'engagement', prompt:'thread-retail-instit' },
+    { platform:'discord', type:'Annonce Discord', title:'Plan de marché semaine + analyse graphe', hook:'Plan de marché de la semaine. Je partage mon analyse.', notes:'Post hebdo d\'analyse pour la communauté', prompt:'post-resultats' },
+  ],
+  "2026-05-11": [
+    { platform:'insta', type:'Carrousel', title:'Les 3 règles ATP non-négociables', hook:'Ces 3 règles m\'ont sauvé des milliers d\'euros de pertes.', notes:'Règles : SL fixe, 3 SL = pause, pas de revenge trading', prompt:'carrousel-methode' },
+    { platform:'x', type:'Thread', title:'Pourquoi le SL fixe est non-négociable', hook:'95% des traders perdent parce qu\'ils n\'ont pas de règle de SL. Voilà la mienne.', notes:'Thread éducatif sur la gestion du risque', prompt:'thread-retail-instit' },
+  ],
+  "2026-05-12": [
+    { platform:'insta', type:'Reel', title:'Setup desk Guadeloupe — mon quotidien', hook:'Je trade depuis la Guadeloupe. Voilà mon setup au quotidien.', notes:'B-roll lifestyle : desk, vue, équipement', prompt:'reel-broll' },
+    { platform:'discord', type:'Live', title:'Live trading session ouverte', hook:'Session ouverte. Je trade en direct. Questions en live.', notes:'Live habituel + on mentionne les résultats post-séminaire', prompt:'post-resultats' },
+  ],
+  "2026-05-13": [
+    { platform:'insta', type:'Alpha Talk', title:'Alpha Talk #3 — J+2 semaines résultats', hook:'"2 semaines après le séminaire. Son bilan en chiffres."', notes:'Extrait court focalisé sur les résultats concrets', prompt:'alphatalk' },
+    { platform:'x', type:'Post', title:'Résultats de la semaine — synthèse', hook:'Résultats de la semaine sur YM. Voilà ce qui s\'est passé.', notes:'Post résultats hebdo', prompt:'recap-hebdo' },
+  ],
+  "2026-05-14": [
+    { platform:'insta', type:'Story', title:'Sondage — votre plus grand blocage', hook:'Question : votre plus grand blocage en trading en ce moment ?', notes:'Sondage pour engagement + données pour prochain contenu', prompt:'seminaire-live' },
+    { platform:'x', type:'Thread', title:'La psychologie du trader — ce que personne ne dit', hook:'Le vrai problème n\'est pas la stratégie. C\'est ce qui se passe dans votre tête.', notes:'Thread psychologie — collaborer avec Vanille pour le contenu', prompt:'thread-quitte-salle' },
+  ],
+  "2026-05-15": [
+    { platform:'insta', type:'Carrousel', title:'Comment je gère une série de pertes', hook:'3 pertes consécutives. Voilà exactement ce que je fais.', notes:'Carrousel très concret — règle des 3 SL ATP', prompt:'carrousel-methode' },
+    { platform:'discord', type:'Annonce Discord', title:'Récap semaine + teaser places coaching', hook:'Récap de la semaine. Et une annonce pour ceux qui veulent aller plus loin.', notes:'Préparer l\'annonce des places coaching semaine suivante', prompt:'activation-coaching' },
+  ],
+  "2026-05-18": [
+    { platform:'insta', type:'Carrousel', title:'ATP ULTRA — ce que le programme change', hook:'En quelques semaines avec moi, voilà ce qui change concrètement.', notes:'Inclure résultats anonymisés des élèves du séminaire', prompt:'activation-coaching' },
+    { platform:'x', type:'Thread', title:'2 places coaching disponibles en mai', hook:'2 places disponibles. Voilà à qui ça s\'adresse et ce que ça comprend.', notes:'Thread de présentation du coaching — pas de prix, CTA call', prompt:'activation-coaching' },
+    { platform:'discord', type:'Annonce Discord', title:'Ouverture 2 places coaching ATP ULTRA', hook:'2 places coaching disponibles ce mois-ci. Voilà le process pour candidater.', notes:'Annonce sobre pour la communauté existante', prompt:'activation-coaching' },
+  ],
+  "2026-05-19": [
+    { platform:'insta', type:'Story', title:'Dernière chance — 2 places coaching', hook:'2 places. Call gratuit 30 min pour voir si c\'est fait pour toi. Lien en bio.', notes:'Stories de relance — urgence sans pression', prompt:'activation-coaching' },
+    { platform:'x', type:'Post', title:'Call gratuit disponible', hook:'Si tu veux qu\'on parle de ton trading, le call de 30 min est disponible. Lien en bio.', notes:'Post simple, CTA clair', prompt:'activation-coaching' },
+  ],
+  "2026-05-20": [
+    { platform:'insta', type:'Reel', title:'1 mois de contenu — bilan', hook:'1 mois de publication quotidienne. Voilà ce que j\'ai observé.', notes:'Bilan personnel — authenticité maximale', prompt:'reel-broll' },
+    { platform:'discord', type:'Annonce Discord', title:'Bilan du mois + teaser juin', hook:'Un mois s\'est écoulé. Voilà ce qui vient en juin.', notes:'Annoncer les prochains lives, événements, contenu de juin', prompt:'post-resultats' },
+  ],
+};
+
+// Merge résultats quotidiens dans PRE
+(function injectDailyResults() {
+  const start = new Date(2026,3,20), end = new Date(2026,4,20);
+  let cur = new Date(start);
+  while (cur <= end) {
+    const dk = fmtDate(cur);
+    const results = getResultsForDay(dk);
+    if (results.length) {
+      if (!PRE[dk]) PRE[dk] = [];
+      PRE[dk].push(...results);
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+})();
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let ST = JSON.parse(localStorage.getItem('atp_cm3')||'{}');
+let FILTER = 'all';
+let mDk = null, mEi = null;
+
+function save() { localStorage.setItem('atp_cm3', JSON.stringify(ST)); stats(); }
+
+function fmtDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtDisp(d) { return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
+function isToday(d) { const t=new Date(); return d.toDateString()===t.toDateString(); }
+function isPast(d) { const t=new Date(); t.setHours(0,0,0,0); return d<t; }
+
+function getItems(dk) {
+  const pre = PRE[dk]||[];
+  const custom = ST[dk]?.c||[];
+  const ov = ST[dk]?.o||{};
+  const del = ST[dk]?.del||{};
+  return [...pre,...custom].map((item,i) => ({
+    ...item,
+    status: ov[i]?.status ?? item.status ?? 'todo',
+    title:  ov[i]?.title  ?? item.title,
+    hook:   ov[i]?.hook   ?? item.hook,
+    notes:  ov[i]?.notes  ?? item.notes ?? '',
+    type:   ov[i]?.type   ?? item.type,
+    platform: ov[i]?.platform ?? item.platform,
+    prompt: ov[i]?.prompt ?? item.prompt ?? '',
+    deleted: del[i] ?? false,
+    index: i, isCustom: i >= pre.length,
+  })).filter(it => !it.deleted);
+}
+
+function setOv(dk, i, fields) {
+  if (!ST[dk]) ST[dk]={};
+  if (!ST[dk].o) ST[dk].o={};
+  ST[dk].o[i]={...(ST[dk].o[i]||{}),...fields};
+  save();
+}
+
+function shouldShow(it) {
+  if (FILTER==='all') return true;
+  if (FILTER==='insta') return it.platform==='insta';
+  if (FILTER==='x') return it.platform==='x';
+  if (FILTER==='discord') return it.platform==='discord';
+  if (FILTER==='todo') return it.status==='todo';
+  if (FILTER==='wip') return it.status==='wip';
+  if (FILTER==='pub') return it.status==='pub';
+  return true;
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function stats() {
+  let tot=0,pub=0,wip=0,si=0,sx=0,sd=0;
+  const allKeys = new Set([...Object.keys(PRE),...Object.keys(ST)]);
+  allKeys.forEach(dk => {
+    getItems(dk).forEach(it => {
+      if (!shouldShow(it)) return;
+      tot++;
+      if (it.status==='pub'){pub++;if(it.platform==='insta')si++;if(it.platform==='x')sx++;if(it.platform==='discord')sd++;}
+      if (it.status==='wip') wip++;
+    });
+  });
+  const pct = tot>0?Math.round(pub/tot*100):0;
+  document.getElementById('s-pub').textContent=pub;
+  document.getElementById('s-wip').textContent=wip;
+  document.getElementById('s-tot').textContent=tot;
+  document.getElementById('s-pct').textContent=pct+'%';
+  document.getElementById('gp-pub').textContent=pub;
+  document.getElementById('gp-i').textContent=si;
+  document.getElementById('gp-x').textContent=sx;
+  document.getElementById('gp-d').textContent=sd;
+  document.getElementById('gp-pct').textContent=pct+'%';
+  document.getElementById('gp-fill').style.width=pct+'%';
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function getWeeks() {
+  const start = new Date(2026,3,20), end = new Date(2026,4,20);
+  const weeks = [];
+  let cur = new Date(start);
+  const dow = cur.getDay();
+  cur.setDate(cur.getDate() + (dow===0?-6:1-dow));
+  while (cur <= end) {
+    const w = [];
+    for (let i=0;i<7;i++){w.push(new Date(cur));cur.setDate(cur.getDate()+1);}
+    weeks.push(w);
+  }
+  return weeks;
+}
+
+function render() {
+  const weeks = getWeeks();
+  const cont = document.getElementById('weeks');
+  cont.innerHTML='';
+  const S = new Date(2026,3,20), E = new Date(2026,4,20);
+
+  weeks.forEach((week,wi) => {
+    const inRange = week.filter(d=>d>=S&&d<=E);
+    if (!inRange.length) return;
+
+    let wTot=0,wPub=0,wWip=0;
+    week.forEach(d=>{
+      getItems(fmtDate(d)).forEach(it=>{
+        if(!shouldShow(it))return;
+        wTot++;if(it.status==='pub')wPub++;if(it.status==='wip')wWip++;
+      });
+    });
+    const wPct=wTot>0?Math.round(wPub/wTot*100):0;
+    const isOpen=wi<2;
+
+    const block=document.createElement('div');
+    block.className='week-block';
+    block.innerHTML=`
+      <div class="week-head" onclick="toggleW(${wi})">
+        <div class="wh-left">
+          <div class="wh-label">S${wi+1} — ${WEEK_LABELS[wi]||'SEMAINE '+(wi+1)}</div>
+          <div class="wh-dates">${fmtDisp(week[0])} → ${fmtDisp(week[6])}</div>
+        </div>
+        <div class="wh-right">
+          ${wWip>0?`<div class="wh-wip">◑ ${wWip} EN COURS</div>`:''}
+          <div class="wh-bar"><div class="wh-bar-fill" style="width:${wPct}%"></div></div>
+          <div class="wh-prog">${wPub}/${wTot}</div>
+          <div class="wh-arrow ${isOpen?'open':''}" id="arr${wi}">▸</div>
+        </div>
+      </div>
+      <div id="wb${wi}" style="display:${isOpen?'block':'none'}">
+        <div class="days-grid" id="dg${wi}"></div>
+      </div>
+    `;
+    cont.appendChild(block);
+
+    const grid=block.querySelector(`#dg${wi}`);
+    week.forEach((day,di)=>{
+      const dk=fmtDate(day);
+      const inR=day>=S&&day<=E;
+      const items=getItems(dk).filter(shouldShow);
+      const col=document.createElement('div');
+      col.className='day-col'+(inR?'':' dim');
+
+      const itsHtml=items.map(it=>{
+        const pc=PC[it.platform]||'#aaa';
+        const pl=PL[it.platform]||it.platform;
+        const sc=SC[it.status]||SC.todo;
+        const hasPub=it.status==='pub';
+        return `<div class="ci ci-${it.platform}${hasPub?' st-pub-item':''}" id="ci-${dk}-${it.index}">
+          <div class="ci-acts">
+            <div class="ci-act" onclick="openPrompt('${dk}',${it.index},event)" title="Voir prompt Claude">⌘</div>
+            <div class="ci-act" onclick="openEdit('${dk}',${it.index},event)" title="Modifier">✎</div>
+            <div class="ci-act del" onclick="delItem('${dk}',${it.index},event)" title="Supprimer">✕</div>
+          </div>
+          <div class="ci-top">
+            <span class="ci-plat" style="color:${pc}">${pl}</span>
+            <span class="ci-type">${it.type}</span>
+          </div>
+          <div class="ci-title">${it.title}</div>
+          ${it.hook?`<div class="ci-hook">"${it.hook}"</div>`:''}
+          ${it.notes?`<div class="ci-notes">📝 ${it.notes}</div>`:''}
+          <div class="ci-status ${sc.cls}" onclick="cycleStatus('${dk}',${it.index},event)">${sc.lbl}</div>
+          <div class="ci-prompt" id="pr-${dk}-${it.index}"></div>
+        </div>`;
+      }).join('');
+
+      col.innerHTML=`
+        <div class="day-head">
+          <div class="day-name">${DAYS[di]}</div>
+          <div class="day-date ${isToday(day)?'today':isPast(day)?'past':''}">${fmtDisp(day)}</div>
+        </div>
+        <div class="day-items">
+          ${itsHtml}
+          ${inR?`<button class="add-btn" onclick="openAdd('${dk}',event)">+ Ajouter</button>`:''}
+        </div>
+      `;
+      grid.appendChild(col);
+    });
+  });
+  stats();
+}
+
+function toggleW(wi) {
+  const wb=document.getElementById(`wb${wi}`);
+  const arr=document.getElementById(`arr${wi}`);
+  const open=wb.style.display==='block';
+  wb.style.display=open?'none':'block';
+  arr.classList.toggle('open',!open);
+}
+
+// ─── STATUS CYCLE ─────────────────────────────────────────────────────────────
+function cycleStatus(dk,i,e) {
+  e.stopPropagation();
+  const items=getItems(dk);
+  const it=items.find(x=>x.index===i);
+  if(!it)return;
+  const order=['todo','wip','pub'];
+  const next=order[(order.indexOf(it.status)+1)%3];
+  setOv(dk,i,{status:next});
+  render();
+}
+
+// ─── PROMPT COPY ──────────────────────────────────────────────────────────────
+function openPrompt(dk,i,e) {
+  e.stopPropagation();
+  const items=getItems(dk);
+  const it=items.find(x=>x.index===i);
+  const ciEl=document.getElementById(`ci-${dk}-${i}`);
+  const prEl=document.getElementById(`pr-${dk}-${i}`);
+  if(!ciEl||!prEl)return;
+
+  const isOpen=ciEl.classList.contains('prompt-open');
+  // Close all first
+  document.querySelectorAll('.ci.prompt-open').forEach(el=>{el.classList.remove('prompt-open');});
+
+  if(isOpen)return;
+
+  const promptKey=it.prompt||'post-resultats';
+  const promptText=PROMPTS[promptKey]||`Crée du contenu pour le sujet : ${it.title}\nHook : ${it.hook}\nFormat : ${it.type}\nPlateforme : ${PL[it.platform]||it.platform}\nTon : Professionnel, direct, basé sur la crédibilité institutionnelle de Gaël Naime (ex hedge fund, 8 ans en salle de marché).`;
+
+  prEl.innerHTML=`<div style="white-space:pre-wrap;font-size:8px;color:#8be5a0;line-height:1.6">${escHtml(promptText)}</div>
+<button class="copy-btn" onclick="copyPrompt(this,'${promptKey}')">📋 COPIER LE PROMPT CLAUDE</button>`;
+  ciEl.classList.add('prompt-open');
+}
+
+function copyPrompt(btn,key) {
+  const text=PROMPTS[key]||'';
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='✓ COPIÉ !';
+    btn.style.color='var(--g)';
+    setTimeout(()=>{btn.innerHTML='📋 COPIER LE PROMPT CLAUDE';btn.style.color='';},2000);
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    btn.textContent='✓ COPIÉ !';
+    setTimeout(()=>{btn.innerHTML='📋 COPIER LE PROMPT CLAUDE';},2000);
+  });
+}
+
+function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ─── DELETE ───────────────────────────────────────────────────────────────────
+function delItem(dk,i,e) {
+  e.stopPropagation();
+  if (!confirm('Supprimer ce contenu ?')) return;
+  const pre=PRE[dk]||[];
+  if (!ST[dk]) ST[dk]={};
+  if (i>=pre.length) {
+    if(!ST[dk].c)ST[dk].c=[];
+    const ci=i-pre.length;
+    ST[dk].c.splice(ci,1);
+    const newO={};
+    Object.keys(ST[dk].o||{}).forEach(k=>{const ki=parseInt(k);if(ki<i)newO[k]=ST[dk].o[k];else if(ki>i)newO[ki-1]=ST[dk].o[k];});
+    ST[dk].o=newO;
+  } else {
+    if(!ST[dk].del)ST[dk].del={};
+    ST[dk].del[i]=true;
+  }
+  save();render();
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+function openAdd(dk,e) {
+  e.stopPropagation();
+  mDk=dk;mEi=null;
+  document.getElementById('m-ttl').textContent='+ AJOUTER UN CONTENU';
+  document.getElementById('m-sv').textContent='AJOUTER ▸';
+  document.getElementById('m-pl').value='insta';
+  document.getElementById('m-ty').value='Carrousel';
+  document.getElementById('m-st').value='todo';
+  document.getElementById('m-ti').value='';
+  document.getElementById('m-ho').value='';
+  document.getElementById('m-no').value='';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function openEdit(dk,i,e) {
+  e.stopPropagation();
+  mDk=dk;mEi=i;
+  const it=getItems(dk).find(x=>x.index===i);
+  if(!it)return;
+  document.getElementById('m-ttl').textContent='✎ MODIFIER';
+  document.getElementById('m-sv').textContent='ENREGISTRER ▸';
+  document.getElementById('m-pl').value=it.platform;
+  document.getElementById('m-ty').value=it.type;
+  document.getElementById('m-st').value=it.status;
+  document.getElementById('m-ti').value=it.title;
+  document.getElementById('m-ho').value=it.hook||'';
+  document.getElementById('m-no').value=it.notes||'';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeM() { document.getElementById('overlay').classList.remove('open');mDk=null;mEi=null; }
+
+function saveM() {
+  const pl=document.getElementById('m-pl').value;
+  const ty=document.getElementById('m-ty').value;
+  const st=document.getElementById('m-st').value;
+  const ti=document.getElementById('m-ti').value.trim();
+  const ho=document.getElementById('m-ho').value.trim();
+  const no=document.getElementById('m-no').value.trim();
+  if(!ti){document.getElementById('m-ti').focus();return;}
+  if(mEi!==null){
+    setOv(mDk,mEi,{platform:pl,type:ty,status:st,title:ti,hook:ho,notes:no});
+  } else {
+    if(!ST[mDk])ST[mDk]={};
+    if(!ST[mDk].c)ST[mDk].c=[];
+    ST[mDk].c.push({platform:pl,type:ty,status:st,title:ti,hook:ho,notes:no});
+    save();
+  }
+  closeM();render();
+}
+
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===document.getElementById('overlay'))closeM();});
+
+// ─── SETUP TOGGLES ────────────────────────────────────────────────────────────
+function tS(row) {
+  row.classList.toggle('done');
+  row.querySelector('.sbox').textContent=row.classList.contains('done')?'✓':'';
+  localStorage.setItem('s_'+row.querySelector('.slbl').textContent.slice(0,28),row.classList.contains('done')?'1':'0');
+}
+document.querySelectorAll('.setup-item').forEach(row=>{
+  if(localStorage.getItem('s_'+row.querySelector('.slbl').textContent.slice(0,28))==='1'){
+    row.classList.add('done');row.querySelector('.sbox').textContent='✓';
+  }
+});
+
+// ─── FILTERS ──────────────────────────────────────────────────────────────────
+function fBy(f,btn) {
+  FILTER=f;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>

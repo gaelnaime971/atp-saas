@@ -17,11 +17,12 @@ import Tasks from '@/components/admin/pages/Tasks'
 import Broadcast from '@/components/admin/pages/Broadcast'
 import BilanCompetences from '@/components/admin/pages/BilanCompetences'
 import Prospects from '@/components/admin/pages/Prospects'
+import ContentManager from '@/components/admin/pages/ContentManager'
 import RecapTradeLive from '@/components/admin/pages/RecapTradeLive'
 import AdminTopbarStats from '@/components/admin/TopbarStats'
 import AdminChatWidget from '@/components/chat/AdminChatWidget'
 
-type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'recap-live' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks' | 'prospects'
+type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'recap-live' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks' | 'prospects' | 'content'
 
 const pageTitles: Record<AdminPage, string> = {
   overview: 'Vue Globale',
@@ -35,6 +36,7 @@ const pageTitles: Record<AdminPage, string> = {
   reports: 'Rapports mensuels',
   tasks: 'Tâches',
   prospects: 'Prospects',
+  content: 'Pilotage Contenu',
   broadcast: 'Broadcast',
   bibliotheque: 'Bibliothèque',
   bilan: 'Bilan de compétences',
@@ -69,6 +71,7 @@ export default function AdminDashboard() {
       case 'reports': return <Reports />
       case 'tasks': return <Tasks />
       case 'prospects': return <Prospects />
+      case 'content': return <ContentManager />
       case 'broadcast': return <Broadcast />
       case 'bibliotheque': return <Bibliotheque />
       case 'bilan': return <BilanCompetences />
