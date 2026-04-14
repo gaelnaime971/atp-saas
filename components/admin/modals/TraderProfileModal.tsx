@@ -78,6 +78,11 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'overview' | 'sessions' | 'journal' | 'coaching' | 'accounts' | 'notes' | 'contrat'>('overview')
   const [contractInfo, setContractInfo] = useState<{ signed_at: string | null; signed_name: string | null }>({ signed_at: null, signed_name: null })
+  const [observations, setObservations] = useState('')
+  const [savingObs, setSavingObs] = useState(false)
+  const [obsSaved, setObsSaved] = useState(false)
+  const [whopLink, setWhopLink] = useState('')
+  const [whopEmail, setWhopEmail] = useState('')
   const supabase = createClient()
 
   useEffect(() => {
@@ -101,9 +106,14 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
       // Load private note from localStorage
       const storedNote = localStorage.getItem(`admin_note_${trader!.id}`)
       if (storedNote) setPrivateNote(storedNote)
-      // Load contract info
-      const { data: prof } = await supabase.from('profiles').select('contract_signed_at, contract_signed_name').eq('id', trader!.id).single()
-      if (prof) setContractInfo({ signed_at: prof.contract_signed_at, signed_name: prof.contract_signed_name })
+      // Load profile extras (contract + observations + whop)
+      const { data: prof } = await supabase.from('profiles').select('contract_signed_at, contract_signed_name, admin_observations, whop_link, whop_email').eq('id', trader!.id).single()
+      if (prof) {
+        setContractInfo({ signed_at: prof.contract_signed_at, signed_name: prof.contract_signed_name })
+        setObservations(prof.admin_observations ?? '')
+        setWhopLink(prof.whop_link ?? '')
+        setWhopEmail(prof.whop_email ?? '')
+      }
       setLoading(false)
     }
     fetchAll()
@@ -137,6 +147,18 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
     setNoteSaved(true)
     setTimeout(() => setNoteSaved(false), 2000)
     setSavingNote(false)
+  }
+
+  async function saveAdminData() {
+    setSavingObs(true)
+    await supabase.from('profiles').update({
+      admin_observations: observations.trim() || null,
+      whop_link: whopLink.trim() || null,
+      whop_email: whopEmail.trim() || null,
+    }).eq('id', trader!.id)
+    setObsSaved(true)
+    setTimeout(() => setObsSaved(false), 2000)
+    setSavingObs(false)
   }
 
   const tabs = [
@@ -608,10 +630,73 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
               {/* NOTES TAB */}
               {tab === 'notes' && (
                 <div className="space-y-4">
+                  {/* Observations (DB) */}
                   <div className="rounded-lg p-4 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Notes privées</p>
-                      <span className="text-xs" style={{ color: 'var(--text3)' }}>Visible uniquement par vous</span>
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Observations</p>
+                      <span className="text-xs" style={{ color: 'var(--text3)' }}>Sync cloud · visible uniquement par toi</span>
+                    </div>
+                    <textarea
+                      value={observations}
+                      onChange={e => setObservations(e.target.value)}
+                      placeholder="Infos persistantes sur ce trader : contexte, particularités, points d'attention..."
+                      style={{
+                        width: '100%', minHeight: 100, padding: 12, background: 'var(--bg)',
+                        border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)',
+                        fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6,
+                      }}
+                    />
+                  </div>
+
+                  {/* Whop access */}
+                  <div className="rounded-lg p-4 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Accès Whop du trader</p>
+                      <span className="text-xs" style={{ color: 'var(--text3)' }}>Visible par le trader dans son compte</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: 'var(--text3)' }}>Email Whop</label>
+                        <input
+                          type="email"
+                          value={whopEmail}
+                          onChange={e => setWhopEmail(e.target.value)}
+                          placeholder="trader@whop.com"
+                          className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                          style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: 'var(--text3)' }}>Lien Whop dédié</label>
+                        <input
+                          type="url"
+                          value={whopLink}
+                          onChange={e => setWhopLink(e.target.value)}
+                          placeholder="https://whop.com/..."
+                          className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                          style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-3">
+                      <button
+                        onClick={saveAdminData}
+                        disabled={savingObs}
+                        className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
+                        style={{ background: 'var(--green)', color: '#09090b' }}
+                      >
+                        {savingObs ? 'Sauvegarde...' : 'Sauvegarder observations + Whop'}
+                      </button>
+                      {obsSaved && (
+                        <span className="text-xs font-medium" style={{ color: '#22c55e' }}>Sauvegardé ✓</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg p-4 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Notes privées (local)</p>
+                      <span className="text-xs" style={{ color: 'var(--text3)' }}>Sur ce navigateur uniquement</span>
                     </div>
                     <textarea
                       value={privateNote}

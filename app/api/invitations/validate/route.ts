@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
         .update({
           plan_type: invitation.plan_type,
           propfirm_name: invitation.propfirm_name,
+          whop_link: invitation.whop_link,
+          whop_email: invitation.whop_email,
+          admin_observations: invitation.admin_observations,
         })
         .eq('id', newUser.user.id)
     }

@@ -6,7 +6,7 @@ import { Revenue } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 
-type PaymentMethod = 'virement' | 'stripe_comptant' | 'stripe_2x' | 'stripe_3x' | 'stripe_4x'
+type PaymentMethod = 'virement' | 'stripe_comptant' | 'stripe_2x' | 'stripe_3x' | 'stripe_4x' | 'crypto'
 
 const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   virement: 'Virement',
@@ -14,6 +14,7 @@ const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   stripe_2x: 'Stripe 2\u00d7',
   stripe_3x: 'Stripe 3\u00d7',
   stripe_4x: 'Stripe 4\u00d7',
+  crypto: 'Crypto',
 }
 
 const PAYMENT_METHOD_COLORS: Record<PaymentMethod, string> = {
@@ -22,6 +23,7 @@ const PAYMENT_METHOD_COLORS: Record<PaymentMethod, string> = {
   stripe_2x: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
   stripe_3x: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
   stripe_4x: 'bg-red-500/15 text-red-400 border-red-500/30',
+  crypto: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
 }
 
 interface RevenueWithTrader extends Revenue {
@@ -43,6 +45,7 @@ export default function Revenus() {
   const [traders, setTraders] = useState<{ id: string; full_name: string }[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [generatingInvoice, setGeneratingInvoice] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const supabase = createClient()
 
   async function fetchData() {
@@ -87,7 +90,7 @@ export default function Revenus() {
     const amountHT = form.is_ttc ? amount / 1.2 : amount
     const tvaAmount = form.is_ttc ? amount - amount / 1.2 : amount * 0.2
 
-    await supabase.from('revenues').insert({
+    const payload = {
       trader_id: form.trader_id || null,
       amount,
       description: form.description,
@@ -96,8 +99,22 @@ export default function Revenus() {
       is_ttc: form.is_ttc,
       amount_ht: Math.round(amountHT * 100) / 100,
       tva_amount: Math.round(tvaAmount * 100) / 100,
-    })
+    }
+
+    if (editingId) {
+      await supabase.from('revenues').update(payload).eq('id', editingId)
+    } else {
+      await supabase.from('revenues').insert(payload)
+    }
+
+    resetForm()
+    setSubmitting(false)
+    fetchData()
+  }
+
+  function resetForm() {
     setShowForm(false)
+    setEditingId(null)
     setForm({
       trader_id: '',
       amount: '',
@@ -106,7 +123,25 @@ export default function Revenus() {
       payment_method: 'virement',
       is_ttc: true,
     })
-    setSubmitting(false)
+  }
+
+  function handleEdit(r: RevenueWithTrader) {
+    setEditingId(r.id)
+    setForm({
+      trader_id: r.trader_id ?? '',
+      amount: String(r.amount),
+      description: r.description ?? '',
+      payment_date: r.payment_date.split('T')[0],
+      payment_method: (r.payment_method ?? 'virement') as PaymentMethod,
+      is_ttc: r.is_ttc ?? true,
+    })
+    setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Supprimer ce paiement ? Cette action est irréversible.')) return
+    await supabase.from('revenues').delete().eq('id', id)
     fetchData()
   }
 
@@ -179,7 +214,7 @@ export default function Revenus() {
       {/* Add Payment Form */}
       {showForm && (
         <Card className="border border-green-500/20">
-          <h3 className="text-sm font-semibold text-[#e8edf5] mb-4">Enregistrer un paiement</h3>
+          <h3 className="text-sm font-semibold text-[#e8edf5] mb-4">{editingId ? 'Modifier le paiement' : 'Enregistrer un paiement'}</h3>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-[#5a6a82] mb-1.5">Trader</label>
@@ -204,6 +239,7 @@ export default function Revenus() {
                 <option value="stripe_2x">Stripe 2&times;</option>
                 <option value="stripe_3x">Stripe 3&times;</option>
                 <option value="stripe_4x">Stripe 4&times;</option>
+                <option value="crypto">Crypto</option>
               </select>
             </div>
             <div>
@@ -261,8 +297,8 @@ export default function Revenus() {
               />
             </div>
             <div className="col-span-2 flex gap-3 justify-end">
-              <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Annuler</Button>
-              <Button type="submit" loading={submitting}>Enregistrer</Button>
+              <Button variant="secondary" type="button" onClick={resetForm}>Annuler</Button>
+              <Button type="submit" loading={submitting}>{editingId ? 'Modifier' : 'Enregistrer'}</Button>
             </div>
           </form>
         </Card>
@@ -286,6 +322,7 @@ export default function Revenus() {
                   <th className="text-center text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">HT/TTC</th>
                   <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Montant</th>
                   <th className="text-center text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Facture</th>
+                  <th className="text-center text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
@@ -333,6 +370,28 @@ export default function Revenus() {
                             G&eacute;n&eacute;rer
                           </Button>
                         )}
+                      </td>
+                      <td className="py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(r)}
+                            title="Modifier"
+                            className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[#18181b] text-[#a0aec0] hover:text-green-400 hover:border-green-500/30 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            title="Supprimer"
+                            className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[#18181b] text-[#a0aec0] hover:text-red-400 hover:border-red-500/30 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a2 2 0 012-2h2a2 2 0 012 2v3" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )

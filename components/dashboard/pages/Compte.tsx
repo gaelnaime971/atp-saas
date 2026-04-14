@@ -39,6 +39,10 @@ export default function Compte() {
   const [billingSiren, setBillingSiren] = useState('')
   const [billingVat, setBillingVat] = useState('')
 
+  // Whop (read-only for user)
+  const [whopLink, setWhopLink] = useState('')
+  const [whopEmail, setWhopEmail] = useState('')
+
   // Notification toggles (local state only)
   const [notifChecklist, setNotifChecklist] = useState(true)
   const [notifSaisie, setNotifSaisie] = useState(true)
@@ -74,6 +78,8 @@ export default function Compte() {
           setBillingAddress((p as any).billing_address ?? '')
           setBillingSiren((p as any).billing_siren ?? '')
           setBillingVat((p as any).billing_vat ?? '')
+          setWhopLink((p as any).whop_link ?? '')
+          setWhopEmail((p as any).whop_email ?? '')
         }
       } catch (err) {
         console.error('Compte fetch error:', err)
@@ -276,6 +282,51 @@ export default function Compte() {
             </div>
           ))}
         </Card>
+
+        {/* Accès Whop */}
+        {(whopEmail || whopLink) && (
+          <Card>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 12, borderBottom: '1px solid var(--border, rgba(255,255,255,0.07))' }}>
+              Accès Whop
+            </h2>
+            <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 14, lineHeight: 1.5 }}>
+              Tes accès Whop dédiés, configurés par ton coach. Garde ces informations confidentielles.
+            </p>
+
+            {whopEmail && (
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Email d&apos;accès Whop</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input type="text" value={whopEmail} readOnly style={{ ...inputStyle, cursor: 'text', userSelect: 'all' }} />
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(whopEmail)}
+                    style={{ padding: '0 14px', borderRadius: 8, background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text3)', fontSize: 12, cursor: 'pointer' }}
+                  >
+                    Copier
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {whopLink && (
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Lien Whop dédié</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input type="text" value={whopLink} readOnly style={{ ...inputStyle, cursor: 'text', userSelect: 'all' }} />
+                  <a
+                    href={whopLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ padding: '0 14px', borderRadius: 8, background: 'var(--green)', color: '#09090b', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+                  >
+                    Ouvrir →
+                  </a>
+                </div>
+              </div>
+            )}
+          </Card>
+        )}
 
         {/* Facturation */}
         <Card>

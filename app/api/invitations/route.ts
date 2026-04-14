@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body: InviteTraderPayload = await request.json()
-    const { email, full_name, plan_type, propfirm_name } = body
+    const body: InviteTraderPayload & { whop_link?: string; whop_email?: string; admin_observations?: string } = await request.json()
+    const { email, full_name, plan_type, propfirm_name, whop_link, whop_email, admin_observations } = body
 
     if (!email || !full_name || !plan_type) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -72,6 +72,9 @@ export async function POST(request: NextRequest) {
         full_name,
         plan_type,
         propfirm_name: propfirm_name || null,
+        whop_link: whop_link || null,
+        whop_email: whop_email || null,
+        admin_observations: admin_observations || null,
         invited_by: user.id,
         code,
       })

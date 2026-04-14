@@ -463,9 +463,10 @@ export default function Settings() {
                   style={inputStyle}
                 >
                   <option value="">Aucun</option>
-                  <option value="coaching-annuel">Coaching Annuel</option>
-                  <option value="coaching-personnalise">Coaching Personnalisé</option>
-                  <option value="seminaire">Séminaire</option>
+                  <option value="Coaching ATP ULTRA">Coaching ATP ULTRA</option>
+                  <option value="Coaching Annuel">Coaching Annuel</option>
+                  <option value="Coaching Personnalisé">Coaching Personnalisé</option>
+                  <option value="Séminaire">Séminaire</option>
                 </select>
               </div>
               <div>

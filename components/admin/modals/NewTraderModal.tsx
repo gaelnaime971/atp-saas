@@ -7,7 +7,7 @@ interface NewTraderModalProps {
   onSuccess: () => void
 }
 
-const PLANS = ['Coaching Annuel', 'Coaching Personnalisé', 'Séminaire']
+const PLANS = ['Coaching ATP ULTRA', 'Coaching Annuel', 'Coaching Personnalisé', 'Séminaire']
 
 export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalProps) {
   const [form, setForm] = useState({
@@ -16,6 +16,9 @@ export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalPro
     email: '',
     plan_type: '',
     propfirm_name: '',
+    whop_link: '',
+    whop_email: '',
+    admin_observations: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -24,7 +27,7 @@ export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalPro
   const [emailSent, setEmailSent] = useState(false)
 
   useEffect(() => {
-    setForm({ first_name: '', last_name: '', email: '', plan_type: '', propfirm_name: '' })
+    setForm({ first_name: '', last_name: '', email: '', plan_type: '', propfirm_name: '', whop_link: '', whop_email: '', admin_observations: '' })
     setError('')
     setSuccess(false)
     setGeneratedCode(null)
@@ -45,6 +48,9 @@ export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalPro
           full_name: `${form.first_name} ${form.last_name}`.trim(),
           plan_type: form.plan_type,
           propfirm_name: form.propfirm_name || undefined,
+          whop_link: form.whop_link || undefined,
+          whop_email: form.whop_email || undefined,
+          admin_observations: form.admin_observations || undefined,
         }),
       })
 
@@ -165,6 +171,49 @@ export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalPro
               onChange={e => setForm(f => ({ ...f, propfirm_name: e.target.value }))}
               placeholder="FTMO, MyForexFunds..."
               className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
+                Email Whop <span style={{ color: 'var(--text3)' }}>(optionnel)</span>
+              </label>
+              <input
+                type="email"
+                value={form.whop_email}
+                onChange={e => setForm(f => ({ ...f, whop_email: e.target.value }))}
+                placeholder="trader@whop.com"
+                className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
+                Lien Whop <span style={{ color: 'var(--text3)' }}>(optionnel)</span>
+              </label>
+              <input
+                type="url"
+                value={form.whop_link}
+                onChange={e => setForm(f => ({ ...f, whop_link: e.target.value }))}
+                placeholder="https://whop.com/..."
+                className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
+              Observations <span style={{ color: 'var(--text3)' }}>(privé — visible uniquement par toi)</span>
+            </label>
+            <textarea
+              value={form.admin_observations}
+              onChange={e => setForm(f => ({ ...f, admin_observations: e.target.value }))}
+              rows={3}
+              placeholder="Infos utiles sur ce trader : contexte, particularités, points d'attention..."
+              className="w-full rounded-lg px-3 py-2 text-sm outline-none resize-none"
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
             />
           </div>
