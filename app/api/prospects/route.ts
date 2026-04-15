@@ -9,7 +9,7 @@ const supabase = createClient(
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { prenom, nom, email, whatsapp, experience, objectif, source } = body
+    const { prenom, nom, email, whatsapp, experience, objectif, source, notes } = body
 
     if (!prenom || !nom || !email || !whatsapp || !experience || !objectif) {
       return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 })
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       source: source || 'landing-capture',
       status: 'nouveau',
       action: 'rien_fait',
-      notes: '',
+      notes: notes || '',
     })
 
     if (error) {

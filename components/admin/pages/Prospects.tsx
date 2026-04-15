@@ -35,16 +35,34 @@ const ACTION_OPTIONS = [
 ]
 
 const OBJECTIF_LABELS: Record<string, string> = {
+  // Méthode ATP (codes courts)
   methode: 'Méthode structurée',
   propfirm: 'Prop firm',
   consistance: 'Consistance',
   vivre: 'Vivre du trading',
+  // Trading Night (texte direct)
+  'Comprendre les marchés': 'Comprendre les marchés',
+  'Commencer à trader': 'Commencer à trader',
+  'Améliorer ma méthode': 'Améliorer ma méthode',
+  'Passer en prop firm': 'Passer en prop firm',
+  'Vivre du trading': 'Vivre du trading',
 }
 
 const EXP_LABELS: Record<string, string> = {
   debutant: 'Débutant (< 6 mois)',
   intermediaire: '6 mois à 2 ans',
   confirme: '+ de 2 ans',
+  // Trading Night (texte direct)
+  'Aucune': 'Aucune',
+  'Débutant (< 6 mois)': 'Débutant (< 6 mois)',
+  '6 mois à 2 ans': '6 mois à 2 ans',
+  '+ de 2 ans': '+ de 2 ans',
+}
+
+const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  'methode-atp': { label: 'Méthode ATP', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+  'landing-capture': { label: 'Méthode ATP', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+  'trading-night': { label: 'Trading Night', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
 }
 
 const PAGE_SIZE = 15
@@ -54,6 +72,7 @@ export default function Prospects() {
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterObjectif, setFilterObjectif] = useState('all')
+  const [filterSource, setFilterSource] = useState('all')
   const [page, setPage] = useState(0)
   const [total, setTotal] = useState(0)
   const [selected, setSelected] = useState<Prospect | null>(null)
@@ -70,12 +89,19 @@ export default function Prospects() {
 
     if (filterStatus !== 'all') query = query.eq('status', filterStatus)
     if (filterObjectif !== 'all') query = query.eq('objectif', filterObjectif)
+    if (filterSource !== 'all') {
+      if (filterSource === 'methode-atp') {
+        query = query.in('source', ['methode-atp', 'landing-capture'])
+      } else {
+        query = query.eq('source', filterSource)
+      }
+    }
 
     const { data, count } = await query
     setProspects(data || [])
     setTotal(count || 0)
     setLoading(false)
-  }, [page, filterStatus, filterObjectif, supabase])
+  }, [page, filterStatus, filterObjectif, filterSource, supabase])
 
   useEffect(() => { fetchProspects() }, [fetchProspects])
 
@@ -163,6 +189,17 @@ export default function Prospects() {
           {Object.entries(OBJECTIF_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
 
+        <select
+          value={filterSource}
+          onChange={e => { setFilterSource(e.target.value); setPage(0) }}
+          className="text-xs px-3 py-2 rounded-lg outline-none"
+          style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          <option value="all">Toutes les sources</option>
+          <option value="methode-atp">Méthode ATP</option>
+          <option value="trading-night">Trading Night</option>
+        </select>
+
         <div className="ml-auto text-xs" style={{ color: 'var(--text3)' }}>
           {total} prospect{total > 1 ? 's' : ''}
         </div>
@@ -173,17 +210,19 @@ export default function Prospects() {
         <table className="w-full text-xs">
           <thead>
             <tr style={{ background: 'var(--bg2)' }}>
-              {['Date', 'Nom', 'Email', 'WhatsApp', 'Expérience', 'Objectif', 'Statut', 'Action', ''].map(h => (
+              {['Date', 'Nom', 'Source', 'Email', 'WhatsApp', 'Expérience', 'Objectif', 'Statut', 'Action', ''].map(h => (
                 <th key={h} className="text-left px-4 py-3 font-semibold uppercase tracking-wider" style={{ color: 'var(--text3)', fontSize: 10 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} className="text-center py-12" style={{ color: 'var(--text3)' }}>Chargement...</td></tr>
+              <tr><td colSpan={10} className="text-center py-12" style={{ color: 'var(--text3)' }}>Chargement...</td></tr>
             ) : prospects.length === 0 ? (
-              <tr><td colSpan={9} className="text-center py-12" style={{ color: 'var(--text3)' }}>Aucun prospect</td></tr>
-            ) : prospects.map(p => (
+              <tr><td colSpan={10} className="text-center py-12" style={{ color: 'var(--text3)' }}>Aucun prospect</td></tr>
+            ) : prospects.map(p => {
+              const src = SOURCE_LABELS[p.source] || { label: p.source, color: 'var(--text3)', bg: 'var(--bg3)' }
+              return (
               <tr
                 key={p.id}
                 className="transition-colors hover:bg-[rgba(255,255,255,0.02)] cursor-pointer"
@@ -194,6 +233,14 @@ export default function Prospects() {
                   {new Date(p.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                 </td>
                 <td className="px-4 py-3 font-medium" style={{ color: 'var(--text)' }}>{p.prenom} {p.nom}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className="px-2 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: src.color, background: src.bg, border: `1px solid ${src.color}33` }}
+                  >
+                    {src.label}
+                  </span>
+                </td>
                 <td className="px-4 py-3" style={{ color: 'var(--text2)' }}>{p.email}</td>
                 <td className="px-4 py-3" style={{ color: 'var(--text2)' }}>{p.whatsapp}</td>
                 <td className="px-4 py-3" style={{ color: 'var(--text3)' }}>{EXP_LABELS[p.experience] || p.experience}</td>
@@ -223,7 +270,7 @@ export default function Prospects() {
                   </svg>
                 </td>
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
       </div>
