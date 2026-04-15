@@ -163,13 +163,6 @@ export default function Session() {
     marginBottom: '6px',
   }
 
-  const textareaStyle: React.CSSProperties = {
-    ...inputStyle,
-    minHeight: '140px',
-    resize: 'vertical' as const,
-    fontFamily: 'inherit',
-  }
-
   return (
     <div>
       {/* Explanatory banner */}
@@ -209,33 +202,62 @@ export default function Session() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        {/* Left card */}
-        <Card>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#e8edf5', marginBottom: '20px' }}>
-            Données de session
-          </h3>
+      {/* LIVE PREVIEW BANNER */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: 10,
+        marginBottom: 18,
+      }}>
+        {[
+          { lbl: 'P&L', val: pnl !== 0 ? `${pnl > 0 ? '+' : ''}${pnl.toLocaleString('fr-FR')} $` : '—', color: pnl > 0 ? '#22c55e' : pnl < 0 ? '#ef4444' : '#a0aec0' },
+          { lbl: 'Trades', val: tradesCount || '—', color: '#e8edf5' },
+          { lbl: 'R total', val: rValue !== 0 ? `${rValue > 0 ? '+' : ''}${rValue.toFixed(1)}R` : '—', color: rValue >= 0 ? '#22c55e' : '#ef4444' },
+          { lbl: 'Win Rate', val: winRate > 0 ? `${winRate}%` : '—', color: winRate >= 50 ? '#22c55e' : winRate > 0 ? '#f59e0b' : '#a0aec0' },
+          { lbl: 'Plan', val: `${planScore}/10`, color: planTag.color },
+        ].map(kpi => (
+          <div
+            key={kpi.lbl}
+            style={{
+              background: 'var(--bg2)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '12px 14px',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 4 }}>{kpi.lbl}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: kpi.color, lineHeight: 1, fontFeatureSettings: '"tnum"' }}>{kpi.val}</div>
+          </div>
+        ))}
+      </div>
 
-          {/* Date */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Date <Tooltip text={TOOLTIPS.date} /></label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              style={{ ...inputStyle, colorScheme: 'dark' }}
-            />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+        {/* LEFT: Session data */}
+        <Card>
+          {/* Date + Instrument compact row */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'end' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ ...labelStyle, fontSize: 11 }}>Date</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inputStyle, padding: '8px 12px', fontSize: 13 }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ ...labelStyle, fontSize: 11 }}>Instrument</label>
+              <select value={instrument} onChange={e => setInstrument(e.target.value)} style={{ ...inputStyle, padding: '8px 12px', fontSize: 13, cursor: 'pointer' }}>
+                {INSTRUMENTS.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+            </div>
           </div>
 
-          {/* Accounts selection */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Comptes tradés <Tooltip text={TOOLTIPS.accounts} /></label>
+          {/* Accounts — compact chips */}
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ ...labelStyle, fontSize: 11 }}>Comptes tradés <Tooltip text={TOOLTIPS.accounts} /></label>
             {accounts.length === 0 ? (
-              <p className="text-xs py-2" style={{ color: 'var(--text3)' }}>
-                Aucun compte configuré. Ajoute tes comptes dans la page Prop Firm.
+              <p style={{ fontSize: 12, color: 'var(--text3)', padding: '4px 0' }}>
+                Aucun compte configuré — va sur la page Prop Firm.
               </p>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {accounts.map(acc => {
                   const selected = selectedAccountIds.includes(acc.id)
                   const typeColor = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
@@ -243,14 +265,16 @@ export default function Session() {
                     <button
                       key={acc.id}
                       onClick={() => toggleAccount(acc.id)}
-                      className="px-3 py-2 rounded-lg text-xs font-medium transition-all"
                       style={{
-                        background: selected ? `${typeColor}15` : 'var(--bg3, #18181b)',
-                        border: `2px solid ${selected ? typeColor : 'rgba(255,255,255,0.1)'}`,
+                        padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                        background: selected ? `${typeColor}15` : 'var(--bg3)',
+                        border: `1.5px solid ${selected ? typeColor : 'transparent'}`,
                         color: selected ? typeColor : '#a0aec0',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
                       }}
                     >
-                      {acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
+                      {selected ? '✓ ' : ''}{acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
                     </button>
                   )
                 })}
@@ -258,118 +282,127 @@ export default function Session() {
             )}
           </div>
 
-          {/* Instrument + Trades count */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-            <div>
-              <label style={labelStyle}>Instrument <Tooltip text={TOOLTIPS.instrument} /></label>
-              <select
-                value={instrument}
-                onChange={(e) => setInstrument(e.target.value)}
-                style={{ ...inputStyle, cursor: 'pointer' }}
-              >
-                {INSTRUMENTS.map((i) => (
-                  <option key={i} value={i}>{i}</option>
-                ))}
-              </select>
+          {/* Numeric inputs — stepper cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+            {/* Nb trades */}
+            <div style={{ background: 'var(--bg3)', borderRadius: 10, padding: '10px 12px' }}>
+              <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 6 }}>Nb trades</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button onClick={() => setTradesCount(Math.max(0, tradesCount - 1))} style={stepBtn}>−</button>
+                <input
+                  type="number"
+                  value={tradesCount || ''}
+                  onChange={e => setTradesCount(Math.max(0, Number(e.target.value) || 0))}
+                  onFocus={e => e.target.select()}
+                  placeholder="0"
+                  style={{ flex: 1, background: 'transparent', border: 'none', color: '#e8edf5', fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none' }}
+                />
+                <button onClick={() => setTradesCount(tradesCount + 1)} style={stepBtn}>+</button>
+              </div>
             </div>
-            <div>
-              <label style={labelStyle}>Nombre de trades <Tooltip text={TOOLTIPS.trades_count} /></label>
-              <input
-                type="number"
-                min={0}
-                value={tradesCount}
-                onChange={(e) => setTradesCount(Number(e.target.value))}
-                style={inputStyle}
-              />
+
+            {/* Win Rate */}
+            <div style={{ background: 'var(--bg3)', borderRadius: 10, padding: '10px 12px' }}>
+              <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 6 }}>Win Rate %</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={winRate || ''}
+                  onChange={e => setWinRate(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
+                  onFocus={e => e.target.select()}
+                  placeholder="0"
+                  style={{ flex: 1, background: 'transparent', border: 'none', color: '#e8edf5', fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none' }}
+                />
+                <span style={{ fontSize: 14, color: '#6b7280', fontWeight: 600 }}>%</span>
+              </div>
             </div>
           </div>
 
           {/* P&L + R */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-            <div>
-              <label style={labelStyle}>P&L ($) <Tooltip text={TOOLTIPS.pnl} /></label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+            {/* P&L */}
+            <div style={{
+              background: pnl > 0 ? 'rgba(34,197,94,0.08)' : pnl < 0 ? 'rgba(239,68,68,0.08)' : 'var(--bg3)',
+              border: `1px solid ${pnl > 0 ? 'rgba(34,197,94,0.25)' : pnl < 0 ? 'rgba(239,68,68,0.25)' : 'var(--border)'}`,
+              borderRadius: 10, padding: '10px 12px',
+            }}>
+              <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 6 }}>P&L ($)</div>
               <input
                 type="number"
-                value={pnl}
-                onChange={(e) => setPnl(Number(e.target.value))}
-                style={inputStyle}
+                value={pnl || ''}
+                onChange={e => setPnl(e.target.value === '' ? 0 : Number(e.target.value))}
+                onFocus={e => e.target.select()}
+                placeholder="0"
+                style={{
+                  width: '100%', background: 'transparent', border: 'none',
+                  color: pnl > 0 ? '#22c55e' : pnl < 0 ? '#ef4444' : '#e8edf5',
+                  fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none',
+                }}
               />
             </div>
-            <div>
-              <label style={labelStyle}>R obtenu <Tooltip text={TOOLTIPS.r_value} /></label>
+
+            {/* R */}
+            <div style={{
+              background: rValue > 0 ? 'rgba(34,197,94,0.08)' : rValue < 0 ? 'rgba(239,68,68,0.08)' : 'var(--bg3)',
+              border: `1px solid ${rValue > 0 ? 'rgba(34,197,94,0.25)' : rValue < 0 ? 'rgba(239,68,68,0.25)' : 'var(--border)'}`,
+              borderRadius: 10, padding: '10px 12px',
+            }}>
+              <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 6 }}>R obtenu</div>
               <input
                 type="number"
                 step={0.1}
-                value={rValue}
-                onChange={(e) => setRValue(Number(e.target.value))}
-                style={inputStyle}
+                value={rValue || ''}
+                onChange={e => setRValue(e.target.value === '' ? 0 : Number(e.target.value))}
+                onFocus={e => e.target.select()}
+                placeholder="0"
+                style={{
+                  width: '100%', background: 'transparent', border: 'none',
+                  color: rValue > 0 ? '#22c55e' : rValue < 0 ? '#ef4444' : '#e8edf5',
+                  fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none',
+                }}
               />
             </div>
           </div>
 
-          {/* Win Rate */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Win Rate (%) <Tooltip text={TOOLTIPS.win_rate} /></label>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={winRate}
-              onChange={(e) => setWinRate(Number(e.target.value))}
-              style={inputStyle}
-            />
-          </div>
-
-          {/* Plan Score Slider */}
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label style={{ ...labelStyle, marginBottom: 0 }}>Respect du plan ATP <Tooltip text={TOOLTIPS.plan_score} /></label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 700, color: '#e8edf5' }}>{planScore}</span>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                  background: `${planTag.color}20`,
-                  color: planTag.color,
-                }}>
-                  {planTag.label}
-                </span>
-              </div>
+          {/* Plan score slider */}
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <label style={{ ...labelStyle, marginBottom: 0, fontSize: 11 }}>Respect plan ATP <Tooltip text={TOOLTIPS.plan_score} /></label>
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6,
+                background: `${planTag.color}20`, color: planTag.color,
+              }}>
+                {planScore}/10 · {planTag.label}
+              </span>
             </div>
             <input
               type="range"
               min={0}
               max={10}
               value={planScore}
-              onChange={(e) => setPlanScore(Number(e.target.value))}
-              style={{
-                width: '100%',
-                accentColor: planTag.color,
-                cursor: 'pointer',
-              }}
+              onChange={e => setPlanScore(Number(e.target.value))}
+              style={{ width: '100%', accentColor: planTag.color, cursor: 'pointer' }}
             />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 9, color: '#4b5563' }}>
+              <span>0</span><span>5</span><span>10</span>
+            </div>
           </div>
 
           {/* Mood */}
           <div>
-            <label style={labelStyle}>Humeur du jour <Tooltip text={TOOLTIPS.mood} /></label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {MOODS.map((m) => (
+            <label style={{ ...labelStyle, fontSize: 11 }}>Humeur du jour</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {MOODS.map(m => (
                 <button
                   key={m}
                   onClick={() => setMood(m)}
                   style={{
-                    flex: 1,
-                    padding: '10px 0',
-                    borderRadius: '10px',
-                    border: mood === m ? '2px solid #22c55e' : '1px solid rgba(255,255,255,0.1)',
-                    background: mood === m ? 'rgba(34,197,94,0.1)' : 'var(--bg3, #18181b)',
-                    fontSize: '22px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    transform: mood === m ? 'scale(1.1)' : 'scale(1)',
+                    flex: 1, padding: '8px 0', borderRadius: 10,
+                    border: mood === m ? '2px solid #22c55e' : '1.5px solid transparent',
+                    background: mood === m ? 'rgba(34,197,94,0.1)' : 'var(--bg3)',
+                    fontSize: 22, cursor: 'pointer', transition: 'all 0.15s',
                   }}
                 >
                   {m}
@@ -379,67 +412,34 @@ export default function Session() {
           </div>
         </Card>
 
-        {/* Right card */}
+        {/* RIGHT: Notes with tabs */}
         <Card>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#e8edf5', marginBottom: '20px' }}>
-            Notes & Analyse
-          </h3>
+          <NotesTabs
+            technical={technicalAnalysis} setTechnical={setTechnicalAnalysis}
+            psycho={psychologicalAnalysis} setPsycho={setPsychologicalAnalysis}
+            improvement={improvement} setImprovement={setImprovement}
+          />
 
-          {/* Technical Analysis */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Analyse technique <Tooltip text={TOOLTIPS.technical} /></label>
-            <textarea
-              value={technicalAnalysis}
-              onChange={(e) => setTechnicalAnalysis(e.target.value)}
-              placeholder="Décrivez votre analyse technique..."
-              style={textareaStyle}
-            />
-          </div>
-
-          {/* Psychological Analysis */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Analyse psychologique <Tooltip text={TOOLTIPS.psychological} /></label>
-            <textarea
-              value={psychologicalAnalysis}
-              onChange={(e) => setPsychologicalAnalysis(e.target.value)}
-              placeholder="Comment vous êtes-vous senti pendant la session ?"
-              style={textareaStyle}
-            />
-          </div>
-
-          {/* Improvement */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Point d&apos;amélioration <Tooltip text={TOOLTIPS.improvement} /></label>
-            <textarea
-              value={improvement}
-              onChange={(e) => setImprovement(e.target.value)}
-              placeholder="Qu'allez-vous améliorer ?"
-              style={{ ...textareaStyle, minHeight: '70px' }}
-            />
-          </div>
-
-          {/* Star Rating */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={labelStyle}>Note globale <Tooltip text={TOOLTIPS.rating} /></label>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => setGlobalRating(star)}
-                  style={{
-                    fontSize: '28px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: star <= globalRating ? '#f59e0b' : '#374151',
-                    transition: 'all 0.15s',
-                    transform: star <= globalRating ? 'scale(1.15)' : 'scale(1)',
-                    padding: '2px',
-                  }}
-                >
-                  ★
-                </button>
-              ))}
+          {/* Star rating */}
+          <div style={{ marginTop: 18, marginBottom: 18, padding: '14px 16px', background: 'var(--bg3)', borderRadius: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ ...labelStyle, marginBottom: 0, fontSize: 11 }}>Note globale session</label>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    onClick={() => setGlobalRating(star)}
+                    style={{
+                      fontSize: 22, background: 'none', border: 'none', cursor: 'pointer',
+                      color: star <= globalRating ? '#f59e0b' : '#374151',
+                      transition: 'all 0.15s',
+                      padding: 0, lineHeight: 1,
+                    }}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -451,10 +451,77 @@ export default function Session() {
             onClick={handleSubmit}
             className="w-full"
           >
-            Enregistrer la session
+            ▸ Enregistrer la session
           </Button>
         </Card>
       </div>
+    </div>
+  )
+}
+
+const stepBtn: React.CSSProperties = {
+  width: 28, height: 28, borderRadius: 6,
+  background: 'var(--bg2)', border: '1px solid var(--border)',
+  color: '#a0aec0', fontSize: 16, fontWeight: 700, cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  transition: 'all 0.12s',
+}
+
+function NotesTabs({
+  technical, setTechnical,
+  psycho, setPsycho,
+  improvement, setImprovement,
+}: {
+  technical: string; setTechnical: (v: string) => void
+  psycho: string; setPsycho: (v: string) => void
+  improvement: string; setImprovement: (v: string) => void
+}) {
+  const [active, setActive] = useState<'tech' | 'psycho' | 'improv'>('tech')
+  const tabs = [
+    { id: 'tech' as const, icon: '📈', label: 'Technique', val: technical, set: setTechnical, placeholder: 'Lecture du marché, setups, niveaux clés...' },
+    { id: 'psycho' as const, icon: '🧠', label: 'Psycho', val: psycho, set: setPsycho, placeholder: 'Stress, confiance, discipline, impulsivité...' },
+    { id: 'improv' as const, icon: '🎯', label: 'À améliorer', val: improvement, set: setImprovement, placeholder: 'Un point concret à améliorer pour la prochaine session...' },
+  ]
+  const current = tabs.find(t => t.id === active)!
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12, background: 'var(--bg3)', padding: 4, borderRadius: 10 }}>
+        {tabs.map(t => {
+          const hasContent = t.val.trim().length > 0
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActive(t.id)}
+              style={{
+                flex: 1, padding: '8px 0', borderRadius: 7,
+                background: active === t.id ? 'var(--bg)' : 'transparent',
+                border: 'none',
+                color: active === t.id ? '#e8edf5' : '#6b7280',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}
+            >
+              <span>{t.icon}</span>
+              {t.label}
+              {hasContent && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', marginLeft: 2 }} />}
+            </button>
+          )
+        })}
+      </div>
+      <textarea
+        key={active}
+        value={current.val}
+        onChange={e => current.set(e.target.value)}
+        placeholder={current.placeholder}
+        style={{
+          width: '100%', minHeight: 220, padding: 14,
+          background: 'var(--bg3)', border: '1px solid var(--border)',
+          borderRadius: 10, color: '#e8edf5', fontSize: 13,
+          outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.65,
+        }}
+      />
     </div>
   )
 }

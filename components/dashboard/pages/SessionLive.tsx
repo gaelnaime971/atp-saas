@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface Trade {
   time: string
@@ -374,10 +375,22 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
           return
         }
         let raw = (data.text || '').replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
+        // Extract JSON object — find first { and last }
+        const firstBrace = raw.indexOf('{')
+        const lastBrace = raw.lastIndexOf('}')
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          raw = raw.substring(firstBrace, lastBrace + 1)
+        }
         try {
           setChartResult(JSON.parse(raw))
         } catch {
-          setChartResult({ analyse: raw.substring(0, 400) })
+          // Try repair: remove trailing commas before closing braces/brackets
+          try {
+            const repaired = raw.replace(/,(\s*[}\]])/g, '$1')
+            setChartResult(JSON.parse(repaired))
+          } catch {
+            setChartResult({ analyse: raw.substring(0, 500) || 'Réponse invalide de l\'IA, réessaie.' })
+          }
         }
       } catch (err) {
         setChartResult({ analyse: `Erreur: ${err instanceof Error ? err.message : 'connexion échouée'}` })
@@ -389,8 +402,57 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
 
   // End session
   const [showEndModal, setShowEndModal] = useState(false)
+  const [savingSession, setSavingSession] = useState(false)
+  const [sessionSaved, setSessionSaved] = useState(false)
   const endSession = () => setShowEndModal(true)
   const confirmEnd = () => { setShowEndModal(false); onExit?.() }
+
+  const saveSessionAndExit = async () => {
+    if (trades.length === 0) { onExit?.(); return }
+    setSavingSession(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setSavingSession(false); return }
+
+      // Most traded instrument (or first if tie)
+      const counts: Record<string, number> = {}
+      trades.forEach(t => { counts[t.inst] = (counts[t.inst] || 0) + 1 })
+      const topInst = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || trades[0].inst
+
+      const result: 'win' | 'loss' | 'breakeven' = totalPnl > 0 ? 'win' : totalPnl < 0 ? 'loss' : 'breakeven'
+      const today = new Date().toISOString().split('T')[0]
+
+      const setup = {
+        source: 'session_live',
+        r_value: totalR,
+        win_rate: winPct,
+        plan_score: Math.round(discScore / 10),
+        mood: mental <= 3 ? '😬' : mental <= 6 ? '😐' : '🎯',
+        technical_analysis: note || '',
+        psychological_analysis: `Score mental: ${mental}/10 · Discipline: ${discScore}%`,
+        improvement: '',
+        global_rating: Math.round((discScore / 100) * 5),
+        trades_detail: trades,
+      }
+
+      await supabase.from('trading_sessions').insert({
+        trader_id: user.id,
+        session_date: today,
+        pnl: totalPnl,
+        result,
+        trades_count: trades.length,
+        instrument: topInst,
+        setup: JSON.stringify(setup),
+        notes: note || null,
+      })
+
+      setSessionSaved(true)
+      setTimeout(() => { onExit?.() }, 1200)
+    } catch {
+      setSavingSession(false)
+    }
+  }
 
   // Add level
   const addLevel = () => {
@@ -958,9 +1020,30 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
                 ))}
               </div>
               <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.6 }}>Bonne fin de session. Pense à documenter tes observations dans ton journal.</div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowEndModal(false)} style={{ flex: 1, padding: '10px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', cursor: 'pointer' }}>← CONTINUER</button>
-                <button onClick={confirmEnd} style={{ flex: 1, padding: '10px', background: 'rgba(255,51,85,0.08)', border: '1px solid rgba(255,51,85,0.25)', borderRadius: 2, color: 'var(--red)', fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', cursor: 'pointer' }}>■ QUITTER SESSION</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {trades.length > 0 && (
+                  <button
+                    onClick={saveSessionAndExit}
+                    disabled={savingSession || sessionSaved}
+                    style={{
+                      width: '100%', padding: '12px', background: sessionSaved ? 'rgba(0,255,136,0.18)' : 'var(--g)',
+                      border: 'none', borderRadius: 2, color: '#000', fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 800,
+                      letterSpacing: '0.1em', cursor: savingSession || sessionSaved ? 'default' : 'pointer',
+                      opacity: savingSession ? 0.7 : 1,
+                    }}
+                  >
+                    {sessionSaved ? '✓ SESSION ENREGISTRÉE' : savingSession ? 'ENREGISTREMENT...' : '▸ ENREGISTRER & QUITTER'}
+                  </button>
+                )}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setShowEndModal(false)} style={{ flex: 1, padding: '10px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', cursor: 'pointer' }}>← CONTINUER</button>
+                  <button onClick={confirmEnd} style={{ flex: 1, padding: '10px', background: 'rgba(255,51,85,0.08)', border: '1px solid rgba(255,51,85,0.25)', borderRadius: 2, color: 'var(--red)', fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', cursor: 'pointer' }}>QUITTER SANS ENREGISTRER</button>
+                </div>
+                {trades.length > 0 && !sessionSaved && (
+                  <div style={{ fontSize: 9, color: 'var(--muted)', textAlign: 'center', marginTop: 4 }}>
+                    Les trades seront ajoutés à ton historique et stats. Modifiable depuis &quot;Sessions de trading&quot;.
+                  </div>
+                )}
               </div>
             </div>
           </div>

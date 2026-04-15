@@ -16,7 +16,8 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        max_tokens: 1500,
+        max_tokens: 3000,
+        response_format: { type: 'json_object' },
         messages: [
           {
             role: 'user',
