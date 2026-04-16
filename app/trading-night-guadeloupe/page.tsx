@@ -36,8 +36,8 @@ export default function TradingNightPage() {
       whatsapp: (form.elements.namedItem('whatsapp') as HTMLInputElement).value,
       experience: (form.elements.namedItem('experience') as HTMLSelectElement).value,
       objectif: (form.elements.namedItem('objectif') as HTMLSelectElement).value,
-      source: 'trading-night',
-      notes: `Inscrit via la page Trading Night le ${today}`,
+      source: 'preinscription-event',
+      notes: `Pré-inscrit via la page Trading Night le ${today} — prochain événement fin mai 2026`,
     }
 
     try {
@@ -141,43 +141,60 @@ body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(
         {submitted ? (
           <div className="tn-success">
             <div className="tn-success-icon">🎉</div>
-            <h2>Inscription <span>confirmée</span></h2>
+            <h2>Pré-inscription <span>confirmée</span></h2>
             <p>
-              On t&apos;attend le <strong>samedi 2 mai 2026</strong> à Saint-François pour la première Trading Night de Guadeloupe.
+              Tu es sur la liste pour le <strong>prochain événement fin mai 2026</strong> en Guadeloupe. On te recontacte dès que la date et le lieu sont confirmés.
             </p>
             <div className="tn-success-card">
               <div className="tn-success-card-row">
                 <div className="tn-success-card-icon">📅</div>
                 <div>
-                  <div style={{ fontSize: 10, color: G, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>Date</div>
-                  <div style={{ color: '#fff', fontWeight: 500 }}>Samedi 2 mai 2026 · 18h00 — 21h00</div>
+                  <div style={{ fontSize: 10, color: G, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>Prochain événement</div>
+                  <div style={{ color: '#fff', fontWeight: 500 }}>Fin mai 2026 · Date exacte à venir</div>
                 </div>
               </div>
               <div className="tn-success-card-row">
                 <div className="tn-success-card-icon">📍</div>
                 <div>
                   <div style={{ fontSize: 10, color: G, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>Lieu</div>
-                  <div style={{ color: '#fff', fontWeight: 500 }}>Saint-François, Guadeloupe</div>
-                  <div style={{ color: '#666', fontSize: 11, marginTop: 2 }}>Adresse exacte envoyée par email J-3</div>
+                  <div style={{ color: '#fff', fontWeight: 500 }}>Guadeloupe</div>
+                  <div style={{ color: '#666', fontSize: 11, marginTop: 2 }}>Lieu communiqué aux inscrits</div>
                 </div>
               </div>
               <div className="tn-success-card-row">
-                <div className="tn-success-card-icon">💬</div>
+                <div className="tn-success-card-icon">📱</div>
                 <div>
-                  <div style={{ fontSize: 10, color: G, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>Contact</div>
-                  <div style={{ color: '#fff', fontWeight: 500 }}>On te recontacte sur WhatsApp dans 24h</div>
+                  <div style={{ fontSize: 10, color: G, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>Restez connecté</div>
+                  <div style={{ color: '#fff', fontWeight: 500 }}>Suivez <a href="https://instagram.com/gael_omega" target="_blank" rel="noopener noreferrer" style={{ color: G, textDecoration: 'none' }}>@gael_omega</a> pour les annonces</div>
                 </div>
               </div>
             </div>
             <p style={{ fontSize: 12, color: '#555' }}>
-              Tu recevras un email de confirmation dans quelques minutes.
+              Tu recevras un email quand la date sera annoncée.
             </p>
           </div>
         ) : (
           <>
+            {/* COMPLET BANNER */}
+            <div style={{
+              background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.22)',
+              borderRadius: 12,
+              padding: '16px 20px',
+              marginBottom: 24,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#ef4444', marginBottom: 4 }}>
+                TRADING NIGHT #1 — COMPLET
+              </div>
+              <div style={{ fontSize: 12, color: '#888' }}>
+                L&apos;événement du 2 mai est complet. <strong style={{ color: '#ddd' }}>Un nouvel événement arrive fin mai !</strong>
+              </div>
+            </div>
+
             <div className="tn-pill">
               <div className="tn-pill-dot" />
-              Événement gratuit · 25 places max
+              Prochain événement · Fin mai 2026
             </div>
 
             <h1 className="tn-h1">
@@ -186,37 +203,45 @@ body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(
             </h1>
 
             <p className="tn-sub">
-              La 1ère soirée networking trading & investissement de la Guadeloupe.<br />
-              <strong>Que tu sois débutant ou que tu trades déjà</strong>, viens comprendre comment les marchés fonctionnent vraiment.
+              La soirée networking trading & investissement de la Guadeloupe revient fin mai.<br />
+              <strong>Pré-inscris-toi maintenant</strong> pour être informé en priorité de la date, du lieu et sécuriser ta place.
             </p>
 
             <div className="tn-info">
               <div className="tn-info-row">
                 <div className="tn-info-icon">📅</div>
                 <div>
-                  <div className="tn-info-lbl">Date</div>
-                  <div className="tn-info-val">Samedi 2 mai 2026</div>
-                  <div className="tn-info-sub">18h00 — 21h00</div>
+                  <div className="tn-info-lbl">Prochain événement</div>
+                  <div className="tn-info-val">Fin mai 2026</div>
+                  <div className="tn-info-sub">Date exacte annoncée sur mes réseaux</div>
                 </div>
               </div>
               <div className="tn-info-row">
                 <div className="tn-info-icon">📍</div>
                 <div>
                   <div className="tn-info-lbl">Lieu</div>
-                  <div className="tn-info-val">Saint-François, Guadeloupe</div>
-                  <div className="tn-info-sub">Adresse exacte envoyée aux inscrits</div>
+                  <div className="tn-info-val">Guadeloupe</div>
+                  <div className="tn-info-sub">Lieu communiqué aux pré-inscrits</div>
+                </div>
+              </div>
+              <div className="tn-info-row">
+                <div className="tn-info-icon">📱</div>
+                <div>
+                  <div className="tn-info-lbl">Restez connecté</div>
+                  <div className="tn-info-val"><a href="https://instagram.com/gael_omega" target="_blank" rel="noopener noreferrer" style={{ color: G, textDecoration: 'none' }}>@gael_omega</a> sur Instagram</div>
+                  <div className="tn-info-sub">Toutes les annonces en avant-première</div>
                 </div>
               </div>
             </div>
 
             <div className="tn-badges">
               <span className="tn-badge tn-badge-g">✓ 100% Gratuit</span>
-              <span className="tn-badge tn-badge-a">⚡ 25 places max</span>
+              <span className="tn-badge tn-badge-a">⚡ Places limitées</span>
             </div>
 
             <div className="tn-form">
-              <div className="tn-form-title">Réserver ma place</div>
-              <div className="tn-form-sub">Quelques infos pour valider ton inscription. On te recontacte sous 24h.</div>
+              <div className="tn-form-title">Se pré-inscrire au prochain événement</div>
+              <div className="tn-form-sub">Remplis le formulaire pour être contacté en priorité dès que la date est fixée.</div>
 
               <form onSubmit={handleSubmit}>
                 <div className="tn-field">
@@ -251,7 +276,7 @@ body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(
                 </div>
 
                 <button type="submit" className="tn-btn" disabled={loading}>
-                  {loading ? 'Inscription en cours...' : 'Confirmer mon inscription →'}
+                  {loading ? 'Pré-inscription en cours...' : 'Se pré-inscrire →'}
                 </button>
 
                 {error && <div className="tn-error">{error}</div>}

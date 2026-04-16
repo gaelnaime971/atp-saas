@@ -63,6 +63,7 @@ const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }
   'methode-atp': { label: 'Méthode ATP', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
   'landing-capture': { label: 'Méthode ATP', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
   'trading-night': { label: 'Trading Night', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
+  'preinscription-event': { label: 'Pré-inscr. Event', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
 }
 
 const PAGE_SIZE = 15
@@ -73,6 +74,7 @@ export default function Prospects() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterObjectif, setFilterObjectif] = useState('all')
   const [filterSource, setFilterSource] = useState('all')
+  const [filterExp, setFilterExp] = useState('all')
   const [page, setPage] = useState(0)
   const [total, setTotal] = useState(0)
   const [selected, setSelected] = useState<Prospect | null>(null)
@@ -96,12 +98,13 @@ export default function Prospects() {
         query = query.eq('source', filterSource)
       }
     }
+    if (filterExp !== 'all') query = query.eq('experience', filterExp)
 
     const { data, count } = await query
     setProspects(data || [])
     setTotal(count || 0)
     setLoading(false)
-  }, [page, filterStatus, filterObjectif, filterSource, supabase])
+  }, [page, filterStatus, filterObjectif, filterSource, filterExp, supabase])
 
   useEffect(() => { fetchProspects() }, [fetchProspects])
 
@@ -198,6 +201,17 @@ export default function Prospects() {
           <option value="all">Toutes les sources</option>
           <option value="methode-atp">Méthode ATP</option>
           <option value="trading-night">Trading Night</option>
+          <option value="preinscription-event">Pré-inscr. Event</option>
+        </select>
+
+        <select
+          value={filterExp}
+          onChange={e => { setFilterExp(e.target.value); setPage(0) }}
+          className="text-xs px-3 py-2 rounded-lg outline-none"
+          style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          <option value="all">Tous les niveaux</option>
+          {Object.entries(EXP_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
 
         <div className="ml-auto text-xs" style={{ color: 'var(--text3)' }}>
