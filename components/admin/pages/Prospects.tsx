@@ -64,6 +64,7 @@ const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }
   'landing-capture': { label: 'Méthode ATP', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
   'trading-night': { label: 'Trading Night', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
   'preinscription-event': { label: 'Pré-inscr. Event', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+  'manual': { label: 'Manuel', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
 }
 
 const PAGE_SIZE = 15
@@ -147,6 +148,32 @@ export default function Prospects() {
     fetchCounts()
   }, [prospects, supabase])
 
+  // Add prospect modal
+  const [showAdd, setShowAdd] = useState(false)
+  const [addForm, setAddForm] = useState({ prenom: '', nom: '', email: '', whatsapp: '', experience: '', objectif: '', source: 'manual' })
+  const [addLoading, setAddLoading] = useState(false)
+
+  const handleAddProspect = async () => {
+    if (!addForm.prenom || !addForm.nom || !addForm.email || !addForm.whatsapp || !addForm.experience || !addForm.objectif) return
+    setAddLoading(true)
+    await supabase.from('prospects').insert({
+      prenom: addForm.prenom,
+      nom: addForm.nom,
+      email: addForm.email,
+      whatsapp: addForm.whatsapp,
+      experience: addForm.experience,
+      objectif: addForm.objectif,
+      source: addForm.source,
+      status: 'nouveau',
+      action: 'rien_fait',
+      notes: `Ajouté manuellement le ${new Date().toLocaleDateString('fr-FR')}`,
+    })
+    setShowAdd(false)
+    setAddForm({ prenom: '', nom: '', email: '', whatsapp: '', experience: '', objectif: '', source: 'manual' })
+    setAddLoading(false)
+    fetchProspects()
+  }
+
   return (
     <div className="space-y-5">
       {/* KPI Cards */}
@@ -170,7 +197,7 @@ export default function Prospects() {
         ))}
       </div>
 
-      {/* Filters */}
+      {/* Filters + Add button */}
       <div className="flex items-center gap-3 flex-wrap">
         <select
           value={filterStatus}
@@ -214,10 +241,102 @@ export default function Prospects() {
           {Object.entries(EXP_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
 
-        <div className="ml-auto text-xs" style={{ color: 'var(--text3)' }}>
-          {total} prospect{total > 1 ? 's' : ''}
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-xs" style={{ color: 'var(--text3)' }}>{total} prospect{total > 1 ? 's' : ''}</span>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+            style={{ background: 'var(--green)', color: '#09090b' }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Nouveau prospect
+          </button>
         </div>
       </div>
+
+      {/* Add prospect modal */}
+      {showAdd && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setShowAdd(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl p-6 space-y-4"
+            style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold" style={{ color: 'var(--text)' }}>Nouveau prospect</h2>
+              <button onClick={() => setShowAdd(false)} className="text-lg" style={{ color: 'var(--text3)' }}>✕</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: 'var(--text3)' }}>Prénom</label>
+                <input type="text" value={addForm.prenom} onChange={e => setAddForm(f => ({ ...f, prenom: e.target.value }))} placeholder="Thomas" required className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: 'var(--text3)' }}>Nom</label>
+                <input type="text" value={addForm.nom} onChange={e => setAddForm(f => ({ ...f, nom: e.target.value }))} placeholder="Dupont" required className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: 'var(--text3)' }}>Email</label>
+              <input type="email" value={addForm.email} onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="thomas@email.com" required className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: 'var(--text3)' }}>WhatsApp</label>
+              <input type="tel" value={addForm.whatsapp} onChange={e => setAddForm(f => ({ ...f, whatsapp: e.target.value }))} placeholder="+590 6 90 XX XX XX" required className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: 'var(--text3)' }}>Expérience</label>
+                <select value={addForm.experience} onChange={e => setAddForm(f => ({ ...f, experience: e.target.value }))} required className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: addForm.experience ? 'var(--text)' : 'var(--text3)' }}>
+                  <option value="" disabled>Niveau</option>
+                  <option value="Aucune">Aucune</option>
+                  <option value="debutant">Débutant</option>
+                  <option value="intermediaire">Intermédiaire</option>
+                  <option value="confirme">Confirmé</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: 'var(--text3)' }}>Objectif</label>
+                <select value={addForm.objectif} onChange={e => setAddForm(f => ({ ...f, objectif: e.target.value }))} required className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: addForm.objectif ? 'var(--text)' : 'var(--text3)' }}>
+                  <option value="" disabled>Objectif</option>
+                  <option value="methode">Méthode structurée</option>
+                  <option value="propfirm">Prop firm</option>
+                  <option value="consistance">Consistance</option>
+                  <option value="vivre">Vivre du trading</option>
+                  <option value="Comprendre les marchés">Comprendre les marchés</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: 'var(--text3)' }}>Source</label>
+              <select value={addForm.source} onChange={e => setAddForm(f => ({ ...f, source: e.target.value }))} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}>
+                <option value="manual">Ajout manuel</option>
+                <option value="trading-night">Trading Night</option>
+                <option value="preinscription-event">Pré-inscr. Event</option>
+                <option value="methode-atp">Méthode ATP</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleAddProspect}
+              disabled={addLoading || !addForm.prenom || !addForm.nom || !addForm.email || !addForm.whatsapp || !addForm.experience || !addForm.objectif}
+              className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
+              style={{ background: 'var(--green)', color: '#09090b' }}
+            >
+              {addLoading ? 'Ajout en cours...' : 'Ajouter le prospect'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
