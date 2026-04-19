@@ -18,18 +18,40 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Find valid invitation
+    // Find valid invitation — try case-insensitive email match
+    const emailNorm = email.toLowerCase().trim()
+    const codeNorm = code.trim()
+
     const { data: invitation, error: inviteError } = await adminSupabase
       .from('invitations')
       .select('*')
-      .eq('email', email.toLowerCase().trim())
-      .eq('code', code.trim())
+      .ilike('email', emailNorm)
+      .eq('code', codeNorm)
       .is('used_at', null)
-      .gt('expires_at', new Date().toISOString())
       .single()
 
     if (inviteError || !invitation) {
-      return NextResponse.json({ error: 'Code invalide ou expiré' }, { status: 400 })
+      console.error('Invitation lookup failed:', { emailNorm, codeNorm, inviteError })
+      // Check if code exists but is expired or used
+      const { data: anyInvite } = await adminSupabase
+        .from('invitations')
+        .select('email, code, used_at, expires_at')
+        .ilike('email', emailNorm)
+        .eq('code', codeNorm)
+        .single()
+
+      if (anyInvite?.used_at) {
+        return NextResponse.json({ error: 'Ce code a déjà été utilisé' }, { status: 400 })
+      }
+      if (anyInvite && new Date(anyInvite.expires_at) < new Date()) {
+        return NextResponse.json({ error: 'Ce code a expiré. Demande un nouveau code à ton coach.' }, { status: 400 })
+      }
+      return NextResponse.json({ error: 'Code invalide. Vérifie ton email et ton code.' }, { status: 400 })
+    }
+
+    // Check expiration separately for clearer error
+    if (new Date(invitation.expires_at) < new Date()) {
+      return NextResponse.json({ error: 'Ce code a expiré. Demande un nouveau code à ton coach.' }, { status: 400 })
     }
 
     // Create Supabase auth user

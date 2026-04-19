@@ -156,6 +156,32 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
   })())
 
 
+  // Discipline reminder every 5 min
+  const DISCIPLINE_MESSAGES = [
+    { title: 'PATIENCE', text: 'Le marché récompense ceux qui attendent. Ne force pas un trade qui n\'existe pas.', action: 'Répète ton plan à haute voix avant de continuer.' },
+    { title: 'DISCIPLINE', text: 'Ton edge ne fonctionne que si tu l\'appliques à chaque trade. Pas d\'exception.', action: 'Vérifie : est-ce que ton prochain trade est dans le plan ?' },
+    { title: 'GESTION DU RISQUE', text: 'Protège ton capital. C\'est ton seul outil de travail. Un trade raté se rattrape, un compte cramé non.', action: 'Rappelle-toi ta règle : SL fixe, sizing calculé.' },
+    { title: 'CONTRÔLE', text: 'Tu ne contrôles pas le marché. Tu contrôles ton risque, tes entrées, et tes sorties. Concentre-toi sur ce que tu maîtrises.', action: 'Inspire. Expire. Puis décide.' },
+    { title: 'PROCESSUS', text: 'Le résultat d\'un trade n\'a aucune importance. La qualité de ton exécution, si.', action: 'Est-ce que ta dernière entrée respectait ton plan ?' },
+    { title: 'STOP LE REVENGE', text: 'Si tu viens de perdre, le prochain trade ne doit pas servir à "te refaire". C\'est comme ça qu\'on perd.', action: 'Pause 2 min. Respire. Puis analyse froidement.' },
+    { title: 'FOCUS', text: 'Un bon trader ne trade pas plus, il trade mieux. Qualité > Quantité.', action: 'Demande-toi : est-ce que je suis encore lucide ?' },
+    { title: 'ROUTINE', text: 'Les meilleurs traders sont les plus ennuyeux. Même setup, même plan, même gestion. Tous les jours.', action: 'Récite les 3 règles ATP qui comptent le plus pour toi.' },
+  ]
+  const [showReminder, setShowReminder] = useState(false)
+  const [reminderMsg, setReminderMsg] = useState(DISCIPLINE_MESSAGES[0])
+  const reminderCount = useRef(0)
+
+  useEffect(() => {
+    if (!booted) return
+    const iv = setInterval(() => {
+      const msg = DISCIPLINE_MESSAGES[reminderCount.current % DISCIPLINE_MESSAGES.length]
+      setReminderMsg(msg)
+      setShowReminder(true)
+      reminderCount.current++
+    }, 5 * 60 * 1000) // 5 minutes
+    return () => clearInterval(iv)
+  }, [booted])
+
   // Clock tick
   useEffect(() => {
     const iv = setInterval(() => {
@@ -415,6 +441,10 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setSavingSession(false); return }
 
+      // Get all trader accounts to link P&L
+      const { data: accs } = await supabase.from('trader_accounts').select('id').eq('trader_id', user.id)
+      const accountIds = (accs || []).map((a: { id: string }) => a.id)
+
       // Most traded instrument (or first if tie)
       const counts: Record<string, number> = {}
       trades.forEach(t => { counts[t.inst] = (counts[t.inst] || 0) + 1 })
@@ -425,6 +455,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
 
       const setup = {
         source: 'session_live',
+        account_ids: accountIds,
         r_value: totalR,
         win_rate: winPct,
         plan_score: Math.round(discScore / 10),
@@ -995,6 +1026,80 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
         </div>
       </div>
 
+      {/* DISCIPLINE REMINDER */}
+      {showReminder && (
+        <div className="disc-overlay" style={{
+          position: 'fixed', inset: 0, zIndex: 30000,
+          background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(12px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'discFadeIn 0.4s ease',
+        }}>
+          <div style={{
+            maxWidth: 440, width: '90%', textAlign: 'center', padding: '40px 36px',
+            position: 'relative',
+          }}>
+            {/* Glow */}
+            <div style={{ position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)', width: 300, height: 300, background: 'radial-gradient(circle, rgba(0,255,136,0.08), transparent 70%)', pointerEvents: 'none' }} />
+
+            {/* Icon pulse */}
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%', margin: '0 auto 20px',
+              background: 'rgba(0,255,136,0.08)', border: '2px solid rgba(0,255,136,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              animation: 'discPulse 2s ease-in-out infinite',
+            }}>
+              <span style={{ fontSize: 24 }}>⚡</span>
+            </div>
+
+            {/* Title */}
+            <div style={{
+              fontFamily: 'var(--orb)', fontSize: 14, fontWeight: 900, letterSpacing: '0.2em',
+              color: 'var(--g)', marginBottom: 16,
+              textShadow: '0 0 20px rgba(0,255,136,0.4)',
+            }}>
+              {reminderMsg.title}
+            </div>
+
+            {/* Message */}
+            <div style={{
+              fontSize: 15, color: 'var(--text)', lineHeight: 1.7, marginBottom: 20,
+              fontWeight: 300,
+            }}>
+              {reminderMsg.text}
+            </div>
+
+            {/* Action */}
+            <div style={{
+              padding: '14px 18px', borderRadius: 6,
+              background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.18)',
+              fontSize: 13, color: 'var(--g)', lineHeight: 1.6, fontWeight: 500,
+              marginBottom: 28,
+            }}>
+              👉 {reminderMsg.action}
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={() => setShowReminder(false)}
+              style={{
+                padding: '14px 40px', background: 'var(--g)', border: 'none', borderRadius: 4,
+                color: '#000', fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 800,
+                letterSpacing: '0.12em', cursor: 'pointer',
+                transition: 'all 0.15s',
+                boxShadow: '0 0 20px rgba(0,255,136,0.25)',
+              }}
+            >
+              J&apos;AI COMPRIS — CONTINUER ▸
+            </button>
+
+            {/* Timer info */}
+            <div style={{ marginTop: 16, fontSize: 9, color: 'var(--muted)', letterSpacing: '0.1em' }}>
+              RAPPEL DISCIPLINE · TOUTES LES 5 MINUTES
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* END SESSION MODAL */}
       {showEndModal && (() => {
         const d = Math.floor((new Date().getTime() - sessionStart.current.getTime()) / 1000)
@@ -1276,4 +1381,6 @@ body::before,body::after{display:none !important;}
 @keyframes fi{to{opacity:1}}
 .bbar{height:100%;background:var(--g);width:0;box-shadow:0 0 10px var(--g);animation:bload 2.3s ease forwards;border-radius:1px;}
 @keyframes bload{from{width:0}to{width:100%}}
+@keyframes discFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes discPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(0,255,136,0.2)}50%{transform:scale(1.08);box-shadow:0 0 20px 4px rgba(0,255,136,0.15)}}
 `
