@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type BlockType = 'text' | 'h2' | 'h3' | 'bullet' | 'todo' | 'divider' | 'quote' | 'callout'
+type BlockType = 'text' | 'h2' | 'h3' | 'bullet' | 'todo' | 'divider' | 'quote' | 'callout' | 'drawing'
 
 interface Block {
   id: string
@@ -80,6 +80,7 @@ const SLASH_ITEMS: { type: BlockType; label: string; icon: string; desc: string 
   { type: 'divider', label: 'Separateur', icon: '—', desc: 'Ligne horizontale' },
   { type: 'quote', label: 'Citation', icon: '❝', desc: 'Bloc de citation' },
   { type: 'callout', label: 'Callout', icon: '💡', desc: 'Bloc info avec icône' },
+  { type: 'drawing', label: 'Dessin', icon: '🎨', desc: 'Zone de dessin libre' },
 ]
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -289,12 +290,16 @@ export default function Notebook() {
   function applySlashCommand(type: BlockType) {
     if (!slashMenu) return
     const blockId = slashMenu.blockId
-    if (type === 'divider') {
-      updateBlock(blockId, { type: 'divider', content: '' })
+    if (type === 'divider' || type === 'drawing') {
+      // Force state update immediately for non-text blocks
+      setBlocks(prev => prev.map(b => b.id === blockId ? { ...b, type, content: '' } : b))
+      blocksRef.current = blocksRef.current.map(b => b.id === blockId ? { ...b, type, content: '' } : b)
       insertBlockAfter(blockId)
     } else {
       updateBlock(blockId, { type, content: '' })
-      setTimeout(() => blockRefs.current[blockId]?.focus(), 20)
+      // Clear the DOM content for the block
+      const el = blockRefs.current[blockId]
+      if (el) { el.textContent = ''; setTimeout(() => el.focus(), 20) }
     }
     closeSlashMenu()
   }
@@ -417,6 +422,8 @@ export default function Notebook() {
       case 'todo':
         return { ...base }
       case 'callout':
+        return { ...base }
+      case 'drawing':
         return { ...base }
       default:
         return base
@@ -824,8 +831,17 @@ export default function Notebook() {
                     </div>
                   )}
 
-                  {/* Divider */}
-                  {block.type === 'divider' ? (
+                  {/* Drawing */}
+                  {block.type === 'drawing' ? (
+                    <DrawingBlock
+                      content={block.content}
+                      onChange={(data) => {
+                        blocksRef.current = blocksRef.current.map(b => b.id === block.id ? { ...b, content: data } : b)
+                        if (saveTimer.current) clearTimeout(saveTimer.current)
+                        saveTimer.current = setTimeout(() => setBlocks([...blocksRef.current]), 1500)
+                      }}
+                    />
+                  ) : block.type === 'divider' ? (
                     <div style={{ flex: 1, padding: '12px 0' }}>
                       <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
                     </div>
@@ -964,6 +980,162 @@ export default function Notebook() {
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Drawing Block Component ─────────────────────────────────────────────────
+
+const DRAW_COLORS = ['#ffffff', '#22c55e', '#ef4444', '#f59e0b', '#3b82f6', '#a855f7', '#ec4899', '#6b7280']
+const DRAW_SIZES = [2, 4, 8, 14]
+
+function DrawingBlock({ content, onChange }: { content: string; onChange: (data: string) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [drawing, setDrawing] = useState(false)
+  const [color, setColor] = useState('#ffffff')
+  const [size, setSize] = useState(4)
+  const [eraser, setEraser] = useState(false)
+  const lastPos = useRef<{ x: number; y: number } | null>(null)
+  const loaded = useRef(false)
+
+  // Load existing drawing
+  useEffect(() => {
+    if (!canvasRef.current || loaded.current) return
+    const ctx = canvasRef.current.getContext('2d')
+    if (!ctx) return
+    ctx.fillStyle = '#0a0a0a'
+    ctx.fillRect(0, 0, 700, 300)
+    if (content) {
+      const img = new Image()
+      img.onload = () => { ctx.drawImage(img, 0, 0); loaded.current = true }
+      img.src = content
+    } else {
+      loaded.current = true
+    }
+  }, [content])
+
+  const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = canvasRef.current!.getBoundingClientRect()
+    return { x: (e.clientX - rect.left) * (700 / rect.width), y: (e.clientY - rect.top) * (300 / rect.height) }
+  }
+
+  const startDraw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setDrawing(true)
+    lastPos.current = getPos(e)
+  }
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!drawing || !canvasRef.current || !lastPos.current) return
+    const ctx = canvasRef.current.getContext('2d')
+    if (!ctx) return
+    const pos = getPos(e)
+    ctx.beginPath()
+    ctx.moveTo(lastPos.current.x, lastPos.current.y)
+    ctx.lineTo(pos.x, pos.y)
+    ctx.strokeStyle = eraser ? '#0a0a0a' : color
+    ctx.lineWidth = eraser ? size * 3 : size
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.stroke()
+    lastPos.current = pos
+  }
+
+  const stopDraw = () => {
+    if (!drawing) return
+    setDrawing(false)
+    lastPos.current = null
+    // Save canvas as data URL
+    if (canvasRef.current) onChange(canvasRef.current.toDataURL('image/png'))
+  }
+
+  const clearCanvas = () => {
+    if (!canvasRef.current) return
+    const ctx = canvasRef.current.getContext('2d')
+    if (!ctx) return
+    ctx.fillStyle = '#0a0a0a'
+    ctx.fillRect(0, 0, 700, 300)
+    onChange('')
+  }
+
+  return (
+    <div style={{ flex: 1 }}>
+      {/* Toolbar */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', marginBottom: 6,
+        background: 'var(--bg3)', borderRadius: '8px 8px 0 0', border: '1px solid var(--border)', borderBottom: 'none',
+        flexWrap: 'wrap',
+      }}>
+        {/* Colors */}
+        {DRAW_COLORS.map(c => (
+          <button
+            key={c}
+            onClick={() => { setColor(c); setEraser(false) }}
+            style={{
+              width: 18, height: 18, borderRadius: '50%', background: c, border: `2px solid ${color === c && !eraser ? 'var(--green)' : 'transparent'}`,
+              cursor: 'pointer', transition: 'border-color 0.1s',
+            }}
+          />
+        ))}
+
+        <div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 4px' }} />
+
+        {/* Sizes */}
+        {DRAW_SIZES.map(s => (
+          <button
+            key={s}
+            onClick={() => setSize(s)}
+            style={{
+              width: 24, height: 24, borderRadius: 4, background: size === s ? 'var(--bg)' : 'transparent',
+              border: size === s ? '1px solid var(--border)' : '1px solid transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}
+          >
+            <div style={{ width: Math.min(s + 2, 14), height: Math.min(s + 2, 14), borderRadius: '50%', background: 'var(--text)' }} />
+          </button>
+        ))}
+
+        <div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 4px' }} />
+
+        {/* Eraser */}
+        <button
+          onClick={() => setEraser(!eraser)}
+          style={{
+            padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+            background: eraser ? 'rgba(239,68,68,0.15)' : 'transparent',
+            border: eraser ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)',
+            color: eraser ? '#ef4444' : 'var(--text3)',
+          }}
+        >
+          Gomme
+        </button>
+
+        {/* Clear */}
+        <button
+          onClick={clearCanvas}
+          style={{
+            marginLeft: 'auto', padding: '3px 8px', borderRadius: 4, fontSize: 11, cursor: 'pointer',
+            background: 'transparent', border: '1px solid var(--border)', color: 'var(--text3)',
+          }}
+        >
+          Effacer tout
+        </button>
+      </div>
+
+      {/* Canvas */}
+      <canvas
+        ref={canvasRef}
+        width={700}
+        height={300}
+        onMouseDown={startDraw}
+        onMouseMove={draw}
+        onMouseUp={stopDraw}
+        onMouseLeave={stopDraw}
+        style={{
+          width: '100%', height: 'auto', borderRadius: '0 0 8px 8px',
+          border: '1px solid var(--border)', cursor: eraser ? 'cell' : 'crosshair',
+          display: 'block',
+        }}
+      />
     </div>
   )
 }
