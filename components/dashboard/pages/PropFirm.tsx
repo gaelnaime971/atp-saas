@@ -13,6 +13,14 @@ const ACCOUNT_TYPES: { id: TraderAccount['account_type']; label: string; color: 
   { id: 'personal', label: 'Personnel', color: '#f59e0b' },
 ]
 
+const ACCOUNT_STATUSES: { id: string; label: string; color: string; bg: string }[] = [
+  { id: 'active', label: 'Actif', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+  { id: 'challenge_en_cours', label: 'Challenge en cours', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' },
+  { id: 'funded', label: 'Funded', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
+  { id: 'crame', label: 'Cramé', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+  { id: 'ferme', label: 'Fermé', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+]
+
 export default function PropFirm() {
   const [accounts, setAccounts] = useState<TraderAccount[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
@@ -128,6 +136,11 @@ export default function PropFirm() {
     if (!userId || !confirm('Supprimer ce compte ?')) return
     await supabase.from('trader_accounts').delete().eq('id', id)
     await fetchData(userId)
+  }
+
+  async function updateAccountStatus(id: string, status: string) {
+    await supabase.from('trader_accounts').update({ account_status: status }).eq('id', id)
+    setAccounts(prev => prev.map(a => a.id === id ? { ...a, account_status: status } as TraderAccount : a))
   }
 
   async function handleAddPayout() {
@@ -336,6 +349,30 @@ export default function PropFirm() {
               <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>
                 {acc.label || `Compte ${acc.propfirm_name}`}
               </h3>
+
+              {/* Status selector */}
+              <div className="flex gap-1 flex-wrap mb-3">
+                {ACCOUNT_STATUSES.map(s => {
+                  const current = (acc as TraderAccount & { account_status?: string }).account_status || 'active'
+                  const isActive = current === s.id
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => updateAccountStatus(acc.id, s.id)}
+                      className="transition-all"
+                      style={{
+                        padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600,
+                        background: isActive ? s.bg : 'transparent',
+                        border: `1px solid ${isActive ? s.color + '44' : 'var(--border)'}`,
+                        color: isActive ? s.color : 'var(--text3)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  )
+                })}
+              </div>
 
               {(() => {
                 const pnl = accountPnl[acc.id] ?? 0

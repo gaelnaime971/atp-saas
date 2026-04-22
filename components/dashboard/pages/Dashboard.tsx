@@ -3,31 +3,21 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
-import type { TradingSession, Profile } from '@/lib/types'
+import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
 import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip)
 
-interface KPIs {
-  totalPnl: number
-  winRate: number
-  profitFactor: number
-  sessionCount: number
-}
-
 export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [kpis, setKpis] = useState<KPIs>({ totalPnl: 0, winRate: 0, profitFactor: 0, sessionCount: 0 })
   const [sessions, setSessions] = useState<TradingSession[]>([])
   const [loading, setLoading] = useState(true)
   const [showWelcome, setShowWelcome] = useState(false)
-  const [nbAccounts, setNbAccounts] = useState(1)
-  const [viewMode, setViewMode] = useState<'solo' | 'global'>('solo')
+  const [accounts, setAccounts] = useState<TraderAccount[]>([])
+  const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set(['all']))
   const supabase = createClient()
-
-  const multiplier = viewMode === 'global' ? nbAccounts : 1
 
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
@@ -54,8 +44,11 @@ export default function Dashboard() {
         if (prof) {
           setProfile(prof as Profile)
           if (!prof.onboarded) setShowWelcome(true)
-          if (prof.nb_accounts && prof.nb_accounts > 1) setNbAccounts(prof.nb_accounts)
         }
+
+        // Fetch accounts
+        const { data: accs } = await supabase.from('trader_accounts').select('*').eq('trader_id', user.id).order('created_at', { ascending: true })
+        if (accs) setAccounts(accs as TraderAccount[])
 
         // Fetch all trading sessions for this trader
         const { data: allSessions } = await supabase
@@ -66,23 +59,6 @@ export default function Dashboard() {
 
         const sess = (allSessions ?? []) as TradingSession[]
         setSessions(sess)
-
-        // Compute KPIs
-        const totalPnl = sess.reduce((sum, s) => sum + Number(s.pnl), 0)
-        const wins = sess.filter(s => s.result === 'win').length
-        const losses = sess.filter(s => s.result === 'loss').length
-        const winRate = sess.length > 0 ? Math.round((wins / sess.length) * 100) : 0
-
-        const grossProfit = sess.filter(s => Number(s.pnl) > 0).reduce((sum, s) => sum + Number(s.pnl), 0)
-        const grossLoss = Math.abs(sess.filter(s => Number(s.pnl) < 0).reduce((sum, s) => sum + Number(s.pnl), 0))
-        const profitFactor = grossLoss > 0 ? Number((grossProfit / grossLoss).toFixed(2)) : grossProfit > 0 ? Infinity : 0
-
-        setKpis({
-          totalPnl,
-          winRate,
-          profitFactor: profitFactor === Infinity ? 99.99 : profitFactor,
-          sessionCount: sess.length,
-        })
       } catch (err) {
         console.error('Dashboard fetch error:', err)
       } finally {
@@ -93,11 +69,40 @@ export default function Dashboard() {
     fetchData()
   }, [])
 
+  // Account filter
+  function toggleAccount(id: string) {
+    setSelectedAccounts(prev => {
+      if (id === 'all') return new Set(['all'])
+      const next = new Set(prev)
+      next.delete('all')
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next.size === 0 ? new Set(['all']) : next
+    })
+  }
+
+  // Filter sessions by selected accounts
+  const filtered = selectedAccounts.has('all') ? sessions : sessions.filter(s => {
+    try {
+      const setup = s.setup ? JSON.parse(s.setup) : null
+      const ids: string[] = setup?.account_ids || []
+      return ids.some(id => selectedAccounts.has(id))
+    } catch { return true }
+  })
+
+  // Computed KPIs from filtered sessions
+  const totalPnl = filtered.reduce((sum, s) => sum + Number(s.pnl), 0)
+  const wins = filtered.filter(s => s.result === 'win').length
+  const winRate = filtered.length > 0 ? Math.round((wins / filtered.length) * 100) : 0
+  const grossProfit = filtered.filter(s => Number(s.pnl) > 0).reduce((sum, s) => sum + Number(s.pnl), 0)
+  const grossLoss = Math.abs(filtered.filter(s => Number(s.pnl) < 0).reduce((sum, s) => sum + Number(s.pnl), 0))
+  const profitFactor = grossLoss > 0 ? Number((grossProfit / grossLoss).toFixed(2)) : grossProfit > 0 ? 99.99 : 0
+
   // Heatmap: sessions ordered by date ascending
-  const heatmapSessions = [...sessions].reverse()
+  const heatmapSessions = [...filtered].reverse()
 
   // Last 8 sessions for table
-  const recentSessions = sessions.slice(0, 8)
+  const recentSessions = filtered.slice(0, 8)
 
   function getCellStyle(session: TradingSession) {
     const isToday = session.session_date === todayStr
@@ -264,27 +269,36 @@ export default function Dashboard() {
             {dateDisplay}
           </p>
         </div>
-        {nbAccounts > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, padding: 3 }}>
-            {(['solo', 'global'] as const).map(mode => {
-              const active = viewMode === mode
+        {accounts.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setSelectedAccounts(new Set(['all']))}
+              style={{
+                padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600,
+                background: selectedAccounts.has('all') ? 'var(--green)' : 'var(--bg2)',
+                border: `1px solid ${selectedAccounts.has('all') ? 'transparent' : 'var(--border)'}`,
+                color: selectedAccounts.has('all') ? '#09090b' : 'var(--text3)',
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}
+            >
+              Tous
+            </button>
+            {accounts.map(acc => {
+              const sel = selectedAccounts.has(acc.id)
+              const tc = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
               return (
                 <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
+                  key={acc.id}
+                  onClick={() => toggleAccount(acc.id)}
                   style={{
-                    padding: '6px 14px',
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    background: active ? 'var(--green)' : 'transparent',
-                    color: active ? '#09090b' : 'var(--text3)',
+                    padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600,
+                    background: sel ? `${tc}18` : 'var(--bg2)',
+                    border: `1px solid ${sel ? tc : 'var(--border)'}`,
+                    color: sel ? tc : 'var(--text3)',
+                    cursor: 'pointer', transition: 'all 0.15s',
                   }}
                 >
-                  {mode === 'solo' ? '1 compte' : `${nbAccounts} comptes`}
+                  {sel ? '✓ ' : ''}{acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
                 </button>
               )
             })}
@@ -301,9 +315,9 @@ export default function Dashboard() {
           <div style={{
             fontSize: 28,
             fontWeight: 700,
-            color: kpis.totalPnl * multiplier >= 0 ? 'var(--green)' : 'var(--red)',
+            color: totalPnl >= 0 ? 'var(--green)' : 'var(--red)',
           }}>
-            {kpis.totalPnl * multiplier >= 0 ? '+' : ''}{(kpis.totalPnl * multiplier).toFixed(2)}$
+            {totalPnl >= 0 ? '+' : ''}{(totalPnl).toFixed(2)}$
           </div>
         </Card>
 
@@ -312,7 +326,7 @@ export default function Dashboard() {
             Win Rate
           </div>
           <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>
-            {kpis.winRate}%
+            {winRate}%
           </div>
         </Card>
 
@@ -320,8 +334,8 @@ export default function Dashboard() {
           <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
             Profit Factor
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: kpis.profitFactor >= 1 ? 'var(--green)' : 'var(--red)' }}>
-            {kpis.profitFactor.toFixed(2)}
+          <div style={{ fontSize: 28, fontWeight: 700, color: profitFactor >= 1 ? 'var(--green)' : 'var(--red)' }}>
+            {profitFactor.toFixed(2)}
           </div>
         </Card>
 
@@ -330,7 +344,7 @@ export default function Dashboard() {
             Sessions
           </div>
           <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>
-            {kpis.sessionCount}
+            {filtered.length}
           </div>
         </Card>
       </div>
@@ -345,9 +359,9 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text3)', fontSize: 13 }}>Aucune session enregistrée</p>
           ) : (
             heatmapSessions.map(s => (
-              <div key={s.id} style={getCellStyle(s)} title={`${s.session_date} — P&L: ${(Number(s.pnl) * multiplier).toFixed(2)}$`}>
+              <div key={s.id} style={getCellStyle(s)} title={`${s.session_date} — P&L: ${(Number(s.pnl) ).toFixed(2)}$`}>
                 <span style={{ fontSize: 12, opacity: 0.7 }}>{formatDate(s.session_date)}</span>
-                <span>{formatPnl(Number(s.pnl) * multiplier)}</span>
+                <span>{formatPnl(Number(s.pnl) )}</span>
               </div>
             ))
           )}
@@ -362,10 +376,10 @@ export default function Dashboard() {
           </h2>
           <div style={{ height: 200 }}>
             {(() => {
-              const sorted = [...sessions].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
+              const sorted = [...filtered].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
               const cumulative: number[] = []
-              sorted.reduce((acc, s) => { const v = acc + Number(s.pnl) * multiplier; cumulative.push(v); return v }, 0)
+              sorted.reduce((acc, s) => { const v = acc + Number(s.pnl) ; cumulative.push(v); return v }, 0)
               return (
                 <Line
                   data={{
@@ -405,9 +419,9 @@ export default function Dashboard() {
           </h2>
           <div style={{ height: 200 }}>
             {(() => {
-              const sorted = [...sessions].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
+              const sorted = [...filtered].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
-              const pnls = sorted.map(s => Number(s.pnl) * multiplier)
+              const pnls = sorted.map(s => Number(s.pnl) )
               return (
                 <Bar
                   data={{
@@ -473,7 +487,7 @@ export default function Dashboard() {
                 </tr>
               ) : (
                 recentSessions.map(s => {
-                  const pnl = Number(s.pnl) * multiplier
+                  const pnl = Number(s.pnl)
                   const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--amber)'
                   const meta = parseSetup(s.setup)
                   const rValue = meta?.r_value
