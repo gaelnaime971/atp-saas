@@ -11,6 +11,16 @@ interface KPIData {
   winRate: number
 }
 
+interface TopProspect {
+  id: string
+  prenom: string
+  nom: string
+  score: number
+  objectif: string
+  source: string
+  status: string
+}
+
 interface RecentSession {
   id: string
   trader_name: string
@@ -31,6 +41,7 @@ export default function Overview() {
   const [recentSessions, setRecentSessions] = useState<RecentSession[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
+  const [topProspects, setTopProspects] = useState<TopProspect[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -125,6 +136,15 @@ export default function Overview() {
         }
 
         setAlerts(newAlerts)
+
+        // Fetch top prospects
+        const { data: topP } = await supabase
+          .from('prospects')
+          .select('id, prenom, nom, score, objectif, source, status')
+          .in('status', ['nouveau', 'contacte'])
+          .order('score', { ascending: false })
+          .limit(5)
+        setTopProspects((topP || []) as TopProspect[])
       } finally {
         setLoading(false)
       }
@@ -288,6 +308,40 @@ export default function Overview() {
                     <p className="text-xs font-medium" style={{ color: colors.color }}>{alert.message}</p>
                     {alert.detail && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{alert.detail}</p>}
                   </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* Top Prospects */}
+      {topProspects.length > 0 && (
+        <Card className="border border-red-500/20">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-lg">🔥</span>
+            <h2 className="text-sm font-semibold text-[#e8edf5]">À appeler aujourd&apos;hui</h2>
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-400 font-mono">{topProspects.length}</span>
+          </div>
+          <div className="space-y-2">
+            {topProspects.map(p => {
+              const scoreColor = (p.score || 0) >= 75 ? '#22c55e' : (p.score || 0) >= 50 ? '#f59e0b' : '#6b7280'
+              return (
+                <div key={p.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-[rgba(255,255,255,0.03)]" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+                  <div className="flex items-center justify-center w-9 h-9 rounded-lg" style={{ background: `${scoreColor}15`, border: `1px solid ${scoreColor}33` }}>
+                    <span className="text-sm font-bold font-mono" style={{ color: scoreColor }}>{p.score || 0}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{p.prenom} {p.nom}</p>
+                    <p className="text-xs" style={{ color: 'var(--text3)' }}>{p.objectif || '—'} · {p.source}</p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded uppercase font-semibold" style={{
+                    background: p.status === 'nouveau' ? 'rgba(59,130,246,0.1)' : 'rgba(245,158,11,0.1)',
+                    color: p.status === 'nouveau' ? '#3b82f6' : '#f59e0b',
+                    border: `1px solid ${p.status === 'nouveau' ? 'rgba(59,130,246,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                  }}>
+                    {p.status === 'nouveau' ? 'Nouveau' : 'Contacté'}
+                  </span>
                 </div>
               )
             })}
