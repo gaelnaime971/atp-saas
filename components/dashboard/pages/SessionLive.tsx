@@ -88,6 +88,10 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
   const sessionStart = useRef(new Date())
   const [sessionTimer, setSessionTimer] = useState('00:00:00')
 
+  // Trader accounts (for session attribution)
+  const [accounts, setAccounts] = useState<Array<{ id: string; label: string; propfirm_name: string; capital: number; account_type: string }>>([])
+  const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(new Set())
+
   // Mental
   const [mental, setMental] = useState(5)
   const mentalLabel = mental <= 3 ? '⚠ TILT — NE PAS TRADER' : mental <= 6 ? '◈ NEUTRE — TRADER AVEC PRUDENCE' : '◆ FOCUS — PRÊT À OPÉRER'
@@ -255,6 +259,23 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
     const iv = setInterval(fetchPrices, 60000)
     return () => clearInterval(iv)
   }, [booted, fetchPrices])
+
+  // Fetch trader accounts at boot
+  useEffect(() => {
+    if (!booted) return
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase.from('trader_accounts').select('id, label, propfirm_name, capital, account_type').eq('trader_id', user.id).order('created_at', { ascending: true })
+        .then(({ data }) => {
+          if (data) {
+            setAccounts(data)
+            // Pre-select all by default
+            setSelectedAccountIds(new Set(data.map((a: { id: string }) => a.id)))
+          }
+        })
+    })
+  }, [booted])
 
   // Calc risk
   const doCalc = useCallback(() => {
@@ -441,9 +462,10 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setSavingSession(false); return }
 
-      // Get all trader accounts to link P&L
-      const { data: accs } = await supabase.from('trader_accounts').select('id').eq('trader_id', user.id)
-      const accountIds = (accs || []).map((a: { id: string }) => a.id)
+      // Use selected accounts (fallback to all if none selected)
+      const accountIds = selectedAccountIds.size > 0
+        ? Array.from(selectedAccountIds)
+        : accounts.map(a => a.id)
 
       // Most traded instrument (or first if tie)
       const counts: Record<string, number> = {}
@@ -563,6 +585,55 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
               <div className="ms-labs"><span>TILT</span><span>NEUTRE</span><span>FOCUS</span></div>
               <div className={`mstate ${mentalCls}`}>{mentalLabel}</div>
             </div>
+
+            {accounts.length > 0 && (
+              <>
+                <div className="ph"><span className="ph-t">COMPTES TRADÉS</span><span className="ph-b">{selectedAccountIds.size}/{accounts.length}</span></div>
+                <div className="blk">
+                  <div className="blt">SUR QUELS COMPTES TU TRADES ?</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {accounts.map(acc => {
+                      const sel = selectedAccountIds.has(acc.id)
+                      const tc = acc.account_type === 'funded' ? '#00ff88' : acc.account_type === 'challenge' ? '#60a5fa' : '#ffaa00'
+                      return (
+                        <button
+                          key={acc.id}
+                          onClick={() => setSelectedAccountIds(prev => {
+                            const next = new Set(prev)
+                            if (next.has(acc.id)) next.delete(acc.id)
+                            else next.add(acc.id)
+                            return next
+                          })}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', borderRadius: 3, fontSize: 9,
+                            background: sel ? `${tc}15` : 'transparent',
+                            border: `1px solid ${sel ? tc : 'var(--dim)'}`,
+                            color: sel ? tc : 'var(--muted)',
+                            cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
+                            fontFamily: 'var(--mono)', letterSpacing: '0.04em',
+                          }}
+                        >
+                          <span style={{ fontSize: 10 }}>{sel ? '◉' : '○'}</span>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                    <button
+                      onClick={() => setSelectedAccountIds(new Set(accounts.map(a => a.id)))}
+                      style={{ flex: 1, padding: '4px', background: 'transparent', border: '1px solid var(--dim)', borderRadius: 2, color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 8, letterSpacing: '0.1em', cursor: 'pointer' }}
+                    >TOUS</button>
+                    <button
+                      onClick={() => setSelectedAccountIds(new Set())}
+                      style={{ flex: 1, padding: '4px', background: 'transparent', border: '1px solid var(--dim)', borderRadius: 2, color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 8, letterSpacing: '0.1em', cursor: 'pointer' }}
+                    >AUCUN</button>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="ph"><span className="ph-t">RESPIRATION 4-4-6</span></div>
             <div className="blk">
