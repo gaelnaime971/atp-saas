@@ -8,6 +8,7 @@ import Session from '@/components/dashboard/pages/Session'
 import SessionsHistory from '@/components/dashboard/pages/SessionsHistory'
 import Stats from '@/components/dashboard/pages/Stats'
 import Backtest from '@/components/dashboard/pages/Backtest'
+import AnalyseIA from '@/components/dashboard/pages/AnalyseIA'
 import Notebook from '@/components/dashboard/pages/Notebook'
 import PropFirm from '@/components/dashboard/pages/PropFirm'
 import Calculateur from '@/components/dashboard/pages/Calculateur'
@@ -32,6 +33,7 @@ const pageTitles: Record<DashboardPage, string> = {
   stats: 'Stats & Performance',
   'pre-market': 'Routine pré-marché',
   backtest: 'Backtest',
+  'analyse-ia': 'Analyse IA',
   notebook: 'Mon cahier',
   propfirm: 'Prop Firm',
   calculateur: 'Calculateur de risque — Futures',
@@ -56,6 +58,7 @@ export default function TraderDashboard() {
       case 'sessions-history': return <SessionsHistory />
       case 'stats': return <Stats />
       case 'backtest': return <Backtest />
+      case 'analyse-ia': return <AnalyseIA />
       case 'notebook': return <Notebook />
       case 'propfirm': return <PropFirm />
       case 'calculateur': return <Calculateur />
