@@ -97,6 +97,66 @@ const KEYFRAMES = `
 
 /* ─── Component ─── */
 
+function CheckItem({ label, checked, onToggle }: { label: string; checked: boolean; onToggle: () => void }) {
+  return (
+    <div
+      onClick={onToggle}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10,
+        border: checked ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
+        background: checked ? 'rgba(34,197,94,0.07)' : 'rgba(255,255,255,0.02)',
+        cursor: 'pointer', transition: 'all 0.25s ease', userSelect: 'none',
+      }}
+    >
+      <div style={{
+        width: 22, height: 22, borderRadius: 6,
+        border: checked ? '2px solid #22c55e' : '2px solid rgba(255,255,255,0.15)',
+        background: checked ? '#22c55e' : 'transparent',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        transition: 'all 0.2s ease', animation: checked ? 'checkPop 0.3s ease' : 'none',
+      }}>
+        {checked && (
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#111113" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </div>
+      <span style={{ fontSize: 13, fontWeight: 500, color: checked ? '#22c55e' : '#c8d0dc', textDecoration: checked ? 'line-through' : 'none', transition: 'all 0.2s ease' }}>
+        {label}
+      </span>
+    </div>
+  )
+}
+
+function SectionCard({ section, done, total, children }: { section: SectionDef; done: number; total: number; children: React.ReactNode }) {
+  const complete = done === total
+  return (
+    <Card style={{
+      border: complete ? '1px solid rgba(34,197,94,0.25)' : undefined,
+      background: complete ? 'rgba(34,197,94,0.03)' : undefined,
+      transition: 'all 0.4s ease',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 12,
+        borderBottom: `1px solid ${complete ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.06)'}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 20 }}>{section.icon}</span>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#e8edf5', margin: 0 }}>{section.title}</h3>
+        </div>
+        <span style={{
+          fontSize: 12, fontWeight: 700, fontFamily: 'monospace', padding: '4px 10px', borderRadius: 8,
+          background: complete ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
+          color: complete ? '#22c55e' : '#8892a4', transition: 'all 0.3s ease',
+        }}>
+          {done}/{total} ✓
+        </span>
+      </div>
+      {children}
+    </Card>
+  )
+}
+
 export default function PreMarket() {
   const [data, setData] = useState<PreMarketData>(emptyData)
   const [mounted, setMounted] = useState(false)
@@ -123,8 +183,8 @@ export default function PreMarket() {
 
   const checkedCount = Object.values(data.checks).filter(Boolean).length
   // Extra trackable items: bias selected, 3 level fields filled
-  const bonusCount = (data.bias ? 1 : 0) + (data.support ? 1 : 0) + (data.resistance ? 1 : 0) + (data.pivot ? 1 : 0)
-  const totalTrackable = TOTAL_CHECKABLE + 4 // 4 bonus (bias + 3 levels)
+  const bonusCount = (data.bias ? 1 : 0) + (data.support ? 1 : 0) + (data.resistance ? 1 : 0)
+  const totalTrackable = TOTAL_CHECKABLE + 3 // 3 bonus (bias + 2 levels)
   const completedCount = checkedCount + bonusCount
   const progress = Math.round((completedCount / totalTrackable) * 100)
   const isReady = progress === 100
@@ -158,104 +218,6 @@ export default function PreMarket() {
     fontFamily: 'inherit',
   }
 
-  const sectionHeaderStyle = (complete: boolean): React.CSSProperties => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottom: `1px solid ${complete ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.06)'}`,
-  })
-
-  /* ─── Checkbox row renderer ─── */
-
-  function CheckItem({ label }: { label: string }) {
-    const isChecked = data.checks[label]
-    return (
-      <div
-        onClick={() => toggleCheck(label)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '11px 14px',
-          borderRadius: 10,
-          border: isChecked ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
-          background: isChecked ? 'rgba(34,197,94,0.07)' : 'rgba(255,255,255,0.02)',
-          cursor: 'pointer',
-          transition: 'all 0.25s ease',
-          userSelect: 'none',
-        }}
-      >
-        {/* Custom checkbox */}
-        <div style={{
-          width: 22,
-          height: 22,
-          borderRadius: 6,
-          border: isChecked ? '2px solid #22c55e' : '2px solid rgba(255,255,255,0.15)',
-          background: isChecked ? '#22c55e' : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          transition: 'all 0.2s ease',
-          animation: isChecked ? 'checkPop 0.3s ease' : 'none',
-        }}>
-          {isChecked && (
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#111113" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </div>
-
-        <span style={{
-          fontSize: 13,
-          fontWeight: 500,
-          color: isChecked ? '#22c55e' : '#c8d0dc',
-          textDecoration: isChecked ? 'line-through' : 'none',
-          transition: 'all 0.2s ease',
-        }}>
-          {label}
-        </span>
-      </div>
-    )
-  }
-
-  /* ─── Section card wrapper ─── */
-
-  function SectionCard({ section, children }: { section: SectionDef; children: React.ReactNode }) {
-    const done = sectionProgress(section)
-    const total = section.checks.length
-    const complete = done === total
-
-    return (
-      <Card style={{
-        border: complete ? '1px solid rgba(34,197,94,0.25)' : undefined,
-        background: complete ? 'rgba(34,197,94,0.03)' : undefined,
-        transition: 'all 0.4s ease',
-      }}>
-        <div style={sectionHeaderStyle(complete)}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 20 }}>{section.icon}</span>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#e8edf5', margin: 0 }}>{section.title}</h3>
-          </div>
-          <span style={{
-            fontSize: 12,
-            fontWeight: 700,
-            fontFamily: 'monospace',
-            padding: '4px 10px',
-            borderRadius: 8,
-            background: complete ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
-            color: complete ? '#22c55e' : '#8892a4',
-            transition: 'all 0.3s ease',
-          }}>
-            {done}/{total} ✓
-          </span>
-        </div>
-        {children}
-      </Card>
-    )
-  }
 
   /* ─── Render ─── */
 
@@ -365,7 +327,7 @@ export default function PreMarket() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
             {/* Section 1: État Mental */}
-            <SectionCard section={SECTIONS[0]}>
+            <SectionCard section={SECTIONS[0]} done={sectionProgress(SECTIONS[0])} total={SECTIONS[0].checks.length}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {/* Confidence slider */}
                 <div>
@@ -423,16 +385,16 @@ export default function PreMarket() {
 
                 {/* Mindset checks */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {SECTIONS[0].checks.map(c => <CheckItem key={c} label={c} />)}
+                  {SECTIONS[0].checks.map(c => <CheckItem key={c} label={c} checked={!!data.checks[c]} onToggle={() => toggleCheck(c)} />)}
                 </div>
               </div>
             </SectionCard>
 
             {/* Section 3: Analyse Technique */}
-            <SectionCard section={SECTIONS[2]}>
+            <SectionCard section={SECTIONS[2]} done={sectionProgress(SECTIONS[2])} total={SECTIONS[2].checks.length}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {/* Key levels */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 600, color: '#22c55e', display: 'block', marginBottom: 5 }}>Support</label>
                     <input
@@ -453,21 +415,11 @@ export default function PreMarket() {
                       style={{ ...inputStyle, textAlign: 'center', borderColor: data.resistance ? 'rgba(239,68,68,0.3)' : undefined }}
                     />
                   </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#f59e0b', display: 'block', marginBottom: 5 }}>Pivot</label>
-                    <input
-                      type="number"
-                      value={data.pivot}
-                      onChange={e => setData(d => ({ ...d, pivot: e.target.value }))}
-                      placeholder="5450"
-                      style={{ ...inputStyle, textAlign: 'center', borderColor: data.pivot ? 'rgba(245,158,11,0.3)' : undefined }}
-                    />
-                  </div>
                 </div>
 
                 {/* Technique checks */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {SECTIONS[2].checks.map(c => <CheckItem key={c} label={c} />)}
+                  {SECTIONS[2].checks.map(c => <CheckItem key={c} label={c} checked={!!data.checks[c]} onToggle={() => toggleCheck(c)} />)}
                 </div>
               </div>
             </SectionCard>
@@ -477,7 +429,7 @@ export default function PreMarket() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
             {/* Section 2: Analyse Macro */}
-            <SectionCard section={SECTIONS[1]}>
+            <SectionCard section={SECTIONS[1]} done={sectionProgress(SECTIONS[1])} total={SECTIONS[1].checks.length}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {/* Bias selector */}
                 <div>
@@ -524,15 +476,15 @@ export default function PreMarket() {
 
                 {/* Macro checks */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {SECTIONS[1].checks.map(c => <CheckItem key={c} label={c} />)}
+                  {SECTIONS[1].checks.map(c => <CheckItem key={c} label={c} checked={!!data.checks[c]} onToggle={() => toggleCheck(c)} />)}
                 </div>
               </div>
             </SectionCard>
 
             {/* Section 4: Gestion du Risque */}
-            <SectionCard section={SECTIONS[3]}>
+            <SectionCard section={SECTIONS[3]} done={sectionProgress(SECTIONS[3])} total={SECTIONS[3].checks.length}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {SECTIONS[3].checks.map(c => <CheckItem key={c} label={c} />)}
+                {SECTIONS[3].checks.map(c => <CheckItem key={c} label={c} checked={!!data.checks[c]} onToggle={() => toggleCheck(c)} />)}
               </div>
             </SectionCard>
           </div>
