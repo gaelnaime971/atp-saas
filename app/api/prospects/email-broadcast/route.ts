@@ -75,31 +75,41 @@ export async function POST(request: Request) {
     const recipients = (prospects || []) as Recipient[]
     let sent = 0
     let errors = 0
+    const failedEmails: Array<{ email: string; reason: string }> = []
 
-    // Send in batches of 5 to avoid rate limits
-    for (let i = 0; i < recipients.length; i += 5) {
-      const chunk = recipients.slice(i, i + 5)
-      const results = await Promise.allSettled(
-        chunk.map(r => {
-          // Personalize: replace {{prenom}}, {{nom}} placeholders
-          const personalizedHtml = html
-            .replace(/\{\{prenom\}\}/gi, r.prenom || '')
-            .replace(/\{\{nom\}\}/gi, r.nom || '')
-            .replace(/\{\{email\}\}/gi, r.email)
-          return resend.emails.send({
-            from,
-            to: r.email,
-            subject,
-            html: personalizedHtml,
-          })
+    // Send sequentially with throttle to respect Resend free tier (2 req/sec)
+    for (let i = 0; i < recipients.length; i++) {
+      const r = recipients[i]
+      const personalizedHtml = html
+        .replace(/\{\{prenom\}\}/gi, r.prenom || '')
+        .replace(/\{\{nom\}\}/gi, r.nom || '')
+        .replace(/\{\{email\}\}/gi, r.email)
+      try {
+        const res = await resend.emails.send({
+          from,
+          to: r.email,
+          subject,
+          html: personalizedHtml,
         })
-      )
-      results.forEach(res => {
-        if (res.status === 'fulfilled' && !res.value.error) sent++
-        else errors++
-      })
-      // Throttle: 100ms between batches
-      if (i + 5 < recipients.length) await new Promise(r => setTimeout(r, 100))
+        if (res.error) {
+          errors++
+          const err = res.error as { message?: string } | string
+          failedEmails.push({
+            email: r.email,
+            reason: typeof err === 'string' ? err : (err.message || JSON.stringify(err)),
+          })
+        } else {
+          sent++
+        }
+      } catch (e) {
+        errors++
+        failedEmails.push({
+          email: r.email,
+          reason: e instanceof Error ? e.message : 'Erreur réseau',
+        })
+      }
+      // Throttle: 600ms between sends to stay under 2 req/sec
+      if (i < recipients.length - 1) await new Promise(r => setTimeout(r, 600))
     }
 
     // Log broadcast
@@ -111,6 +121,7 @@ export async function POST(request: Request) {
       sources: sources || [],
       recipient_ids: recipientIds,
       sent, errors,
+      failed_emails: failedEmails,
       test_mode: false,
     })
 

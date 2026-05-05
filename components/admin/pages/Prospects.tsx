@@ -336,6 +336,7 @@ export default function Prospects() {
     errors: number
     test_mode: boolean
     test_email: string | null
+    failed_emails: Array<{ email: string; reason: string }>
   }
   const [showHistory, setShowHistory] = useState(false)
   const [historyList, setHistoryList] = useState<BroadcastRow[]>([])
@@ -950,6 +951,35 @@ export default function Prospects() {
                     </div>
                   </div>
                 </div>
+                {/* Failed emails */}
+                {historyDetail.failed_emails && historyDetail.failed_emails.length > 0 && (
+                  <div className="rounded-lg p-4 mb-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: '#ef4444' }}>
+                        ⚠️ {historyDetail.failed_emails.length} échecs détaillés
+                      </div>
+                    </div>
+                    <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)', maxHeight: 240, overflowY: 'auto' }}>
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr style={{ background: 'var(--bg)' }}>
+                            <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text3)', fontSize: 10 }}>Email</th>
+                            <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text3)', fontSize: 10 }}>Raison de l&apos;échec</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {historyDetail.failed_emails.map((f, i) => (
+                            <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
+                              <td className="px-3 py-2 font-mono" style={{ color: 'var(--text2)' }}>{f.email}</td>
+                              <td className="px-3 py-2" style={{ color: '#ef4444', fontSize: 11 }}>{f.reason}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: 'var(--text3)' }}>Aperçu du contenu</div>
                 <div className="rounded-lg overflow-hidden" style={{ background: '#fff', border: '1px solid var(--border)', height: 500 }}>
                   <iframe
