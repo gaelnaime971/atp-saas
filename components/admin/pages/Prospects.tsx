@@ -347,15 +347,38 @@ export default function Prospects() {
       setCsvData(rows)
       // Auto-map by guessing
       const map: Record<string, string> = { prenom: '', nom: '', email: '', whatsapp: '', experience: '', objectif: '', spending: '' }
+
+      // Score each column for email by scanning the actual data
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      const emailCandidates: Array<{ header: string; score: number; filledCount: number }> = []
+      headers.forEach((h, idx) => {
+        const lh = h.toLowerCase()
+        if (lh.includes('mail') || lh.includes('e-mail')) {
+          // Count valid emails in this column
+          let validCount = 0
+          rows.slice(0, 50).forEach(row => {
+            const v = (row[idx] || '').trim()
+            if (v && emailRegex.test(v)) validCount++
+          })
+          // Prefer exact "email" match, then by valid count
+          const baseScore = lh === 'email' || lh === 'e-mail' ? 100 : 50
+          emailCandidates.push({ header: h, score: baseScore + validCount, filledCount: validCount })
+        }
+      })
+      // Pick the email column with highest score (most actual emails)
+      if (emailCandidates.length > 0) {
+        const best = emailCandidates.sort((a, b) => b.score - a.score)[0]
+        map.email = best.header
+      }
+
       headers.forEach(h => {
         const lh = h.toLowerCase()
-        if (lh.includes('prénom') || lh.includes('prenom') || lh === 'first' || lh.includes('first name')) map.prenom = h
-        else if (lh.includes('nom') || lh === 'last' || lh.includes('last name') || lh.includes('family')) map.nom = h
-        else if (lh.includes('mail') || lh.includes('e-mail')) map.email = h
-        else if (lh.includes('phone') || lh.includes('tel') || lh.includes('whatsapp') || lh.includes('mobile')) map.whatsapp = h
-        else if (lh.includes('expéri') || lh.includes('experience') || lh.includes('niveau')) map.experience = h
-        else if (lh.includes('objectif') || lh.includes('goal')) map.objectif = h
-        else if (lh.includes('dépens') || lh.includes('depens') || lh.includes('total spent') || lh.includes('total revenue') || lh.includes('amount') || lh.includes('montant') || lh.includes('lifetime')) map.spending = h
+        if (!map.prenom && (lh.includes('prénom') || lh.includes('prenom') || lh === 'first' || lh.includes('first name'))) map.prenom = h
+        else if (!map.nom && (lh.includes('nom') || lh === 'last' || lh.includes('last name') || lh.includes('family'))) map.nom = h
+        else if (!map.whatsapp && (lh.includes('phone') || lh.includes('tel') || lh.includes('whatsapp') || lh.includes('mobile'))) map.whatsapp = h
+        else if (!map.experience && (lh.includes('expéri') || lh.includes('experience') || lh.includes('niveau'))) map.experience = h
+        else if (!map.objectif && (lh.includes('objectif') || lh.includes('goal'))) map.objectif = h
+        else if (!map.spending && (lh.includes('dépens') || lh.includes('depens') || lh.includes('total spent') || lh.includes('total revenue') || lh.includes('amount') || lh.includes('montant') || lh.includes('lifetime'))) map.spending = h
       })
       // If no prenom but has "nom complet" or "name", use nom for both
       if (!map.prenom && !map.nom) {
@@ -851,6 +874,17 @@ export default function Prospects() {
                           <option value="">— Non mappé —</option>
                           {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
+                        {f.key === 'email' && csvMapping.email && (() => {
+                          const idx = csvHeaders.indexOf(csvMapping.email)
+                          const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                          const valid = csvData.filter(r => idx >= 0 && re.test((r[idx] || '').trim())).length
+                          const color = valid === csvData.length ? '#22c55e' : valid > 0 ? '#f59e0b' : '#ef4444'
+                          return (
+                            <div className="text-[10px] mt-1" style={{ color }}>
+                              {valid}/{csvData.length} emails valides {valid === 0 && '— change de colonne'}
+                            </div>
+                          )
+                        })()}
                       </div>
                     ))}
                   </div>
