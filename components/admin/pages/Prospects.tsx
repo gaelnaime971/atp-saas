@@ -323,6 +323,32 @@ export default function Prospects() {
     setScoreCfg(def)
   }
 
+  // Email history
+  interface BroadcastRow {
+    id: string
+    created_at: string
+    subject: string
+    html: string
+    recipient_mode: string
+    recipient_count: number
+    sources: string[]
+    sent: number
+    errors: number
+    test_mode: boolean
+    test_email: string | null
+  }
+  const [showHistory, setShowHistory] = useState(false)
+  const [historyList, setHistoryList] = useState<BroadcastRow[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyDetail, setHistoryDetail] = useState<BroadcastRow | null>(null)
+
+  async function loadHistory() {
+    setHistoryLoading(true)
+    const { data } = await supabase.from('email_broadcasts').select('*').order('created_at', { ascending: false }).limit(100)
+    setHistoryList((data || []) as BroadcastRow[])
+    setHistoryLoading(false)
+  }
+
   // Email broadcast
   const [showEmail, setShowEmail] = useState(false)
   const [emailSubject, setEmailSubject] = useState('')
@@ -390,6 +416,8 @@ export default function Prospects() {
           html: emailHtml,
           testMode: emailTestMode,
           testEmail: emailTestMode ? emailTestAddress : undefined,
+          sources: emailRecipientMode === 'source' ? emailSourceFilter : [],
+          recipientMode: emailRecipientMode,
         }),
       })
       const data = await res.json()
@@ -744,6 +772,14 @@ export default function Prospects() {
             Envoyer email
           </button>
           <button
+            onClick={() => { setShowHistory(true); loadHistory() }}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)' }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Historique
+          </button>
+          <button
             onClick={() => setShowImport(true)}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
             style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)' }}
@@ -866,6 +902,124 @@ export default function Prospects() {
                 Sauvegarder & recalculer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email history modal */}
+      {showHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }} onClick={() => { setShowHistory(false); setHistoryDetail(null) }}>
+          <div className="w-full max-w-4xl rounded-2xl p-6" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-sm font-bold" style={{ color: 'var(--text)' }}>Historique des emails envoyés</h2>
+                <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>{historyList.length} broadcast{historyList.length > 1 ? 's' : ''} (100 derniers)</p>
+              </div>
+              <button onClick={() => { setShowHistory(false); setHistoryDetail(null) }} className="text-lg" style={{ color: 'var(--text3)' }}>✕</button>
+            </div>
+
+            {historyDetail ? (
+              <div>
+                <button onClick={() => setHistoryDetail(null)} className="text-xs mb-4 flex items-center gap-1" style={{ color: 'var(--text3)' }}>
+                  ← Retour à la liste
+                </button>
+                <div className="rounded-lg p-4 mb-4" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--text3)' }}>Sujet</div>
+                      <div className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{historyDetail.subject}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--text3)' }}>Date</div>
+                      <div className="text-sm" style={{ color: 'var(--text)' }}>
+                        {new Date(historyDetail.created_at).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--text3)' }}>Mode</div>
+                      <div className="text-sm" style={{ color: historyDetail.test_mode ? '#f59e0b' : 'var(--text)' }}>
+                        {historyDetail.test_mode ? `🧪 Test (${historyDetail.test_email})` : historyDetail.recipient_mode === 'source' ? `Par source: ${historyDetail.sources?.join(', ')}` : 'Sélection manuelle'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--text3)' }}>Résultats</div>
+                      <div className="flex gap-3 text-sm">
+                        <span style={{ color: '#22c55e' }}>✓ {historyDetail.sent} envoyés</span>
+                        {historyDetail.errors > 0 && <span style={{ color: '#ef4444' }}>✕ {historyDetail.errors} erreurs</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: 'var(--text3)' }}>Aperçu du contenu</div>
+                <div className="rounded-lg overflow-hidden" style={{ background: '#fff', border: '1px solid var(--border)', height: 500 }}>
+                  <iframe
+                    title="hist-preview"
+                    srcDoc={historyDetail.html.replace(/\{\{prenom\}\}/gi, 'Thomas').replace(/\{\{nom\}\}/gi, 'Dupont').replace(/\{\{email\}\}/gi, 'thomas@email.com')}
+                    sandbox="allow-same-origin"
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                {historyLoading ? (
+                  <div className="text-center py-12" style={{ color: 'var(--text3)' }}>Chargement...</div>
+                ) : historyList.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div style={{ fontSize: 32, marginBottom: 12 }}>📭</div>
+                    <p style={{ color: 'var(--text2)', fontSize: 13 }}>Aucun email envoyé pour le moment</p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr style={{ background: 'var(--bg3)' }}>
+                          {['Date', 'Sujet', 'Mode', 'Destinataires', 'Résultat', ''].map(h => (
+                            <th key={h} className="text-left px-4 py-3 font-semibold uppercase tracking-wider" style={{ color: 'var(--text3)', fontSize: 10 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {historyList.map(h => (
+                          <tr
+                            key={h.id}
+                            className="cursor-pointer transition-colors hover:bg-[rgba(255,255,255,0.02)]"
+                            style={{ borderTop: '1px solid var(--border)' }}
+                            onClick={() => setHistoryDetail(h)}
+                          >
+                            <td className="px-4 py-3" style={{ color: 'var(--text3)' }}>
+                              {new Date(h.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                              <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
+                                {new Date(h.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 font-medium" style={{ color: 'var(--text)', maxWidth: 280 }}>
+                              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {h.test_mode && <span style={{ color: '#f59e0b' }}>🧪 </span>}
+                                {h.subject}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3" style={{ color: 'var(--text3)' }}>
+                              {h.test_mode ? 'Test' : h.recipient_mode === 'source' ? 'Source' : 'Manuel'}
+                            </td>
+                            <td className="px-4 py-3 font-mono" style={{ color: 'var(--text2)' }}>{h.recipient_count}</td>
+                            <td className="px-4 py-3">
+                              <span style={{ color: '#22c55e' }}>{h.sent}</span>
+                              {h.errors > 0 && <span style={{ color: '#ef4444', marginLeft: 6 }}>+ {h.errors} ✕</span>}
+                            </td>
+                            <td className="px-4 py-3">
+                              <svg className="w-4 h-4" style={{ color: 'var(--text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

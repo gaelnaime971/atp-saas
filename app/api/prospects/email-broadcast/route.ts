@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createSsrClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
 
 const supabase = createClient(
@@ -18,7 +19,7 @@ interface Recipient {
 
 export async function POST(request: Request) {
   try {
-    const { recipientIds, subject, html, testMode, testEmail } = await request.json()
+    const { recipientIds, subject, html, testMode, testEmail, sources, recipientMode } = await request.json()
 
     if (!subject || !html) {
       return NextResponse.json({ error: 'Sujet et contenu HTML requis' }, { status: 400 })
@@ -26,16 +27,35 @@ export async function POST(request: Request) {
 
     const from = process.env.EMAIL_FROM || 'ATP coaching <noreply@alphatradingpro-coaching.fr>'
 
+    // Get current admin user for log
+    const ssr = await createSsrClient()
+    const { data: { user } } = await ssr.auth.getUser()
+
     // TEST MODE: send only to test email
     if (testMode) {
       if (!testEmail) return NextResponse.json({ error: 'Email de test requis' }, { status: 400 })
-      await resend.emails.send({
+      const r = await resend.emails.send({
         from,
         to: testEmail,
         subject: `[TEST] ${subject}`,
         html,
       })
-      return NextResponse.json({ success: true, sent: 1, mode: 'test' })
+      const sent = r.error ? 0 : 1
+      const errors = r.error ? 1 : 0
+
+      await supabase.from('email_broadcasts').insert({
+        sent_by: user?.id || null,
+        subject, html,
+        recipient_mode: 'test',
+        recipient_count: 1,
+        sources: [],
+        recipient_ids: [],
+        sent, errors,
+        test_email: testEmail,
+        test_mode: true,
+      })
+
+      return NextResponse.json({ success: true, sent, errors, mode: 'test' })
     }
 
     // BROADCAST MODE
@@ -81,6 +101,18 @@ export async function POST(request: Request) {
       // Throttle: 100ms between batches
       if (i + 5 < recipients.length) await new Promise(r => setTimeout(r, 100))
     }
+
+    // Log broadcast
+    await supabase.from('email_broadcasts').insert({
+      sent_by: user?.id || null,
+      subject, html,
+      recipient_mode: recipientMode || 'manual',
+      recipient_count: recipients.length,
+      sources: sources || [],
+      recipient_ids: recipientIds,
+      sent, errors,
+      test_mode: false,
+    })
 
     return NextResponse.json({ success: true, sent, errors, total: recipients.length })
   } catch (err) {
