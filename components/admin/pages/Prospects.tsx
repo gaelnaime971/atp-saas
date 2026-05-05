@@ -323,6 +323,101 @@ export default function Prospects() {
     setScoreCfg(def)
   }
 
+  // Email broadcast
+  const [showEmail, setShowEmail] = useState(false)
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailHtml, setEmailHtml] = useState('')
+  const [emailRecipientMode, setEmailRecipientMode] = useState<'source' | 'manual'>('source')
+  const [emailSourceFilter, setEmailSourceFilter] = useState<string[]>([])
+  const [emailManualIds, setEmailManualIds] = useState<Set<string>>(new Set())
+  const [emailManualSearch, setEmailManualSearch] = useState('')
+  const [emailManualResults, setEmailManualResults] = useState<Prospect[]>([])
+  const [emailTestMode, setEmailTestMode] = useState(false)
+  const [emailTestAddress, setEmailTestAddress] = useState('')
+  const [emailSending, setEmailSending] = useState(false)
+  const [emailResult, setEmailResult] = useState<{ sent: number; errors?: number; mode?: string } | null>(null)
+  const [emailRecipientCount, setEmailRecipientCount] = useState(0)
+
+  // Update recipient count when filter changes
+  useEffect(() => {
+    if (emailRecipientMode === 'source' && emailSourceFilter.length > 0) {
+      const sources = emailSourceFilter.flatMap(s => s === 'methode-atp' ? ['methode-atp', 'landing-capture'] : [s])
+      supabase.from('prospects').select('id', { count: 'exact', head: true }).in('source', sources).not('email', 'is', null)
+        .then(({ count }) => setEmailRecipientCount(count || 0))
+    } else if (emailRecipientMode === 'manual') {
+      setEmailRecipientCount(emailManualIds.size)
+    } else {
+      setEmailRecipientCount(0)
+    }
+  }, [emailRecipientMode, emailSourceFilter, emailManualIds, supabase])
+
+  // Search prospects for manual selection
+  useEffect(() => {
+    if (emailRecipientMode !== 'manual' || !emailManualSearch.trim()) { setEmailManualResults([]); return }
+    const s = emailManualSearch.trim().replace(/[%_]/g, '')
+    supabase.from('prospects').select('*').or(`prenom.ilike.%${s}%,nom.ilike.%${s}%,email.ilike.%${s}%`).limit(15)
+      .then(({ data }) => setEmailManualResults((data || []) as Prospect[]))
+  }, [emailManualSearch, emailRecipientMode, supabase])
+
+  function handleHtmlUpload(file: File) {
+    const reader = new FileReader()
+    reader.onload = e => setEmailHtml(e.target?.result as string)
+    reader.readAsText(file)
+  }
+
+  async function handleSendEmail() {
+    if (!emailSubject.trim() || !emailHtml.trim()) return
+    setEmailSending(true)
+    setEmailResult(null)
+    try {
+      let recipientIds: string[] = []
+      if (!emailTestMode) {
+        if (emailRecipientMode === 'source' && emailSourceFilter.length > 0) {
+          const sources = emailSourceFilter.flatMap(s => s === 'methode-atp' ? ['methode-atp', 'landing-capture'] : [s])
+          const { data } = await supabase.from('prospects').select('id').in('source', sources).not('email', 'is', null)
+          recipientIds = (data || []).map((p: { id: string }) => p.id)
+        } else if (emailRecipientMode === 'manual') {
+          recipientIds = Array.from(emailManualIds)
+        }
+      }
+
+      const res = await fetch('/api/prospects/email-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientIds,
+          subject: emailSubject,
+          html: emailHtml,
+          testMode: emailTestMode,
+          testEmail: emailTestMode ? emailTestAddress : undefined,
+        }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        setEmailResult({ sent: 0, errors: 1 })
+      } else {
+        setEmailResult({ sent: data.sent || 0, errors: data.errors || 0, mode: data.mode })
+      }
+    } catch {
+      setEmailResult({ sent: 0, errors: 1 })
+    }
+    setEmailSending(false)
+  }
+
+  function resetEmail() {
+    setShowEmail(false)
+    setEmailSubject('')
+    setEmailHtml('')
+    setEmailRecipientMode('source')
+    setEmailSourceFilter([])
+    setEmailManualIds(new Set())
+    setEmailManualSearch('')
+    setEmailManualResults([])
+    setEmailTestMode(false)
+    setEmailTestAddress('')
+    setEmailResult(null)
+  }
+
   // CSV Import
   const [showImport, setShowImport] = useState(false)
   const [csvData, setCsvData] = useState<string[][]>([])
@@ -641,6 +736,14 @@ export default function Prospects() {
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs" style={{ color: 'var(--text3)' }}>{total} prospect{total > 1 ? 's' : ''}</span>
           <button
+            onClick={() => setShowEmail(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)' }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+            Envoyer email
+          </button>
+          <button
             onClick={() => setShowImport(true)}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
             style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)' }}
@@ -763,6 +866,240 @@ export default function Prospects() {
                 Sauvegarder & recalculer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email broadcast modal */}
+      {showEmail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }} onClick={resetEmail}>
+          <div className="w-full max-w-4xl rounded-2xl p-6" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-sm font-bold" style={{ color: 'var(--text)' }}>Envoyer un email</h2>
+                <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Diffusion à un groupe de prospects ou à des contacts spécifiques</p>
+              </div>
+              <button onClick={resetEmail} className="text-lg" style={{ color: 'var(--text3)' }}>✕</button>
+            </div>
+
+            {emailResult ? (
+              <div className="text-center py-8">
+                <div style={{ fontSize: 48, marginBottom: 16 }}>{emailResult.sent > 0 && (emailResult.errors || 0) === 0 ? '✅' : (emailResult.errors || 0) > 0 ? '⚠️' : '❌'}</div>
+                <div className="text-lg font-bold mb-3" style={{ color: 'var(--text)' }}>
+                  {emailResult.mode === 'test' ? 'Email de test envoyé' : 'Diffusion terminée'}
+                </div>
+                <div className="flex gap-4 justify-center mb-6">
+                  <div className="rounded-lg p-4" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', minWidth: 120 }}>
+                    <div className="text-2xl font-bold" style={{ color: '#22c55e' }}>{emailResult.sent}</div>
+                    <div className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Envoyés</div>
+                  </div>
+                  {(emailResult.errors || 0) > 0 && (
+                    <div className="rounded-lg p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', minWidth: 120 }}>
+                      <div className="text-2xl font-bold" style={{ color: '#ef4444' }}>{emailResult.errors}</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Erreurs</div>
+                    </div>
+                  )}
+                </div>
+                <button onClick={resetEmail} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'var(--green)', color: '#09090b', cursor: 'pointer' }}>Fermer</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-5">
+                {/* LEFT: Configuration */}
+                <div className="space-y-4">
+                  {/* Subject */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider mb-2 block font-bold" style={{ color: 'var(--text3)' }}>Sujet de l&apos;email</label>
+                    <input
+                      type="text"
+                      value={emailSubject}
+                      onChange={e => setEmailSubject(e.target.value)}
+                      placeholder="Ex: Nouvelle vidéo méthode ATP disponible"
+                      className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                      style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                    />
+                  </div>
+
+                  {/* HTML upload + textarea */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--text3)' }}>Contenu HTML</label>
+                      <label className="text-[11px] cursor-pointer hover:underline" style={{ color: 'var(--green)' }}>
+                        📁 Uploader un fichier .html
+                        <input type="file" accept=".html,.htm,text/html" className="hidden" style={{ display: 'none' }}
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handleHtmlUpload(f) }}
+                        />
+                      </label>
+                    </div>
+                    <textarea
+                      value={emailHtml}
+                      onChange={e => setEmailHtml(e.target.value)}
+                      placeholder="Colle ici le HTML du mail ou upload un fichier..."
+                      rows={10}
+                      className="w-full rounded-lg px-3 py-2 text-xs outline-none font-mono resize-y"
+                      style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)', minHeight: 200 }}
+                    />
+                    <div className="text-[10px] mt-1" style={{ color: 'var(--text3)' }}>
+                      Variables disponibles : <code style={{ color: 'var(--green)' }}>{'{{prenom}}'}</code> · <code style={{ color: 'var(--green)' }}>{'{{nom}}'}</code> · <code style={{ color: 'var(--green)' }}>{'{{email}}'}</code>
+                    </div>
+                  </div>
+
+                  {/* Recipients */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider mb-2 block font-bold" style={{ color: 'var(--text3)' }}>Destinataires</label>
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        onClick={() => setEmailRecipientMode('source')}
+                        className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                        style={emailRecipientMode === 'source' ? { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' } : { background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text3)' }}
+                      >
+                        🎯 Par source/groupe
+                      </button>
+                      <button
+                        onClick={() => setEmailRecipientMode('manual')}
+                        className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                        style={emailRecipientMode === 'manual' ? { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' } : { background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text3)' }}
+                      >
+                        👥 Sélection manuelle
+                      </button>
+                    </div>
+
+                    {emailRecipientMode === 'source' ? (
+                      <div className="flex gap-2 flex-wrap">
+                        {Object.entries(SOURCE_LABELS)
+                          .filter(([k]) => k !== 'landing-capture' && k !== 'csv-import')
+                          .map(([k, v]) => {
+                            const sel = emailSourceFilter.includes(k)
+                            return (
+                              <button
+                                key={k}
+                                onClick={() => setEmailSourceFilter(prev => sel ? prev.filter(s => s !== k) : [...prev, k])}
+                                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                                style={sel
+                                  ? { background: v.bg, color: v.color, border: `1px solid ${v.color}55` }
+                                  : { background: 'var(--bg3)', color: 'var(--text3)', border: '1px solid var(--border)' }
+                                }
+                              >
+                                {sel ? '✓ ' : ''}{v.label}
+                              </button>
+                            )
+                          })}
+                      </div>
+                    ) : (
+                      <div>
+                        <input
+                          type="text"
+                          value={emailManualSearch}
+                          onChange={e => setEmailManualSearch(e.target.value)}
+                          placeholder="Rechercher par nom, prénom ou email..."
+                          className="w-full rounded-lg px-3 py-2 text-sm outline-none mb-2"
+                          style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                        />
+                        {emailManualResults.length > 0 && (
+                          <div className="rounded-lg max-h-40 overflow-y-auto" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+                            {emailManualResults.map(p => {
+                              const sel = emailManualIds.has(p.id)
+                              return (
+                                <button
+                                  key={p.id}
+                                  onClick={() => setEmailManualIds(prev => {
+                                    const next = new Set(prev)
+                                    if (next.has(p.id)) next.delete(p.id)
+                                    else next.add(p.id)
+                                    return next
+                                  })}
+                                  className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors"
+                                  style={{ background: sel ? 'rgba(34,197,94,0.08)' : 'transparent', borderBottom: '1px solid var(--border)' }}
+                                >
+                                  <span style={{ color: sel ? '#22c55e' : 'var(--text3)', fontSize: 12 }}>{sel ? '☑' : '☐'}</span>
+                                  <span style={{ color: 'var(--text)' }}>{p.prenom} {p.nom}</span>
+                                  <span style={{ color: 'var(--text3)' }}>· {p.email}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
+                        {emailManualIds.size > 0 && (
+                          <div className="text-[11px] mt-2" style={{ color: 'var(--green)' }}>
+                            {emailManualIds.size} contact{emailManualIds.size > 1 ? 's' : ''} sélectionné{emailManualIds.size > 1 ? 's' : ''}
+                            <button onClick={() => setEmailManualIds(new Set())} className="ml-2 underline" style={{ color: 'var(--text3)' }}>Réinitialiser</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-3 p-3 rounded-lg text-center" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+                      <span className="text-2xl font-bold" style={{ color: emailRecipientCount > 0 ? '#22c55e' : 'var(--text3)' }}>{emailRecipientCount}</span>
+                      <span className="text-xs ml-2" style={{ color: 'var(--text3)' }}>destinataire{emailRecipientCount > 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+
+                  {/* Test mode */}
+                  <div className="rounded-lg p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={emailTestMode}
+                        onChange={e => setEmailTestMode(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-xs font-semibold" style={{ color: '#f59e0b' }}>🧪 Mode test (envoyer à une seule adresse)</span>
+                    </label>
+                    {emailTestMode && (
+                      <input
+                        type="email"
+                        value={emailTestAddress}
+                        onChange={e => setEmailTestAddress(e.target.value)}
+                        placeholder="ton@email.com"
+                        className="w-full mt-2 rounded-lg px-3 py-2 text-sm outline-none"
+                        style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* RIGHT: Preview */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--text3)' }}>Aperçu</label>
+                    <span className="text-[10px]" style={{ color: 'var(--text3)' }}>Variables remplacées par exemple</span>
+                  </div>
+                  <div className="rounded-lg overflow-hidden" style={{ background: '#fff', border: '1px solid var(--border)', height: 480 }}>
+                    {emailHtml ? (
+                      <iframe
+                        title="email-preview"
+                        srcDoc={emailHtml.replace(/\{\{prenom\}\}/gi, 'Thomas').replace(/\{\{nom\}\}/gi, 'Dupont').replace(/\{\{email\}\}/gi, 'thomas@email.com')}
+                        sandbox="allow-same-origin"
+                        style={{ width: '100%', height: '100%', border: 'none' }}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-sm" style={{ color: '#999' }}>
+                        Le contenu HTML s&apos;affichera ici
+                      </div>
+                    )}
+                  </div>
+                  {emailSubject && (
+                    <div className="mt-2 text-[11px]" style={{ color: 'var(--text3)' }}>
+                      Sujet : <strong style={{ color: 'var(--text)' }}>{emailTestMode ? `[TEST] ${emailSubject}` : emailSubject}</strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions full-width */}
+                <div className="col-span-2 flex gap-3 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+                  <button onClick={resetEmail} className="flex-1 py-2.5 rounded-lg text-sm font-medium" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)', cursor: 'pointer' }}>
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleSendEmail}
+                    disabled={emailSending || !emailSubject.trim() || !emailHtml.trim() || (emailTestMode ? !emailTestAddress : emailRecipientCount === 0)}
+                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
+                    style={{ background: emailTestMode ? '#f59e0b' : 'var(--green)', color: '#09090b', cursor: emailSending ? 'default' : 'pointer' }}
+                  >
+                    {emailSending ? 'Envoi en cours...' : emailTestMode ? `🧪 Envoyer le test` : `📧 Envoyer à ${emailRecipientCount} contact${emailRecipientCount > 1 ? 's' : ''}`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
