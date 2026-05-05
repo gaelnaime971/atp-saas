@@ -68,6 +68,8 @@ export async function POST(request: Request) {
         continue
       }
 
+      const today = new Date().toLocaleDateString('fr-FR')
+      const baseNote = `Import CSV le ${today}`
       batch.push({
         prenom: prenom || nom,
         nom: nom || prenom,
@@ -75,10 +77,10 @@ export async function POST(request: Request) {
         whatsapp: (p.whatsapp || '').trim(),
         experience: (p.experience || '').trim(),
         objectif: (p.objectif || '').trim(),
-        source: source || 'csv-import',
+        source: p.source || source || 'csv-import',
         status: 'nouveau',
         action: 'rien_fait',
-        notes: `Import CSV le ${new Date().toLocaleDateString('fr-FR')}`,
+        notes: p.notes ? `${baseNote} · ${p.notes}` : baseNote,
       })
     }
 

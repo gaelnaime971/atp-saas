@@ -329,7 +329,7 @@ export default function Prospects() {
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
   const [csvSource, setCsvSource] = useState('trading-night')
   const [csvCustomSource, setCsvCustomSource] = useState('')
-  const [csvMapping, setCsvMapping] = useState<Record<string, string>>({ prenom: '', nom: '', email: '', whatsapp: '', experience: '', objectif: '' })
+  const [csvMapping, setCsvMapping] = useState<Record<string, string>>({ prenom: '', nom: '', email: '', whatsapp: '', experience: '', objectif: '', spending: '' })
   const [importing, setImporting] = useState(false)
   const [importProgress, setImportProgress] = useState(0)
   const [importResult, setImportResult] = useState<{ imported: number; duplicates: number; errors: number } | null>(null)
@@ -346,7 +346,7 @@ export default function Prospects() {
       setCsvHeaders(headers)
       setCsvData(rows)
       // Auto-map by guessing
-      const map: Record<string, string> = { prenom: '', nom: '', email: '', whatsapp: '', experience: '', objectif: '' }
+      const map: Record<string, string> = { prenom: '', nom: '', email: '', whatsapp: '', experience: '', objectif: '', spending: '' }
       headers.forEach(h => {
         const lh = h.toLowerCase()
         if (lh.includes('prénom') || lh.includes('prenom') || lh === 'first' || lh.includes('first name')) map.prenom = h
@@ -355,6 +355,7 @@ export default function Prospects() {
         else if (lh.includes('phone') || lh.includes('tel') || lh.includes('whatsapp') || lh.includes('mobile')) map.whatsapp = h
         else if (lh.includes('expéri') || lh.includes('experience') || lh.includes('niveau')) map.experience = h
         else if (lh.includes('objectif') || lh.includes('goal')) map.objectif = h
+        else if (lh.includes('dépens') || lh.includes('depens') || lh.includes('total spent') || lh.includes('total revenue') || lh.includes('amount') || lh.includes('montant') || lh.includes('lifetime')) map.spending = h
       })
       // If no prenom but has "nom complet" or "name", use nom for both
       if (!map.prenom && !map.nom) {
@@ -389,12 +390,27 @@ export default function Prospects() {
         prenom = parts[0] || ''
         nom = parts.slice(1).join(' ') || parts[0] || ''
       }
+
+      // Auto-classify by Whop spending if column mapped
+      let perRowSource: string | undefined
+      if (csvMapping.spending) {
+        const raw = get('spending').replace(/[^\d.,-]/g, '').replace(',', '.')
+        const amount = parseFloat(raw)
+        if (!isNaN(amount) && amount > 0) {
+          if (amount < 1000) perRowSource = 'whop-1000'
+          else if (amount < 2000) perRowSource = 'whop-1000-2000'
+          else perRowSource = 'whop-2000'
+        }
+      }
+
       return {
         prenom, nom,
         email: get('email'),
         whatsapp: get('whatsapp'),
         experience: get('experience'),
         objectif: get('objectif'),
+        source: perRowSource,
+        notes: csvMapping.spending ? `Whop total: ${get('spending')}` : undefined,
       }
     }).filter(p => p.email)
 
@@ -820,6 +836,7 @@ export default function Prospects() {
                       { key: 'whatsapp', label: 'WhatsApp', req: false },
                       { key: 'experience', label: 'Expérience', req: false },
                       { key: 'objectif', label: 'Objectif', req: false },
+                      { key: 'spending', label: '💰 Dépenses Whop (€)', req: false },
                     ].map(f => (
                       <div key={f.key}>
                         <div className="text-[10px] mb-1" style={{ color: f.req ? 'var(--text2)' : 'var(--text3)' }}>
@@ -837,6 +854,19 @@ export default function Prospects() {
                       </div>
                     ))}
                   </div>
+                  {csvMapping.spending && (
+                    <div className="mt-3 p-3 rounded-lg" style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.18)' }}>
+                      <div className="text-xs font-semibold mb-1" style={{ color: '#a855f7' }}>💡 Classification automatique Whop activée</div>
+                      <div className="text-[11px]" style={{ color: 'var(--text3)', lineHeight: 1.6 }}>
+                        Chaque contact sera classé automatiquement selon le montant dépensé :
+                        <span className="font-semibold" style={{ color: '#06b6d4' }}> {'<'}1000€ = Whop &lt;1000€</span> ·
+                        <span className="font-semibold" style={{ color: '#8b5cf6' }}> 1000-2000€ = Whop 1K-2K€</span> ·
+                        <span className="font-semibold" style={{ color: '#ec4899' }}> {'>'}2000€ = Whop +2000€</span>
+                        <br />
+                        La source choisie ci-dessus s&apos;applique uniquement aux contacts sans montant valide.
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Preview */}
