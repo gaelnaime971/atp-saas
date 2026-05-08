@@ -288,7 +288,7 @@ body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(
         )}
 
         <div className="tn-page-foot">
-          <a href="https://instagram.com/gael_omega" target="_blank" rel="noopener noreferrer">@gael_omega</a> · Alpha Trading Pro
+          <a href="https://instagram.com/gael_omega" target="_blank" rel="noopener noreferrer">@gael_omega</a> · Alpha Trading Pro · <a href="/paiement">Paiement &amp; CGV</a>
         </div>
       </div>
     </>

@@ -545,7 +545,10 @@ export default function OffrePage() {
         <footer className="ft">
           <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>Alpha Trading Pro</span>
           <div className="ft-c">© 2026 ATP · Guadeloupe</div>
-          <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#444', textDecoration: 'none' }}>Contact</a>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <a href="/paiement" style={{ fontSize: 10, color: '#444', textDecoration: 'none' }}>Paiement & CGV</a>
+            <a href="https://calendly.com/gael-n971/60min" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#444', textDecoration: 'none' }}>Contact</a>
+          </div>
         </footer>
       </div>
     </>
