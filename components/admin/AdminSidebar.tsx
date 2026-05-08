@@ -20,6 +20,7 @@ type AdminPage =
   | 'bibliotheque'
   | 'bilan'
   | 'prospects'
+  | 'pipeline'
   | 'content'
   | 'recap-live'
   | 'settings'
@@ -97,6 +98,11 @@ const sections: NavSection[] = [
         id: 'prospects',
         label: 'Prospects',
         icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>,
+      },
+      {
+        id: 'pipeline',
+        label: 'Pipeline calls',
+        icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 7.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5M2.25 6.75A.75.75 0 003 7.5h.75a.75.75 0 000-1.5H3a.75.75 0 00-.75.75zm0 4.5a.75.75 0 00.75.75h.75a.75.75 0 000-1.5H3a.75.75 0 00-.75.75zm0 4.5a.75.75 0 00.75.75h.75a.75.75 0 000-1.5H3a.75.75 0 00-.75.75z" /></svg>,
       },
       {
         id: 'content',
