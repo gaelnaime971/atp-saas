@@ -1,7 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { Responsive, WidthProvider, type LayoutItem, type ResponsiveLayouts } from 'react-grid-layout/legacy'
+import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
+
+const ResponsiveGridLayout = WidthProvider(Responsive)
 
 interface Trade {
   time: string
@@ -75,6 +80,71 @@ const BSEQ = [
 ]
 
 const LEVEL_COLORS: Record<string, string> = { RES: '#ff3355', SUP: '#00ff88', OB: '#ffaa00', FVG: '#00aaff' }
+
+// Widget catalog — id, label, icon
+type WidgetMeta = { id: string; label: string; icon: string }
+const WIDGETS: WidgetMeta[] = [
+  { id: 'mental', label: 'ÉTAT MENTAL', icon: '◆' },
+  { id: 'accounts', label: 'COMPTES TRADÉS', icon: '⊞' },
+  { id: 'breath', label: 'RESPIRATION 4-4-6', icon: '◉' },
+  { id: 'quotes', label: 'CITATIONS', icon: '"' },
+  { id: 'checklist', label: 'CHECKLIST PRÉ-SESSION', icon: '✓' },
+  { id: 'discipline', label: 'SCORE DISCIPLINE', icon: '◐' },
+  { id: 'rules', label: 'RÈGLES ATP', icon: '§' },
+  { id: 'bloomberg', label: 'BLOOMBERG LIVE', icon: '▶' },
+  { id: 'pnl', label: 'P&L SESSION', icon: '$' },
+  { id: 'trades', label: 'JOURNAL SESSION', icon: '≡' },
+  { id: 'note', label: 'NOTE SESSION', icon: '✎' },
+  { id: 'stats', label: 'STATS SESSION', icon: '▣' },
+  { id: 'objectives', label: 'OBJECTIFS SESSION', icon: '◎' },
+  { id: 'ai-news', label: 'ASSISTANT NEWS IA', icon: '⚡' },
+  { id: 'levels', label: 'NIVEAUX CLÉS', icon: '⫶' },
+  { id: 'calc', label: 'CALCULATEUR RISQUE', icon: '∑' },
+  { id: 'chart-ai', label: 'ANALYSE CHART IA', icon: '◈' },
+  { id: 'eco', label: 'CALENDRIER ÉCONOMIQUE', icon: '☷' },
+  { id: 'markets', label: 'MARCHÉS MONDIAUX', icon: '◯' },
+  { id: 'end-session', label: 'FIN DE SESSION', icon: '■' },
+]
+
+// Default 12-col layout (lg breakpoint)
+const DEFAULT_LAYOUT: LayoutItem[] = [
+  // Left zone: mental, breath, accounts (cols 0-2 → 3 wide)
+  { i: 'mental', x: 0, y: 0, w: 3, h: 7, minW: 2, minH: 5 },
+  { i: 'breath', x: 0, y: 7, w: 3, h: 6, minW: 2, minH: 4 },
+  { i: 'accounts', x: 0, y: 13, w: 3, h: 6, minW: 2, minH: 4 },
+  { i: 'quotes', x: 0, y: 19, w: 3, h: 8, minW: 2, minH: 4 },
+
+  // Second zone: checklist, rules, discipline, bloomberg (cols 3-5)
+  { i: 'checklist', x: 3, y: 0, w: 3, h: 8, minW: 2, minH: 5 },
+  { i: 'discipline', x: 3, y: 8, w: 3, h: 5, minW: 2, minH: 4 },
+  { i: 'rules', x: 3, y: 13, w: 3, h: 7, minW: 2, minH: 4 },
+  { i: 'bloomberg', x: 3, y: 20, w: 3, h: 7, minW: 2, minH: 4 },
+
+  // Center zone: P&L, trades, note (cols 6-8)
+  { i: 'pnl', x: 6, y: 0, w: 3, h: 8, minW: 3, minH: 6 },
+  { i: 'trades', x: 6, y: 8, w: 3, h: 11, minW: 3, minH: 6 },
+  { i: 'note', x: 6, y: 19, w: 3, h: 6, minW: 2, minH: 4 },
+
+  // Right zone: stats, objectives, ai-news, end-session (cols 9-11 first half), levels/calc/chart (col split)
+  { i: 'stats', x: 9, y: 0, w: 3, h: 7, minW: 2, minH: 5 },
+  { i: 'objectives', x: 9, y: 7, w: 3, h: 6, minW: 2, minH: 4 },
+  { i: 'ai-news', x: 9, y: 13, w: 3, h: 9, minW: 2, minH: 5 },
+  { i: 'end-session', x: 9, y: 22, w: 3, h: 2, minW: 2, minH: 2 },
+
+  // Tools zone (continued right area, lower)
+  { i: 'levels', x: 0, y: 27, w: 3, h: 6, minW: 2, minH: 4 },
+  { i: 'calc', x: 3, y: 27, w: 3, h: 7, minW: 2, minH: 5 },
+  { i: 'chart-ai', x: 6, y: 25, w: 3, h: 9, minW: 2, minH: 5 },
+
+  // Markets/eco
+  { i: 'eco', x: 9, y: 24, w: 3, h: 8, minW: 2, minH: 5 },
+  { i: 'markets', x: 9, y: 32, w: 3, h: 8, minW: 2, minH: 5 },
+]
+
+const DEFAULT_VISIBLE = WIDGETS.map(w => w.id)
+
+const LS_LAYOUT = 'atp_session_layout'
+const LS_VISIBLE = 'atp_session_widgets'
 
 export default function SessionLive({ onExit }: { onExit?: () => void }) {
   // Boot
@@ -159,9 +229,31 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
     return shuffled
   })())
 
+  // Layout state (persisted)
+  const [layout, setLayout] = useState<LayoutItem[]>(DEFAULT_LAYOUT)
+  const [visibleIds, setVisibleIds] = useState<string[]>(DEFAULT_VISIBLE)
+  const [editMode, setEditMode] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
+
+  // Restore layout/visibility from localStorage
+  useEffect(() => {
+    try {
+      const rawL = typeof window !== 'undefined' ? window.localStorage.getItem(LS_LAYOUT) : null
+      const rawV = typeof window !== 'undefined' ? window.localStorage.getItem(LS_VISIBLE) : null
+      if (rawL) {
+        const parsed = JSON.parse(rawL) as LayoutItem[]
+        if (Array.isArray(parsed) && parsed.length) setLayout(parsed)
+      }
+      if (rawV) {
+        const parsed = JSON.parse(rawV) as string[]
+        if (Array.isArray(parsed)) setVisibleIds(parsed)
+      }
+    } catch { /* ignore */ }
+    setHydrated(true)
+  }, [])
 
   // Discipline reminder every 5 min
-  const DISCIPLINE_MESSAGES = [
+  const DISCIPLINE_MESSAGES = useMemo(() => ([
     { title: 'PATIENCE', text: 'Le marché récompense ceux qui attendent. Ne force pas un trade qui n\'existe pas.', action: 'Répète ton plan à haute voix avant de continuer.' },
     { title: 'DISCIPLINE', text: 'Ton edge ne fonctionne que si tu l\'appliques à chaque trade. Pas d\'exception.', action: 'Vérifie : est-ce que ton prochain trade est dans le plan ?' },
     { title: 'GESTION DU RISQUE', text: 'Protège ton capital. C\'est ton seul outil de travail. Un trade raté se rattrape, un compte cramé non.', action: 'Rappelle-toi ta règle : SL fixe, sizing calculé.' },
@@ -170,7 +262,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
     { title: 'STOP LE REVENGE', text: 'Si tu viens de perdre, le prochain trade ne doit pas servir à "te refaire". C\'est comme ça qu\'on perd.', action: 'Pause 2 min. Respire. Puis analyse froidement.' },
     { title: 'FOCUS', text: 'Un bon trader ne trade pas plus, il trade mieux. Qualité > Quantité.', action: 'Demande-toi : est-ce que je suis encore lucide ?' },
     { title: 'ROUTINE', text: 'Les meilleurs traders sont les plus ennuyeux. Même setup, même plan, même gestion. Tous les jours.', action: 'Récite les 3 règles ATP qui comptent le plus pour toi.' },
-  ]
+  ]), [])
   const [showReminder, setShowReminder] = useState(false)
   const [reminderMsg, setReminderMsg] = useState(DISCIPLINE_MESSAGES[0])
   const reminderCount = useRef(0)
@@ -184,7 +276,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
       reminderCount.current++
     }, 5 * 60 * 1000) // 5 minutes
     return () => clearInterval(iv)
-  }, [booted])
+  }, [booted, DISCIPLINE_MESSAGES])
 
   // Clock tick
   useEffect(() => {
@@ -515,7 +607,750 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
     setLvlInp('')
   }
 
+  // Persist layout/visible changes
+  const persistLayout = useCallback((next: LayoutItem[]) => {
+    setLayout(next)
+    try { window.localStorage.setItem(LS_LAYOUT, JSON.stringify(next)) } catch { /* ignore */ }
+  }, [])
 
+  const toggleWidget = useCallback((id: string) => {
+    setVisibleIds(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      try { window.localStorage.setItem(LS_VISIBLE, JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }, [])
+
+  const hideWidget = useCallback((id: string) => {
+    setVisibleIds(prev => {
+      const next = prev.filter(x => x !== id)
+      try { window.localStorage.setItem(LS_VISIBLE, JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }, [])
+
+  const resetLayout = useCallback(() => {
+    try {
+      window.localStorage.removeItem(LS_LAYOUT)
+      window.localStorage.removeItem(LS_VISIBLE)
+    } catch { /* ignore */ }
+    setLayout(DEFAULT_LAYOUT)
+    setVisibleIds(DEFAULT_VISIBLE)
+  }, [])
+
+  // Filter layout to visible widgets and ensure every visible widget has a layout entry
+  const activeLayout = useMemo<LayoutItem[]>(() => {
+    const byId = new Map(layout.map(l => [l.i, l]))
+    const out: LayoutItem[] = []
+    for (const id of visibleIds) {
+      const existing = byId.get(id)
+      if (existing) {
+        out.push(existing)
+      } else {
+        // Find default for this id
+        const def = DEFAULT_LAYOUT.find(l => l.i === id)
+        if (def) out.push(def)
+        else out.push({ i: id, x: 0, y: Infinity, w: 3, h: 6, minW: 2, minH: 3 })
+      }
+    }
+    return out
+  }, [layout, visibleIds])
+
+  // Render a widget body by id
+  const renderWidget = (id: string): React.ReactNode => {
+    switch (id) {
+      case 'mental':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">ÉTAT MENTAL</span>
+              <span className="ph-b">{mentalBadge}</span>
+              <button className="widget-close" onClick={() => hideWidget('mental')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                <div className="blt">ÉVALUER AVANT DE TRADER</div>
+                <div className="mgrid">
+                  {Array.from({ length: 10 }, (_, i) => {
+                    const v = i + 1
+                    const cls = v <= mental ? (mental <= 3 ? 'tilt' : mental <= 6 ? 'neu' : 'foc') : ''
+                    return <div key={i} className={`mc ${cls}`} onClick={() => setMental(v)} />
+                  })}
+                </div>
+                <div className="ms-labs"><span>TILT</span><span>NEUTRE</span><span>FOCUS</span></div>
+                <div className={`mstate ${mentalCls}`}>{mentalLabel}</div>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'accounts':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">COMPTES TRADÉS</span>
+              <span className="ph-b">{selectedAccountIds.size}/{accounts.length || 0}</span>
+              <button className="widget-close" onClick={() => hideWidget('accounts')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                {accounts.length === 0 ? (
+                  <div style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.06em' }}>// Aucun compte configuré</div>
+                ) : (
+                  <>
+                    <div className="blt">SUR QUELS COMPTES TU TRADES ?</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {accounts.map(acc => {
+                        const sel = selectedAccountIds.has(acc.id)
+                        const tc = acc.account_type === 'funded' ? '#00ff88' : acc.account_type === 'challenge' ? '#60a5fa' : '#ffaa00'
+                        return (
+                          <button
+                            key={acc.id}
+                            onClick={() => setSelectedAccountIds(prev => {
+                              const next = new Set(prev)
+                              if (next.has(acc.id)) next.delete(acc.id)
+                              else next.add(acc.id)
+                              return next
+                            })}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', borderRadius: 3, fontSize: 9,
+                              background: sel ? `${tc}15` : 'transparent',
+                              border: `1px solid ${sel ? tc : 'var(--dim)'}`,
+                              color: sel ? tc : 'var(--muted)',
+                              cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
+                              fontFamily: 'var(--mono)', letterSpacing: '0.04em',
+                            }}
+                          >
+                            <span style={{ fontSize: 10 }}>{sel ? '◉' : '○'}</span>
+                            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                      <button
+                        onClick={() => setSelectedAccountIds(new Set(accounts.map(a => a.id)))}
+                        style={{ flex: 1, padding: '4px', background: 'transparent', border: '1px solid var(--dim)', borderRadius: 2, color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 8, letterSpacing: '0.1em', cursor: 'pointer' }}
+                      >TOUS</button>
+                      <button
+                        onClick={() => setSelectedAccountIds(new Set())}
+                        style={{ flex: 1, padding: '4px', background: 'transparent', border: '1px solid var(--dim)', borderRadius: 2, color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 8, letterSpacing: '0.1em', cursor: 'pointer' }}
+                      >AUCUN</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </>
+        )
+
+      case 'breath':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">RESPIRATION 4-4-6</span>
+              <button className="widget-close" onClick={() => hideWidget('breath')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                <div className="bvis">
+                  <div className="bring-w">
+                    <div className={`bring ${breathClass}`}><span className="bnum">{breathNum}</span></div>
+                  </div>
+                  <div className="bphase">{breathPhase}</div>
+                </div>
+                <button className="bbtn" onClick={() => {
+                  if (breathOn) { setBreathOn(false); breathStep.current = 0; breathTick.current = 0; setBreathClass(''); setBreathPhase('INSPIRER — 4s'); setBreathNum(4) }
+                  else setBreathOn(true)
+                }}>{breathOn ? '■ ARRÊTER' : '▸ DÉMARRER PROTOCOLE'}</button>
+              </div>
+              {pauseOn && (
+                <div className="blk">
+                  <div className="palert show">
+                    <div className="pa-t">⚠ PAUSE OBLIGATOIRE</div>
+                    <div className="pa-tm">{`${pad(Math.floor(pauseSec / 60))}:${pad(pauseSec % 60)}`}</div>
+                    <div className="pa-tx">3 pertes consécutives.<br />Attends. Respire. Règle n°3.</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )
+
+      case 'quotes':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">CITATIONS</span>
+              <span className="ph-b">{quotesRef.current.length}</span>
+              <button className="widget-close" onClick={() => hideWidget('quotes')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body" style={{ overflowY: 'auto', padding: '6px 12px' }}>
+              {quotesRef.current.map((q, i) => (
+                <div key={i} style={{ padding: '8px 0', borderBottom: i < quotesRef.current.length - 1 ? '1px solid var(--vdim)' : 'none' }}>
+                  <div className="qt">{q.t}</div>
+                  <div className="qa">{q.a}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )
+
+      case 'checklist':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">CHECKLIST PRÉ-SESSION</span>
+              <span className="ph-b">{checksDone}/{CHK_ITEMS.length}</span>
+              <button className="widget-close" onClick={() => hideWidget('checklist')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                <div className="cpbar"><div className="cpfill" style={{ width: `${Math.round((checksDone / CHK_ITEMS.length) * 100)}%` }} /></div>
+                <div className="cplbls"><span>PROGRESSION</span><span>{checksDone}/{CHK_ITEMS.length}</span></div>
+                {CHK_ITEMS.map((item, i) => (
+                  <div key={i} className={`chkrow ${checks[i] ? 'done' : ''}`} onClick={() => setChecks(prev => { const n = [...prev]; n[i] = !n[i]; return n })}>
+                    <div className="chkbox">{checks[i] ? '✓' : ''}</div>
+                    <span className="chklbl">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )
+
+      case 'discipline':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">SCORE DISCIPLINE</span>
+              <button className="widget-close" onClick={() => hideWidget('discipline')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                <div className="dring-wrap">
+                  <svg className="dring-svg" viewBox="0 0 58 58">
+                    <circle className="dr-track" cx="29" cy="29" r="25" />
+                    <circle className="dr-fill" cx="29" cy="29" r="25" style={{ strokeDashoffset: 157 - (discScore / 100) * 157 }} />
+                  </svg>
+                  <div className={`ds-num ${discScore >= 70 ? 'sc-g' : discScore >= 40 ? 'sc-a' : 'sc-r'}`}>{discScore}%</div>
+                  <div className="ds-lbl">SCORE DISCIPLINE</div>
+                </div>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'rules':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">RÈGLES ATP</span>
+              <button className="widget-close" onClick={() => hideWidget('rules')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                {RULES.map(r => (
+                  <div key={r.n} className="rrow">
+                    <span className="rn">{r.n}</span>
+                    <div className="rb"><strong>{r.t}</strong><small>{r.s}</small></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )
+
+      case 'bloomberg':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">BLOOMBERG LIVE</span>
+              <span className="ph-b">TV</span>
+              <button className="widget-close" onClick={() => hideWidget('bloomberg')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body" style={{ padding: 0 }}>
+              <iframe title="bloomberg" src="https://www.youtube.com/embed/iEpJwprxDdk?autoplay=1&mute=1" allow="autoplay; encrypted-media" style={{ width: '100%', height: '100%', border: 'none' }} />
+            </div>
+          </>
+        )
+
+      case 'pnl':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">P&L SESSION</span>
+              <button className="widget-close" onClick={() => hideWidget('pnl')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="pnlhero">
+                <div className="pnl-glow" />
+                <div className={`pnl-amt ${totalPnl > 0 ? 'pv-p' : totalPnl < 0 ? 'pv-n' : 'pv-z'}`}>
+                  {(totalPnl >= 0 ? '+' : '')}{totalPnl.toFixed(2)} €
+                </div>
+                <div className="pnl-meta">
+                  <div className="pm">TRADES <span>{trades.length}</span></div>
+                  <div className="pm">W/L <span>{wins}/{losses}</span></div>
+                  <div className="pm">WIN% <span>{trades.length > 0 ? winPct + '%' : '—'}</span></div>
+                  <div className="pm">R∑ <span>{(totalR >= 0 ? '+' : '')}{totalR.toFixed(1)}R</span></div>
+                  <div className="pm">BEST <span>{trades.length > 0 ? '+' + bestTrade.toFixed(2) + '€' : '—'}</span></div>
+                </div>
+              </div>
+              <div className="spk-wrap">
+                <div className="spk-lbl">// COURBE P&L SESSION</div>
+                <svg className="spk-svg" viewBox="0 0 400 90" preserveAspectRatio="none">
+                  <defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00ff88" stopOpacity="0.12" /><stop offset="100%" stopColor="#00ff88" stopOpacity="0" /></linearGradient></defs>
+                  <polyline fill="none" stroke={totalPnl >= 0 ? '#00ff88' : '#ff3355'} strokeWidth="1.5" points={sparkPoints} strokeLinejoin="round" filter="drop-shadow(0 0 2px rgba(0,255,136,0.4))" />
+                  <polygon fill="url(#spg)" points={`0,90 ${sparkPoints} 400,90`} />
+                </svg>
+              </div>
+              <div className="risk-wrap">
+                <div className="rsk-row">
+                  <div>
+                    <div className="ri-lbl"><span>DAILY LOSS</span><span>{dailyLoss.toFixed(0)}€</span></div>
+                    <div className="ri-bar"><div className="ri-f ri-loss" style={{ width: `${Math.min((dailyLoss / 500) * 100, 100)}%` }} /></div>
+                    <div className="ri-vals"><span>0</span><span>500€ MAX</span></div>
+                  </div>
+                  <div>
+                    <div className="ri-lbl"><span>OBJECTIF</span><span>{dailyObj.toFixed(0)}€</span></div>
+                    <div className="ri-bar"><div className="ri-f ri-obj" style={{ width: `${Math.min((dailyObj / 300) * 100, 100)}%` }} /></div>
+                    <div className="ri-vals"><span>0</span><span>300€</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'trades':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">JOURNAL SESSION</span>
+              <span className="ph-b">{trades.length} TRADE{trades.length > 1 ? 'S' : ''}</span>
+              <button className="widget-close" onClick={() => hideWidget('trades')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="tlh"><span>HEURE</span><span>INST</span><span>SENS</span><span>P&L</span><span>R</span><span>STAT</span></div>
+              <div className="tlscroll">
+                {trades.length === 0 ? (
+                  <div className="tl-empty">// EN ATTENTE — AUCUN TRADE</div>
+                ) : [...trades].reverse().map((t, i) => (
+                  <div key={i} className="trow">
+                    <span className="tc-t">{t.time}</span>
+                    <span className="tc-i">{t.inst}</span>
+                    <span className={t.side === 'LONG' ? 'tc-l' : 'tc-s'}>{t.side}</span>
+                    <span className={t.pnl >= 0 ? 'tc-pp' : 'tc-pn'}>{(t.pnl >= 0 ? '+' : '') + t.pnl.toFixed(2)}€</span>
+                    <span className={t.r >= 0 ? 'tc-rp' : 'tc-rn'}>{(t.r >= 0 ? '+' : '') + t.r.toFixed(1)}R</span>
+                    <span className={t.pnl >= 0 ? 'tc-pp' : 'tc-pn'}>{t.status}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="addtrade">
+                <select className="tsel" value={iInst} onChange={e => setIInst(e.target.value)} style={{ width: 52 }}>
+                  {['YM', 'NQ', 'ES', 'MYM', 'MNQ'].map(s => <option key={s}>{s}</option>)}
+                </select>
+                <select className="tsel" value={iSide} onChange={e => setISide(e.target.value)} style={{ width: 58 }}>
+                  <option>LONG</option><option>SHORT</option>
+                </select>
+                <input className="tinp" type="number" placeholder="P&L €" value={iPnl} onChange={e => setIPnl(e.target.value)} style={{ flex: 1 }} />
+                <input className="tinp" type="number" placeholder="R" value={iR} onChange={e => setIR(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') logTrade() }} style={{ width: 48 }} />
+                <button className="logbtn" onClick={logTrade}>LOG ▸</button>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'note':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">NOTE SESSION</span>
+              <button className="widget-close" onClick={() => hideWidget('note')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="note-area">
+                <div className="blt" style={{ marginBottom: 5 }}>NOTE SESSION</div>
+                <textarea className="note-ta" value={note} onChange={e => setNote(e.target.value)} placeholder="Observations, setup, erreurs..." />
+              </div>
+            </div>
+          </>
+        )
+
+      case 'stats':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">STATS SESSION</span>
+              <button className="widget-close" onClick={() => hideWidget('stats')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                <div className="sgrid">
+                  <div className="sc"><div className="sclbl">MEILLEUR</div><div className="scval sc-g">{trades.length > 0 ? '+' + bestTrade.toFixed(2) + '€' : '—'}</div></div>
+                  <div className="sc"><div className="sclbl">PIRE</div><div className="scval sc-r">{trades.length > 0 ? worstTrade.toFixed(2) + '€' : '—'}</div></div>
+                  <div className="sc"><div className="sclbl">MOYENNE</div><div className="scval sc-w">{trades.length > 0 ? (avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(2) + '€' : '—'}</div></div>
+                  <div className="sc"><div className="sclbl">R MAX</div><div className="scval sc-g">{trades.length > 0 ? '+' + rMax.toFixed(1) + 'R' : '—'}</div></div>
+                  <div className="sc"><div className="sclbl">PROFIT FACTOR</div><div className="scval sc-w">{pf}</div></div>
+                  <div className="sc">
+                    <div className="sclbl">PERTES CONSEC.</div>
+                    <div className="scval sc-a">{consec}</div>
+                    <div className="cdots">
+                      {[0, 1, 2].map(i => <div key={i} className={`cd ${i < consec ? 'loss' : ''}`} />)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'objectives':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">OBJECTIFS SESSION</span>
+              <button className="widget-close" onClick={() => hideWidget('objectives')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk" style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {dailyObj >= 300 && (
+                  <div className="obj-reach show">
+                    <div className="or-t">✓ OBJECTIF ATTEINT</div>
+                    <div className="or-s">+300€ — bonne session, tu peux t&apos;arrêter.</div>
+                  </div>
+                )}
+                <div className="objcard">
+                  <div className="och"><span className="ocl">P&L OBJECTIF</span><span className="ocv sc-g">{dailyObj.toFixed(0)} / 300€</span></div>
+                  <div className="obar"><div className="obfill" style={{ width: `${Math.min(Math.round((dailyObj / 300) * 100), 100)}%` }} /></div>
+                  <div className="opct">{Math.min(Math.round((dailyObj / 300) * 100), 100)}%</div>
+                </div>
+                <div className="objcard">
+                  <div className="och"><span className="ocl">DAILY LOSS MAX</span><span className="ocv sc-r">{dailyLoss.toFixed(0)} / 500€</span></div>
+                  <div className="obar"><div className="obfill" style={{ background: 'linear-gradient(90deg,#cc2200,var(--red))', width: `${Math.min(Math.round((dailyLoss / 500) * 100), 100)}%` }} /></div>
+                  <div className="opct">{Math.min(Math.round((dailyLoss / 500) * 100), 100)}%</div>
+                </div>
+                <div className="objcard">
+                  <div className="och"><span className="ocl">CHECKLIST</span><span className="ocv sc-g">{checksDone} / {CHK_ITEMS.length}</span></div>
+                  <div className="obar"><div className="obfill" style={{ width: `${Math.round((checksDone / CHK_ITEMS.length) * 100)}%` }} /></div>
+                  <div className="opct">{Math.round((checksDone / CHK_ITEMS.length) * 100)}%</div>
+                </div>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'ai-news':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">ASSISTANT NEWS IA</span>
+              <span className="ph-b">GPT</span>
+              <button className="widget-close" onClick={() => hideWidget('ai-news')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk" style={{ flex: 1 }}>
+                <button className="aibtn" onClick={analyzeNews} disabled={aiLoading}>
+                  <div className="aidot" />ANALYSER NEWS MAINTENANT
+                </button>
+                <input className="aiinp" placeholder="Colle une headline → Enter" value={aiInput} onChange={e => setAiInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') analyzeNews() }} />
+                <div className="aihint">// ex: NFP +178K · FOMC hawkish · CPI 3.2%</div>
+                <div className="aicards">
+                  {aiLoading && <div className="aiload"><div className="aispin" />ANALYSE EN COURS...</div>}
+                  {aiCards.map((c, i) => {
+                    const cc = c.signal === 'BULLISH' ? 'ai-bull' : c.signal === 'BEARISH' ? 'ai-bear' : 'ai-neu'
+                    const sc = c.signal === 'BULLISH' ? 'sig-g' : c.signal === 'BEARISH' ? 'sig-r' : 'sig-a'
+                    const ic = c.signal === 'BULLISH' ? '▲' : c.signal === 'BEARISH' ? '▼' : '◈'
+                    return (
+                      <div key={i} className={`aicard ${cc}`}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 3 }}>
+                          <span className={`aisig ${sc}`}>{ic} {c.signal}</span>
+                          <span className="aiimpact">{c.impact}</span>
+                        </div>
+                        <div className="aihl">{c.headline}</div>
+                        <div className="aian">{c.analyse}</div>
+                        <div className="aitags">{(c.instruments || []).map(ins => <span key={ins} className="aitag">{ins}</span>)}</div>
+                      </div>
+                    )
+                  })}
+                  {aiSummary && (
+                    <div className="aisum">
+                      <div className="aisumlbl">// BIAIS SESSION</div>
+                      <div className="aisumtxt">{aiSummary}</div>
+                    </div>
+                  )}
+                  {aiTime && <div className="aits">{aiTime}</div>}
+                </div>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'levels':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">NIVEAUX CLÉS</span>
+              <span className="ph-b">{levels.length}</span>
+              <button className="widget-close" onClick={() => hideWidget('levels')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                <div style={{ display: 'flex', gap: 5, marginBottom: 7 }}>
+                  <input className="tinp" placeholder="Prix ex: 42500" value={lvlInp} onChange={e => setLvlInp(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addLevel() }} style={{ flex: 1, fontSize: 10 }} />
+                  <select className="tsel" value={lvlType} onChange={e => setLvlType(e.target.value)} style={{ width: 52, fontSize: 10 }}>
+                    <option>RES</option><option>SUP</option><option>OB</option><option>FVG</option>
+                  </select>
+                  <button className="logbtn" onClick={addLevel} style={{ padding: '5px 9px' }}>+</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {levels.map((lv, i) => (
+                    <div key={i} className="lvlrow">
+                      <span style={{ color: LEVEL_COLORS[lv.t] || '#fff', fontSize: 8, fontWeight: 700, letterSpacing: '0.1em' }}>{lv.t}</span>
+                      <span style={{ fontFamily: 'var(--orb)', fontSize: 11 }}>{lv.v.toLocaleString('fr-FR')}</span>
+                      <button className="lvlbtn" onClick={() => setLevels(prev => prev.filter((_, j) => j !== i))}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'calc':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">CALCULATEUR RISQUE</span>
+              <button className="widget-close" onClick={() => hideWidget('calc')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 7 }}>
+                  <div><div className="blt" style={{ marginBottom: 2 }}>CAPITAL €</div><input className="tinp" type="number" value={cCap} onChange={e => setCCap(e.target.value)} style={{ width: '100%', fontSize: 10 }} /></div>
+                  <div><div className="blt" style={{ marginBottom: 2 }}>RISQUE %</div><input className="tinp" type="number" value={cRisk} onChange={e => setCRisk(e.target.value)} step="0.1" style={{ width: '100%', fontSize: 10 }} /></div>
+                  <div><div className="blt" style={{ marginBottom: 2 }}>SL (pts)</div><input className="tinp" type="number" value={cSl} onChange={e => setCSl(e.target.value)} style={{ width: '100%', fontSize: 10 }} /></div>
+                  <div><div className="blt" style={{ marginBottom: 2 }}>INSTRUMENT</div>
+                    <select className="tsel" value={cInst} onChange={e => setCInst(e.target.value)} style={{ width: '100%', fontSize: 10 }}>
+                      <option value="5">YM ($5/pt)</option>
+                      <option value="0.5">MYM ($0.5/pt)</option>
+                      <option value="20">NQ ($20/pt)</option>
+                      <option value="2">MNQ ($2/pt)</option>
+                      <option value="50">ES ($50/pt)</option>
+                      <option value="5">MES ($5/pt)</option>
+                      <option value="100">GC ($100/pt)</option>
+                      <option value="10">MGC ($10/pt)</option>
+                    </select>
+                  </div>
+                </div>
+                <button className="bbtn" onClick={doCalc} style={{ marginBottom: 7 }}>CALCULER ▸</button>
+                <div className="calc-res">{calcResult || '// Remplis les champs et calcule'}</div>
+              </div>
+            </div>
+          </>
+        )
+
+      case 'chart-ai':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">ANALYSE CHART IA</span>
+              <span className="ph-b">VISION</span>
+              <button className="widget-close" onClick={() => hideWidget('chart-ai')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk" style={{ flex: 1 }}>
+                <label className="aibtn" style={{ cursor: 'pointer' }}>
+                  <div className="aidot" />UPLOAD UN GRAPHE
+                  <input type="file" accept="image/*" onChange={handleChartUpload} style={{ display: 'none' }} />
+                </label>
+
+                {chartPreview && (
+                  <div style={{ marginTop: 8, borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={chartPreview} alt="Chart" style={{ width: '100%', display: 'block', maxHeight: 140, objectFit: 'cover' }} />
+                  </div>
+                )}
+
+                {chartLoading && (
+                  <div className="aiload"><div className="aispin" />ANALYSE DU GRAPHE EN COURS...</div>
+                )}
+
+                {chartResult && !chartLoading && (
+                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {(chartResult.tendance || chartResult.biais) && (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {chartResult.tendance && (
+                          <div style={{
+                            padding: '4px 10px', borderRadius: 2, fontSize: 10, fontFamily: 'var(--orb)', fontWeight: 700, letterSpacing: '0.1em',
+                            background: chartResult.tendance.includes('HAUSS') ? 'rgba(0,255,136,0.07)' : chartResult.tendance.includes('BAISS') ? 'rgba(255,51,85,0.07)' : 'rgba(255,170,0,0.07)',
+                            border: `1px solid ${chartResult.tendance.includes('HAUSS') ? 'rgba(0,255,136,0.22)' : chartResult.tendance.includes('BAISS') ? 'rgba(255,51,85,0.22)' : 'rgba(255,170,0,0.22)'}`,
+                            color: chartResult.tendance.includes('HAUSS') ? 'var(--g)' : chartResult.tendance.includes('BAISS') ? 'var(--red)' : 'var(--amber)',
+                          }}>
+                            TENDANCE: {chartResult.tendance}
+                          </div>
+                        )}
+                        {chartResult.biais && (
+                          <div style={{
+                            padding: '4px 10px', borderRadius: 2, fontSize: 10, fontFamily: 'var(--orb)', fontWeight: 700, letterSpacing: '0.1em',
+                            background: chartResult.biais === 'LONG' ? 'rgba(0,255,136,0.07)' : chartResult.biais === 'SHORT' ? 'rgba(255,51,85,0.07)' : 'rgba(255,170,0,0.07)',
+                            border: `1px solid ${chartResult.biais === 'LONG' ? 'rgba(0,255,136,0.22)' : chartResult.biais === 'SHORT' ? 'rgba(255,51,85,0.22)' : 'rgba(255,170,0,0.22)'}`,
+                            color: chartResult.biais === 'LONG' ? 'var(--g)' : chartResult.biais === 'SHORT' ? 'var(--red)' : 'var(--amber)',
+                          }}>
+                            BIAIS: {chartResult.biais}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {chartResult.niveaux && chartResult.niveaux.length > 0 && (
+                      <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--muted)', marginBottom: 6 }}>// NIVEAUX IDENTIFIÉS</div>
+                        {chartResult.niveaux.map((n, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'flex-start', padding: '4px 0', borderBottom: i < chartResult.niveaux!.length - 1 ? '1px solid var(--vdim)' : 'none' }}>
+                            <span style={{
+                              fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', flexShrink: 0, padding: '1px 5px', borderRadius: 2,
+                              color: LEVEL_COLORS[n.type] || 'var(--g)',
+                              background: `${LEVEL_COLORS[n.type] || 'var(--g)'}15`,
+                              border: `1px solid ${LEVEL_COLORS[n.type] || 'var(--g)'}33`,
+                            }}>{n.type}</span>
+                            <span style={{ fontSize: 11, fontFamily: 'var(--orb)', fontWeight: 700, color: 'var(--text)', flexShrink: 0 }}>{n.prix}</span>
+                            <span style={{ fontSize: 10, color: 'var(--muted)', lineHeight: 1.4 }}>{n.description}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {chartResult.structure && (
+                      <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--muted)', marginBottom: 4 }}>// STRUCTURE DE MARCHÉ</div>
+                        <div style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.6 }}>{chartResult.structure}</div>
+                      </div>
+                    )}
+
+                    {(chartResult.premium_discount || chartResult.liquidity) && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                        {chartResult.premium_discount && (
+                          <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
+                            <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--amber)', marginBottom: 4 }}>// PREMIUM / DISCOUNT</div>
+                            <div style={{ fontSize: 10, color: 'var(--text)', lineHeight: 1.5 }}>{chartResult.premium_discount}</div>
+                          </div>
+                        )}
+                        {chartResult.liquidity && (
+                          <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
+                            <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--red)', marginBottom: 4 }}>// LIQUIDITÉ</div>
+                            <div style={{ fontSize: 10, color: 'var(--text)', lineHeight: 1.5 }}>{chartResult.liquidity}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {chartResult.confluences && chartResult.confluences.length > 0 && (
+                      <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 2, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--g)', marginBottom: 4 }}>// CONFLUENCES</div>
+                        {chartResult.confluences.map((c, i) => (
+                          <div key={i} style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.6 }}>• {c}</div>
+                        ))}
+                      </div>
+                    )}
+
+                    {chartResult.analyse && (
+                      <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--muted)', marginBottom: 4 }}>// ANALYSE</div>
+                        <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.65 }}>{chartResult.analyse}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )
+
+      case 'eco':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">CALENDRIER ÉCONOMIQUE</span>
+              <span className="ph-b">TV LIVE</span>
+              <button className="widget-close" onClick={() => hideWidget('eco')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body" style={{ padding: 0 }}>
+              <iframe title="eco-cal" src="https://www.tradingview.com/embed-widget/events/?locale=fr_FR#%7B%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22importanceFilter%22%3A%22-1%2C0%2C1%22%2C%22countryFilter%22%3A%22us%2Ceu%22%7D" style={{ border: 'none', overflow: 'hidden', width: '100%', height: '100%' }} />
+            </div>
+          </>
+        )
+
+      case 'markets': {
+        const now = new Date()
+        const utcH = now.getUTCHours() + now.getUTCMinutes() / 60
+        const wd = now.getUTCDay() >= 1 && now.getUTCDay() <= 5
+        const markets = [
+          { name: 'TOKYO', flag: '🇯🇵', hours: 'TSE 00:00–06:00 UTC', open: wd && utcH >= 0 && utcH < 6, sub: 'Nikkei 225 · TOPIX' },
+          { name: 'SHANGHAI', flag: '🇨🇳', hours: 'SSE 01:30–07:00 UTC', open: wd && utcH >= 1.5 && utcH < 7, sub: 'CSI 300 · Hang Seng' },
+          { name: 'SYDNEY', flag: '🇦🇺', hours: 'ASX 00:00–06:00 UTC', open: wd && utcH >= 0 && utcH < 6, sub: 'ASX 200' },
+          { name: 'LONDON', flag: '🇬🇧', hours: 'LSE 08:00–16:30 UTC', open: wd && utcH >= 8 && utcH < 16.5, sub: 'FTSE 100 · DAX' },
+          { name: 'FRANCFORT', flag: '🇩🇪', hours: 'XETRA 07:00–15:30 UTC', open: wd && utcH >= 7 && utcH < 15.5, sub: 'DAX 40 · EUROSTOXX' },
+          { name: 'NEW YORK', flag: '🇺🇸', hours: 'NYSE 13:30–20:00 UTC', open: wd && utcH >= 13.5 && utcH < 20, sub: 'ES · NQ · YM' },
+          { name: 'CME FUTURES', flag: '📊', hours: 'CME 22:00–21:00 UTC', open: wd || (now.getUTCDay() === 0 && utcH >= 22), sub: 'Futures 23h/24' },
+        ]
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">MARCHÉS MONDIAUX</span>
+              <span className="ph-b">LIVE</span>
+              <button className="widget-close" onClick={() => hideWidget('markets')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body" style={{ overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {markets.map(m => (
+                <div key={m.name} className="instcard" style={{ padding: '8px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 16 }}>{m.flag}</span>
+                      <div>
+                        <div style={{ fontFamily: 'var(--orb)', fontSize: 10, fontWeight: 700, color: 'var(--text)', letterSpacing: '0.05em' }}>{m.name}</div>
+                        <div style={{ fontSize: 8, color: 'var(--muted)', marginTop: 1 }}>{m.sub}</div>
+                      </div>
+                    </div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 2, fontSize: 8, fontWeight: 700, letterSpacing: '0.14em',
+                      background: m.open ? 'rgba(0,255,136,0.08)' : 'rgba(255,51,85,0.08)',
+                      border: `1px solid ${m.open ? 'rgba(0,255,136,0.22)' : 'rgba(255,51,85,0.22)'}`,
+                      color: m.open ? 'var(--g)' : 'var(--red)',
+                    }}>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: m.open ? 'var(--g)' : 'var(--red)', boxShadow: `0 0 6px ${m.open ? 'var(--g)' : 'var(--red)'}`, animation: m.open ? 'blink 1.4s ease infinite' : 'none' }} />
+                      {m.open ? 'OUVERT' : 'FERMÉ'}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 7, color: 'var(--muted)', marginTop: 4, letterSpacing: '0.06em' }}>{m.hours}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )
+      }
+
+      case 'end-session':
+        return (
+          <>
+            <div className="ph widget-drag-handle">
+              <span className="ph-t">FIN DE SESSION</span>
+              <button className="widget-close" onClick={() => hideWidget('end-session')} title="Masquer">✕</button>
+            </div>
+            <div className="widget-body">
+              <div className="blk">
+                <button className="endbtn" onClick={endSession}>■ FIN DE SESSION</button>
+              </div>
+            </div>
+          </>
+        )
+
+      default:
+        return null
+    }
+  }
 
   // Boot screen
   if (!booted) {
@@ -557,6 +1392,15 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
           <div className="ticker-wrap">
             <iframe title="ticker" src="https://s.tradingview.com/embed-widget/ticker-tape/?locale=fr#%7B%22symbols%22%3A%5B%7B%22proName%22%3A%22FOREXCOM%3ASPXUSD%22%2C%22title%22%3A%22SPX%22%7D%2C%7B%22proName%22%3A%22FX%3AEURUSD%22%2C%22title%22%3A%22EUR%2FUSD%22%7D%2C%7B%22proName%22%3A%22BITSTAMP%3ABTCUSD%22%2C%22title%22%3A%22BTC%22%7D%2C%7B%22proName%22%3A%22BITSTAMP%3AETHUSD%22%2C%22title%22%3A%22ETH%22%7D%2C%7B%22proName%22%3A%22CMCMARKETS%3AGOLD%22%2C%22title%22%3A%22GOLD%22%7D%2C%7B%22proName%22%3A%22TVC%3AVIX%22%2C%22title%22%3A%22VIX%22%7D%2C%7B%22proName%22%3A%22NASDAQ%3ANVDA%22%2C%22title%22%3A%22NVDA%22%7D%5D%2C%22showSymbolLogo%22%3Afalse%2C%22isTransparent%22%3Atrue%2C%22displayMode%22%3A%22compact%22%2C%22colorTheme%22%3A%22dark%22%7D" style={{ width: '100%', height: '100%', border: 'none' }} />
           </div>
+          <div className="tb-seg" style={{ borderLeft: '1px solid var(--border)', padding: '0 10px' }}>
+            <button
+              className={`edit-toggle ${editMode ? 'on' : ''}`}
+              onClick={() => setEditMode(v => !v)}
+              title="Verrouiller / déverrouiller la disposition"
+            >
+              🎨 PERSONNALISER {editMode ? '· ON' : ''}
+            </button>
+          </div>
           <div className="tb-seg clk-seg" style={{ minWidth: 150, textAlign: 'center', borderLeft: '1px solid var(--border)' }}>
             <div className="clk">{clock}</div>
             <div className="clk-d">{dateLine}</div>
@@ -567,518 +1411,73 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
           </div>
         </div>
 
-        {/* MAIN 6 COLS */}
-        <div className="main">
-
-          {/* COL1: MENTAL + BREATH */}
-          <div className="col">
-            <div className="ph"><span className="ph-t">ÉTAT MENTAL</span><span className="ph-b">{mentalBadge}</span></div>
-            <div className="blk">
-              <div className="blt">ÉVALUER AVANT DE TRADER</div>
-              <div className="mgrid">
-                {Array.from({ length: 10 }, (_, i) => {
-                  const v = i + 1
-                  const cls = v <= mental ? (mental <= 3 ? 'tilt' : mental <= 6 ? 'neu' : 'foc') : ''
-                  return <div key={i} className={`mc ${cls}`} onClick={() => setMental(v)} />
-                })}
-              </div>
-              <div className="ms-labs"><span>TILT</span><span>NEUTRE</span><span>FOCUS</span></div>
-              <div className={`mstate ${mentalCls}`}>{mentalLabel}</div>
+        {/* BODY: SIDEBAR + GRID */}
+        <div className="body-wrap">
+          {/* LEFT SIDEBAR */}
+          <aside className="left-sidebar">
+            <div className="ls-logo">
+              <span className="tb-logo" style={{ fontSize: 16 }}>ATP</span>
+              <span style={{ fontSize: 8, letterSpacing: '0.22em', color: 'var(--muted)', marginLeft: 6 }}>WIDGETS</span>
             </div>
-
-            {accounts.length > 0 && (
-              <>
-                <div className="ph"><span className="ph-t">COMPTES TRADÉS</span><span className="ph-b">{selectedAccountIds.size}/{accounts.length}</span></div>
-                <div className="blk">
-                  <div className="blt">SUR QUELS COMPTES TU TRADES ?</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {accounts.map(acc => {
-                      const sel = selectedAccountIds.has(acc.id)
-                      const tc = acc.account_type === 'funded' ? '#00ff88' : acc.account_type === 'challenge' ? '#60a5fa' : '#ffaa00'
-                      return (
-                        <button
-                          key={acc.id}
-                          onClick={() => setSelectedAccountIds(prev => {
-                            const next = new Set(prev)
-                            if (next.has(acc.id)) next.delete(acc.id)
-                            else next.add(acc.id)
-                            return next
-                          })}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', borderRadius: 3, fontSize: 9,
-                            background: sel ? `${tc}15` : 'transparent',
-                            border: `1px solid ${sel ? tc : 'var(--dim)'}`,
-                            color: sel ? tc : 'var(--muted)',
-                            cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
-                            fontFamily: 'var(--mono)', letterSpacing: '0.04em',
-                          }}
-                        >
-                          <span style={{ fontSize: 10 }}>{sel ? '◉' : '○'}</span>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                    <button
-                      onClick={() => setSelectedAccountIds(new Set(accounts.map(a => a.id)))}
-                      style={{ flex: 1, padding: '4px', background: 'transparent', border: '1px solid var(--dim)', borderRadius: 2, color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 8, letterSpacing: '0.1em', cursor: 'pointer' }}
-                    >TOUS</button>
-                    <button
-                      onClick={() => setSelectedAccountIds(new Set())}
-                      style={{ flex: 1, padding: '4px', background: 'transparent', border: '1px solid var(--dim)', borderRadius: 2, color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 8, letterSpacing: '0.1em', cursor: 'pointer' }}
-                    >AUCUN</button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="ph"><span className="ph-t">RESPIRATION 4-4-6</span></div>
-            <div className="blk">
-              <div className="bvis">
-                <div className="bring-w">
-                  <div className={`bring ${breathClass}`}><span className="bnum">{breathNum}</span></div>
-                </div>
-                <div className="bphase">{breathPhase}</div>
-              </div>
-              <button className="bbtn" onClick={() => {
-                if (breathOn) { setBreathOn(false); breathStep.current = 0; breathTick.current = 0; setBreathClass(''); setBreathPhase('INSPIRER — 4s'); setBreathNum(4) }
-                else setBreathOn(true)
-              }}>{breathOn ? '■ ARRÊTER' : '▸ DÉMARRER PROTOCOLE'}</button>
+            <div className="ls-search-wrap">
+              <input className="ls-search" placeholder="🔎 Rechercher..." />
             </div>
-
-            {pauseOn && (
-              <div className="blk">
-                <div className="palert show">
-                  <div className="pa-t">⚠ PAUSE OBLIGATOIRE</div>
-                  <div className="pa-tm">{`${pad(Math.floor(pauseSec / 60))}:${pad(pauseSec % 60)}`}</div>
-                  <div className="pa-tx">3 pertes consécutives.<br />Attends. Respire. Règle n°3.</div>
-                </div>
-              </div>
-            )}
-
-            <div className="ph"><span className="ph-t">CITATIONS</span><span className="ph-b">{quotesRef.current.length}</span></div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '6px 12px' }}>
-              {quotesRef.current.map((q, i) => (
-                <div key={i} style={{ padding: '8px 0', borderBottom: i < quotesRef.current.length - 1 ? '1px solid var(--vdim)' : 'none' }}>
-                  <div className="qt">{q.t}</div>
-                  <div className="qa">{q.a}</div>
-                </div>
-              ))}
+            <div className="ls-list">
+              {WIDGETS.map(w => {
+                const on = visibleIds.includes(w.id)
+                return (
+                  <button
+                    key={w.id}
+                    className={`ls-item ${on ? 'on' : ''}`}
+                    onClick={() => toggleWidget(w.id)}
+                    title={on ? 'Masquer' : 'Afficher'}
+                  >
+                    <span className="ls-icon">{w.icon}</span>
+                    <span className="ls-label">{w.label}</span>
+                    <span className={`ls-dot ${on ? 'on' : ''}`} />
+                  </button>
+                )
+              })}
             </div>
-          </div>
-
-          {/* COL2: CHECKLIST + DISCIPLINE + RULES */}
-          <div className="col">
-            <div className="ph"><span className="ph-t">CHECKLIST PRÉ-SESSION</span><span className="ph-b">{checksDone}/{CHK_ITEMS.length}</span></div>
-            <div className="blk">
-              <div className="cpbar"><div className="cpfill" style={{ width: `${Math.round((checksDone / CHK_ITEMS.length) * 100)}%` }} /></div>
-              <div className="cplbls"><span>PROGRESSION</span><span>{checksDone}/{CHK_ITEMS.length}</span></div>
-              {CHK_ITEMS.map((item, i) => (
-                <div key={i} className={`chkrow ${checks[i] ? 'done' : ''}`} onClick={() => setChecks(prev => { const n = [...prev]; n[i] = !n[i]; return n })}>
-                  <div className="chkbox">{checks[i] ? '✓' : ''}</div>
-                  <span className="chklbl">{item}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="ph"><span className="ph-t">SCORE DISCIPLINE</span></div>
-            <div className="blk">
-              <div className="dring-wrap">
-                <svg className="dring-svg" viewBox="0 0 58 58">
-                  <circle className="dr-track" cx="29" cy="29" r="25" />
-                  <circle className="dr-fill" cx="29" cy="29" r="25" style={{ strokeDashoffset: 157 - (discScore / 100) * 157 }} />
-                </svg>
-                <div className={`ds-num ${discScore >= 70 ? 'sc-g' : discScore >= 40 ? 'sc-a' : 'sc-r'}`}>{discScore}%</div>
-                <div className="ds-lbl">SCORE DISCIPLINE</div>
-              </div>
-            </div>
-
-            <div className="ph"><span className="ph-t">RÈGLES ATP</span></div>
-            <div className="blk">
-              {RULES.map(r => (
-                <div key={r.n} className="rrow">
-                  <span className="rn">{r.n}</span>
-                  <div className="rb"><strong>{r.t}</strong><small>{r.s}</small></div>
-                </div>
-              ))}
-            </div>
-
-            <div className="ph"><span className="ph-t">BLOOMBERG LIVE</span><span className="ph-b">TV</span></div>
-            <div style={{ flex: 1, minHeight: 180 }}>
-              <iframe title="bloomberg" src="https://www.youtube.com/embed/iEpJwprxDdk?autoplay=1&mute=1" allow="autoplay; encrypted-media" style={{ width: '100%', height: '100%', border: 'none' }} />
-            </div>
-          </div>
-
-          {/* COL3: P&L + TRADES + NOTE */}
-          <div className="col" style={{ display: 'flex', flexDirection: 'column' }}>
-            <div className="pnlhero">
-              <div className="pnl-glow" />
-              <div className={`pnl-amt ${totalPnl > 0 ? 'pv-p' : totalPnl < 0 ? 'pv-n' : 'pv-z'}`}>
-                {(totalPnl >= 0 ? '+' : '')}{totalPnl.toFixed(2)} €
-              </div>
-              <div className="pnl-meta">
-                <div className="pm">TRADES <span>{trades.length}</span></div>
-                <div className="pm">W/L <span>{wins}/{losses}</span></div>
-                <div className="pm">WIN% <span>{trades.length > 0 ? winPct + '%' : '—'}</span></div>
-                <div className="pm">R∑ <span>{(totalR >= 0 ? '+' : '')}{totalR.toFixed(1)}R</span></div>
-                <div className="pm">BEST <span>{trades.length > 0 ? '+' + bestTrade.toFixed(2) + '€' : '—'}</span></div>
-              </div>
-            </div>
-
-            <div className="spk-wrap">
-              <div className="spk-lbl">// COURBE P&L SESSION</div>
-              <svg className="spk-svg" viewBox="0 0 400 90" preserveAspectRatio="none">
-                <defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00ff88" stopOpacity="0.12" /><stop offset="100%" stopColor="#00ff88" stopOpacity="0" /></linearGradient></defs>
-                <polyline fill="none" stroke={totalPnl >= 0 ? '#00ff88' : '#ff3355'} strokeWidth="1.5" points={sparkPoints} strokeLinejoin="round" filter="drop-shadow(0 0 2px rgba(0,255,136,0.4))" />
-                <polygon fill="url(#spg)" points={`0,90 ${sparkPoints} 400,90`} />
-              </svg>
-            </div>
-
-            <div className="risk-wrap">
-              <div className="rsk-row">
-                <div>
-                  <div className="ri-lbl"><span>DAILY LOSS</span><span>{dailyLoss.toFixed(0)}€</span></div>
-                  <div className="ri-bar"><div className="ri-f ri-loss" style={{ width: `${Math.min((dailyLoss / 500) * 100, 100)}%` }} /></div>
-                  <div className="ri-vals"><span>0</span><span>500€ MAX</span></div>
-                </div>
-                <div>
-                  <div className="ri-lbl"><span>OBJECTIF</span><span>{dailyObj.toFixed(0)}€</span></div>
-                  <div className="ri-bar"><div className="ri-f ri-obj" style={{ width: `${Math.min((dailyObj / 300) * 100, 100)}%` }} /></div>
-                  <div className="ri-vals"><span>0</span><span>300€</span></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="ph" style={{ position: 'sticky', top: 0, zIndex: 5 }}>
-              <span className="ph-t">JOURNAL SESSION</span><span className="ph-b">{trades.length} TRADE{trades.length > 1 ? 'S' : ''}</span>
-            </div>
-            <div className="tlh"><span>HEURE</span><span>INST</span><span>SENS</span><span>P&L</span><span>R</span><span>STAT</span></div>
-            <div className="tlscroll">
-              {trades.length === 0 ? (
-                <div className="tl-empty">// EN ATTENTE — AUCUN TRADE</div>
-              ) : [...trades].reverse().map((t, i) => (
-                <div key={i} className="trow">
-                  <span className="tc-t">{t.time}</span>
-                  <span className="tc-i">{t.inst}</span>
-                  <span className={t.side === 'LONG' ? 'tc-l' : 'tc-s'}>{t.side}</span>
-                  <span className={t.pnl >= 0 ? 'tc-pp' : 'tc-pn'}>{(t.pnl >= 0 ? '+' : '') + t.pnl.toFixed(2)}€</span>
-                  <span className={t.r >= 0 ? 'tc-rp' : 'tc-rn'}>{(t.r >= 0 ? '+' : '') + t.r.toFixed(1)}R</span>
-                  <span className={t.pnl >= 0 ? 'tc-pp' : 'tc-pn'}>{t.status}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="addtrade">
-              <select className="tsel" value={iInst} onChange={e => setIInst(e.target.value)} style={{ width: 52 }}>
-                {['YM', 'NQ', 'ES', 'MYM', 'MNQ'].map(s => <option key={s}>{s}</option>)}
-              </select>
-              <select className="tsel" value={iSide} onChange={e => setISide(e.target.value)} style={{ width: 58 }}>
-                <option>LONG</option><option>SHORT</option>
-              </select>
-              <input className="tinp" type="number" placeholder="P&L €" value={iPnl} onChange={e => setIPnl(e.target.value)} style={{ flex: 1 }} />
-              <input className="tinp" type="number" placeholder="R" value={iR} onChange={e => setIR(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') logTrade() }} style={{ width: 48 }} />
-              <button className="logbtn" onClick={logTrade}>LOG ▸</button>
-            </div>
-
-            <div className="note-area">
-              <div className="blt" style={{ marginBottom: 5 }}>NOTE SESSION</div>
-              <textarea className="note-ta" value={note} onChange={e => setNote(e.target.value)} placeholder="Observations, setup, erreurs..." />
-            </div>
-          </div>
-
-          {/* COL4: STATS + OBJECTIFS + AI */}
-          <div className="col">
-            <div className="ph"><span className="ph-t">STATS SESSION</span></div>
-            <div className="blk">
-              <div className="sgrid">
-                <div className="sc"><div className="sclbl">MEILLEUR</div><div className="scval sc-g">{trades.length > 0 ? '+' + bestTrade.toFixed(2) + '€' : '—'}</div></div>
-                <div className="sc"><div className="sclbl">PIRE</div><div className="scval sc-r">{trades.length > 0 ? worstTrade.toFixed(2) + '€' : '—'}</div></div>
-                <div className="sc"><div className="sclbl">MOYENNE</div><div className="scval sc-w">{trades.length > 0 ? (avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(2) + '€' : '—'}</div></div>
-                <div className="sc"><div className="sclbl">R MAX</div><div className="scval sc-g">{trades.length > 0 ? '+' + rMax.toFixed(1) + 'R' : '—'}</div></div>
-                <div className="sc"><div className="sclbl">PROFIT FACTOR</div><div className="scval sc-w">{pf}</div></div>
-                <div className="sc">
-                  <div className="sclbl">PERTES CONSEC.</div>
-                  <div className="scval sc-a">{consec}</div>
-                  <div className="cdots">
-                    {[0, 1, 2].map(i => <div key={i} className={`cd ${i < consec ? 'loss' : ''}`} />)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="ph"><span className="ph-t">OBJECTIFS SESSION</span></div>
-            <div className="blk" style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {dailyObj >= 300 && (
-                <div className="obj-reach show">
-                  <div className="or-t">✓ OBJECTIF ATTEINT</div>
-                  <div className="or-s">+300€ — bonne session, tu peux t&apos;arrêter.</div>
-                </div>
-              )}
-              <div className="objcard">
-                <div className="och"><span className="ocl">P&L OBJECTIF</span><span className="ocv sc-g">{dailyObj.toFixed(0)} / 300€</span></div>
-                <div className="obar"><div className="obfill" style={{ width: `${Math.min(Math.round((dailyObj / 300) * 100), 100)}%` }} /></div>
-                <div className="opct">{Math.min(Math.round((dailyObj / 300) * 100), 100)}%</div>
-              </div>
-              <div className="objcard">
-                <div className="och"><span className="ocl">DAILY LOSS MAX</span><span className="ocv sc-r">{dailyLoss.toFixed(0)} / 500€</span></div>
-                <div className="obar"><div className="obfill" style={{ background: 'linear-gradient(90deg,#cc2200,var(--red))', width: `${Math.min(Math.round((dailyLoss / 500) * 100), 100)}%` }} /></div>
-                <div className="opct">{Math.min(Math.round((dailyLoss / 500) * 100), 100)}%</div>
-              </div>
-              <div className="objcard">
-                <div className="och"><span className="ocl">CHECKLIST</span><span className="ocv sc-g">{checksDone} / {CHK_ITEMS.length}</span></div>
-                <div className="obar"><div className="obfill" style={{ width: `${Math.round((checksDone / CHK_ITEMS.length) * 100)}%` }} /></div>
-                <div className="opct">{Math.round((checksDone / CHK_ITEMS.length) * 100)}%</div>
-              </div>
-            </div>
-
-            <div className="ph"><span className="ph-t">ASSISTANT NEWS IA</span><span className="ph-b">GPT</span></div>
-            <div className="blk" style={{ flex: 1 }}>
-              <button className="aibtn" onClick={analyzeNews} disabled={aiLoading}>
-                <div className="aidot" />ANALYSER NEWS MAINTENANT
+            <div className="ls-footer">
+              <button className="ls-reset" onClick={resetLayout} title="Restaurer la disposition par défaut">
+                🔄 Layout par défaut
               </button>
-              <input className="aiinp" placeholder="Colle une headline → Enter" value={aiInput} onChange={e => setAiInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') analyzeNews() }} />
-              <div className="aihint">// ex: NFP +178K · FOMC hawkish · CPI 3.2%</div>
-              <div className="aicards">
-                {aiLoading && <div className="aiload"><div className="aispin" />ANALYSE EN COURS...</div>}
-                {aiCards.map((c, i) => {
-                  const cc = c.signal === 'BULLISH' ? 'ai-bull' : c.signal === 'BEARISH' ? 'ai-bear' : 'ai-neu'
-                  const sc = c.signal === 'BULLISH' ? 'sig-g' : c.signal === 'BEARISH' ? 'sig-r' : 'sig-a'
-                  const ic = c.signal === 'BULLISH' ? '▲' : c.signal === 'BEARISH' ? '▼' : '◈'
-                  return (
-                    <div key={i} className={`aicard ${cc}`}>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 3 }}>
-                        <span className={`aisig ${sc}`}>{ic} {c.signal}</span>
-                        <span className="aiimpact">{c.impact}</span>
-                      </div>
-                      <div className="aihl">{c.headline}</div>
-                      <div className="aian">{c.analyse}</div>
-                      <div className="aitags">{(c.instruments || []).map(ins => <span key={ins} className="aitag">{ins}</span>)}</div>
-                    </div>
-                  )
-                })}
-                {aiSummary && (
-                  <div className="aisum">
-                    <div className="aisumlbl">// BIAIS SESSION</div>
-                    <div className="aisumtxt">{aiSummary}</div>
-                  </div>
-                )}
-                {aiTime && <div className="aits">{aiTime}</div>}
-              </div>
+              <div className="ls-meta">{visibleIds.length}/{WIDGETS.length} widgets</div>
             </div>
+          </aside>
 
-            <div className="blk">
-              <button className="endbtn" onClick={endSession}>■ FIN DE SESSION</button>
-            </div>
-          </div>
-
-          {/* COL5: INSTRUMENTS + LEVELS + CALC */}
-          <div className="col">
-            <div className="ph"><span className="ph-t">NIVEAUX CLÉS</span><span className="ph-b">{levels.length}</span></div>
-            <div className="blk">
-              <div style={{ display: 'flex', gap: 5, marginBottom: 7 }}>
-                <input className="tinp" placeholder="Prix ex: 42500" value={lvlInp} onChange={e => setLvlInp(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addLevel() }} style={{ flex: 1, fontSize: 10 }} />
-                <select className="tsel" value={lvlType} onChange={e => setLvlType(e.target.value)} style={{ width: 52, fontSize: 10 }}>
-                  <option>RES</option><option>SUP</option><option>OB</option><option>FVG</option>
-                </select>
-                <button className="logbtn" onClick={addLevel} style={{ padding: '5px 9px' }}>+</button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {levels.map((lv, i) => (
-                  <div key={i} className="lvlrow">
-                    <span style={{ color: LEVEL_COLORS[lv.t] || '#fff', fontSize: 8, fontWeight: 700, letterSpacing: '0.1em' }}>{lv.t}</span>
-                    <span style={{ fontFamily: 'var(--orb)', fontSize: 11 }}>{lv.v.toLocaleString('fr-FR')}</span>
-                    <button className="lvlbtn" onClick={() => setLevels(prev => prev.filter((_, j) => j !== i))}>✕</button>
+          {/* MAIN GRID */}
+          <main className="main-grid">
+            {hydrated && (
+              <ResponsiveGridLayout
+                className="layout"
+                layouts={{ lg: activeLayout, md: activeLayout, sm: activeLayout, xs: activeLayout, xxs: activeLayout } as ResponsiveLayouts}
+                breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                cols={{ lg: 12, md: 12, sm: 8, xs: 6, xxs: 4 }}
+                rowHeight={30}
+                margin={[8, 8]}
+                containerPadding={[10, 10]}
+                isDraggable={editMode}
+                isResizable={editMode}
+                draggableHandle=".widget-drag-handle"
+                compactType="vertical"
+                preventCollision={false}
+                onLayoutChange={(next) => {
+                  // Merge with existing layout entries for hidden widgets so we don't lose positions
+                  const map = new Map<string, LayoutItem>(layout.map(l => [l.i, l]))
+                  for (const l of next) map.set(l.i, l)
+                  persistLayout(Array.from(map.values()))
+                }}
+              >
+                {activeLayout.map(item => (
+                  <div key={item.i} className="widget-card" data-grid={item}>
+                    {renderWidget(item.i)}
                   </div>
                 ))}
-              </div>
-            </div>
-
-            <div className="ph"><span className="ph-t">CALCULATEUR RISQUE</span></div>
-            <div className="blk">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 7 }}>
-                <div><div className="blt" style={{ marginBottom: 2 }}>CAPITAL €</div><input className="tinp" type="number" value={cCap} onChange={e => setCCap(e.target.value)} style={{ width: '100%', fontSize: 10 }} /></div>
-                <div><div className="blt" style={{ marginBottom: 2 }}>RISQUE %</div><input className="tinp" type="number" value={cRisk} onChange={e => setCRisk(e.target.value)} step="0.1" style={{ width: '100%', fontSize: 10 }} /></div>
-                <div><div className="blt" style={{ marginBottom: 2 }}>SL (pts)</div><input className="tinp" type="number" value={cSl} onChange={e => setCSl(e.target.value)} style={{ width: '100%', fontSize: 10 }} /></div>
-                <div><div className="blt" style={{ marginBottom: 2 }}>INSTRUMENT</div>
-                  <select className="tsel" value={cInst} onChange={e => setCInst(e.target.value)} style={{ width: '100%', fontSize: 10 }}>
-                    <option value="5">YM ($5/pt)</option>
-                    <option value="0.5">MYM ($0.5/pt)</option>
-                    <option value="20">NQ ($20/pt)</option>
-                    <option value="2">MNQ ($2/pt)</option>
-                    <option value="50">ES ($50/pt)</option>
-                    <option value="5">MES ($5/pt)</option>
-                    <option value="100">GC ($100/pt)</option>
-                    <option value="10">MGC ($10/pt)</option>
-                  </select>
-                </div>
-              </div>
-              <button className="bbtn" onClick={doCalc} style={{ marginBottom: 7 }}>CALCULER ▸</button>
-              <div className="calc-res">{calcResult || '// Remplis les champs et calcule'}</div>
-            </div>
-
-            <div className="ph"><span className="ph-t">ANALYSE CHART IA</span><span className="ph-b">VISION</span></div>
-            <div className="blk" style={{ flex: 1 }}>
-              <label className="aibtn" style={{ cursor: 'pointer' }}>
-                <div className="aidot" />UPLOAD UN GRAPHE
-                <input type="file" accept="image/*" onChange={handleChartUpload} style={{ display: 'none' }} />
-              </label>
-
-              {chartPreview && (
-                <div style={{ marginTop: 8, borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                  <img src={chartPreview} alt="Chart" style={{ width: '100%', display: 'block', maxHeight: 140, objectFit: 'cover' }} />
-                </div>
-              )}
-
-              {chartLoading && (
-                <div className="aiload"><div className="aispin" />ANALYSE DU GRAPHE EN COURS...</div>
-              )}
-
-              {chartResult && !chartLoading && (
-                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {/* Tendance + Biais */}
-                  {(chartResult.tendance || chartResult.biais) && (
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {chartResult.tendance && (
-                        <div style={{
-                          padding: '4px 10px', borderRadius: 2, fontSize: 10, fontFamily: 'var(--orb)', fontWeight: 700, letterSpacing: '0.1em',
-                          background: chartResult.tendance.includes('HAUSS') ? 'rgba(0,255,136,0.07)' : chartResult.tendance.includes('BAISS') ? 'rgba(255,51,85,0.07)' : 'rgba(255,170,0,0.07)',
-                          border: `1px solid ${chartResult.tendance.includes('HAUSS') ? 'rgba(0,255,136,0.22)' : chartResult.tendance.includes('BAISS') ? 'rgba(255,51,85,0.22)' : 'rgba(255,170,0,0.22)'}`,
-                          color: chartResult.tendance.includes('HAUSS') ? 'var(--g)' : chartResult.tendance.includes('BAISS') ? 'var(--red)' : 'var(--amber)',
-                        }}>
-                          TENDANCE: {chartResult.tendance}
-                        </div>
-                      )}
-                      {chartResult.biais && (
-                        <div style={{
-                          padding: '4px 10px', borderRadius: 2, fontSize: 10, fontFamily: 'var(--orb)', fontWeight: 700, letterSpacing: '0.1em',
-                          background: chartResult.biais === 'LONG' ? 'rgba(0,255,136,0.07)' : chartResult.biais === 'SHORT' ? 'rgba(255,51,85,0.07)' : 'rgba(255,170,0,0.07)',
-                          border: `1px solid ${chartResult.biais === 'LONG' ? 'rgba(0,255,136,0.22)' : chartResult.biais === 'SHORT' ? 'rgba(255,51,85,0.22)' : 'rgba(255,170,0,0.22)'}`,
-                          color: chartResult.biais === 'LONG' ? 'var(--g)' : chartResult.biais === 'SHORT' ? 'var(--red)' : 'var(--amber)',
-                        }}>
-                          BIAIS: {chartResult.biais}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Niveaux clés */}
-                  {chartResult.niveaux && chartResult.niveaux.length > 0 && (
-                    <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
-                      <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--muted)', marginBottom: 6 }}>// NIVEAUX IDENTIFIÉS</div>
-                      {chartResult.niveaux.map((n, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'flex-start', padding: '4px 0', borderBottom: i < chartResult.niveaux!.length - 1 ? '1px solid var(--vdim)' : 'none' }}>
-                          <span style={{
-                            fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', flexShrink: 0, padding: '1px 5px', borderRadius: 2,
-                            color: LEVEL_COLORS[n.type] || 'var(--g)',
-                            background: `${LEVEL_COLORS[n.type] || 'var(--g)'}15`,
-                            border: `1px solid ${LEVEL_COLORS[n.type] || 'var(--g)'}33`,
-                          }}>{n.type}</span>
-                          <span style={{ fontSize: 11, fontFamily: 'var(--orb)', fontWeight: 700, color: 'var(--text)', flexShrink: 0 }}>{n.prix}</span>
-                          <span style={{ fontSize: 10, color: 'var(--muted)', lineHeight: 1.4 }}>{n.description}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Structure */}
-                  {chartResult.structure && (
-                    <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
-                      <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--muted)', marginBottom: 4 }}>// STRUCTURE DE MARCHÉ</div>
-                      <div style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.6 }}>{chartResult.structure}</div>
-                    </div>
-                  )}
-
-                  {/* Premium/Discount + Liquidity */}
-                  {(chartResult.premium_discount || chartResult.liquidity) && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                      {chartResult.premium_discount && (
-                        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
-                          <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--amber)', marginBottom: 4 }}>// PREMIUM / DISCOUNT</div>
-                          <div style={{ fontSize: 10, color: 'var(--text)', lineHeight: 1.5 }}>{chartResult.premium_discount}</div>
-                        </div>
-                      )}
-                      {chartResult.liquidity && (
-                        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
-                          <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--red)', marginBottom: 4 }}>// LIQUIDITÉ</div>
-                          <div style={{ fontSize: 10, color: 'var(--text)', lineHeight: 1.5 }}>{chartResult.liquidity}</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Confluences */}
-                  {chartResult.confluences && chartResult.confluences.length > 0 && (
-                    <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.15)', borderRadius: 2, padding: '8px 10px' }}>
-                      <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--g)', marginBottom: 4 }}>// CONFLUENCES</div>
-                      {chartResult.confluences.map((c, i) => (
-                        <div key={i} style={{ fontSize: 11, color: 'var(--text)', lineHeight: 1.6 }}>• {c}</div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Analyse */}
-                  {chartResult.analyse && (
-                    <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 2, padding: '8px 10px' }}>
-                      <div style={{ fontSize: 8, letterSpacing: '0.14em', color: 'var(--muted)', marginBottom: 4 }}>// ANALYSE</div>
-                      <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.65 }}>{chartResult.analyse}</div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* COL6: TV WIDGETS */}
-          <div className="col tvcol">
-            <div className="ph" style={{ flexShrink: 0 }}><span className="ph-t">CALENDRIER ÉCONOMIQUE</span><span className="ph-b">TV LIVE</span></div>
-            <div className="tvwrap" style={{ flex: 1.15 }}>
-              <iframe title="eco-cal" src="https://www.tradingview.com/embed-widget/events/?locale=fr_FR#%7B%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Atrue%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22importanceFilter%22%3A%22-1%2C0%2C1%22%2C%22countryFilter%22%3A%22us%2Ceu%22%7D" allowTransparency={true} style={{ border: 'none', overflow: 'hidden' }} />
-            </div>
-            <div className="tvdiv" />
-            <div className="ph" style={{ flexShrink: 0 }}><span className="ph-t">MARCHÉS MONDIAUX</span><span className="ph-b">LIVE</span></div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {(() => {
-                const now = new Date()
-                const utcH = now.getUTCHours() + now.getUTCMinutes() / 60
-                const wd = now.getUTCDay() >= 1 && now.getUTCDay() <= 5
-                const markets = [
-                  { name: 'TOKYO', flag: '🇯🇵', hours: 'TSE 00:00–06:00 UTC', open: wd && utcH >= 0 && utcH < 6, sub: 'Nikkei 225 · TOPIX' },
-                  { name: 'SHANGHAI', flag: '🇨🇳', hours: 'SSE 01:30–07:00 UTC', open: wd && utcH >= 1.5 && utcH < 7, sub: 'CSI 300 · Hang Seng' },
-                  { name: 'SYDNEY', flag: '🇦🇺', hours: 'ASX 00:00–06:00 UTC', open: wd && utcH >= 0 && utcH < 6, sub: 'ASX 200' },
-                  { name: 'LONDON', flag: '🇬🇧', hours: 'LSE 08:00–16:30 UTC', open: wd && utcH >= 8 && utcH < 16.5, sub: 'FTSE 100 · DAX' },
-                  { name: 'FRANCFORT', flag: '🇩🇪', hours: 'XETRA 07:00–15:30 UTC', open: wd && utcH >= 7 && utcH < 15.5, sub: 'DAX 40 · EUROSTOXX' },
-                  { name: 'NEW YORK', flag: '🇺🇸', hours: 'NYSE 13:30–20:00 UTC', open: wd && utcH >= 13.5 && utcH < 20, sub: 'ES · NQ · YM' },
-                  { name: 'CME FUTURES', flag: '📊', hours: 'CME 22:00–21:00 UTC', open: wd || (now.getUTCDay() === 0 && utcH >= 22), sub: 'Futures 23h/24' },
-                ]
-                return markets.map(m => (
-                  <div key={m.name} className="instcard" style={{ padding: '8px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 16 }}>{m.flag}</span>
-                        <div>
-                          <div style={{ fontFamily: 'var(--orb)', fontSize: 10, fontWeight: 700, color: 'var(--text)', letterSpacing: '0.05em' }}>{m.name}</div>
-                          <div style={{ fontSize: 8, color: 'var(--muted)', marginTop: 1 }}>{m.sub}</div>
-                        </div>
-                      </div>
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 2, fontSize: 8, fontWeight: 700, letterSpacing: '0.14em',
-                        background: m.open ? 'rgba(0,255,136,0.08)' : 'rgba(255,51,85,0.08)',
-                        border: `1px solid ${m.open ? 'rgba(0,255,136,0.22)' : 'rgba(255,51,85,0.22)'}`,
-                        color: m.open ? 'var(--g)' : 'var(--red)',
-                      }}>
-                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: m.open ? 'var(--g)' : 'var(--red)', boxShadow: `0 0 6px ${m.open ? 'var(--g)' : 'var(--red)'}`, animation: m.open ? 'blink 1.4s ease infinite' : 'none' }} />
-                        {m.open ? 'OUVERT' : 'FERMÉ'}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 7, color: 'var(--muted)', marginTop: 4, letterSpacing: '0.06em' }}>{m.hours}</div>
-                  </div>
-                ))
-              })()}
-            </div>
-          </div>
+              </ResponsiveGridLayout>
+            )}
+          </main>
         </div>
 
         {/* STATUS BAR */}
@@ -1109,10 +1508,8 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
             maxWidth: 440, width: '90%', textAlign: 'center', padding: '40px 36px',
             position: 'relative',
           }}>
-            {/* Glow */}
             <div style={{ position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)', width: 300, height: 300, background: 'radial-gradient(circle, rgba(0,255,136,0.08), transparent 70%)', pointerEvents: 'none' }} />
 
-            {/* Icon pulse */}
             <div style={{
               width: 56, height: 56, borderRadius: '50%', margin: '0 auto 20px',
               background: 'rgba(0,255,136,0.08)', border: '2px solid rgba(0,255,136,0.25)',
@@ -1122,7 +1519,6 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
               <span style={{ fontSize: 24 }}>⚡</span>
             </div>
 
-            {/* Title */}
             <div style={{
               fontFamily: 'var(--orb)', fontSize: 14, fontWeight: 900, letterSpacing: '0.2em',
               color: 'var(--g)', marginBottom: 16,
@@ -1131,7 +1527,6 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
               {reminderMsg.title}
             </div>
 
-            {/* Message */}
             <div style={{
               fontSize: 15, color: 'var(--text)', lineHeight: 1.7, marginBottom: 20,
               fontWeight: 300,
@@ -1139,7 +1534,6 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
               {reminderMsg.text}
             </div>
 
-            {/* Action */}
             <div style={{
               padding: '14px 18px', borderRadius: 6,
               background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.18)',
@@ -1149,7 +1543,6 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
               👉 {reminderMsg.action}
             </div>
 
-            {/* Button */}
             <button
               onClick={() => setShowReminder(false)}
               style={{
@@ -1163,7 +1556,6 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
               J&apos;AI COMPRIS — CONTINUER ▸
             </button>
 
-            {/* Timer info */}
             <div style={{ marginTop: 16, fontSize: 9, color: 'var(--muted)', letterSpacing: '0.1em' }}>
               RAPPEL DISCIPLINE · TOUTES LES 5 MINUTES
             </div>
@@ -1273,11 +1665,60 @@ body::before,body::after{display:none !important;}
 .sess-seg{gap:8px;padding:0 14px;}
 .ss-lbl{font-size:7px;letter-spacing:0.2em;color:var(--muted);}
 .ss-t{font-family:var(--orb);font-size:13px;font-weight:700;color:var(--amber);letter-spacing:0.06em;}
-.main{display:grid;grid-template-columns:195px 210px 1fr 1fr 230px 265px;overflow:hidden;}
-.col{border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:var(--g2) transparent;}
-.col:last-child{border-right:none;}
-::-webkit-scrollbar{width:2px;}::-webkit-scrollbar-thumb{background:var(--g2);}
-.ph{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.85);position:sticky;top:0;z-index:10;flex-shrink:0;}
+.edit-toggle{padding:5px 10px;background:transparent;border:1px solid var(--border);border-radius:2px;color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:0.14em;cursor:pointer;transition:all 0.15s;font-weight:700;}
+.edit-toggle:hover{border-color:var(--border2);color:var(--text);}
+.edit-toggle.on{background:var(--g3);border-color:var(--border2);color:var(--g);box-shadow:0 0 10px rgba(0,255,136,0.18);}
+
+/* BODY: sidebar + grid */
+.body-wrap{display:grid;grid-template-columns:200px 1fr;overflow:hidden;min-height:0;}
+.left-sidebar{display:flex;flex-direction:column;border-right:1px solid var(--border);background:rgba(0,0,0,0.55);overflow:hidden;}
+.ls-logo{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.7);}
+.ls-search-wrap{padding:8px 10px;border-bottom:1px solid var(--dim);}
+.ls-search{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--text);outline:none;letter-spacing:0.04em;}
+.ls-search:focus{border-color:var(--border2);}
+.ls-search::placeholder{color:var(--muted);}
+.ls-list{flex:1;overflow-y:auto;padding:6px 0;display:flex;flex-direction:column;gap:1px;}
+.ls-item{display:flex;align-items:center;gap:8px;padding:6px 12px;background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:0.08em;cursor:pointer;text-align:left;border-left:2px solid transparent;transition:all 0.12s;}
+.ls-item:hover{background:rgba(0,255,136,0.04);color:var(--text);}
+.ls-item.on{color:var(--text);border-left-color:var(--g);background:rgba(0,255,136,0.05);}
+.ls-icon{font-family:var(--orb);font-size:11px;width:14px;text-align:center;color:var(--g);opacity:0.7;flex-shrink:0;}
+.ls-item.on .ls-icon{opacity:1;text-shadow:0 0 6px rgba(0,255,136,0.5);}
+.ls-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
+.ls-dot{width:7px;height:7px;border-radius:50%;border:1px solid var(--dim);flex-shrink:0;transition:all 0.15s;}
+.ls-dot.on{background:var(--g);border-color:var(--g);box-shadow:0 0 6px var(--g);}
+.ls-footer{padding:8px 10px;border-top:1px solid var(--border);background:rgba(0,0,0,0.4);display:flex;flex-direction:column;gap:4px;}
+.ls-reset{width:100%;padding:7px 10px;background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.22);border-radius:2px;color:var(--amber);font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:0.1em;cursor:pointer;transition:all 0.15s;}
+.ls-reset:hover{background:rgba(255,170,0,0.12);border-color:rgba(255,170,0,0.4);}
+.ls-meta{font-size:7px;letter-spacing:0.18em;color:var(--muted);text-align:center;}
+
+/* MAIN GRID */
+.main-grid{overflow:auto;background:transparent;position:relative;scrollbar-width:thin;scrollbar-color:var(--g2) transparent;}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-thumb{background:var(--g2);}
+.layout{min-height:100%;}
+
+/* Widget cards */
+.widget-card{background:rgba(0,0,0,0.6);border:1px solid var(--border);border-radius:3px;overflow:hidden;display:flex;flex-direction:column;backdrop-filter:blur(2px);transition:border-color 0.15s,box-shadow 0.15s;}
+.widget-card:hover{border-color:var(--border2);box-shadow:0 0 12px rgba(0,255,136,0.06);}
+.widget-card .ph{flex-shrink:0;cursor:default;}
+.widget-card .widget-drag-handle{cursor:grab;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 10px;}
+.widget-card .widget-drag-handle:active{cursor:grabbing;}
+.widget-close{margin-left:auto;background:transparent;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:0 4px;line-height:1;transition:color 0.12s;}
+.widget-close:hover{color:var(--red);}
+.widget-body{flex:1;overflow:auto;display:flex;flex-direction:column;min-height:0;scrollbar-width:thin;scrollbar-color:var(--g2) transparent;}
+
+/* react-grid-layout dark theme overrides */
+.react-grid-layout{position:relative;}
+.react-grid-item{transition:all 200ms ease;transition-property:left,top,width,height;}
+.react-grid-item.cssTransforms{transition-property:transform,width,height;}
+.react-grid-item.react-grid-placeholder{background:rgba(0,255,136,0.15) !important;border:1px dashed var(--g) !important;border-radius:3px !important;opacity:0.5 !important;transition-duration:80ms;}
+.react-grid-item > .react-resizable-handle{opacity:0;transition:opacity 0.15s;background-image:none !important;width:14px;height:14px;}
+.react-grid-item > .react-resizable-handle::after{content:'';position:absolute;right:3px;bottom:3px;width:8px;height:8px;border-right:2px solid var(--g);border-bottom:2px solid var(--g);box-shadow:0 0 4px rgba(0,255,136,0.4);}
+.react-grid-item:hover > .react-resizable-handle{opacity:0.8;}
+.react-grid-item.react-draggable-dragging{z-index:100;cursor:grabbing !important;box-shadow:0 0 28px rgba(0,255,136,0.18);}
+.react-grid-item.resizing{opacity:0.85;}
+
+/* Existing block styles (preserved) */
+.ph{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.85);z-index:10;flex-shrink:0;}
 .ph-t{font-size:8px;font-weight:700;letter-spacing:0.22em;color:var(--muted);display:flex;align-items:center;gap:5px;}
 .ph-t::before{content:'▸';color:var(--g);font-size:7px;}
 .ph-b{font-size:7px;letter-spacing:0.1em;padding:2px 6px;border-radius:2px;background:var(--g3);border:1px solid var(--border);color:var(--g);}
@@ -1340,7 +1781,7 @@ body::before,body::after{display:none !important;}
 .pnlhero{padding:12px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(0,255,136,0.04),transparent);position:relative;overflow:hidden;flex-shrink:0;}
 .pnlhero::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--g),transparent);opacity:0.45;}
 .pnl-glow{position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(0,255,136,0.07),transparent 70%);pointer-events:none;}
-.pnl-amt{font-family:var(--orb);font-size:50px;font-weight:900;line-height:1;letter-spacing:-0.02em;transition:all 0.4s;}
+.pnl-amt{font-family:var(--orb);font-size:42px;font-weight:900;line-height:1;letter-spacing:-0.02em;transition:all 0.4s;}
 .pv-p{color:var(--g);text-shadow:0 0 30px rgba(0,255,136,0.28);}
 .pv-n{color:var(--red);text-shadow:0 0 30px rgba(255,51,85,0.28);}
 .pv-z{color:var(--amber);}
@@ -1349,7 +1790,7 @@ body::before,body::after{display:none !important;}
 .pm span{color:var(--text);font-size:9px;}
 .spk-wrap{padding:10px 16px;border-bottom:1px solid var(--dim);flex-shrink:0;}
 .spk-lbl{font-size:7px;letter-spacing:0.15em;color:var(--muted);margin-bottom:3px;}
-.spk-svg{width:100%;height:90px;}
+.spk-svg{width:100%;height:60px;}
 .risk-wrap{padding:9px 16px;border-bottom:1px solid var(--dim);flex-shrink:0;}
 .rsk-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .ri-lbl{font-size:7px;letter-spacing:0.12em;color:var(--muted);margin-bottom:3px;display:flex;justify-content:space-between;}
@@ -1359,7 +1800,7 @@ body::before,body::after{display:none !important;}
 .ri-obj{background:linear-gradient(90deg,var(--g2),var(--g));box-shadow:0 0 6px rgba(0,255,136,0.25);}
 .ri-vals{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);}
 .ri-vals span{color:var(--text);}
-.tlh{display:grid;grid-template-columns:50px 38px 44px 66px 44px 40px;padding:5px 16px;gap:4px;font-size:7px;letter-spacing:0.12em;color:var(--muted);border-bottom:1px solid var(--dim);background:rgba(0,0,0,0.6);flex-shrink:0;position:sticky;top:38px;z-index:5;}
+.tlh{display:grid;grid-template-columns:50px 38px 44px 66px 44px 40px;padding:5px 16px;gap:4px;font-size:7px;letter-spacing:0.12em;color:var(--muted);border-bottom:1px solid var(--dim);background:rgba(0,0,0,0.6);flex-shrink:0;}
 .tl-empty{padding:18px 16px;text-align:center;font-size:9px;color:var(--dim);letter-spacing:0.1em;}
 .tlscroll{flex:1;overflow-y:auto;min-height:80px;}
 .trow{display:grid;grid-template-columns:50px 38px 44px 66px 44px 40px;padding:6px 16px;gap:4px;font-size:10px;border-bottom:1px solid var(--vdim);cursor:pointer;transition:background 0.1s;animation:rSlide 0.22s ease;}
@@ -1436,10 +1877,6 @@ body::before,body::after{display:none !important;}
 .lvlrow{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:2px;font-size:10px;}
 .lvlbtn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:10px;padding:0 2px;}
 .calc-res{background:var(--bg2);border:1px solid var(--border);border-radius:2px;padding:8px 10px;font-size:9px;line-height:1.8;color:var(--muted);}
-.tvcol{display:flex;flex-direction:column;}
-.tvwrap{flex:1;overflow:hidden;min-height:0;}
-.tvwrap iframe{width:100%;height:100%;border:none;}
-.tvdiv{height:1px;background:var(--border);flex-shrink:0;}
 .sbar{background:#000;border-top:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:16px;font-size:8px;letter-spacing:0.1em;color:var(--muted);}
 .sbi{display:flex;align-items:center;gap:4px;}
 .sbdot{width:4px;height:4px;border-radius:50%;}
