@@ -267,16 +267,53 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
   const [reminderMsg, setReminderMsg] = useState(DISCIPLINE_MESSAGES[0])
   const reminderCount = useRef(0)
 
+  // User preferences (persisted)
+  interface Prefs {
+    fontSize: number // base scale 0.85 - 1.3
+    reminderInterval: number // minutes (0 = disabled)
+    reminderEnabled: boolean
+    breathSoundEnabled: boolean
+    showStatusBar: boolean
+    accentColor: string
+  }
+  const DEFAULT_PREFS: Prefs = {
+    fontSize: 1,
+    reminderInterval: 5,
+    reminderEnabled: true,
+    breathSoundEnabled: false,
+    showStatusBar: true,
+    accentColor: '#00ff88',
+  }
+  const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS)
+  const [showPrefs, setShowPrefs] = useState(false)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('atp_session_prefs')
+      if (stored) setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(stored) })
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function updatePrefs(patch: Partial<Prefs>) {
+    setPrefs(prev => {
+      const next = { ...prev, ...patch }
+      localStorage.setItem('atp_session_prefs', JSON.stringify(next))
+      return next
+    })
+  }
+
   useEffect(() => {
     if (!booted) return
+    if (!prefs.reminderEnabled || prefs.reminderInterval <= 0) return
     const iv = setInterval(() => {
       const msg = DISCIPLINE_MESSAGES[reminderCount.current % DISCIPLINE_MESSAGES.length]
       setReminderMsg(msg)
       setShowReminder(true)
       reminderCount.current++
-    }, 5 * 60 * 1000) // 5 minutes
+    }, prefs.reminderInterval * 60 * 1000)
     return () => clearInterval(iv)
-  }, [booted, DISCIPLINE_MESSAGES])
+  }, [booted, DISCIPLINE_MESSAGES, prefs.reminderEnabled, prefs.reminderInterval])
 
   // Clock tick
   useEffect(() => {
@@ -1377,7 +1414,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
       <div className="glow gl-tl" />
       <div className="glow gl-br" />
 
-      <div className="terminal">
+      <div className="terminal" style={{ fontSize: `${prefs.fontSize * 100}%` }}>
         {/* TOPBAR */}
         <div className="topbar">
           <div className="tb-seg" style={{ minWidth: 130 }}>
@@ -1389,16 +1426,21 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
               <span>{mktOpen ? 'MARCHÉ OUVERT' : 'MARCHÉ FERMÉ'}</span>
             </div>
           </div>
-          <div className="ticker-wrap">
-            <iframe title="ticker" src="https://s.tradingview.com/embed-widget/ticker-tape/?locale=fr#%7B%22symbols%22%3A%5B%7B%22proName%22%3A%22FOREXCOM%3ASPXUSD%22%2C%22title%22%3A%22SPX%22%7D%2C%7B%22proName%22%3A%22FX%3AEURUSD%22%2C%22title%22%3A%22EUR%2FUSD%22%7D%2C%7B%22proName%22%3A%22BITSTAMP%3ABTCUSD%22%2C%22title%22%3A%22BTC%22%7D%2C%7B%22proName%22%3A%22BITSTAMP%3AETHUSD%22%2C%22title%22%3A%22ETH%22%7D%2C%7B%22proName%22%3A%22CMCMARKETS%3AGOLD%22%2C%22title%22%3A%22GOLD%22%7D%2C%7B%22proName%22%3A%22TVC%3AVIX%22%2C%22title%22%3A%22VIX%22%7D%2C%7B%22proName%22%3A%22NASDAQ%3ANVDA%22%2C%22title%22%3A%22NVDA%22%7D%5D%2C%22showSymbolLogo%22%3Afalse%2C%22isTransparent%22%3Atrue%2C%22displayMode%22%3A%22compact%22%2C%22colorTheme%22%3A%22dark%22%7D" style={{ width: '100%', height: '100%', border: 'none' }} />
-          </div>
-          <div className="tb-seg" style={{ borderLeft: '1px solid var(--border)', padding: '0 10px' }}>
+          <div style={{ flex: 1 }} />
+          <div className="tb-seg" style={{ borderLeft: '1px solid var(--border)', padding: '0 10px', gap: 6 }}>
             <button
               className={`edit-toggle ${editMode ? 'on' : ''}`}
               onClick={() => setEditMode(v => !v)}
               title="Verrouiller / déverrouiller la disposition"
             >
               🎨 PERSONNALISER {editMode ? '· ON' : ''}
+            </button>
+            <button
+              className="edit-toggle"
+              onClick={() => setShowPrefs(true)}
+              title="Préférences"
+            >
+              ⚙ PRÉFÉRENCES
             </button>
           </div>
           <div className="tb-seg clk-seg" style={{ minWidth: 150, textAlign: 'center', borderLeft: '1px solid var(--border)' }}>
@@ -1481,7 +1523,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
         </div>
 
         {/* STATUS BAR */}
-        <div className="sbar">
+        {prefs.showStatusBar && <div className="sbar">
           <div className="sbi"><div className="sbdot sb-g" /><span>SYSTÈME OK</span></div>
           <div className="sbsep" />
           <div className="sbi"><span>RISQUE/TRADE:</span><span className="sbv">0.3%</span></div>
@@ -1493,7 +1535,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
           <div className="sbi"><span>P&L:</span><span className="sbv">{(totalPnl >= 0 ? '+' : '')}{totalPnl.toFixed(2)}€</span></div>
           <div className="sbsep" />
           <div className="sbi" style={{ marginLeft: 'auto' }}><span className="sbv">ATP TERMINAL v4.0 © 2026</span></div>
-        </div>
+        </div>}
       </div>
 
       {/* DISCIPLINE REMINDER */}
@@ -1558,6 +1600,118 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
 
             <div style={{ marginTop: 16, fontSize: 9, color: 'var(--muted)', letterSpacing: '0.1em' }}>
               RAPPEL DISCIPLINE · TOUTES LES 5 MINUTES
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PREFERENCES MODAL */}
+      {showPrefs && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 30000, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setShowPrefs(false)}>
+          <div style={{ background: '#050905', border: '1px solid var(--border)', borderRadius: 6, padding: 28, maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--orb)', fontSize: 14, fontWeight: 900, letterSpacing: '0.18em', color: 'var(--g)' }}>⚙ PRÉFÉRENCES</div>
+                <div style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.1em', marginTop: 4 }}>PERSONNALISE TON TERMINAL</div>
+              </div>
+              <button onClick={() => setShowPrefs(false)} style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 16, cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+              {/* FONT SIZE */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 10, letterSpacing: '0.14em', color: 'var(--muted)', textTransform: 'uppercase' }}>
+                  <span>Taille du texte</span>
+                  <span style={{ color: 'var(--g)', fontFamily: 'var(--orb)' }}>{Math.round(prefs.fontSize * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.85}
+                  max={1.4}
+                  step={0.05}
+                  value={prefs.fontSize}
+                  onChange={e => updatePrefs({ fontSize: parseFloat(e.target.value) })}
+                  style={{ width: '100%', accentColor: 'var(--g)' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: 'var(--dim)', marginTop: 2 }}>
+                  <span>85%</span><span>100%</span><span>140%</span>
+                </div>
+              </div>
+
+              {/* DISCIPLINE REMINDER */}
+              <div style={{ padding: '12px 14px', background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.18)', borderRadius: 4 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={prefs.reminderEnabled} onChange={e => updatePrefs({ reminderEnabled: e.target.checked })} style={{ accentColor: 'var(--g)' }} />
+                  <span style={{ fontSize: 11, fontFamily: 'var(--orb)', fontWeight: 700, color: 'var(--text)', letterSpacing: '0.08em' }}>RAPPELS DISCIPLINE</span>
+                </label>
+                {prefs.reminderEnabled && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 9, letterSpacing: '0.12em', color: 'var(--muted)', textTransform: 'uppercase' }}>
+                      <span>Fréquence des notifications</span>
+                      <span style={{ color: 'var(--g)', fontFamily: 'var(--orb)' }}>{prefs.reminderInterval} min</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={30}
+                      step={1}
+                      value={prefs.reminderInterval}
+                      onChange={e => updatePrefs({ reminderInterval: parseInt(e.target.value) })}
+                      style={{ width: '100%', accentColor: 'var(--g)' }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: 'var(--dim)', marginTop: 2 }}>
+                      <span>1 min</span><span>15 min</span><span>30 min</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+                      {[3, 5, 10, 15, 20].map(m => (
+                        <button
+                          key={m}
+                          onClick={() => updatePrefs({ reminderInterval: m })}
+                          style={{
+                            flex: 1, padding: '4px', fontSize: 9, fontFamily: 'var(--mono)',
+                            background: prefs.reminderInterval === m ? 'rgba(0,255,136,0.15)' : 'transparent',
+                            border: `1px solid ${prefs.reminderInterval === m ? 'var(--g)' : 'var(--dim)'}`,
+                            color: prefs.reminderInterval === m ? 'var(--g)' : 'var(--muted)',
+                            borderRadius: 2, cursor: 'pointer', letterSpacing: '0.1em',
+                          }}
+                        >
+                          {m}m
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* STATUS BAR */}
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: 11, fontFamily: 'var(--orb)', fontWeight: 700, color: 'var(--text)', letterSpacing: '0.08em' }}>BARRE DE STATUT</div>
+                  <div style={{ fontSize: 9, color: 'var(--muted)', marginTop: 2 }}>Affiche la barre en bas (P&L · trades · règles)</div>
+                </div>
+                <input type="checkbox" checked={prefs.showStatusBar} onChange={e => updatePrefs({ showStatusBar: e.target.checked })} style={{ accentColor: 'var(--g)', width: 16, height: 16 }} />
+              </label>
+
+              {/* BREATH SOUND */}
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: 11, fontFamily: 'var(--orb)', fontWeight: 700, color: 'var(--text)', letterSpacing: '0.08em' }}>SON RESPIRATION</div>
+                  <div style={{ fontSize: 9, color: 'var(--muted)', marginTop: 2 }}>Bip de transition entre les phases (4-4-6)</div>
+                </div>
+                <input type="checkbox" checked={prefs.breathSoundEnabled} onChange={e => updatePrefs({ breathSoundEnabled: e.target.checked })} style={{ accentColor: 'var(--g)', width: 16, height: 16 }} />
+              </label>
+
+              {/* RESET */}
+              <button
+                onClick={() => { setPrefs(DEFAULT_PREFS); localStorage.removeItem('atp_session_prefs') }}
+                style={{
+                  padding: '10px', background: 'transparent', border: '1px solid rgba(255,51,85,0.3)',
+                  color: 'rgba(255,51,85,0.7)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em',
+                  borderRadius: 4, cursor: 'pointer',
+                }}
+              >
+                ↻ RÉINITIALISER LES PRÉFÉRENCES
+              </button>
             </div>
           </div>
         </div>

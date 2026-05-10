@@ -70,6 +70,21 @@ export interface Resource {
   description: string | null
   created_by: string | null
   created_at: string
+  duration_seconds: number | null
+  thumbnail_url: string | null
+  category: string | null
+  order_idx: number
+}
+
+export interface CourseProgress {
+  id: string
+  trader_id: string
+  resource_id: string
+  watched_seconds: number
+  last_position_seconds: number
+  completed: boolean
+  completed_at: string | null
+  updated_at: string
 }
 
 export interface JournalEntry {

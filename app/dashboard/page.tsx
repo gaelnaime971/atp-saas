@@ -14,10 +14,10 @@ import PropFirm from '@/components/dashboard/pages/PropFirm'
 import Calculateur from '@/components/dashboard/pages/Calculateur'
 import Coaching from '@/components/dashboard/pages/Coaching'
 import Progression from '@/components/dashboard/pages/Progression'
-import Ressources from '@/components/dashboard/pages/Ressources'
+import Formation from '@/components/dashboard/pages/Formation'
+import Documents from '@/components/dashboard/pages/Documents'
 import Contrat from '@/components/dashboard/pages/Contrat'
 import Compte from '@/components/dashboard/pages/Compte'
-import BilanCompetences from '@/components/dashboard/pages/BilanCompetences'
 import RecapTradeLive from '@/components/dashboard/pages/RecapTradeLive'
 import Classement from '@/components/dashboard/pages/Classement'
 
@@ -41,9 +41,9 @@ const pageTitles: Record<DashboardPage, string> = {
   'recap-live': 'Trades Live Coach',
   progression: 'Ma progression',
   classement: 'Achievements',
-  ressources: 'Ressources ATP',
+  formation: 'Formation',
+  documents: 'Documents',
   contrat: 'Contrat',
-  bilan: 'Bilan de compétences',
   compte: 'Mon compte',
 }
 
@@ -67,9 +67,9 @@ export default function TraderDashboard() {
       case 'recap-live': return <RecapTradeLive />
       case 'progression': return <Progression />
       case 'classement': return <Classement />
-      case 'ressources': return <Ressources />
+      case 'formation': return <Formation />
+      case 'documents': return <Documents />
       case 'contrat': return <Contrat />
-      case 'bilan': return <BilanCompetences />
       case 'compte': return <Compte />
       default: return <Dashboard />
     }
