@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADMIN — Trame Call ATP ULTRA</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg2: #111;
+  --g: #22c55e;
+  --g2: rgba(34,197,94,0.1);
+  --border: rgba(34,197,94,0.15);
+  --text: #e0e0e0;
+  --muted: #666;
+  --red: #ef4444;
+  --orange: #f59e0b;
+  --blue: #3b82f6;
+  --yellow: #eab308;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── LAYOUT ── */
+.layout { display: flex; min-height: 100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 260px;
+  background: #070707;
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0; bottom: 0;
+  overflow-y: auto;
+  z-index: 50;
+}
+.sidebar-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--g);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.sidebar-sub {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.12em;
+}
+.sidebar-nav { padding: 12px 0; }
+.nav-section {
+  padding: 8px 20px 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.nav-item:hover, .nav-item.active {
+  background: rgba(34,197,94,0.05);
+  border-left-color: var(--g);
+  color: var(--text);
+}
+.nav-item.active { color: var(--g); }
+.nav-icon { width: 16px; text-align: center; font-size: 13px; }
+.nav-timer {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(34,197,94,0.5);
+  background: rgba(34,197,94,0.08);
+  padding: 2px 7px;
+  border-radius: 100px;
+}
+
+/* ── MAIN ── */
+.main {
+  margin-left: 260px;
+  flex: 1;
+  padding: 0;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  position: sticky;
+  top: 0;
+  background: rgba(10,10,10,0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 40;
+}
+.topbar-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--g);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.timer-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--g);
+  letter-spacing: 0.1em;
+}
+.timer-btns { display: flex; gap: 8px; }
+.tbtn {
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 6px;
+  padding: 6px 14px;
+  color: var(--g);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tbtn:hover { background: rgba(34,197,94,0.15); }
+.tbtn.red {
+  color: var(--red);
+  background: rgba(239,68,68,0.08);
+  border-color: rgba(239,68,68,0.2);
+}
+
+/* ── SECTIONS ── */
+.section {
+  padding: 36px 32px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: none;
+}
+.section.active { display: block; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--g);
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  letter-spacing: 0.1em;
+}
+.section-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+}
+.section-time {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--orange);
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 100px;
+  padding: 4px 12px;
+}
+
+/* ── SCRIPT BLOCK ── */
+.script-block {
+  background: rgba(34,197,94,0.04);
+  border: 1px solid rgba(34,197,94,0.12);
+  border-left: 3px solid var(--g);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}
+.script-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--g);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.script-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.7;
+  font-style: italic;
+}
+.script-text strong { color: #fff; font-style: normal; }
+
+/* ── NOTE BLOCK ── */
+.note-block {
+  background: rgba(245,158,11,0.05);
+  border: 1px solid rgba(245,158,11,0.15);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  display: flex;
+  gap: 12px;
+}
+.note-icon { font-size: 16px; flex-shrink: 0; }
+.note-text {
+  font-size: 13px;
+  color: rgba(245,158,11,0.85);
+  line-height: 1.6;
+}
+.note-text strong { color: #f59e0b; }
+
+/* ── INFO BLOCK ── */
+.info-block {
+  background: rgba(59,130,246,0.05);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+}
+.info-text {
+  font-size: 13px;
+  color: rgba(147,197,253,0.85);
+  line-height: 1.6;
+}
+.info-text strong { color: #93c5fd; }
+
+/* ── QUESTIONS ── */
+.questions { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.question-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.question-item:hover {
+  border-color: rgba(34,197,94,0.25);
+  background: rgba(34,197,94,0.04);
+}
+.q-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--g);
+  background: rgba(34,197,94,0.1);
+  border-radius: 4px;
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+.q-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.5;
+}
+.q-text .purpose {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ── OBJECTIONS ── */
+.obj-card {
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  transition: all 0.2s;
+}
+.obj-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  cursor: pointer;
+  user-select: none;
+}
+.obj-header:hover { background: rgba(255,255,255,0.02); }
+.obj-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--red);
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 100px;
+  padding: 3px 10px;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+.obj-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  flex: 1;
+}
+.obj-toggle {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.3s;
+}
+.obj-card.open .obj-toggle { transform: rotate(180deg); }
+.obj-body {
+  display: none;
+  padding: 0 18px 18px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.obj-card.open .obj-body { display: block; padding-top: 16px; }
+
+.response-block {
+  background: rgba(34,197,94,0.05);
+  border: 1px solid rgba(34,197,94,0.15);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.response-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--g);
+  letter-spacing: 0.15em;
+  margin-bottom: 8px;
+}
+.response-text {
+  font-size: 13.5px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.7;
+  font-style: italic;
+}
+.response-text strong { color: #fff; font-style: normal; }
+
+.tip-block {
+  display: flex;
+  gap: 10px;
+  background: rgba(34,197,94,0.03);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+}
+.tip-icon { font-size: 14px; flex-shrink: 0; }
+.tip-text { font-size: 12px; color: var(--muted); line-height: 1.55; }
+.tip-text strong { color: var(--g); }
+
+/* ── CHECKLIST ── */
+.checklist { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.check-item.done {
+  background: rgba(34,197,94,0.04);
+  border-color: rgba(34,197,94,0.2);
+}
+.check-box {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.check-item.done .check-box {
+  background: var(--g);
+  border-color: var(--g);
+}
+.check-item.done .check-box::after { content: '✓'; font-size: 11px; color: #000; font-weight: 700; }
+.check-label { font-size: 13px; color: rgba(255,255,255,0.75); }
+.check-item.done .check-label { color: var(--muted); text-decoration: line-through; }
+
+/* ── PRIX TABLE ── */
+.price-table {
+  background: #111;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+.price-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 16px;
+}
+.price-row:last-child { border-bottom: none; }
+.price-row.featured { background: rgba(34,197,94,0.06); }
+.price-opt-label { font-size: 13px; color: rgba(255,255,255,0.7); flex: 1; }
+.price-opt-label strong { color: #fff; display: block; }
+.price-opt-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--g);
+}
+.price-opt-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--g);
+  background: rgba(34,197,94,0.1);
+  border-radius: 100px;
+  padding: 3px 10px;
+  letter-spacing: 0.1em;
+}
+
+/* ── NOTES PROSPECT ── */
+.prospect-notes {
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 0;
+  overflow: hidden;
+  margin: 16px 0;
+}
+.prospect-field {
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.prospect-field:last-child { border-bottom: none; }
+.field-label {
+  width: 160px;
+  padding: 14px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.02);
+  border-right: 1px solid rgba(255,255,255,0.04);
+  flex-shrink: 0;
+}
+.field-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  resize: none;
+  min-height: 42px;
+}
+.field-input::placeholder { color: rgba(255,255,255,0.15); }
+
+/* ── CLOSING SECTION ── */
+.closing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+.closing-card {
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 18px;
+}
+.closing-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.closing-card p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+  font-style: italic;
+}
+.closing-card p strong { color: #fff; font-style: normal; }
+
+/* ── LABELS COULEUR ── */
+.label-green { color: var(--g); font-weight: 600; }
+.label-red { color: var(--red); }
+.label-orange { color: var(--orange); }
+.label-blue { color: var(--blue); }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-brand">ATP ULTRA</div>
+    <div class="sidebar-sub">Admin · Trame de call</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Préparation</div>
+    <a class="nav-item active" onclick="showSection('prep')" href="#">
+      <span class="nav-icon">📋</span> Checklist pré-call
+      <span class="nav-timer">–2 min</span>
+    </a>
+    <a class="nav-item" onclick="showSection('prospect')" href="#">
+      <span class="nav-icon">👤</span> Fiche prospect
+    </a>
+
+    <div class="nav-section">Trame call</div>
+    <a class="nav-item" onclick="showSection('ouverture')" href="#">
+      <span class="nav-icon">🤝</span> Ouverture
+      <span class="nav-timer">3 min</span>
+    </a>
+    <a class="nav-item" onclick="showSection('diagnostic')" href="#">
+      <span class="nav-icon">🔍</span> Diagnostic
+      <span class="nav-timer">12 min</span>
+    </a>
+    <a class="nav-item" onclick="showSection('reformulation')" href="#">
+      <span class="nav-icon">🔄</span> Reformulation
+      <span class="nav-timer">4 min</span>
+    </a>
+    <a class="nav-item" onclick="showSection('presentation')" href="#">
+      <span class="nav-icon">🎯</span> Présentation offre
+      <span class="nav-timer">10 min</span>
+    </a>
+    <a class="nav-item" onclick="showSection('tarif')" href="#">
+      <span class="nav-icon">💰</span> Tarification
+      <span class="nav-timer">5 min</span>
+    </a>
+    <a class="nav-item" onclick="showSection('closing')" href="#">
+      <span class="nav-icon">✅</span> Closing
+      <span class="nav-timer">5 min</span>
+    </a>
+
+    <div class="nav-section">Objections</div>
+    <a class="nav-item" onclick="showSection('objections')" href="#">
+      <span class="nav-icon">🛡️</span> Réponses objections
+    </a>
+
+    <div class="nav-section">Post-call</div>
+    <a class="nav-item" onclick="showSection('followup')" href="#">
+      <span class="nav-icon">📩</span> Suivi & relance
+    </a>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="sectionLabel">// Checklist pré-call</div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="timer-btns">
+        <button class="tbtn" onclick="startTimer()">▶ START</button>
+        <button class="tbtn" onclick="pauseTimer()">⏸ PAUSE</button>
+        <button class="tbtn red" onclick="resetTimer()">↺ RESET</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : CHECKLIST ══ -->
+  <div class="section active" id="sec-prep">
+    <div class="section-header">
+      <div class="section-num">PRÉ-CALL</div>
+      <div class="section-title">Checklist avant de décrocher</div>
+    </div>
+
+    <div class="note-block">
+      <div class="note-icon">⚡</div>
+      <div class="note-text">Ces prospects t'ont vu en vrai à la Trading Night. <strong>70% de la vente est déjà faite.</strong> Ton call doit valider leur décision, pas les convaincre de zéro.</div>
+    </div>
+
+    <div class="checklist" id="prepChecklist">
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-label">J'ai ouvert la fiche prospect et lu ses réponses</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-label">J'ai mon lien sales page prêt à partager en screen</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-label">Je suis dans un endroit calme, micro testé</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-label">Mon prix est décidé avant l'appel — pas pendant</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-label">J'ai 40 minutes devant moi sans interruption</div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <div class="check-box"></div>
+        <div class="check-label">Je ne commencerai pas par pitcher — je pose des questions d'abord</div>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <div class="info-text"><strong>Mindset :</strong> Je ne vends pas un coaching. Je qualifie quelqu'un pour un programme rare. La rareté est réelle — 2 places par mois. Je sélectionne autant qu'ils me sélectionnent.</div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : FICHE PROSPECT ══ -->
+  <div class="section" id="sec-prospect">
+    <div class="section-header">
+      <div class="section-num">PROSPECT</div>
+      <div class="section-title">Fiche de call</div>
+    </div>
+    <div class="prospect-notes">
+      <div class="prospect-field">
+        <div class="field-label">Prénom</div>
+        <input class="field-input" placeholder="Prénom du prospect...">
+      </div>
+      <div class="prospect-field">
+        <div class="field-label">Source</div>
+        <input class="field-input" placeholder="Trading Night / Pré-inscription / DM Instagram...">
+      </div>
+      <div class="prospect-field">
+        <div class="field-label">Expérience</div>
+        <input class="field-input" placeholder="Débutant / 6 mois / 2 ans+...">
+      </div>
+      <div class="prospect-field">
+        <div class="field-label">Objectif déclaré</div>
+        <input class="field-input" placeholder="Ce qu'il a dit vouloir...">
+      </div>
+      <div class="prospect-field">
+        <div class="field-label">Douleur principale</div>
+        <textarea class="field-input" rows="2" placeholder="Son vrai problème en trading..."></textarea>
+      </div>
+      <div class="prospect-field">
+        <div class="field-label">Frein identifié</div>
+        <input class="field-input" placeholder="Prix / temps / doute sur lui-même / autre...">
+      </div>
+      <div class="prospect-field">
+        <div class="field-label">Notes call</div>
+        <textarea class="field-input" rows="4" placeholder="Notes pendant l'appel..."></textarea>
+      </div>
+      <div class="prospect-field">
+        <div class="field-label">Décision</div>
+        <input class="field-input" placeholder="Signé / Réflexion / Relance J+X / Non qualifié...">
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : OUVERTURE ══ -->
+  <div class="section" id="sec-ouverture">
+    <div class="section-header">
+      <div class="section-num">PHASE 1</div>
+      <div class="section-title">Ouverture</div>
+      <div class="section-time">⏱ 2–3 min</div>
+    </div>
+
+    <div class="note-block">
+      <div class="note-icon">🎯</div>
+      <div class="note-text"><strong>Objectif :</strong> Rappeler le lien humain. Ils t'ont vu, tu les as vus. Ce n'est pas un call froid. Commence par eux, pas par toi.</div>
+    </div>
+
+    <div class="script-block">
+      <div class="script-label">// Script d'ouverture</div>
+      <div class="script-text">
+        "Salut [Prénom] ! Comment tu vas depuis la Trading Night ?"<br><br>
+        <em>[Laisser répondre — ne pas couper]</em><br><br>
+        "T'as eu le temps de réfléchir à ce qu'on s'est dit ce soir-là ?"<br><br>
+        <em>[Écouter — noter les mots qu'il utilise, tu vas les réutiliser plus tard]</em>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <div class="info-text"><strong>Pourquoi ça marche :</strong> Tu rappelles le contexte émotionnel positif (la soirée, les échanges). Tu crées de la continuité, pas une rupture commerciale. Et tu lui donnes la parole en premier — ce qui le met à l'aise et te donne des infos précieuses.</div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : DIAGNOSTIC ══ -->
+  <div class="section" id="sec-diagnostic">
+    <div class="section-header">
+      <div class="section-num">PHASE 2</div>
+      <div class="section-title">Diagnostic</div>
+      <div class="section-time">⏱ 10–12 min</div>
+    </div>
+
+    <div class="note-block">
+      <div class="note-icon">🔑</div>
+      <div class="note-text"><strong>Règle absolue :</strong> Tu poses les questions dans l'ordre. Tu écoutes vraiment. Tu ne coupes pas. Tu notes ses mots exacts — tu les réutiliseras mot pour mot en reformulation. <strong>Ne parle pas de ton programme ici.</strong></div>
+    </div>
+
+    <div class="questions">
+      <div class="question-item">
+        <div class="q-num">Q1</div>
+        <div class="q-text">
+          "Dis-moi où tu en es concrètement dans ton trading aujourd'hui. Pas le résumé poli — la vraie situation."
+          <span class="purpose">→ Fait sortir la vraie douleur. "Je perds de l'argent" n'est pas assez — pousse pour avoir le détail précis.</span>
+        </div>
+      </div>
+      <div class="question-item">
+        <div class="q-num">Q2</div>
+        <div class="q-text">
+          "Qu'est-ce qui t'a bloqué jusqu'ici ? Pourquoi tu n'as pas encore avancé comme tu le voulais ?"
+          <span class="purpose">→ Sort le vrai frein intérieur. Souvent c'est la peur, le manque de méthode ou des mauvaises expériences passées.</span>
+        </div>
+      </div>
+      <div class="question-item">
+        <div class="q-num">Q3</div>
+        <div class="q-text">
+          "Dans 12 mois, si tout se passe comme tu le veux — tu en es où exactement ?"
+          <span class="purpose">→ Crée une image mentale positive. Le prospect se projette. Il commence à désirer le résultat, pas juste le produit.</span>
+        </div>
+      </div>
+      <div class="question-item">
+        <div class="q-num">Q4</div>
+        <div class="q-text">
+          "Pourquoi maintenant ? Qu'est-ce qui fait que tu veux avancer sur ça aujourd'hui et pas dans 6 mois ?"
+          <span class="purpose">→ Sort l'urgence réelle. Si il n'a pas de raison d'agir maintenant, le closing sera difficile. Cette réponse te dit tout.</span>
+        </div>
+      </div>
+      <div class="question-item">
+        <div class="q-num">Q5</div>
+        <div class="q-text">
+          "Qu'est-ce qui t'empêcherait de te lancer si on trouvait ensemble la bonne approche ?"
+          <span class="purpose">→ Sort les objections <strong>avant</strong> qu'elles arrivent à la fin. Tu sais déjà ce que tu dois traiter. Souvent : le prix, le temps, ou la confiance en lui-même.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="script-block" style="margin-top:16px;">
+      <div class="script-label">// Si il parle peu — relance</div>
+      <div class="script-text">
+        "Développe un peu — qu'est-ce qui se passe concrètement quand tu es devant les marchés ?"<br><br>
+        "Et ça dure depuis combien de temps ?"<br><br>
+        "Tu as essayé quoi comme approche avant ?"
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : REFORMULATION ══ -->
+  <div class="section" id="sec-reformulation">
+    <div class="section-header">
+      <div class="section-num">PHASE 3</div>
+      <div class="section-title">Reformulation</div>
+      <div class="section-time">⏱ 3–4 min</div>
+    </div>
+
+    <div class="note-block">
+      <div class="note-icon">⚡</div>
+      <div class="note-text"><strong>C'est la technique la plus puissante du call.</strong> Tu résumes avec ses propres mots exacts. Quand quelqu'un entend ses douleurs reformulées avec précision — il se sent compris. Et quelqu'un qui se sent compris est prêt à agir.</div>
+    </div>
+
+    <div class="script-block">
+      <div class="script-label">// Script de reformulation</div>
+      <div class="script-text">
+        "OK, si je comprends bien ce que tu me dis —"<br><br>
+        "Tu trades depuis [X temps], tu [leur problème exact avec leurs mots]. Ton objectif c'est [leur objectif exact]. Et ce qui t'a bloqué jusqu'ici c'est [leur frein exact]."<br><br>
+        <strong>"C'est bien ça ?"</strong><br><br>
+        <em>[Attendre la confirmation — ils vont toujours dire oui et souvent rajouter quelque chose]</em><br><br>
+        "Et si je comprends bien — tu veux avancer maintenant parce que [leur raison d'urgence]."
+      </div>
+    </div>
+
+    <div class="info-block">
+      <div class="info-text"><strong>Ce qui se passe psychologiquement :</strong> Le prospect confirme sa propre douleur à voix haute. Il ne peut plus se dire "je vais y réfléchir" — il vient de valider publiquement que son problème est réel et qu'il veut le résoudre maintenant. La transition vers la présentation de l'offre devient naturelle.</div>
+    </div>
+
+    <div class="script-block">
+      <div class="script-label">// Transition vers la présentation</div>
+      <div class="script-text">
+        "Ce que tu décris — c'est exactement ce que j'ai construit ATP ULTRA pour résoudre. Laisse-moi te montrer concrètement comment ça fonctionne."<br><br>
+        <em>[Partager l'écran avec la Sales Page client]</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : PRÉSENTATION ══ -->
+  <div class="section" id="sec-presentation">
+    <div class="section-header">
+      <div class="section-num">PHASE 4</div>
+      <div class="section-title">Présentation de l'offre</div>
+      <div class="section-time">⏱ 8–10 min</div>
+    </div>
+
+    <div class="note-block">
+      <div class="note-icon">🖥️</div>
+      <div class="note-text"><strong>Partage ton écran maintenant</strong> avec la Sales Page client. Tu navigues entre les slides en parlant. Ne lis pas les slides — commente-les. La page est le support, ta voix est le discours.</div>
+    </div>
+
+    <div class="questions" style="gap:8px;">
+      <div class="question-item" style="cursor:default;">
+        <div class="q-num" style="background:rgba(34,197,94,0.1);color:var(--g);">S2</div>
+        <div class="q-text">
+          <strong>Slide Problème</strong> — "Ce que tu vis, c'est pas une exception. 95% des traders retail sont dans cette situation et voilà pourquoi..."
+          <span class="purpose">→ Valider sa douleur avec des données. Il ne se sent plus seul ni nul.</span>
+        </div>
+      </div>
+      <div class="question-item" style="cursor:default;">
+        <div class="q-num" style="background:rgba(34,197,94,0.1);color:var(--g);">S3</div>
+        <div class="q-text">
+          <strong>Slide Autorité</strong> — "Ce que je vais t'enseigner, je l'ai pas appris sur YouTube. Je l'ai vécu en salle de marché pendant 8 ans."
+          <span class="purpose">→ Court. 30 secondes max sur cette slide. Ne pas s'appesantir sur soi-même.</span>
+        </div>
+      </div>
+      <div class="question-item" style="cursor:default;">
+        <div class="q-num" style="background:rgba(34,197,94,0.1);color:var(--g);">S4</div>
+        <div class="q-text">
+          <strong>Slide 3 Phases</strong> — "Voilà exactement comment on va travailler ensemble..."
+          <span class="purpose">→ <strong>Slide la plus importante.</strong> Adapte le discours à leur profil. Débutant → insister sur Phase 1. Trader expérimenté → sauter vite à Phase 2.</span>
+        </div>
+      </div>
+      <div class="question-item" style="cursor:default;">
+        <div class="q-num" style="background:rgba(34,197,94,0.1);color:var(--g);">S5</div>
+        <div class="q-text">
+          <strong>Slide Ce qui est inclus</strong> — Présenter chaque élément en lien avec sa douleur spécifique.
+          <span class="purpose">→ Ne pas lister mécaniquement. "Tu m'as dit que tu tradais seul — le suivi live 5j/7 c'est exactement pour ça."</span>
+        </div>
+      </div>
+      <div class="question-item" style="cursor:default;">
+        <div class="q-num" style="background:rgba(34,197,94,0.1);color:var(--g);">S7</div>
+        <div class="q-text">
+          <strong>Slide Promesse</strong> — "Mon objectif ce n'est pas que tu me suives indéfiniment. C'est que tu n'aies plus besoin de moi."
+          <span class="purpose">→ Cette phrase est puissante. Elle enlève la peur de "dépendance" et montre la confiance dans le programme.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : TARIF ══ -->
+  <div class="section" id="sec-tarif">
+    <div class="section-header">
+      <div class="section-num">PHASE 5</div>
+      <div class="section-title">Tarification</div>
+      <div class="section-time">⏱ 4–5 min</div>
+    </div>
+
+    <div class="note-block">
+      <div class="note-icon">⚠️</div>
+      <div class="note-text"><strong>Règle absolue :</strong> Le prix ne sort jamais avant la valeur. Si tu as bien fait les phases 1 à 4, le prix est une formalité, pas un obstacle.</div>
+    </div>
+
+    <div class="script-block">
+      <div class="script-label">// Annonce du prix</div>
+      <div class="script-text">
+        "L'investissement pour ATP ULTRA — je te propose deux options."<br><br>
+        <em>[Afficher la slide tarif]</em><br><br>
+        "Si tu règles en une fois, c'est <strong>3 000€</strong> — tu économises 600€ par rapport à l'étalement. Si tu préfères étaler, c'est <strong>3 fois 1 200€</strong>, donc 3 600€ au total."<br><br>
+        "Quelle option t'arrange le mieux ?"
+      </div>
+    </div>
+
+    <div class="price-table">
+      <div class="price-row featured">
+        <div class="price-opt-label"><strong>Option A — Comptant</strong>Recommandé · Économie de 600€</div>
+        <div class="price-opt-amount">3 000€</div>
+        <div class="price-opt-tag">✦ Best</div>
+      </div>
+      <div class="price-row">
+        <div class="price-opt-label"><strong>Option B — 3 fois</strong>Sans frais · 3 mensualités</div>
+        <div class="price-opt-amount">3 × 1 200€</div>
+      </div>
+    </div>
+
+    <div class="info-block">
+      <div class="info-text"><strong>Pourquoi formuler "quelle option t'arrange le mieux ?" :</strong> Tu ne demandes pas "est-ce que tu veux y aller ?" — tu passes directement à la modalité de paiement. Psychologiquement la décision d'achat est déjà franchie. Il ne reste que le "comment", pas le "si".</div>
+    </div>
+
+    <div class="script-block">
+      <div class="script-label">// Si silence après le prix</div>
+      <div class="script-text">
+        <em>[Ne pas remplir le silence. Laisser le silence travailler. C'est lui qui doit parler en premier. Attendre.]</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : CLOSING ══ -->
+  <div class="section" id="sec-closing">
+    <div class="section-header">
+      <div class="section-num">PHASE 6</div>
+      <div class="section-title">Closing</div>
+      <div class="section-time">⏱ 3–5 min</div>
+    </div>
+
+    <div class="closing-grid">
+      <div class="closing-card">
+        <div class="closing-card-title">✅ S'il dit oui</div>
+        <p>"Parfait. On démarre dès réception du règlement. Je t'envoie le lien de paiement par WhatsApp dans les 10 minutes. Et dès que c'est fait — on fixe notre première session ensemble."</p>
+      </div>
+      <div class="closing-card">
+        <div class="closing-card-title">⏸️ S'il dit "j'ai besoin de réfléchir"</div>
+        <p>"C'est normal. Qu'est-ce qui te retient précisément ?"<br><br><em>[Écouter sa vraie objection — ne pas accepter "j'ai besoin de réfléchir" comme réponse finale]</em></p>
+      </div>
+      <div class="closing-card">
+        <div class="closing-card-title">👫 S'il doit "en parler à sa femme/famille"</div>
+        <p>"Je comprends. Est-ce que tu pourrais lui en parler aujourd'hui ? Je garde ta place jusqu'à demain soir — après ça je passe au prospect suivant."</p>
+      </div>
+      <div class="closing-card">
+        <div class="closing-card-title">❌ S'il n'est clairement pas prêt</div>
+        <p>"C'est pas de souci. Je te mets sur la liste pour le prochain cycle. Tu reçois toutes les infos en avant-première."<br><br><em>[Ne pas insister. Préserver la relation.]</em></p>
+      </div>
+    </div>
+
+    <div class="script-block" style="margin-top:8px;">
+      <div class="script-label">// Message WhatsApp de relance J+1 (si non signé)</div>
+      <div class="script-text">
+        "Salut [Prénom], réfléchi bien à ce qu'on s'est dit. Je suis disponible si tu as des questions. Les 2 places de ce mois se remplissent — si tu veux avancer, dis-le moi cette semaine."
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : OBJECTIONS ══ -->
+  <div class="section" id="sec-objections">
+    <div class="section-header">
+      <div class="section-num">OBJECTIONS</div>
+      <div class="section-title">Réponses préparées</div>
+    </div>
+
+    <div class="note-block">
+      <div class="note-icon">🛡️</div>
+      <div class="note-text"><strong>Règle d'or :</strong> Ne jamais baisser le prix. Jamais. Soit tu reformules la valeur, soit tu proposes l'échelonnement. Baisser le prix détruit la valeur perçue et attire les mauvais profils.</div>
+    </div>
+
+    <!-- OBJECTION 1 -->
+    <div class="obj-card" id="obj1">
+      <div class="obj-header" onclick="toggleObj('obj1')">
+        <div class="obj-tag">OBJECTION</div>
+        <div class="obj-title">"C'est trop cher / C'est beaucoup d'argent"</div>
+        <div class="obj-toggle">▼</div>
+      </div>
+      <div class="obj-body">
+        <div class="response-block">
+          <div class="response-label">// Réponse recommandée</div>
+          <div class="response-text">
+            "Je comprends que ça représente un investissement. Dis-moi — si dans 6 mois tu passes ton premier challenge prop firm et tu décroches un payout de 5 000€, est-ce que les <strong>3 000€</strong> que tu aurais investis aujourd'hui t'auraient semblé chers ?"<br><br>
+            <em>[Silence. Attendre sa réponse.]</em><br><br>
+            "Le vrai coût, c'est pas 3 000€. C'est les mois que tu vas encore perdre à essayer seul."
+          </div>
+        </div>
+        <div class="tip-block">
+          <div class="tip-icon">💡</div>
+          <div class="tip-text">Si il persiste : <strong>"Ce que je peux faire — c'est un premier versement de 900€ aujourd'hui pour réserver ta place, et on étale le reste sur 3 mois. Le tarif total reste identique."</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBJECTION 2 -->
+    <div class="obj-card" id="obj2">
+      <div class="obj-header" onclick="toggleObj('obj2')">
+        <div class="obj-tag">OBJECTION</div>
+        <div class="obj-title">"Je n'ai pas le temps"</div>
+        <div class="obj-toggle">▼</div>
+      </div>
+      <div class="obj-body">
+        <div class="response-block">
+          <div class="response-label">// Réponse recommandée</div>
+          <div class="response-text">
+            "Combien de temps tu trades ou tu cherches à trader par semaine en ce moment ?"<br><br>
+            <em>[Écouter]</em><br><br>
+            "ATP ULTRA s'adapte à ton rythme. La formation tu la consommes quand tu veux. Le suivi live c'est 1h30 par jour sur les marchés US — que tu regardes quand tu peux. Le coaching on le cale selon tes disponibilités. <strong>Ce programme est fait pour des gens qui ont une vie.</strong>"
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBJECTION 3 -->
+    <div class="obj-card" id="obj3">
+      <div class="obj-header" onclick="toggleObj('obj3')">
+        <div class="obj-tag">OBJECTION</div>
+        <div class="obj-title">"Je suis débutant, je ne suis pas sûr d'être prêt"</div>
+        <div class="obj-toggle">▼</div>
+      </div>
+      <div class="obj-body">
+        <div class="response-block">
+          <div class="response-label">// Réponse recommandée</div>
+          <div class="response-text">
+            "C'est exactement pour ça que le programme existe. Si tu étais déjà prêt, tu n'aurais pas besoin de moi. <strong>Je t'apprends tout de A à Z.</strong> Certains de mes meilleurs élèves ont démarré sans avoir jamais passé un seul trade. La Phase 1 est faite précisément pour ça."<br><br>
+            "Ce qui compte c'est pas ton niveau aujourd'hui. C'est ta motivation à progresser."
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBJECTION 4 -->
+    <div class="obj-card" id="obj4">
+      <div class="obj-header" onclick="toggleObj('obj4')">
+        <div class="obj-tag">OBJECTION</div>
+        <div class="obj-title">"J'ai déjà acheté des formations et ça n'a pas marché"</div>
+        <div class="obj-toggle">▼</div>
+      </div>
+      <div class="obj-body">
+        <div class="response-block">
+          <div class="response-label">// Réponse recommandée</div>
+          <div class="response-text">
+            "Je comprends la méfiance. Dis-moi — dans ces formations, est-ce que quelqu'un regardait tes trades et te donnait un feedback personnalisé ?"<br><br>
+            <em>[Réponse : non]</em><br><br>
+            "C'est exactement la différence. Une formation c'est du contenu générique. Ce que je propose c'est un <strong>accompagnement 1v1</strong> — je vois ce que tu fais, je te dis ce qui ne va pas, je m'adapte à ton profil spécifique. C'est pas comparable."
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBJECTION 5 -->
+    <div class="obj-card" id="obj5">
+      <div class="obj-header" onclick="toggleObj('obj5')">
+        <div class="obj-tag">OBJECTION</div>
+        <div class="obj-title">"Est-ce que ça marche vraiment ?"</div>
+        <div class="obj-toggle">▼</div>
+      </div>
+      <div class="obj-body">
+        <div class="response-block">
+          <div class="response-label">// Réponse recommandée</div>
+          <div class="response-text">
+            "À la Trading Night tu as pu parler directement avec des traders qui sont passés par le programme. Qu'est-ce qu'ils t'ont dit ?"<br><br>
+            <em>[Laisser répondre — il va se souvenir des témoignages positifs]</em><br><br>
+            "Voilà ta réponse. Ce ne sont pas mes mots — ce sont les leurs. Et en plus — si tu n'es pas satisfait dans les 30 premiers jours, on en reparle. Je veux des gens qui avancent, pas des gens coincés."
+          </div>
+        </div>
+        <div class="tip-block">
+          <div class="tip-icon">💡</div>
+          <div class="tip-text">L'avantage clé ici : <strong>ils ont entendu des témoignages en vrai à la Trading Night.</strong> Rappeler ce moment est extrêmement puissant — ce n'est pas du marketing, c'est une expérience qu'ils ont vécue.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBJECTION 6 -->
+    <div class="obj-card" id="obj6">
+      <div class="obj-header" onclick="toggleObj('obj6')">
+        <div class="obj-tag">OBJECTION</div>
+        <div class="obj-title">"Je dois en parler à ma femme / ma famille"</div>
+        <div class="obj-toggle">▼</div>
+      </div>
+      <div class="obj-body">
+        <div class="response-block">
+          <div class="response-label">// Réponse recommandée</div>
+          <div class="response-text">
+            "Bien sûr, c'est normal. Tu peux lui en parler aujourd'hui ?"<br><br>
+            <em>[Si oui :]</em><br>
+            "Je te garde la place jusqu'à demain soir. Si tu veux qu'on fasse un appel à trois pour que je lui explique directement — je suis disponible."<br><br>
+            <em>[Si non / "ça va prendre du temps" :]</em><br>
+            "OK. Je te recontacte dans X jours. Mais garde en tête que les 2 places de ce mois ne m'appartiennent pas — si quelqu'un d'autre décide avant toi, je ne peux pas bloquer ta place indéfiniment."
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBJECTION 7 -->
+    <div class="obj-card" id="obj7">
+      <div class="obj-header" onclick="toggleObj('obj7')">
+        <div class="obj-tag">OBJECTION</div>
+        <div class="obj-title">"Je vais d'abord apprendre seul puis je reviendrai"</div>
+        <div class="obj-toggle">▼</div>
+      </div>
+      <div class="obj-body">
+        <div class="response-block">
+          <div class="response-label">// Réponse recommandée</div>
+          <div class="response-text">
+            "Tu m'as dit que tu essaies depuis [X mois/ans]. Si apprendre seul avait fonctionné — tu ne serais pas là à me parler aujourd'hui."<br><br>
+            <em>[Pause]</em><br><br>
+            "Je ne dis pas ça pour te blesser — c'est juste la réalité. Le trading seul sans feedback c'est comme apprendre la médecine sur YouTube et espérer opérer. L'accompagnement c'est pas un luxe — c'est ce qui fait la différence entre ceux qui y arrivent et ceux qui abandonnent."
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION : SUIVI ══ -->
+  <div class="section" id="sec-followup">
+    <div class="section-header">
+      <div class="section-num">POST-CALL</div>
+      <div class="section-title">Suivi & relance</div>
+    </div>
+
+    <div class="note-block">
+      <div class="note-icon">⏰</div>
+      <div class="note-text"><strong>Règle des 24h :</strong> Si quelqu'un ne signe pas pendant le call, tu envoies un message dans les 24h. Pas une relance commerciale. Juste une présence douce.</div>
+    </div>
+
+    <div class="script-block">
+      <div class="script-label">// WhatsApp J+1 — prospect qui réfléchit</div>
+      <div class="script-text">
+        "Salut [Prénom], réfléchi bien à ce qu'on s'est dit. Je suis disponible si tu as des questions. Les 2 places de ce mois se remplissent — si tu veux avancer, dis-le moi cette semaine."
+      </div>
+    </div>
+
+    <div class="script-block">
+      <div class="script-label">// WhatsApp J+3 — si toujours pas de réponse</div>
+      <div class="script-text">
+        "Hey [Prénom] — juste pour te tenir informé, j'ai une place qui vient de se libérer pour ce mois. Si tu veux qu'on démarre ensemble tu me le dis. Sinon c'est parti pour le mois prochain."
+      </div>
+    </div>
+
+    <div class="script-block">
+      <div class="script-label">// WhatsApp J+7 — dernier message</div>
+      <div class="script-text">
+        "Salut [Prénom]. Je ferme les inscriptions de ce mois demain. Si tu veux rejoindre ATP ULTRA — c'est maintenant. Sinon je te mets sur la liste prioritaire pour le mois prochain."
+      </div>
+    </div>
+
+    <div class="info-block">
+      <div class="info-text"><strong>Après 3 messages sans réponse :</strong> Stop. Ne pas insister. Mettre le prospect en "nurture" — il reçoit ton contenu Instagram et Discord. Il reviendra quand il sera prêt. La pression tue la relation.</div>
+    </div>
+
+    <div class="prospect-notes" style="margin-top:20px;">
+      <div class="prospect-field">
+        <div class="field-label">Statut final</div>
+        <input class="field-input" placeholder="Signé / Relance J+1 / Relance J+3 / Nurture / Disqualifié">
+      </div>
+      <div class="prospect-field">
+        <div class="field-label">Action suivante</div>
+        <input class="field-input" placeholder="Date et action prévue...">
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<button class="next-btn" style="bottom:20px;right:20px;position:fixed;z-index:200;" id="nextBtn" onclick="nextSection()">Section suivante →</button>
+
+<script>
+// ── TIMER ──────────────────────────────
+let timerInterval, timerSeconds = 0, timerRunning = false;
+
+function startTimer() {
+  if (!timerRunning) {
+    timerRunning = true;
+    timerInterval = setInterval(() => {
+      timerSeconds++;
+      updateTimerDisplay();
+    }, 1000);
+  }
+}
+function pauseTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+}
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 0;
+  updateTimerDisplay();
+}
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+  const s = (timerSeconds % 60).toString().padStart(2, '0');
+  document.getElementById('timerDisplay').textContent = m + ':' + s;
+}
+
+// ── NAVIGATION ─────────────────────────
+const sections = ['prep', 'prospect', 'ouverture', 'diagnostic', 'reformulation', 'presentation', 'tarif', 'closing', 'objections', 'followup'];
+const sectionLabels = {
+  prep: '// Checklist pré-call',
+  prospect: '// Fiche prospect',
+  ouverture: '// Phase 1 — Ouverture',
+  diagnostic: '// Phase 2 — Diagnostic',
+  reformulation: '// Phase 3 — Reformulation',
+  presentation: '// Phase 4 — Présentation offre',
+  tarif: '// Phase 5 — Tarification',
+  closing: '// Phase 6 — Closing',
+  objections: '// Objections',
+  followup: '// Post-call & suivi'
+};
+let currentSection = 0;
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById('sec-' + name);
+  if (sec) sec.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + name + "'")) {
+      n.classList.add('active');
+    }
+  });
+  document.getElementById('sectionLabel').textContent = sectionLabels[name] || '';
+  currentSection = sections.indexOf(name);
+  window.scrollTo(0, 0);
+}
+
+function nextSection() {
+  if (currentSection < sections.length - 1) {
+    showSection(sections[currentSection + 1]);
+  }
+}
+
+// ── OBJECTIONS TOGGLE ──────────────────
+function toggleObj(id) {
+  const card = document.getElementById(id);
+  card.classList.toggle('open');
+}
+
+// ── CHECKLIST TOGGLE ───────────────────
+function toggleCheck(el) {
+  el.classList.toggle('done');
+}
+
+// ── KEYBOARD NAV ───────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') nextSection();
+  if (e.key === 'ArrowLeft' && currentSection > 0) showSection(sections[currentSection - 1]);
+});
+</script>
+</body>
+</html>

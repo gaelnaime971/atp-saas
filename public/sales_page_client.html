@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATP ULTRA — Programme</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g: #22c55e;
+  --g2: #00ff88;
+  --bg: #050905;
+  --bg2: #0a0f0a;
+  --card: rgba(34,197,94,0.04);
+  --border: rgba(34,197,94,0.12);
+  --text: #e8e8e8;
+  --muted: rgba(255,255,255,0.45);
+  --red: #ef4444;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── CUSTOM CURSOR ── */
+.cursor {
+  position: fixed;
+  width: 12px; height: 12px;
+  background: var(--g);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.15s ease;
+  box-shadow: 0 0 20px rgba(34,197,94,0.6);
+}
+.cursor-ring {
+  position: fixed;
+  width: 36px; height: 36px;
+  border: 1px solid rgba(34,197,94,0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transition: transform 0.4s ease, width 0.3s, height 0.3s;
+}
+
+/* ── GRID BG ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,197,94,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,197,94,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── SCANLINE ── */
+body::after {
+  content: '';
+  position: fixed;
+  top: -100%;
+  left: 0; right: 0;
+  height: 200px;
+  background: linear-gradient(transparent, rgba(34,197,94,0.015), transparent);
+  animation: scan 8s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes scan { to { top: 100%; } }
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 48px;
+  background: rgba(5,9,5,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-brand {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--g);
+  letter-spacing: 0.2em;
+}
+.nav-slides {
+  display: flex;
+  gap: 8px;
+}
+.nav-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 1px solid rgba(34,197,94,0.2);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.nav-dot.active {
+  background: var(--g);
+  box-shadow: 0 0 10px rgba(34,197,94,0.6);
+}
+
+/* ── SLIDE CONTAINER ── */
+.slides {
+  position: relative;
+  z-index: 1;
+}
+
+.slide {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 48px 60px;
+  position: relative;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.slide.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── SLIDE NUMÉRO ── */
+.slide-num {
+  position: absolute;
+  top: 90px;
+  right: 48px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(34,197,94,0.3);
+  letter-spacing: 0.2em;
+}
+
+/* ── EYEBROW ── */
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  color: var(--g);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::before {
+  content: '';
+  width: 24px; height: 2px;
+  background: var(--g);
+}
+
+/* ── TITRES ── */
+.title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(42px, 6vw, 80px);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 24px;
+}
+.title .g { color: var(--g); }
+.title .outline {
+  -webkit-text-stroke: 2px rgba(34,197,94,0.4);
+  color: transparent;
+}
+
+.subtitle {
+  font-size: 17px;
+  color: var(--muted);
+  line-height: 1.7;
+  text-align: center;
+  max-width: 560px;
+}
+.subtitle strong { color: #fff; }
+.subtitle .g { color: var(--g); font-weight: 600; }
+
+/* ── HERO SLIDE ── */
+#s1 {
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(34,197,94,0.07) 0%, transparent 70%);
+}
+
+.hero-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: 100px;
+  padding: 8px 20px;
+  margin-bottom: 32px;
+}
+.hero-badge-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--g);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+  50% { opacity:0.7; box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+}
+.hero-badge span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--g);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.hero-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(52px, 8vw, 110px);
+  font-weight: 900;
+  line-height: 0.88;
+  text-align: center;
+  letter-spacing: 0.03em;
+  margin-bottom: 32px;
+}
+.hero-title .line1 { color: #fff; display: block; }
+.hero-title .line2 { color: var(--g); display: block; }
+.hero-title .line3 { color: rgba(255,255,255,0.4); display: block; font-size: 0.28em; letter-spacing: 0.2em; font-family: 'JetBrains Mono', monospace; font-weight: 400; margin-top: 8px; }
+
+.hero-sep {
+  width: 80px; height: 2px;
+  background: var(--g);
+  margin: 0 auto 32px;
+  box-shadow: 0 0 20px rgba(34,197,94,0.5);
+}
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--muted);
+  text-align: center;
+  max-width: 480px;
+  line-height: 1.7;
+}
+
+/* Stats row hero */
+.stats-row {
+  display: flex;
+  gap: 48px;
+  margin-top: 52px;
+  align-items: center;
+}
+.stat-item {
+  text-align: center;
+}
+.stat-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--g);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.stat-sep {
+  width: 1px;
+  height: 48px;
+  background: var(--border);
+}
+
+/* ── SLIDE 2 — PROBLÈME ── */
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 800px;
+  width: 100%;
+  margin: 32px 0;
+}
+.problem-card {
+  background: rgba(239,68,68,0.05);
+  border: 1px solid rgba(239,68,68,0.15);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.problem-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.problem-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.55;
+}
+.problem-text strong { color: #fff; display: block; margin-bottom: 3px; font-size: 15px; }
+
+.verdict-box {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 20px 28px;
+  max-width: 600px;
+  text-align: center;
+  margin-top: 8px;
+}
+.verdict-box p {
+  font-size: 16px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.65;
+}
+.verdict-box p strong { color: var(--g); }
+
+/* ── SLIDE 3 — AUTORITÉ ── */
+.authority-card {
+  max-width: 720px;
+  width: 100%;
+}
+.auth-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+.auth-item {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.auth-item:hover {
+  border-color: rgba(34,197,94,0.35);
+  transform: translateY(-3px);
+}
+.auth-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--g);
+  margin-bottom: 6px;
+}
+.auth-label {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.auth-label strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+.timeline-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(34,197,94,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 28px;
+  overflow: hidden;
+}
+.tl-step {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+.tl-step:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--g);
+  font-size: 16px;
+}
+.tl-year {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--g);
+  letter-spacing: 0.15em;
+  margin-bottom: 4px;
+}
+.tl-role {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── SLIDE 4 — PHASES ── */
+.phases {
+  display: flex;
+  gap: 16px;
+  max-width: 900px;
+  width: 100%;
+  margin: 32px 0;
+}
+.phase-card {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 22px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s;
+  cursor: pointer;
+}
+.phase-card:hover {
+  border-color: rgba(34,197,94,0.4);
+  background: rgba(34,197,94,0.07);
+  transform: translateY(-4px);
+}
+.phase-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--g);
+  transform: scaleX(0);
+  transition: transform 0.4s;
+  transform-origin: left;
+}
+.phase-card:hover::before { transform: scaleX(1); }
+
+.phase-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 42px;
+  font-weight: 900;
+  color: rgba(34,197,94,0.15);
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.phase-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--g);
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+.phase-sub {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 14px;
+}
+.phase-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.6;
+}
+.phase-tag {
+  display: inline-block;
+  margin-top: 14px;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--g);
+  letter-spacing: 0.12em;
+}
+
+/* ── SLIDE 5 — INCLUS ── */
+.includes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  max-width: 780px;
+  width: 100%;
+  margin: 28px 0;
+}
+.include-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  transition: all 0.3s;
+}
+.include-item:hover {
+  border-color: rgba(34,197,94,0.3);
+  background: rgba(34,197,94,0.06);
+}
+.include-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.include-text strong {
+  display: block;
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 3px;
+}
+.include-text span {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ── SLIDE 6 — RÉSULTATS ── */
+.results-big {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 700px;
+  width: 100%;
+  margin: 24px 0;
+}
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 22px;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.5s ease;
+}
+.result-row.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+.result-arrow {
+  color: var(--g);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.result-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.5;
+  flex: 1;
+}
+.result-text strong { color: #fff; }
+.result-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--g);
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 100px;
+  padding: 4px 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.big-stat {
+  text-align: center;
+  padding: 32px;
+  background: var(--card);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 14px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.big-stat-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 80px;
+  font-weight: 900;
+  color: var(--g);
+  line-height: 1;
+  box-shadow: none;
+}
+.big-stat-label {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ── SLIDE 7 — PROMESSE ── */
+.promise-big {
+  max-width: 700px;
+  text-align: center;
+}
+.promise-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.promise-title .g { color: var(--g); }
+
+.promise-sep {
+  width: 60px; height: 2px;
+  background: var(--g);
+  margin: 24px auto;
+}
+
+.promise-text {
+  font-size: 16px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.8;
+  margin-bottom: 32px;
+}
+.promise-text strong { color: #fff; }
+
+.promise-items {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.promise-pill {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 10px 20px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 500;
+  transition: all 0.3s;
+}
+.promise-pill:hover {
+  border-color: var(--g);
+  color: #fff;
+}
+.promise-pill .g { color: var(--g); font-weight: 700; }
+
+/* ── SLIDE 8 — TARIF ── */
+.pricing-wrap {
+  display: flex;
+  gap: 20px;
+  max-width: 700px;
+  width: 100%;
+  margin: 28px 0;
+}
+.price-card {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 24px;
+  text-align: center;
+  transition: all 0.4s;
+  position: relative;
+  overflow: hidden;
+}
+.price-card.featured {
+  background: rgba(34,197,94,0.07);
+  border-color: rgba(34,197,94,0.35);
+}
+.price-card.featured::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--g);
+}
+.price-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--g);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: rgba(34,197,94,0.1);
+  border-radius: 100px;
+  padding: 4px 14px;
+  margin-bottom: 16px;
+  display: inline-block;
+}
+.price-amount {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 44px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.price-amount.g { color: var(--g); }
+.price-period {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+}
+.price-eco {
+  font-size: 12px;
+  color: var(--g);
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+.price-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.6;
+}
+
+.or-sep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.or-line { width: 1px; height: 60px; background: var(--border); }
+.or-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.15em;
+}
+
+.cta-main {
+  display: inline-block;
+  background: var(--g);
+  color: #000;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 18px 48px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.3s;
+  box-shadow: 0 0 40px rgba(34,197,94,0.2);
+  cursor: pointer;
+  border: none;
+}
+.cta-main:hover {
+  background: var(--g2);
+  box-shadow: 0 0 60px rgba(34,197,94,0.4);
+  transform: translateY(-2px);
+}
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  background: var(--g);
+  z-index: 200;
+  transition: width 0.3s;
+  box-shadow: 0 0 10px rgba(34,197,94,0.6);
+}
+
+/* ── NEXT BUTTON ── */
+.next-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 48px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 12px 24px;
+  color: var(--g);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.next-btn:hover {
+  background: rgba(34,197,94,0.1);
+  border-color: rgba(34,197,94,0.4);
+}
+.next-btn.hide { display: none; }
+
+/* ── COUNTER ANIM ── */
+.count-up { transition: none; }
+
+/* ── SECTION DIVIDER ── */
+.s-div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 600px;
+  margin: 16px 0 28px;
+}
+.s-div-line { flex: 1; height: 1px; background: var(--border); }
+.s-div-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--g); opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="progress-bar" id="progressBar"></div>
+
+<nav>
+  <div class="nav-brand">ATP · ULTRA</div>
+  <div class="nav-slides" id="navDots"></div>
+</nav>
+
+<div class="slides" id="slides">
+
+  <!-- ══ SLIDE 1 — HERO ══ -->
+  <div class="slide" id="s1" data-slide="1">
+    <div class="slide-num">01 / 08</div>
+    <div class="hero-badge">
+      <div class="hero-badge-dot"></div>
+      <span>Alpha Trading Pro · Guadeloupe</span>
+    </div>
+    <div class="hero-title">
+      <span class="line1">PROGRAMME</span>
+      <span class="line2">ATP ULTRA</span>
+      <span class="line3">DE A À Z · JUSQU'À TON INDÉPENDANCE</span>
+    </div>
+    <div class="hero-sep"></div>
+    <div class="hero-sub">
+      La méthode institutionnelle adaptée aux particuliers.<br>
+      Construit avec ce que j'ai appris en salle de marché.
+    </div>
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-num count-up" data-target="1200">0</div>
+        <div class="stat-label">Traders formés</div>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <div class="stat-num count-up" data-target="8">0</div>
+        <div class="stat-label">Ans d'expérience</div>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <div class="stat-num">5j/7</div>
+        <div class="stat-label">Suivi live</div>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item">
+        <div class="stat-num">A→Z</div>
+        <div class="stat-label">Formation complète</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 2 — LE PROBLÈME ══ -->
+  <div class="slide" id="s2" data-slide="2">
+    <div class="slide-num">02 / 08</div>
+    <div class="eyebrow">Le constat</div>
+    <div class="title">POURQUOI <span class="g">95%</span> DES TRADERS<br>PERDENT DE L'ARGENT</div>
+    <div class="s-div"><div class="s-div-line"></div><div class="s-div-dot"></div><div class="s-div-line"></div></div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-icon">📉</div>
+        <div class="problem-text"><strong>Pas de process écrit</strong>Ils tradent à l'instinct. Chaque décision est émotionnelle.</div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">🎲</div>
+        <div class="problem-text"><strong>Sizing aléatoire</strong>Ils risquent trop ou trop peu sans règle fixe. L'edge disparaît.</div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">🔄</div>
+        <div class="problem-text"><strong>Stop loss déplacés</strong>L'émotion prend le dessus. Les pertes s'accumulent.</div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">🎥</div>
+        <div class="problem-text"><strong>Formation YouTube</strong>Pas de suivi, pas de feedback, pas d'adaptation à leur profil.</div>
+      </div>
+    </div>
+    <div class="verdict-box">
+      <p>Le problème n'est <strong>jamais la stratégie</strong>.<br>C'est l'absence de <strong class="g">process et d'accompagnement</strong> adapté.</p>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 3 — AUTORITÉ ══ -->
+  <div class="slide" id="s3" data-slide="3">
+    <div class="slide-num">03 / 08</div>
+    <div class="eyebrow">Pourquoi moi</div>
+    <div class="title">L'EXPÉRIENCE<br><span class="g">INSTITUTIONNELLE</span></div>
+    <div class="s-div"><div class="s-div-line"></div><div class="s-div-dot"></div><div class="s-div-line"></div></div>
+    <div class="authority-card">
+      <div class="auth-row">
+        <div class="auth-item">
+          <div class="auth-num">8 ans</div>
+          <div class="auth-label"><strong>Salle de marché</strong>Banque d'investissement et hedge fund. Trading institutionnel réel.</div>
+        </div>
+        <div class="auth-item">
+          <div class="auth-num">1 200</div>
+          <div class="auth-label"><strong>Membres Discord ATP</strong>La plus grande communauté trading de Guadeloupe.</div>
+        </div>
+        <div class="auth-item">
+          <div class="auth-num">100%</div>
+          <div class="auth-label"><strong>Dédié</strong>Je trade tous les jours. Ce que j'enseigne, je le vis en direct.</div>
+        </div>
+      </div>
+      <div class="timeline-bar">
+        <div class="tl-step">
+          <div class="tl-year">2014–2018</div>
+          <div class="tl-role">Banque d'invest.</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-year">2018–2021</div>
+          <div class="tl-role">Hedge Fund</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-year">2022</div>
+          <div class="tl-role">Trader indép.</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-year">2023</div>
+          <div class="tl-role">Création ATP</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-year">Aujourd'hui</div>
+          <div class="tl-role">ATP ULTRA</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 4 — LES 3 PHASES ══ -->
+  <div class="slide" id="s4" data-slide="4">
+    <div class="slide-num">04 / 08</div>
+    <div class="eyebrow">Le programme</div>
+    <div class="title">3 PHASES VERS<br>TON <span class="g">INDÉPENDANCE</span></div>
+    <div class="s-div"><div class="s-div-line"></div><div class="s-div-dot"></div><div class="s-div-line"></div></div>
+    <div class="phases">
+      <div class="phase-card">
+        <div class="phase-num">01</div>
+        <div class="phase-title">FONDATIONS</div>
+        <div class="phase-sub">1 à 2 mois</div>
+        <div class="phase-desc">Les bases institutionnelles. Analyse, risk management, money management, psychologie. Construction de ton process écrit et validé.</div>
+        <div class="phase-tag">Livrable : ton plan de trading</div>
+      </div>
+      <div class="phase-card">
+        <div class="phase-num">02</div>
+        <div class="phase-title">EXÉCUTION</div>
+        <div class="phase-sub">2 à 3 mois</div>
+        <div class="phase-desc">On passe en conditions réelles. Suivi live de mes trades 5j/7. Débrief hebdomadaire. Optimisation du process trade par trade.</div>
+        <div class="phase-tag">Livrable : 1er mois rentable</div>
+      </div>
+      <div class="phase-card">
+        <div class="phase-num">03</div>
+        <div class="phase-title">PERFORMANCE</div>
+        <div class="phase-sub">2 à 3 mois</div>
+        <div class="phase-desc">On vise la régularité et le payout prop firm. Track record, drawdown maîtrisé, autonomie complète. Tu n'as plus besoin de moi.</div>
+        <div class="phase-tag">Livrable : indépendance totale</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 5 — CE QUI EST INCLUS ══ -->
+  <div class="slide" id="s5" data-slide="5">
+    <div class="slide-num">05 / 08</div>
+    <div class="eyebrow">Ce que tu reçois</div>
+    <div class="title">TOUT CE QU'IL<br>TE FAUT POUR <span class="g">RÉUSSIR</span></div>
+    <div class="s-div"><div class="s-div-line"></div><div class="s-div-dot"></div><div class="s-div-line"></div></div>
+    <div class="includes-grid">
+      <div class="include-item">
+        <div class="include-icon">🎯</div>
+        <div class="include-text">
+          <strong>Coaching 1v1 illimité</strong>
+          <span>Sessions privées avec Gaël sur toute la durée. Feedback sur tes trades en moins de 24h.</span>
+        </div>
+      </div>
+      <div class="include-item">
+        <div class="include-icon">📡</div>
+        <div class="include-text">
+          <strong>Suivi live 5 jours sur 7</strong>
+          <span>Tu vois mes trades en temps réel. Comment je lis le marché, mes décisions, ma gestion.</span>
+        </div>
+      </div>
+      <div class="include-item">
+        <div class="include-icon">🎓</div>
+        <div class="include-text">
+          <strong>Formation vidéo complète</strong>
+          <span>Accès à vie à toutes les formations sur le Whop ATP. De A à Z, sans filtre.</span>
+        </div>
+      </div>
+      <div class="include-item">
+        <div class="include-icon">⚡</div>
+        <div class="include-text">
+          <strong>SaaS ATP exclusif</strong>
+          <span>Le dashboard institutionnel. Journal de trades, gestion du risque automatisée, assistant IA.</span>
+        </div>
+      </div>
+      <div class="include-item">
+        <div class="include-icon">🌐</div>
+        <div class="include-text">
+          <strong>Discord ATP à vie</strong>
+          <span>Accès permanent à la communauté, aux lives quotidiens et aux replays. À vie.</span>
+        </div>
+      </div>
+      <div class="include-item">
+        <div class="include-icon">🏆</div>
+        <div class="include-text">
+          <strong>Accompagnement prop firm</strong>
+          <span>On prépare et on passe ton challenge ensemble. Objectif : premier payout.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 6 — RÉSULTATS ══ -->
+  <div class="slide" id="s6" data-slide="6">
+    <div class="slide-num">06 / 08</div>
+    <div class="eyebrow">Les résultats</div>
+    <div class="title">CE QUE ÇA<br><span class="g">CHANGE CONCRÈTEMENT</span></div>
+    <div class="s-div"><div class="s-div-line"></div><div class="s-div-dot"></div><div class="s-div-line"></div></div>
+    <div class="results-big">
+      <div class="result-row">
+        <div class="result-arrow">→</div>
+        <div class="result-text">Des <strong>débutants complets</strong> qui lisent et analysent un marché en quelques semaines.</div>
+        <div class="result-badge">Phase 1</div>
+      </div>
+      <div class="result-row">
+        <div class="result-arrow">→</div>
+        <div class="result-text">Des traders qui <strong>perdaient chaque mois</strong> et qui sont dans le vert aujourd'hui.</div>
+        <div class="result-badge">Phase 2</div>
+      </div>
+      <div class="result-row">
+        <div class="result-arrow">→</div>
+        <div class="result-text">Des règles écrites que mes élèves <strong>respectent chaque jour</strong> — même sous pression.</div>
+        <div class="result-badge">Process</div>
+      </div>
+      <div class="result-row">
+        <div class="result-arrow">→</div>
+        <div class="result-text">Des élèves <strong>autonomes et rentables</strong> — qui n'ont plus besoin de moi pour trader.</div>
+        <div class="result-badge">Phase 3</div>
+      </div>
+    </div>
+    <div class="big-stat">
+      <div class="big-stat-num count-up" data-target="100">0</div>
+      <div class="stat-label" style="font-size:13px;margin-top:4px;">%</div>
+      <div class="big-stat-label">des élèves repartent avec un plan de trading écrit et validé</div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 7 — LA PROMESSE ══ -->
+  <div class="slide" id="s7" data-slide="7">
+    <div class="slide-num">07 / 08</div>
+    <div class="eyebrow">La promesse</div>
+    <div class="promise-big">
+      <div class="promise-title">TON <span class="g">INDÉPENDANCE</span><br>TOTALE.</div>
+      <div class="promise-sep"></div>
+      <div class="promise-text">
+        L'objectif n'est pas que tu me suives indéfiniment.<br>
+        C'est que dans quelques mois — <strong>tu analyses seul, tu décides seul, tu es rentable seul.</strong><br><br>
+        Peu importe ton niveau aujourd'hui.
+      </div>
+      <div class="promise-items">
+        <div class="promise-pill">Débutant complet <span class="g">✓</span></div>
+        <div class="promise-pill">Trader qui stagne <span class="g">✓</span></div>
+        <div class="promise-pill">Expérimenté <span class="g">✓</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 8 — TARIF ══ -->
+  <div class="slide" id="s8" data-slide="8">
+    <div class="slide-num">08 / 08</div>
+    <div class="eyebrow">L'investissement</div>
+    <div class="title">CHOISISSEZ<br>VOTRE <span class="g">OPTION</span></div>
+    <div class="s-div"><div class="s-div-line"></div><div class="s-div-dot"></div><div class="s-div-line"></div></div>
+    <div class="pricing-wrap">
+      <div class="price-card featured">
+        <div class="price-tag">✦ Recommandé</div>
+        <div class="price-amount g">3 000€</div>
+        <div class="price-period">Paiement comptant</div>
+        <div class="price-eco">Économie de 500€</div>
+        <div class="price-desc">Règlement en une fois. Tu commences immédiatement dès réception.</div>
+      </div>
+      <div class="or-sep">
+        <div class="or-line"></div>
+        <div class="or-text">OU</div>
+        <div class="or-line"></div>
+      </div>
+      <div class="price-card">
+        <div class="price-tag">Facilité</div>
+        <div class="price-amount">3 × 1 200€</div>
+        <div class="price-period">En 3 mensualités</div>
+        <div class="price-eco" style="color:var(--muted);">Total : 3 600€</div>
+        <div class="price-desc">3 mensualités sans frais. Premier versement à la signature.</div>
+      </div>
+    </div>
+    <button class="cta-main" onclick="alert('Réservation confirmée — Gaël vous contacte sous 24h.')">
+      RÉSERVER MA PLACE →
+    </button>
+    <p style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.15em;text-align:center;">
+      2 PLACES DISPONIBLES CE MOIS · SÉLECTION SUR APPEL
+    </p>
+  </div>
+
+</div>
+
+<button class="next-btn" id="prevBtn" onclick="prevSlide()" style="right:auto;left:48px;">
+  <span>←</span>
+  <span>Précédent</span>
+</button>
+<button class="next-btn" id="nextBtn" onclick="nextSlide()">
+  <span>Suivant</span>
+  <span>→</span>
+</button>
+
+<script>
+// ── CURSOR ──────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animCursor() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) *.12;
+  cursor.style.left = (mx - 6) + 'px';
+  cursor.style.top = (my - 6) + 'px';
+  ring.style.left = (rx - 18) + 'px';
+  ring.style.top = (ry - 18) + 'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+
+// ── SLIDES ──────────────────────────────
+const slides = document.querySelectorAll('.slide');
+const totalSlides = slides.length;
+let currentSlide = 0;
+
+// Nav dots
+const navDots = document.getElementById('navDots');
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => goToSlide(i);
+  navDots.appendChild(d);
+});
+
+function updateNav() {
+  document.querySelectorAll('.nav-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === currentSlide);
+  });
+  const pct = ((currentSlide + 1) / totalSlides * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('nextBtn').classList.toggle('hide', currentSlide === totalSlides - 1);
+  document.getElementById('prevBtn').classList.toggle('hide', currentSlide === 0);
+}
+
+function goToSlide(idx) {
+  slides.forEach((s, i) => {
+    if (i === idx) {
+      s.style.display = 'flex';
+      setTimeout(() => s.classList.add('visible'), 50);
+      triggerSlideAnimations(s);
+    } else {
+      s.classList.remove('visible');
+      setTimeout(() => { if (s !== slides[idx]) s.style.display = 'none'; }, 10);
+      s.style.display = 'none';
+    }
+  });
+  currentSlide = idx;
+  window.scrollTo(0, 0);
+  updateNav();
+}
+
+function nextSlide() {
+  if (currentSlide < totalSlides - 1) goToSlide(currentSlide + 1);
+}
+
+function prevSlide() {
+  if (currentSlide > 0) goToSlide(currentSlide - 1);
+}
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextSlide();
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    if (currentSlide > 0) goToSlide(currentSlide - 1);
+  }
+});
+
+// ── COUNT UP ────────────────────────────
+function countUp(el) {
+  const target = parseInt(el.dataset.target);
+  const duration = 1800;
+  const start = Date.now();
+  const tick = () => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.floor(ease * target).toLocaleString('fr-FR');
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function triggerSlideAnimations(slide) {
+  // CountUp
+  slide.querySelectorAll('.count-up').forEach(el => countUp(el));
+  // Result rows stagger
+  const rows = slide.querySelectorAll('.result-row');
+  rows.forEach((r, i) => {
+    setTimeout(() => r.classList.add('show'), 200 + i * 150);
+  });
+}
+
+// ── INIT ────────────────────────────────
+slides.forEach((s, i) => {
+  s.style.display = i === 0 ? 'flex' : 'none';
+});
+setTimeout(() => {
+  slides[0].classList.add('visible');
+  triggerSlideAnimations(slides[0]);
+}, 100);
+updateNav();
+</script>
+</body>
+</html>
