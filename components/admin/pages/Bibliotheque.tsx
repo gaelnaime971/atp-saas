@@ -106,6 +106,7 @@ export default function Bibliotheque() {
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const draggedId = useRef<string | null>(null)
 
   const fetchResources = useCallback(async () => {
     const { data, error } = await supabase
@@ -127,11 +128,11 @@ export default function Bibliotheque() {
   // ── Derived data ────────────────────────────────────────────────
 
   const videos = useMemo(
-    () => resources.filter(r => r.type === 'video').sort((a, b) => a.order_idx - b.order_idx),
+    () => resources.filter(r => r.type === 'video').sort((a, b) => (a.order_idx - b.order_idx) || (new Date(a.created_at).getTime() - new Date(b.created_at).getTime())),
     [resources],
   )
   const pdfs = useMemo(
-    () => resources.filter(r => r.type === 'pdf' || r.type === 'doc').sort((a, b) => a.order_idx - b.order_idx),
+    () => resources.filter(r => r.type === 'pdf' || r.type === 'doc').sort((a, b) => (a.order_idx - b.order_idx) || (new Date(a.created_at).getTime() - new Date(b.created_at).getTime())),
     [resources],
   )
 
@@ -383,30 +384,37 @@ export default function Bibliotheque() {
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
-  async function swapOrder(a: Resource, b: Resource) {
-    // Swap order_idx between two resources
-    const aOrder = a.order_idx
-    const bOrder = b.order_idx
-    // Use a temporary high value to avoid potential unique-index conflicts
-    const TEMP = 1_000_000_000
-    await supabase.from('resources').update({ order_idx: TEMP }).eq('id', a.id)
-    await supabase.from('resources').update({ order_idx: aOrder }).eq('id', b.id)
-    await supabase.from('resources').update({ order_idx: bOrder }).eq('id', a.id)
-    fetchResources()
+  async function reorderList(newList: Resource[]) {
+    // Renumber sequentially 0, 10, 20, 30... and persist
+    // Spacing of 10 lets us insert later without renumbering everything
+    const updates = newList.map((r, i) => ({ id: r.id, order_idx: i + 1 }))
+
+    // Optimistic UI update
+    setResources(prev => {
+      const map = new Map(updates.map(u => [u.id, u.order_idx]))
+      return prev.map(r => map.has(r.id) ? { ...r, order_idx: map.get(r.id)! } : r)
+    })
+
+    // Persist in parallel
+    await Promise.all(
+      updates.map(u => supabase.from('resources').update({ order_idx: u.order_idx }).eq('id', u.id))
+    )
   }
 
   function moveUp(r: Resource) {
-    const list = currentList
+    const list = [...currentList]
     const idx = list.findIndex(x => x.id === r.id)
     if (idx <= 0) return
-    swapOrder(r, list[idx - 1])
+    ;[list[idx - 1], list[idx]] = [list[idx], list[idx - 1]]
+    reorderList(list)
   }
 
   function moveDown(r: Resource) {
-    const list = currentList
+    const list = [...currentList]
     const idx = list.findIndex(x => x.id === r.id)
     if (idx === -1 || idx >= list.length - 1) return
-    swapOrder(r, list[idx + 1])
+    ;[list[idx], list[idx + 1]] = [list[idx + 1], list[idx]]
+    reorderList(list)
   }
 
   // ── Loading ─────────────────────────────────────────────────────
@@ -542,6 +550,19 @@ export default function Bibliotheque() {
               onPreview={() => handlePreview(r)}
               onEdit={() => openEdit(r)}
               onDelete={() => handleDelete(r)}
+              onDragStartId={() => { draggedId.current = r.id }}
+              onDropTarget={() => {
+                const fromId = draggedId.current
+                draggedId.current = null
+                if (!fromId || fromId === r.id) return
+                const list = [...currentList]
+                const fromIdx = list.findIndex(x => x.id === fromId)
+                const toIdx = list.findIndex(x => x.id === r.id)
+                if (fromIdx < 0 || toIdx < 0) return
+                const [moved] = list.splice(fromIdx, 1)
+                list.splice(toIdx, 0, moved)
+                reorderList(list)
+              }}
             />
           ))}
         </div>
@@ -980,6 +1001,8 @@ function ResourceRow({
   onPreview,
   onEdit,
   onDelete,
+  onDragStartId,
+  onDropTarget,
 }: {
   resource: Resource
   tab: TabKey
@@ -990,8 +1013,11 @@ function ResourceRow({
   onPreview: () => void
   onEdit: () => void
   onDelete: () => void
+  onDragStartId: () => void
+  onDropTarget: () => void
 }) {
   const [hover, setHover] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
 
   const externalLink = isHttpUrl(resource.url)
 
@@ -999,19 +1025,26 @@ function ResourceRow({
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => { e.preventDefault(); setDragOver(false); onDropTarget() }}
       className="grid items-center gap-3 px-4 py-3 transition-colors"
       style={{
         gridTemplateColumns: tab === 'video'
           ? '36px 80px 56px 140px minmax(0,1fr) 80px minmax(0,1fr) 180px'
           : '36px 56px 140px minmax(0,1fr) minmax(0,1fr) 180px',
-        background: hover ? 'var(--bg3)' : 'transparent',
+        background: dragOver ? 'rgba(34,197,94,0.08)' : hover ? 'var(--bg3)' : 'transparent',
         borderBottom: '1px solid var(--border)',
+        borderTop: dragOver ? '2px solid var(--green)' : 'none',
       }}
     >
-      {/* Drag handle (visual only) */}
+      {/* Drag handle (real drag-and-drop) */}
       <div
+        draggable
+        onDragStart={() => onDragStartId()}
         className="flex flex-col items-center justify-center"
-        style={{ color: hover ? 'var(--text2)' : 'var(--text3)', opacity: hover ? 1 : 0.4 }}
+        style={{ color: hover ? 'var(--text2)' : 'var(--text3)', opacity: hover ? 1 : 0.5, cursor: 'grab' }}
+        title="Glisser pour réordonner"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
