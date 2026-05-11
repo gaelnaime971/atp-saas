@@ -7,6 +7,7 @@ import Traders from '@/components/admin/pages/Traders'
 import Results from '@/components/admin/pages/Results'
 import Calendar from '@/components/admin/pages/Calendar'
 import Sessions from '@/components/admin/pages/Sessions'
+import AdminCoaching from '@/components/admin/pages/Coaching'
 import Revenus from '@/components/admin/pages/Revenus'
 import Bibliotheque from '@/components/admin/pages/Bibliotheque'
 import Settings from '@/components/admin/pages/Settings'
@@ -23,7 +24,7 @@ import RecapTradeLive from '@/components/admin/pages/RecapTradeLive'
 import AdminTopbarStats from '@/components/admin/TopbarStats'
 import AdminChatWidget from '@/components/chat/AdminChatWidget'
 
-type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'recap-live' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks' | 'prospects' | 'pipeline' | 'content'
+type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'coaching' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'recap-live' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks' | 'prospects' | 'pipeline' | 'content'
 
 const pageTitles: Record<AdminPage, string> = {
   overview: 'Vue Globale',
@@ -33,6 +34,7 @@ const pageTitles: Record<AdminPage, string> = {
   notes: 'Notes privées',
   calendar: 'Calendrier',
   sessions: 'Sessions',
+  coaching: 'Coaching vidéo',
   revenus: 'Revenus',
   reports: 'Rapports mensuels',
   tasks: 'Tâches',
@@ -69,6 +71,7 @@ export default function AdminDashboard() {
       case 'notes': return <Notes />
       case 'calendar': return <Calendar />
       case 'sessions': return <Sessions />
+      case 'coaching': return <AdminCoaching />
       case 'revenus': return <Revenus />
       case 'reports': return <Reports />
       case 'tasks': return <Tasks />
