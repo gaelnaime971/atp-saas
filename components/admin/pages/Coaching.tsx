@@ -353,6 +353,8 @@ export default function AdminCoaching() {
         </div>
       )}
 
+      <GoogleCalendarStatus onToast={msg => setToast(msg)} />
+
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8 }}>
         {tabs.map((t) => (
@@ -894,4 +896,95 @@ const inputStyle: React.CSSProperties = {
   fontFamily: 'inherit',
   outline: 'none',
   width: '100%',
+}
+
+
+function GoogleCalendarStatus({ onToast }: { onToast: (msg: string) => void }) {
+  const [loading, setLoading] = useState(true)
+  const [connected, setConnected] = useState(false)
+  const [email, setEmail] = useState<string | null>(null)
+  const [disconnecting, setDisconnecting] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/google/status").then(r => r.json()).then(d => {
+      setConnected(!!d.connected)
+      setEmail(d.email || null)
+    }).finally(() => setLoading(false))
+
+    // Handle return from OAuth
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("google") === "connected") {
+      onToast("Google Calendar connecté ✓")
+      window.history.replaceState({}, "", window.location.pathname)
+    } else if (params.get("google") === "error") {
+      onToast(`Erreur Google : ${params.get("reason") || ""}`)
+      window.history.replaceState({}, "", window.location.pathname)
+    }
+  }, [onToast])
+
+  async function disconnect() {
+    if (!confirm("Déconnecter Google Calendar ? Les futurs RDV ne seront plus synchronisés.")) return
+    setDisconnecting(true)
+    await fetch("/api/google/disconnect", { method: "POST" })
+    setConnected(false)
+    setEmail(null)
+    setDisconnecting(false)
+    onToast("Google Calendar déconnecté")
+  }
+
+  if (loading) return null
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "12px 16px",
+        background: connected ? "rgba(34,197,94,0.06)" : "var(--bg3)",
+        border: `1px solid ${connected ? "rgba(34,197,94,0.25)" : "var(--border)"}`,
+        borderRadius: 10,
+        gap: 16,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 22 }}>📅</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Google Calendar</div>
+          {connected ? (
+            <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>
+              Connecté{email ? ` · ${email}` : ""} · les RDV sont créés dans ton agenda automatiquement
+            </div>
+          ) : (
+            <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 2 }}>
+              Connecte ton compte pour que les RDV apparaissent dans ton agenda Google
+            </div>
+          )}
+        </div>
+      </div>
+      {connected ? (
+        <button
+          onClick={disconnect}
+          disabled={disconnecting}
+          style={{
+            padding: "8px 14px", borderRadius: 8, fontSize: 11, fontWeight: 600,
+            background: "transparent", border: "1px solid rgba(239,68,68,0.3)",
+            color: "#ef4444", cursor: disconnecting ? "default" : "pointer", whiteSpace: "nowrap",
+          }}
+        >
+          {disconnecting ? "..." : "Déconnecter"}
+        </button>
+      ) : (
+        <a
+          href="/api/google/oauth/start"
+          style={{
+            padding: "10px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+            background: "var(--green)", color: "#000", textDecoration: "none", whiteSpace: "nowrap",
+          }}
+        >
+          Connecter Google →
+        </a>
+      )}
+    </div>
+  )
 }

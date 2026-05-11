@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { deleteRoom } from '@/lib/daily'
+import { deleteCalendarEvent, findConnectedAdminId } from '@/lib/google'
 
 const adminSupabase = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,10 +34,20 @@ export async function POST(request: Request) {
     // Delete Daily room
     if (session.daily_room_name) await deleteRoom(session.daily_room_name)
 
+    // Delete Google Calendar event
+    if (session.google_event_id) {
+      try {
+        const adminId = await findConnectedAdminId()
+        if (adminId) await deleteCalendarEvent(adminId, session.google_event_id)
+      } catch (gErr) {
+        console.warn('Google event deletion failed:', gErr)
+      }
+    }
+
     // Mark as cancelled
     await adminSupabase
       .from('coaching_sessions')
-      .update({ meeting_status: 'cancelled', daily_room_url: null, daily_room_name: null })
+      .update({ meeting_status: 'cancelled', daily_room_url: null, daily_room_name: null, google_event_id: null })
       .eq('id', session_id)
 
     return NextResponse.json({ success: true })

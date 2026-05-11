@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createCoachingRoom } from '@/lib/daily'
+import { createCalendarEvent, findConnectedAdminId } from '@/lib/google'
 import { Resend } from 'resend'
 
 const adminSupabase = createAdminClient(
@@ -73,6 +74,33 @@ export async function POST(request: Request) {
     if (insertErr) {
       console.error('Insert error:', insertErr)
       return NextResponse.json({ error: 'Erreur sauvegarde' }, { status: 500 })
+    }
+
+    // Sync to Google Calendar (admin's calendar)
+    try {
+      const adminId = await findConnectedAdminId()
+      if (adminId) {
+        const endDate = new Date(scheduledDate.getTime() + duration_minutes * 60_000)
+        const traderEmail = profile?.email || user.email
+        const event = await createCalendarEvent(adminId, {
+          summary: `Coaching ATP — ${traderName}`,
+          description: notes
+            ? `Trader : ${traderName}${traderEmail ? ` (${traderEmail})` : ''}\n\nNotes du trader :\n${notes}`
+            : `Trader : ${traderName}${traderEmail ? ` (${traderEmail})` : ''}`,
+          start: scheduledDate,
+          end: endDate,
+          attendees: traderEmail ? [traderEmail] : [],
+          conferenceUrl: dailyRoomUrl || undefined,
+        })
+        if (event?.id) {
+          await adminSupabase
+            .from('coaching_sessions')
+            .update({ google_event_id: event.id })
+            .eq('id', inserted.id)
+        }
+      }
+    } catch (gErr) {
+      console.warn('Google sync failed (non-blocking):', gErr)
     }
 
     // Send confirmation email
