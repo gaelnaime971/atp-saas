@@ -5,6 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 
 // ── Types ─────────────────────────────────────────────────────────
 
+interface PaymentInstallment {
+  num: number
+  amount: number
+  due_date: string | null
+  paid_at: string | null
+  method: 'stripe' | 'virement' | 'especes' | null
+  reference: string | null
+}
+
 interface Prospect {
   id: string
   created_at: string
@@ -32,6 +41,10 @@ interface Prospect {
   program_type: string | null
   is_beginner: boolean | null
   in_pipeline: boolean | null
+  // Payment fields
+  payment_method: 'stripe' | 'virement' | 'especes' | 'mixed' | null
+  payment_installments: number | null
+  payment_schedule: PaymentInstallment[] | null
 }
 
 interface CallNote {
@@ -95,6 +108,24 @@ const SOURCE_SELECT = [
   { value: 'manual', label: 'Manuel' },
 ]
 
+const PAYMENT_METHOD_OPTIONS = [
+  { value: 'stripe', label: 'Stripe', color: '#635bff', bg: 'rgba(99,91,255,0.12)' },
+  { value: 'virement', label: 'Virement', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+  { value: 'especes', label: 'Espèces', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  { value: 'mixed', label: 'Mixte', color: '#a855f7', bg: 'rgba(168,85,247,0.12)' },
+] as const
+
+const INSTALLMENT_LABELS: Record<number, string> = {
+  1: 'Comptant',
+  2: '2 fois',
+  3: '3 fois',
+  4: '4 fois',
+  5: '5 fois',
+  6: '6 fois',
+  7: '7 fois',
+  8: '8 fois',
+}
+
 const OUTCOME_OPTIONS = [
   { value: 'pas_repondu', label: 'Pas répondu', color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
   { value: 'rappel', label: 'À rappeler', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
@@ -139,6 +170,36 @@ function fromLocalInput(v: string): string | null {
 function whatsappLink(phone: string): string {
   const cleaned = (phone || '').replace(/[^\d+]/g, '').replace(/^\+/, '')
   return `https://wa.me/${cleaned}`
+}
+
+function buildSchedule(totalAmount: number, installments: number, method: PaymentInstallment['method']): PaymentInstallment[] {
+  const n = Math.max(1, Math.min(8, installments || 1))
+  const base = Math.floor((totalAmount || 0) / n)
+  const rest = (totalAmount || 0) - base * n
+  const today = new Date()
+  return Array.from({ length: n }, (_, i): PaymentInstallment => {
+    const due = new Date(today)
+    due.setMonth(due.getMonth() + i)
+    const amount = base + (i === 0 ? rest : 0)
+    return {
+      num: i + 1,
+      amount,
+      due_date: due.toISOString().slice(0, 10),
+      paid_at: null,
+      method,
+      reference: null,
+    }
+  })
+}
+
+function paymentSummary(schedule: PaymentInstallment[] | null | undefined): { paid: number; total: number; paidCount: number; totalCount: number } {
+  if (!schedule || schedule.length === 0) return { paid: 0, total: 0, paidCount: 0, totalCount: 0 }
+  let paid = 0, total = 0, paidCount = 0
+  for (const i of schedule) {
+    total += Number(i.amount) || 0
+    if (i.paid_at) { paid += Number(i.amount) || 0; paidCount++ }
+  }
+  return { paid, total, paidCount, totalCount: schedule.length }
 }
 
 // ── Component ─────────────────────────────────────────────────────
@@ -206,6 +267,7 @@ export default function Pipeline() {
     const counts: Record<string, number> = {}
     STATUS_COLUMNS.forEach(c => { counts[c.value] = 0 })
     let agreedTotal = 0
+    let receivedTotal = 0
     let closedCount = 0
     prospects.forEach(p => {
       const s = p.status && counts[p.status] !== undefined ? p.status : 'nouveau'
@@ -213,10 +275,12 @@ export default function Pipeline() {
       if (p.status === 'close') {
         closedCount++
         if (p.agreed_price) agreedTotal += Number(p.agreed_price) || 0
+        const sum = paymentSummary(p.payment_schedule)
+        receivedTotal += sum.paid
       }
     })
     const closingRate = total > 0 ? (closedCount / total) * 100 : 0
-    return { total, counts, agreedTotal, closedCount, closingRate }
+    return { total, counts, agreedTotal, receivedTotal, closedCount, closingRate }
   }, [prospects])
 
   // ── Mutations ────────────────────────────────────────────────────
@@ -344,7 +408,8 @@ export default function Pipeline() {
           <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--green)' }}>Closing</div>
           <div className="text-xl font-bold mt-0.5" style={{ color: 'var(--text)' }}>{stats.closingRate.toFixed(0)}%</div>
           <div className="text-[10px] mt-0.5" style={{ color: 'var(--text3)' }}>
-            {stats.agreedTotal.toLocaleString('fr-FR')}€
+            <span style={{ color: 'var(--green)', fontWeight: 700 }}>{stats.receivedTotal.toLocaleString('fr-FR')}€</span>
+            {' / '}{stats.agreedTotal.toLocaleString('fr-FR')}€
           </div>
         </div>
       </div>
@@ -606,10 +671,38 @@ function PipelineCard({
         </div>
       )}
 
-      {/* Agreed price */}
+      {/* Agreed price + payment progress */}
       {p.agreed_price && Number(p.agreed_price) > 0 && (
-        <div className="mb-2 text-base font-extrabold" style={{ color: 'var(--green)' }}>
-          {Number(p.agreed_price).toLocaleString('fr-FR')}€
+        <div className="mb-2">
+          <div className="text-base font-extrabold" style={{ color: 'var(--green)' }}>
+            {Number(p.agreed_price).toLocaleString('fr-FR')}€
+            {p.payment_installments && p.payment_installments > 1 && (
+              <span className="ml-1.5 text-[10px] font-semibold" style={{ color: 'var(--text3)' }}>
+                · {p.payment_installments}×
+              </span>
+            )}
+          </div>
+          {(() => {
+            const s = paymentSummary(p.payment_schedule)
+            if (s.totalCount === 0) return null
+            const pct = s.total > 0 ? (s.paid / s.total) * 100 : 0
+            const fullyPaid = s.paidCount === s.totalCount
+            return (
+              <div className="mt-1">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[9px] font-bold" style={{ color: fullyPaid ? 'var(--green)' : 'var(--text3)' }}>
+                    {fullyPaid ? '✓ Soldé' : `${s.paidCount}/${s.totalCount} reçu${s.paidCount > 1 ? 's' : ''}`}
+                  </span>
+                  <span className="text-[9px]" style={{ color: 'var(--text3)' }}>
+                    {s.paid.toLocaleString('fr-FR')}€
+                  </span>
+                </div>
+                <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--bg2)' }}>
+                  <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: fullyPaid ? 'var(--green)' : '#22c55e' }} />
+                </div>
+              </div>
+            )
+          })()}
         </div>
       )}
 
@@ -710,6 +803,213 @@ function PipelineCard({
   )
 }
 
+// ── Payment section ───────────────────────────────────────────────
+
+function PaymentSection({
+  draft,
+  setDraft,
+}: {
+  draft: Prospect
+  setDraft: React.Dispatch<React.SetStateAction<Prospect>>
+}) {
+  const schedule = draft.payment_schedule || []
+  const summary = paymentSummary(schedule)
+  const totalAgreed = Number(draft.agreed_price) || 0
+  const progressPct = summary.total > 0 ? (summary.paid / summary.total) * 100 : 0
+
+  const regenerate = (nextInstallments?: number, nextMethod?: PaymentInstallment['method']) => {
+    const n = Math.max(1, Math.min(8, nextInstallments ?? draft.payment_installments ?? 1))
+    const m = nextMethod ?? (draft.payment_method === 'mixed' ? null : (draft.payment_method as PaymentInstallment['method'] | null) ?? null)
+    const newSchedule = buildSchedule(totalAgreed, n, m)
+    setDraft(d => ({ ...d, payment_installments: n, payment_schedule: newSchedule }))
+  }
+
+  const updateInstallment = (idx: number, patch: Partial<PaymentInstallment>) => {
+    setDraft(d => {
+      const list = [...(d.payment_schedule || [])]
+      list[idx] = { ...list[idx], ...patch }
+      return { ...d, payment_schedule: list }
+    })
+  }
+
+  const togglePaid = (idx: number) => {
+    const current = schedule[idx]
+    updateInstallment(idx, { paid_at: current.paid_at ? null : new Date().toISOString() })
+  }
+
+  return (
+    <div className="rounded-xl p-3" style={{ background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.2)' }}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--green)' }}>
+          // Paiement
+        </div>
+        {summary.totalCount > 0 && (
+          <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
+            <span style={{ color: 'var(--green)', fontWeight: 700 }}>
+              {summary.paid.toLocaleString('fr-FR')}€
+            </span> / {summary.total.toLocaleString('fr-FR')}€
+            {' · '}
+            <span style={{ color: 'var(--text2)' }}>{summary.paidCount}/{summary.totalCount} reçu{summary.paidCount > 1 ? 's' : ''}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div>
+          <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>Méthode</label>
+          <select
+            value={draft.payment_method || ''}
+            onChange={e => setDraft(d => ({ ...d, payment_method: (e.target.value || null) as Prospect['payment_method'] }))}
+            className="w-full px-2 py-1.5 rounded-md text-xs outline-none"
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+          >
+            <option value="">—</option>
+            {PAYMENT_METHOD_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>Nb fois</label>
+          <select
+            value={draft.payment_installments ?? 1}
+            onChange={e => {
+              const n = Number(e.target.value)
+              setDraft(d => ({ ...d, payment_installments: n }))
+              regenerate(n)
+            }}
+            className="w-full px-2 py-1.5 rounded-md text-xs outline-none font-semibold"
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+          >
+            {Array.from({ length: 8 }, (_, i) => i + 1).map(n => (
+              <option key={n} value={n}>{INSTALLMENT_LABELS[n]}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      {summary.totalCount > 0 && (
+        <div className="mb-3">
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg3)' }}>
+            <div
+              className="h-full transition-all"
+              style={{ width: `${Math.min(100, progressPct)}%`, background: 'var(--green)' }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {schedule.length === 0 && (
+        <button
+          onClick={() => regenerate(draft.payment_installments || 1)}
+          disabled={!totalAgreed}
+          className="w-full px-3 py-2 rounded-md text-xs font-bold transition-all"
+          style={{
+            background: totalAgreed ? 'rgba(34,197,94,0.12)' : 'var(--bg3)',
+            color: totalAgreed ? 'var(--green)' : 'var(--text3)',
+            border: '1px solid rgba(34,197,94,0.3)',
+            cursor: totalAgreed ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {totalAgreed ? '+ Générer le plan de paiement' : 'Renseigne le prix accordé'}
+        </button>
+      )}
+
+      {/* Schedule list */}
+      {schedule.length > 0 && (
+        <div className="space-y-1.5">
+          {schedule.map((inst, idx) => {
+            const paid = !!inst.paid_at
+            return (
+              <div
+                key={idx}
+                className="rounded-md p-2"
+                style={{
+                  background: paid ? 'rgba(34,197,94,0.08)' : 'var(--bg3)',
+                  border: `1px solid ${paid ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <button
+                    onClick={() => togglePaid(idx)}
+                    className="flex items-center justify-center w-5 h-5 rounded transition-all"
+                    style={{
+                      background: paid ? 'var(--green)' : 'var(--bg2)',
+                      border: `1px solid ${paid ? 'var(--green)' : 'var(--border)'}`,
+                      color: paid ? '#000' : 'var(--text3)',
+                      cursor: 'pointer',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                    title={paid ? 'Marquer non reçu' : 'Marquer comme reçu'}
+                  >
+                    {paid ? '✓' : ''}
+                  </button>
+                  <span className="text-[10px] font-bold" style={{ color: paid ? 'var(--green)' : 'var(--text2)', minWidth: 28 }}>
+                    #{inst.num}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={inst.amount}
+                    onChange={e => updateInstallment(idx, { amount: Number(e.target.value) || 0 })}
+                    className="px-2 py-1 rounded text-xs outline-none font-bold w-24"
+                    style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--green)' }}
+                  />
+                  <span className="text-[10px]" style={{ color: 'var(--text3)' }}>€</span>
+                  <input
+                    type="date"
+                    value={inst.due_date || ''}
+                    onChange={e => updateInstallment(idx, { due_date: e.target.value || null })}
+                    className="flex-1 px-2 py-1 rounded text-[11px] outline-none"
+                    style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                  />
+                </div>
+                <div className="flex items-center gap-2 pl-7">
+                  <select
+                    value={inst.method || ''}
+                    onChange={e => updateInstallment(idx, { method: (e.target.value || null) as PaymentInstallment['method'] })}
+                    className="px-2 py-0.5 rounded text-[10px] outline-none"
+                    style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)' }}
+                  >
+                    <option value="">méthode</option>
+                    {PAYMENT_METHOD_OPTIONS.filter(m => m.value !== 'mixed').map(m => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={inst.reference || ''}
+                    onChange={e => updateInstallment(idx, { reference: e.target.value || null })}
+                    placeholder="réf./tx (optionnel)"
+                    className="flex-1 px-2 py-0.5 rounded text-[10px] outline-none font-mono"
+                    style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)' }}
+                  />
+                  {paid && inst.paid_at && (
+                    <span className="text-[9px]" style={{ color: 'var(--green)' }} title={`Reçu le ${fmtDate(inst.paid_at)}`}>
+                      ✓ {fmtDate(inst.paid_at)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+          <button
+            onClick={() => regenerate(draft.payment_installments || 1)}
+            className="w-full mt-1 px-2 py-1.5 rounded-md text-[10px] font-semibold transition-all"
+            style={{ background: 'var(--bg3)', border: '1px dashed var(--border)', color: 'var(--text3)', cursor: 'pointer' }}
+            title="Recalcule le plan à partir du prix accordé et du nombre d'échéances"
+          >
+            ↻ Régénérer le plan depuis le prix accordé
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Detail modal ──────────────────────────────────────────────────
 
 type SupabaseClient = ReturnType<typeof createClient>
@@ -782,6 +1082,9 @@ function ProspectDetailModal({
       agreed_price: draft.agreed_price,
       program_type: draft.program_type,
       notes: draft.notes,
+      payment_method: draft.payment_method,
+      payment_installments: draft.payment_installments,
+      payment_schedule: draft.payment_schedule,
     }
     await onUpdate(patch)
     setSaving(false)
@@ -1028,6 +1331,14 @@ function ProspectDetailModal({
                   />
                 </div>
               </div>
+
+              {/* Payment section (closed deals only) */}
+              {draft.status === 'close' && (
+                <PaymentSection
+                  draft={draft}
+                  setDraft={setDraft}
+                />
+              )}
 
               {/* Observations */}
               <div>
