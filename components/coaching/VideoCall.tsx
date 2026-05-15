@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
 
 interface VideoCallProps {
   sessionId: string
@@ -15,22 +14,19 @@ interface TokenResponse {
 }
 
 export default function VideoCall({ sessionId, onLeave }: VideoCallProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const callRef = useRef<DailyCall | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [data, setData] = useState<TokenResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const onLeaveRef = useRef(onLeave)
 
-  // Keep latest onLeave in a ref so the effect can stay deps-free
   useEffect(() => {
     onLeaveRef.current = onLeave
   }, [onLeave])
 
+  // Fetch the meeting token + room URL
   useEffect(() => {
     let cancelled = false
-    let frame: DailyCall | null = null
-
-    async function start() {
+    async function fetchToken() {
       try {
         const res = await fetch('/api/coaching/token', {
           method: 'POST',
@@ -41,65 +37,43 @@ export default function VideoCall({ sessionId, onLeave }: VideoCallProps) {
           const body = (await res.json().catch(() => ({}))) as { error?: string }
           throw new Error(body.error || 'Erreur récupération token vidéo')
         }
-        const data = (await res.json()) as TokenResponse
-
-        if (cancelled || !containerRef.current) return
-
-        // Cleanup any existing instance just in case (HMR / strict mode)
-        const existing = DailyIframe.getCallInstance()
-        if (existing) {
-          try {
-            await existing.destroy()
-          } catch {
-            /* ignore */
-          }
+        const d = (await res.json()) as TokenResponse
+        if (!cancelled) {
+          setData(d)
+          setLoading(false)
         }
-
-        frame = DailyIframe.createFrame(containerRef.current, {
-          showLeaveButton: true,
-          showFullscreenButton: true,
-          iframeStyle: {
-            width: '100%',
-            height: '100%',
-            border: '0',
-            borderRadius: '12px',
-            background: '#000',
-          },
-        })
-        callRef.current = frame
-
-        frame.on('left-meeting', () => {
-          onLeaveRef.current()
-        })
-        frame.on('error', (ev) => {
-          console.error('Daily error:', ev)
-          setError("Erreur dans l'appel vidéo")
-        })
-
-        await frame.join({ url: data.url, token: data.token })
-        if (!cancelled) setLoading(false)
       } catch (err) {
-        console.error('VideoCall start failed:', err)
+        console.error('VideoCall token fetch failed:', err)
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Erreur inconnue')
           setLoading(false)
         }
       }
     }
-
-    start()
-
+    fetchToken()
     return () => {
       cancelled = true
-      const call = callRef.current
-      callRef.current = null
-      if (call) {
-        call.destroy().catch(() => {
-          /* ignore */
-        })
-      }
     }
   }, [sessionId])
+
+  // Listen for Daily Prebuilt postMessage events (left-meeting → close overlay)
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (!e.data || typeof e.data !== 'object') return
+      const msg = e.data as { action?: string; event?: string }
+      // Daily Prebuilt emits { action: 'left-meeting' } and similar.
+      // The SDK normally wraps these — without the SDK we read them raw.
+      if (msg.action === 'left-meeting' || msg.event === 'left-meeting') {
+        onLeaveRef.current()
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
+  const iframeSrc = data
+    ? `${data.url}?t=${encodeURIComponent(data.token)}`
+    : null
 
   return (
     <div
@@ -112,38 +86,75 @@ export default function VideoCall({ sessionId, onLeave }: VideoCallProps) {
         flexDirection: 'column',
       }}
     >
-      <button
-        onClick={onLeave}
+      <div
         style={{
           position: 'absolute',
           top: 16,
           right: 16,
           zIndex: 10000,
-          background: 'rgba(239,68,68,0.9)',
-          color: '#fff',
-          border: 'none',
-          padding: '8px 14px',
-          borderRadius: 8,
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: 'pointer',
           display: 'flex',
+          gap: 8,
           alignItems: 'center',
-          gap: 6,
         }}
       >
-        <span style={{ fontSize: 16, lineHeight: 1 }}>×</span> Quitter l&apos;appel
-      </button>
+        {iframeSrc && (
+          <a
+            href={iframeSrc}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: 'rgba(34,197,94,0.85)',
+              color: '#000',
+              padding: '8px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+            title="Ouvrir l'appel dans un nouvel onglet"
+          >
+            ⎘ Nouvel onglet
+          </a>
+        )}
+        <button
+          onClick={onLeave}
+          style={{
+            background: 'rgba(239,68,68,0.9)',
+            color: '#fff',
+            border: 'none',
+            padding: '8px 14px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span style={{ fontSize: 16, lineHeight: 1 }}>×</span> Quitter l&apos;appel
+        </button>
+      </div>
 
-      <div
-        ref={containerRef}
-        style={{
-          flex: 1,
-          width: '100%',
-          height: '100%',
-          background: '#000',
-        }}
-      />
+      {iframeSrc && (
+        <iframe
+          key={iframeSrc}
+          src={iframeSrc}
+          allow="camera; microphone; autoplay; display-capture; fullscreen; clipboard-write; encrypted-media"
+          allowFullScreen
+          title="Appel coaching ATP"
+          style={{
+            flex: 1,
+            width: '100%',
+            height: '100%',
+            border: 0,
+            background: '#000',
+          }}
+        />
+      )}
 
       {loading && !error && (
         <div

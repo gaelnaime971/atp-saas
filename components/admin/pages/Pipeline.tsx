@@ -155,6 +155,8 @@ export default function Pipeline() {
   const [showAdd, setShowAdd] = useState(false)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
+  const [closingEmailFor, setClosingEmailFor] = useState<Prospect | null>(null)
+  const [welcomeEmailFor, setWelcomeEmailFor] = useState<Prospect | null>(null)
 
   // ── Fetch ────────────────────────────────────────────────────────
 
@@ -453,6 +455,8 @@ export default function Pipeline() {
                       onDragEnd={onDragEnd}
                       isDragging={draggingId === p.id}
                       onMove={(s) => moveToStatus(p.id, s)}
+                      onSendClosingEmail={() => setClosingEmailFor(p)}
+                      onSendWelcomeEmail={() => setWelcomeEmailFor(p)}
                     />
                   ))}
                 </div>
@@ -470,6 +474,8 @@ export default function Pipeline() {
           onUpdate={(patch) => updateProspect(selected.id, patch)}
           onRemove={() => removeFromPipeline(selected.id)}
           supabase={supabase}
+          onSendClosingEmail={() => setClosingEmailFor(selected)}
+          onSendWelcomeEmail={() => setWelcomeEmailFor(selected)}
         />
       )}
 
@@ -479,6 +485,22 @@ export default function Pipeline() {
           onClose={() => setShowAdd(false)}
           onAdded={() => { setShowAdd(false); fetchProspects() }}
           supabase={supabase}
+        />
+      )}
+
+      {/* Closing email modal */}
+      {closingEmailFor && (
+        <ClosingEmailModal
+          prospect={closingEmailFor}
+          onClose={() => setClosingEmailFor(null)}
+        />
+      )}
+
+      {/* Welcome email modal */}
+      {welcomeEmailFor && (
+        <WelcomeEmailModal
+          prospect={welcomeEmailFor}
+          onClose={() => setWelcomeEmailFor(null)}
         />
       )}
     </div>
@@ -495,6 +517,8 @@ function PipelineCard({
   onDragEnd,
   isDragging,
   onMove,
+  onSendClosingEmail,
+  onSendWelcomeEmail,
 }: {
   prospect: Prospect
   column: typeof STATUS_COLUMNS[number]
@@ -503,6 +527,8 @@ function PipelineCard({
   onDragEnd: () => void
   isDragging: boolean
   onMove: (status: string) => void
+  onSendClosingEmail: () => void
+  onSendWelcomeEmail: () => void
 }) {
   const [hover, setHover] = useState(false)
   const [moveOpen, setMoveOpen] = useState(false)
@@ -587,6 +613,44 @@ function PipelineCard({
         </div>
       )}
 
+      {/* Email buttons (only for closed prospects with email) */}
+      {p.status === 'close' && p.email && (
+        <div data-no-card-click className="mb-2 flex gap-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onSendClosingEmail() }}
+            className="flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all flex items-center justify-center gap-1 hover:opacity-90"
+            style={{
+              background: 'rgba(168,85,247,0.12)',
+              border: '1px solid rgba(168,85,247,0.35)',
+              color: '#a855f7',
+              cursor: 'pointer',
+            }}
+            title="Envoyer l'email de closing (lien Stripe ou virement)"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Closing
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onSendWelcomeEmail() }}
+            className="flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all flex items-center justify-center gap-1 hover:opacity-90"
+            style={{
+              background: 'rgba(34,197,94,0.12)',
+              border: '1px solid rgba(34,197,94,0.35)',
+              color: '#22c55e',
+              cursor: 'pointer',
+            }}
+            title="Envoyer l'email de bienvenue (paiement reçu + accès)"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Accès
+          </button>
+        </div>
+      )}
+
       {/* Date row */}
       <div className="flex items-center justify-between gap-2 text-[10px]" style={{ color: 'var(--text3)' }}>
         {p.next_call_date ? (
@@ -656,12 +720,16 @@ function ProspectDetailModal({
   onUpdate,
   onRemove,
   supabase,
+  onSendClosingEmail,
+  onSendWelcomeEmail,
 }: {
   prospect: Prospect
   onClose: () => void
   onUpdate: (patch: Partial<Prospect>) => Promise<void> | void
   onRemove: () => void
   supabase: SupabaseClient
+  onSendClosingEmail: () => void
+  onSendWelcomeEmail: () => void
 }) {
   const [draft, setDraft] = useState<Prospect>(prospect)
   const [notes, setNotes] = useState<CallNote[]>([])
@@ -1102,6 +1170,28 @@ function ProspectDetailModal({
               Email
             </a>
           )}
+          {prospect.email && (
+            <button
+              onClick={onSendClosingEmail}
+              className="px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+              style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.35)', color: '#a855f7', cursor: 'pointer' }}
+              title="Envoyer l'email de closing avec lien Stripe ou virement"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m-6-8h6M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+              Email closing
+            </button>
+          )}
+          {prospect.email && (
+            <button
+              onClick={onSendWelcomeEmail}
+              className="px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+              style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', color: '#22c55e', cursor: 'pointer' }}
+              title="Envoyer l'email de bienvenue (paiement reçu + accès)"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Email accès
+            </button>
+          )}
           <div className="flex-1" />
           {savedAt && (
             <span className="text-[10px] font-semibold" style={{ color: 'var(--green)' }}>✓ Enregistré</span>
@@ -1475,6 +1565,700 @@ function AddToPipelineModal({
             </button>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── Closing email modal ──────────────────────────────────────────
+
+function renderClosingTemplateClient(
+  template: string,
+  vars: Record<string, string>,
+  flags: { stripe: boolean; virement: boolean; note: boolean }
+): string {
+  let html = template
+  const sections: Array<{ name: string; show: boolean }> = [
+    { name: 'STRIPE', show: flags.stripe },
+    { name: 'VIREMENT', show: flags.virement },
+    { name: 'BOTH', show: flags.stripe && flags.virement },
+    { name: 'NOTE', show: flags.note },
+  ]
+  for (const { name, show } of sections) {
+    const blockRegex = new RegExp(`<!-- IF_${name}_START -->[\\s\\S]*?<!-- IF_${name}_END -->`, 'g')
+    if (!show) {
+      html = html.replace(blockRegex, '')
+    } else {
+      html = html.replace(new RegExp(`<!-- IF_${name}_START -->`, 'g'), '')
+      html = html.replace(new RegExp(`<!-- IF_${name}_END -->`, 'g'), '')
+    }
+  }
+  for (const [key, value] of Object.entries(vars)) {
+    const safe = (value ?? '').toString().replace(/\$/g, '$$$$')
+    html = html.replace(new RegExp(`{{${key}}}`, 'g'), safe)
+  }
+  return html
+}
+
+function ClosingEmailModal({
+  prospect,
+  onClose,
+}: {
+  prospect: Prospect
+  onClose: () => void
+}) {
+  const [template, setTemplate] = useState<string>('')
+  const [templateLoading, setTemplateLoading] = useState(true)
+
+  // Form state
+  const [subject, setSubject] = useState(`Bienvenue dans ATP ULTRA — Finalise ton inscription`)
+  const [amount, setAmount] = useState<string>(
+    prospect.agreed_price && Number(prospect.agreed_price) > 0
+      ? `${Number(prospect.agreed_price).toLocaleString('fr-FR')} €`
+      : ''
+  )
+  const [dateDemarrage, setDateDemarrage] = useState<string>(() => {
+    // Default to "lundi prochain"
+    const d = new Date()
+    const day = d.getDay()
+    const delta = day === 1 ? 7 : (8 - day) % 7 || 7
+    d.setDate(d.getDate() + delta)
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  })
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'virement' | 'both'>('stripe')
+  const [stripeLink, setStripeLink] = useState('')
+  const [titulaire, setTitulaire] = useState('OMEGA INVESTMENT')
+  const [iban, setIban] = useState('')
+  const [bic, setBic] = useState('')
+  const [reference, setReference] = useState<string>(() =>
+    `ATP-${(prospect.prenom || '').toUpperCase().slice(0, 6) || 'CLIENT'}`
+  )
+  const [note, setNote] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null)
+
+  // Test mode
+  const [testMode, setTestMode] = useState(false)
+  const [testEmail, setTestEmail] = useState('gael.n971@gmail.com')
+
+  // Load template once
+  useEffect(() => {
+    let cancelled = false
+    fetch('/email_closing_clean.html')
+      .then(r => r.text())
+      .then(t => { if (!cancelled) { setTemplate(t); setTemplateLoading(false) } })
+      .catch(() => { if (!cancelled) setTemplateLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  const showStripe = paymentMethod === 'stripe' || paymentMethod === 'both'
+  const showVirement = paymentMethod === 'virement' || paymentMethod === 'both'
+
+  const previewHtml = useMemo(() => {
+    if (!template) return ''
+    return renderClosingTemplateClient(
+      template,
+      {
+        PRENOM: prospect.prenom || 'à toi',
+        DATE_DEMARRAGE: dateDemarrage,
+        MONTANT: amount,
+        LIEN_STRIPE: stripeLink || '#',
+        TITULAIRE: titulaire,
+        IBAN: iban,
+        BIC: bic,
+        REFERENCE_VIREMENT: reference,
+        NOTE_PERSONNALISEE: note,
+      },
+      {
+        stripe: showStripe,
+        virement: showVirement,
+        note: !!note.trim(),
+      }
+    )
+  }, [template, prospect.prenom, dateDemarrage, amount, stripeLink, titulaire, iban, bic, reference, note, showStripe, showVirement])
+
+  const canSubmit = () => {
+    if (!amount.trim()) return false
+    if (!dateDemarrage.trim()) return false
+    if (showStripe && !stripeLink.trim()) return false
+    if (showVirement && (!titulaire.trim() || !iban.trim() || !bic.trim())) return false
+    if (testMode && !testEmail.trim()) return false
+    return true
+  }
+
+  const handleSend = async () => {
+    if (!canSubmit()) return
+    setSending(true)
+    setSendResult(null)
+    try {
+      const res = await fetch('/api/prospects/send-closing-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prospect_id: prospect.id,
+          recipient_email: prospect.email,
+          recipient_prenom: prospect.prenom,
+          subject,
+          amount,
+          date_demarrage: dateDemarrage,
+          payment_method: paymentMethod,
+          stripe_link: stripeLink || undefined,
+          titulaire: titulaire || undefined,
+          iban: iban || undefined,
+          bic: bic || undefined,
+          reference: reference || undefined,
+          note: note || undefined,
+          test_mode: testMode,
+          test_email: testMode ? testEmail : undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setSendResult({ ok: false, message: data.error || `Erreur (${res.status})` })
+      } else {
+        setSendResult({
+          ok: true,
+          message: testMode
+            ? `Test envoyé à ${testEmail}`
+            : `Email envoyé à ${prospect.email}`,
+        })
+      }
+    } catch (e) {
+      setSendResult({ ok: false, message: e instanceof Error ? e.message : 'Erreur réseau' })
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-6xl rounded-2xl flex flex-col"
+        style={{ background: 'var(--bg2)', border: '1px solid var(--border)', maxHeight: '94vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+          <div>
+            <h2 className="text-base font-bold" style={{ color: 'var(--text)' }}>Email de closing</h2>
+            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text3)' }}>
+              Destinataire : <span style={{ color: 'var(--text2)' }}>{prospect.prenom || ''} {prospect.nom || ''}</span>
+              {prospect.email && (
+                <> · <span style={{ color: 'var(--text2)' }}>{prospect.email}</span></>
+              )}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-xl px-2" style={{ color: 'var(--text3)', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        {/* Body — 2 cols */}
+        <div className="flex-1 overflow-hidden grid" style={{ gridTemplateColumns: '380px 1fr' }}>
+          {/* Form */}
+          <div className="overflow-y-auto p-5 space-y-4" style={{ borderRight: '1px solid var(--border)' }}>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Sujet</label>
+              <input
+                type="text"
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Montant</label>
+                <input
+                  type="text"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder="2 500 €"
+                  className="w-full px-3 py-2 rounded-lg text-xs outline-none font-bold"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--green)', color: 'var(--green)' }}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Démarrage</label>
+                <input
+                  type="text"
+                  value={dateDemarrage}
+                  onChange={e => setDateDemarrage(e.target.value)}
+                  placeholder="20 mai 2026"
+                  className="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Méthode de paiement</label>
+              <div className="flex gap-1.5">
+                {(['stripe', 'virement', 'both'] as const).map(m => {
+                  const active = paymentMethod === m
+                  const label = m === 'stripe' ? 'Stripe' : m === 'virement' ? 'Virement' : 'Les deux'
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => setPaymentMethod(m)}
+                      className="flex-1 px-2 py-2 rounded-md text-[10px] font-bold transition-all"
+                      style={{
+                        background: active ? 'rgba(34,197,94,0.12)' : 'var(--bg3)',
+                        border: `1px solid ${active ? 'var(--green)' : 'var(--border)'}`,
+                        color: active ? 'var(--green)' : 'var(--text3)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {showStripe && (
+              <div>
+                <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Lien Stripe</label>
+                <input
+                  type="url"
+                  value={stripeLink}
+                  onChange={e => setStripeLink(e.target.value)}
+                  placeholder="https://buy.stripe.com/..."
+                  className="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                />
+              </div>
+            )}
+
+            {showVirement && (
+              <div className="space-y-2 rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.15)' }}>
+                <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--green)' }}>Coordonnées bancaires</div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>Titulaire</label>
+                  <input
+                    type="text"
+                    value={titulaire}
+                    onChange={e => setTitulaire(e.target.value)}
+                    placeholder="OMEGA INVESTMENT"
+                    className="w-full px-2 py-1.5 rounded-md text-xs outline-none"
+                    style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>IBAN</label>
+                  <input
+                    type="text"
+                    value={iban}
+                    onChange={e => setIban(e.target.value)}
+                    placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX"
+                    className="w-full px-2 py-1.5 rounded-md text-xs outline-none font-mono"
+                    style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>BIC / SWIFT</label>
+                    <input
+                      type="text"
+                      value={bic}
+                      onChange={e => setBic(e.target.value)}
+                      placeholder="BNPAFRPP"
+                      className="w-full px-2 py-1.5 rounded-md text-xs outline-none font-mono"
+                      style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>Référence</label>
+                    <input
+                      type="text"
+                      value={reference}
+                      onChange={e => setReference(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-md text-xs outline-none font-mono"
+                      style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Note personnalisée (optionnel)</label>
+              <textarea
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                rows={3}
+                placeholder="Un petit mot personnel pour ce prospect…"
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none resize-none"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+
+            {/* Test mode */}
+            <div className="rounded-lg p-3" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+              <label className="flex items-center gap-2 cursor-pointer mb-2">
+                <input
+                  type="checkbox"
+                  checked={testMode}
+                  onChange={e => setTestMode(e.target.checked)}
+                  className="cursor-pointer"
+                />
+                <span className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>Mode test (envoi vers une adresse de test)</span>
+              </label>
+              {testMode && (
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={e => setTestEmail(e.target.value)}
+                  placeholder="ton@email.com"
+                  className="w-full px-3 py-2 rounded-md text-xs outline-none"
+                  style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                />
+              )}
+            </div>
+
+            {sendResult && (
+              <div
+                className="text-xs px-3 py-2 rounded-lg"
+                style={{
+                  background: sendResult.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                  color: sendResult.ok ? '#22c55e' : '#ef4444',
+                  border: `1px solid ${sendResult.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                }}
+              >
+                {sendResult.ok ? '✓ ' : '⚠ '}{sendResult.message}
+              </div>
+            )}
+          </div>
+
+          {/* Preview */}
+          <div className="overflow-hidden flex flex-col" style={{ background: '#0a0a0a' }}>
+            <div className="px-4 py-2 text-[10px] uppercase tracking-wider font-bold flex items-center justify-between" style={{ color: 'var(--text3)', borderBottom: '1px solid var(--border)' }}>
+              <span>Aperçu en direct</span>
+              <span style={{ color: 'var(--green)' }}>● LIVE</span>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {templateLoading ? (
+                <div className="text-center py-12 text-xs" style={{ color: 'var(--text3)' }}>Chargement du template…</div>
+              ) : (
+                <iframe
+                  srcDoc={previewHtml}
+                  title="Email preview"
+                  className="w-full h-full border-0"
+                  style={{ background: '#0a0a0a' }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t flex items-center gap-2" style={{ borderColor: 'var(--border)' }}>
+          <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
+            {testMode ? `Sera envoyé en TEST à ${testEmail}` : `Sera envoyé à ${prospect.email || 'aucune adresse'}`}
+          </div>
+          <div className="flex-1" />
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg text-xs font-semibold"
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)', cursor: 'pointer' }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleSend}
+            disabled={!canSubmit() || sending}
+            className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
+            style={{
+              background: canSubmit() && !sending ? 'var(--green)' : 'var(--bg3)',
+              color: canSubmit() && !sending ? '#09090b' : 'var(--text3)',
+              cursor: canSubmit() && !sending ? 'pointer' : 'not-allowed',
+              border: '1px solid var(--border)',
+            }}
+          >
+            {sending ? (
+              'Envoi…'
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                {testMode ? 'Envoyer le test' : 'Envoyer l\'email'}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Welcome email modal ─────────────────────────────────────────
+
+function renderWelcomeTemplate(template: string, vars: Record<string, string>): string {
+  let html = template
+  for (const [key, value] of Object.entries(vars)) {
+    const safe = (value ?? '').toString().replace(/\$/g, '$$$$')
+    html = html.replace(new RegExp(`{{${key}}}`, 'g'), safe)
+  }
+  return html
+}
+
+function WelcomeEmailModal({
+  prospect,
+  onClose,
+}: {
+  prospect: Prospect
+  onClose: () => void
+}) {
+  const [template, setTemplate] = useState<string>('')
+  const [templateLoading, setTemplateLoading] = useState(true)
+
+  const [subject, setSubject] = useState(`Paiement reçu — Bienvenue dans ATP ULTRA`)
+  const [amount, setAmount] = useState<string>(
+    prospect.agreed_price && Number(prospect.agreed_price) > 0
+      ? `${Number(prospect.agreed_price).toLocaleString('fr-FR')} €`
+      : ''
+  )
+  const [datePaiement, setDatePaiement] = useState<string>(() =>
+    new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  )
+  const [reference, setReference] = useState<string>(() =>
+    `ATP-${(prospect.prenom || '').toUpperCase().slice(0, 6) || 'CLIENT'}`
+  )
+  const [sending, setSending] = useState(false)
+  const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null)
+
+  const [testMode, setTestMode] = useState(false)
+  const [testEmail, setTestEmail] = useState('gael.n971@gmail.com')
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/email_bienvenue_atp.html')
+      .then(r => r.text())
+      .then(t => { if (!cancelled) { setTemplate(t); setTemplateLoading(false) } })
+      .catch(() => { if (!cancelled) setTemplateLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  const previewHtml = useMemo(() => {
+    if (!template) return ''
+    return renderWelcomeTemplate(template, {
+      PRENOM: prospect.prenom || 'à toi',
+      MONTANT: amount,
+      DATE_PAIEMENT: datePaiement,
+      REFERENCE: reference,
+    })
+  }, [template, prospect.prenom, amount, datePaiement, reference])
+
+  const canSubmit = () => {
+    if (!amount.trim()) return false
+    if (!datePaiement.trim()) return false
+    if (!reference.trim()) return false
+    if (testMode && !testEmail.trim()) return false
+    return true
+  }
+
+  const handleSend = async () => {
+    if (!canSubmit()) return
+    setSending(true)
+    setSendResult(null)
+    try {
+      const res = await fetch('/api/prospects/send-welcome-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prospect_id: prospect.id,
+          recipient_email: prospect.email,
+          recipient_prenom: prospect.prenom,
+          subject,
+          amount,
+          date_paiement: datePaiement,
+          reference,
+          test_mode: testMode,
+          test_email: testMode ? testEmail : undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setSendResult({ ok: false, message: data.error || `Erreur (${res.status})` })
+      } else {
+        setSendResult({
+          ok: true,
+          message: testMode
+            ? `Test envoyé à ${testEmail}`
+            : `Email envoyé à ${prospect.email}`,
+        })
+      }
+    } catch (e) {
+      setSendResult({ ok: false, message: e instanceof Error ? e.message : 'Erreur réseau' })
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-6xl rounded-2xl flex flex-col"
+        style={{ background: 'var(--bg2)', border: '1px solid var(--border)', maxHeight: '94vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+          <div>
+            <h2 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <span style={{ color: 'var(--green)' }}>✓</span> Email de bienvenue (accès)
+            </h2>
+            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text3)' }}>
+              Destinataire : <span style={{ color: 'var(--text2)' }}>{prospect.prenom || ''} {prospect.nom || ''}</span>
+              {prospect.email && (<> · <span style={{ color: 'var(--text2)' }}>{prospect.email}</span></>)}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-xl px-2" style={{ color: 'var(--text3)', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        <div className="flex-1 overflow-hidden grid" style={{ gridTemplateColumns: '380px 1fr' }}>
+          <div className="overflow-y-auto p-5 space-y-4" style={{ borderRight: '1px solid var(--border)' }}>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Sujet</label>
+              <input
+                type="text"
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Montant payé</label>
+              <input
+                type="text"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="2 500 €"
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none font-bold"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--green)', color: 'var(--green)' }}
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Date du paiement</label>
+              <input
+                type="text"
+                value={datePaiement}
+                onChange={e => setDatePaiement(e.target.value)}
+                placeholder="13 mai 2026"
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Référence paiement</label>
+              <input
+                type="text"
+                value={reference}
+                onChange={e => setReference(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none font-mono"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+
+            <div className="rounded-lg p-3" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+              <label className="flex items-center gap-2 cursor-pointer mb-2">
+                <input
+                  type="checkbox"
+                  checked={testMode}
+                  onChange={e => setTestMode(e.target.checked)}
+                  className="cursor-pointer"
+                />
+                <span className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>Mode test</span>
+              </label>
+              {testMode && (
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={e => setTestEmail(e.target.value)}
+                  placeholder="ton@email.com"
+                  className="w-full px-3 py-2 rounded-md text-xs outline-none"
+                  style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                />
+              )}
+            </div>
+
+            {sendResult && (
+              <div
+                className="text-xs px-3 py-2 rounded-lg"
+                style={{
+                  background: sendResult.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                  color: sendResult.ok ? '#22c55e' : '#ef4444',
+                  border: `1px solid ${sendResult.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                }}
+              >
+                {sendResult.ok ? '✓ ' : '⚠ '}{sendResult.message}
+              </div>
+            )}
+          </div>
+
+          <div className="overflow-hidden flex flex-col" style={{ background: '#0a0a0a' }}>
+            <div className="px-4 py-2 text-[10px] uppercase tracking-wider font-bold flex items-center justify-between" style={{ color: 'var(--text3)', borderBottom: '1px solid var(--border)' }}>
+              <span>Aperçu en direct</span>
+              <span style={{ color: 'var(--green)' }}>● LIVE</span>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {templateLoading ? (
+                <div className="text-center py-12 text-xs" style={{ color: 'var(--text3)' }}>Chargement du template…</div>
+              ) : (
+                <iframe
+                  srcDoc={previewHtml}
+                  title="Welcome email preview"
+                  className="w-full h-full border-0"
+                  style={{ background: '#0a0a0a' }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t flex items-center gap-2" style={{ borderColor: 'var(--border)' }}>
+          <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
+            {testMode ? `Sera envoyé en TEST à ${testEmail}` : `Sera envoyé à ${prospect.email || 'aucune adresse'}`}
+          </div>
+          <div className="flex-1" />
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg text-xs font-semibold"
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)', cursor: 'pointer' }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleSend}
+            disabled={!canSubmit() || sending}
+            className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
+            style={{
+              background: canSubmit() && !sending ? 'var(--green)' : 'var(--bg3)',
+              color: canSubmit() && !sending ? '#09090b' : 'var(--text3)',
+              cursor: canSubmit() && !sending ? 'pointer' : 'not-allowed',
+              border: '1px solid var(--border)',
+            }}
+          >
+            {sending ? (
+              'Envoi…'
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                {testMode ? 'Envoyer le test' : 'Envoyer l\'email'}
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )

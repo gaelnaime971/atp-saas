@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATP ULTRA — Confirmation inscription</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0a0a0a; font-family:'Inter',sans-serif; }
+
+.email-wrap {
+  max-width:620px;
+  margin:0 auto;
+  background:#0d0d0d;
+}
+
+/* ── HEADER ── */
+.e-header {
+  background:#040a04;
+  padding:32px 40px 24px;
+  border-bottom:1px solid rgba(34,197,94,0.12);
+  position:relative;
+}
+.e-header::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, #22c55e, transparent);
+}
+.e-brand {
+  font-family:'Orbitron',sans-serif;
+  font-size:13px; font-weight:700;
+  color:#22c55e; letter-spacing:0.2em;
+}
+.e-badge {
+  background:rgba(34,197,94,0.08);
+  border:1px solid rgba(34,197,94,0.25);
+  border-radius:100px; padding:5px 14px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:#22c55e; letter-spacing:0.15em;
+}
+.e-title {
+  font-family:'Orbitron',sans-serif;
+  font-size:22px; font-weight:900;
+  color:#fff; margin-bottom:6px;
+}
+.e-subtitle {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:rgba(255,255,255,0.25);
+  letter-spacing:0.15em;
+}
+
+/* ── BODY ── */
+.e-body { padding:32px 40px; }
+
+.e-salut {
+  font-size:15px; color:rgba(255,255,255,0.5);
+  margin-bottom:20px;
+}
+.e-salut strong { color:#22c55e; }
+
+.e-intro {
+  font-size:14.5px; color:rgba(255,255,255,0.7);
+  line-height:1.75; margin-bottom:24px;
+}
+.e-intro strong { color:#fff; }
+.e-intro .g { color:#22c55e; font-weight:600; }
+
+.sep {
+  height:1px;
+  background:rgba(255,255,255,0.06);
+  margin:24px 0;
+}
+
+/* ── RÉCAP ── */
+.recap-box {
+  background:rgba(34,197,94,0.04);
+  border:1px solid rgba(34,197,94,0.12);
+  border-radius:10px; padding:20px 22px;
+  margin-bottom:22px;
+}
+.recap-label {
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; color:#22c55e;
+  letter-spacing:0.22em; text-transform:uppercase;
+  margin-bottom:14px;
+}
+.recap-row td {
+  padding:9px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  vertical-align:middle;
+}
+.recap-row-last td { border-bottom:none; }
+.recap-key {
+  font-size:12px; color:rgba(255,255,255,0.4);
+  font-family:'JetBrains Mono',monospace; letter-spacing:0.1em;
+}
+.recap-val { font-size:13px; color:#fff; font-weight:600; }
+.recap-val.green { color:#22c55e; }
+
+/* ── PAYMENT ── */
+.pay-title {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:rgba(255,255,255,0.35);
+  letter-spacing:0.18em; text-transform:uppercase;
+  margin-bottom:14px;
+}
+
+.pay-stripe {
+  background:#0a0a0a;
+  border:1px solid rgba(34,197,94,0.2);
+  border-radius:10px; padding:20px 22px;
+  margin-bottom:14px;
+}
+.pay-option-header {
+  margin-bottom:14px;
+}
+.pay-option-tag {
+  background:rgba(34,197,94,0.1);
+  border:1px solid rgba(34,197,94,0.25);
+  border-radius:100px; padding:3px 12px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; color:#22c55e; letter-spacing:0.12em;
+}
+.pay-option-name { font-size:13px; font-weight:700; color:#fff; }
+.pay-amount {
+  font-family:'Orbitron',sans-serif;
+  font-size:32px; font-weight:900;
+  color:#22c55e; margin-bottom:14px;
+}
+.cta-btn {
+  display:inline-block;
+  background:#22c55e; color:#000 !important;
+  text-decoration:none;
+  font-family:'Orbitron',sans-serif;
+  font-size:12px; font-weight:700;
+  letter-spacing:0.1em;
+  padding:15px 36px; border-radius:6px;
+}
+.pay-note {
+  margin-top:10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:rgba(255,255,255,0.2);
+  letter-spacing:0.1em;
+}
+
+.pay-virement {
+  background:#0a0a0a;
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px; padding:20px 22px;
+}
+.pay-sep {
+  text-align:center; padding:10px 0;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px; color:rgba(255,255,255,0.15);
+  letter-spacing:0.2em;
+}
+.vir-label {
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; color:rgba(255,255,255,0.25);
+  letter-spacing:0.15em; margin-bottom:3px;
+}
+.vir-val {
+  font-size:13px; color:#fff; font-weight:600;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.04em;
+}
+.vir-val.green { color:#22c55e; }
+
+/* ── NOTE PERSO ── */
+.note-box {
+  background:rgba(245,158,11,0.05);
+  border:1px solid rgba(245,158,11,0.15);
+  border-left:3px solid #f59e0b;
+  border-radius:0 8px 8px 0;
+  padding:14px 18px; margin-bottom:24px;
+}
+.note-text {
+  font-size:13px; color:rgba(245,158,11,0.85);
+  line-height:1.65;
+}
+.note-text strong { color:#f59e0b; }
+
+/* ── ÉTAPES ── */
+.step-num {
+  width:24px; height:24px; line-height:22px;
+  border-radius:50%;
+  background:rgba(34,197,94,0.1);
+  border:1px solid rgba(34,197,94,0.25);
+  text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:#22c55e;
+  margin-top:1px;
+}
+.step-text { font-size:13px; color:rgba(255,255,255,0.65); line-height:1.55; }
+.step-text strong { color:#fff; }
+
+/* ── SIGNATURE ── */
+.sig-name {
+  font-family:'Orbitron',sans-serif;
+  font-size:15px; font-weight:700; color:#fff;
+  margin-bottom:4px;
+}
+.sig-title {
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px; color:rgba(34,197,94,0.7);
+  letter-spacing:0.15em; margin-bottom:12px;
+}
+.sig-link {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:rgba(255,255,255,0.25);
+  text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  padding-bottom:1px; margin-right:16px;
+}
+
+/* ── FOOTER ── */
+.e-footer {
+  background:#040a04;
+  border-top:1px solid rgba(34,197,94,0.08);
+  padding:18px 40px;
+}
+.e-footer-brand {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:rgba(255,255,255,0.18);
+  letter-spacing:0.1em;
+}
+.e-footer-right {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:rgba(34,197,94,0.35);
+  letter-spacing:0.1em;
+}
+</style>
+</head>
+<body>
+<div class="email-wrap">
+
+  <!-- HEADER -->
+  <div class="e-header">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:18px;">
+      <tr>
+        <td align="left" style="vertical-align:middle;">
+          <span class="e-brand">ALPHA TRADING PRO</span>
+        </td>
+        <td align="right" style="vertical-align:middle;">
+          <span class="e-badge">ATP ULTRA</span>
+        </td>
+      </tr>
+    </table>
+    <div class="e-title">Bienvenue dans le programme.</div>
+    <div class="e-subtitle">OMEGA INVESTMENT · GAËL · GUADELOUPE</div>
+  </div>
+
+  <!-- BODY -->
+  <div class="e-body">
+
+    <div class="e-salut">Bonjour <strong>{{PRENOM}}</strong>,</div>
+
+    <div class="e-intro">
+      C'est avec plaisir que je t'accueille dans <strong>ATP ULTRA</strong>.<br><br>
+      Comme on en a discuté lors de notre appel — je vais t'accompagner de A à Z jusqu'à ton <span class="g">indépendance totale</span> en trading.<br><br>
+      Voici tout ce dont tu as besoin pour finaliser ton inscription.
+    </div>
+
+    <div class="sep"></div>
+
+    <!-- RÉCAP OFFRE -->
+    <div class="recap-box">
+      <div class="recap-label">// Récapitulatif de ton inscription</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr class="recap-row">
+          <td align="left" class="recap-key">PROGRAMME</td>
+          <td align="right" class="recap-val">ATP ULTRA</td>
+        </tr>
+        <tr class="recap-row">
+          <td align="left" class="recap-key">FORMATEUR</td>
+          <td align="right" class="recap-val">Gaël · Ex-trader institutionnel</td>
+        </tr>
+        <tr class="recap-row">
+          <td align="left" class="recap-key">DURÉE</td>
+          <td align="right" class="recap-val">Jusqu'à ton indépendance totale</td>
+        </tr>
+        <tr class="recap-row recap-row-last">
+          <td align="left" class="recap-key">DÉMARRAGE PRÉVU</td>
+          <td align="right" class="recap-val green">{{DATE_DEMARRAGE}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- PAIEMENT -->
+    <div class="pay-title">// Modalités de paiement</div>
+
+    <!-- IF_STRIPE_START -->
+    <!-- OPTION STRIPE -->
+    <div class="pay-stripe">
+      <div class="pay-option-header">
+        <div class="pay-option-name">Paiement en ligne sécurisé</div>
+      </div>
+      <div class="pay-amount">{{MONTANT}}</div>
+      <a class="cta-btn" href="{{LIEN_STRIPE}}">
+        PAYER EN LIGNE MAINTENANT →
+      </a>
+      <div class="pay-note">
+        Paiement 100% sécurisé via Stripe · Carte bancaire acceptée
+      </div>
+    </div>
+    <!-- IF_STRIPE_END -->
+
+    <!-- IF_BOTH_START -->
+    <!-- SÉPARATEUR -->
+    <div class="pay-sep">— OU —</div>
+    <!-- IF_BOTH_END -->
+
+    <!-- IF_VIREMENT_START -->
+    <!-- OPTION VIREMENT -->
+    <div class="pay-virement">
+      <div class="pay-option-header">
+        <div class="pay-option-name">Virement bancaire</div>
+      </div>
+      <div class="pay-amount" style="font-size:24px;">{{MONTANT}}</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
+        <tr>
+          <td colspan="2" style="padding-bottom:12px;">
+            <div class="vir-label">TITULAIRE</div>
+            <div class="vir-val green">{{TITULAIRE}}</div>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding-bottom:12px;">
+            <div class="vir-label">IBAN</div>
+            <div class="vir-val">{{IBAN}}</div>
+          </td>
+        </tr>
+        <tr>
+          <td width="50%" valign="top" style="padding-right:8px;">
+            <div class="vir-label">BIC / SWIFT</div>
+            <div class="vir-val">{{BIC}}</div>
+          </td>
+          <td width="50%" valign="top" style="padding-left:8px;">
+            <div class="vir-label">RÉFÉRENCE (motif)</div>
+            <div class="vir-val green">{{REFERENCE_VIREMENT}}</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <!-- IF_VIREMENT_END -->
+
+    <!-- IF_NOTE_START -->
+    <!-- NOTE PERSONNALISÉE -->
+    <div style="height:22px;"></div>
+    <div class="note-box">
+      <div class="note-text">
+        <strong>Note :</strong> {{NOTE_PERSONNALISEE}}
+      </div>
+    </div>
+    <!-- IF_NOTE_END -->
+
+    <div class="sep"></div>
+
+    <!-- PROCHAINES ÉTAPES -->
+    <div class="pay-title" style="margin-bottom:16px;">// Ce qui se passe après</div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="38" valign="top" style="padding-bottom:12px;">
+          <div class="step-num">1</div>
+        </td>
+        <td valign="top" style="padding-bottom:12px;padding-left:6px;">
+          <div class="step-text"><strong>Tu finalises le paiement</strong> via l'option de ton choix ci-dessus.</div>
+        </td>
+      </tr>
+      <tr>
+        <td width="38" valign="top" style="padding-bottom:12px;">
+          <div class="step-num">2</div>
+        </td>
+        <td valign="top" style="padding-bottom:12px;padding-left:6px;">
+          <div class="step-text"><strong>Je te contacte sous 48h</strong> pour confirmer ton accès au Discord ATP, au SaaS et à la formation vidéo.</div>
+        </td>
+      </tr>
+      <tr>
+        <td width="38" valign="top" style="padding-bottom:12px;">
+          <div class="step-num">3</div>
+        </td>
+        <td valign="top" style="padding-bottom:12px;padding-left:6px;">
+          <div class="step-text"><strong>On fixe notre première session</strong> pour construire ton plan de trading personnalisé.</div>
+        </td>
+      </tr>
+      <tr>
+        <td width="38" valign="top">
+          <div class="step-num">4</div>
+        </td>
+        <td valign="top" style="padding-left:6px;">
+          <div class="step-text"><strong>On démarre.</strong> Le suivi live commence dès le lendemain — tu suivras mes trades en temps réel 5 jours sur 7.</div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="sep"></div>
+
+    <div class="e-intro" style="margin-bottom:28px;">
+      Si tu as la moindre question avant de finaliser — je suis disponible par WhatsApp directement.<br><br>
+      À très vite,
+    </div>
+
+    <!-- SIGNATURE -->
+    <div>
+      <div class="sig-name">Gaël</div>
+      <div class="sig-title">Fondateur · Alpha Trading Pro</div>
+      <a href="https://instagram.com/gael_omega" class="sig-link">@gael_omega</a>
+      <a href="https://www.alphatradingpro-coaching.fr" class="sig-link">alphatradingpro-coaching.fr</a>
+    </div>
+
+  </div><!-- /e-body -->
+
+  <!-- FOOTER -->
+  <div class="e-footer">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td align="left" class="e-footer-brand">Alpha Trading Pro · Omega Investment · Guadeloupe</td>
+        <td align="right" class="e-footer-right">© 2026</td>
+      </tr>
+    </table>
+  </div>
+
+</div><!-- /email-wrap -->
+</body>
+</html>
