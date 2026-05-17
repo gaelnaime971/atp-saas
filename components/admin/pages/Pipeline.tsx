@@ -414,6 +414,9 @@ export default function Pipeline() {
         </div>
       </div>
 
+      {/* Revenue forecast */}
+      <RevenueForecast prospects={prospects} />
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="relative flex-1 min-w-[260px] max-w-md">
@@ -798,6 +801,198 @@ function PipelineCard({
             </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Revenue forecast ──────────────────────────────────────────────
+
+interface MonthBucket {
+  received: number
+  expected: number
+  overdue: number
+  count: number
+}
+
+function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function RevenueForecast({ prospects }: { prospects: Prospect[] }) {
+  const MONTHS_AHEAD = 12
+
+  const { months, buckets, kpi } = useMemo(() => {
+    const today = new Date()
+    const todayKey = monthKey(today)
+    const todayMs = today.getTime()
+
+    const buckets: Record<string, MonthBucket> = {}
+    let receivedThisMonth = 0
+    let expectedThisMonth = 0
+    let overdueTotal = 0
+    let expectedNext12 = 0
+    let receivedYTD = 0
+    const yearStart = new Date(today.getFullYear(), 0, 1).getTime()
+
+    // Pre-fill the next 12 months so they always show
+    const months: Array<{ key: string; label: string; isCurrent: boolean; isPast: boolean }> = []
+    for (let i = 0; i < MONTHS_AHEAD; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1)
+      const key = monthKey(d)
+      months.push({
+        key,
+        label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
+        isCurrent: key === todayKey,
+        isPast: false,
+      })
+      buckets[key] = { received: 0, expected: 0, overdue: 0, count: 0 }
+    }
+
+    for (const p of prospects) {
+      if (p.status !== 'close') continue
+      const schedule = p.payment_schedule || []
+      for (const inst of schedule) {
+        const amount = Number(inst.amount) || 0
+        if (amount <= 0) continue
+        // Received YTD (paid_at in current year)
+        if (inst.paid_at) {
+          const paidMs = new Date(inst.paid_at).getTime()
+          if (paidMs >= yearStart) receivedYTD += amount
+        }
+        if (!inst.due_date) continue
+        const due = new Date(inst.due_date)
+        const dueKey = monthKey(due)
+        const dueMs = due.getTime()
+        const paid = !!inst.paid_at
+
+        // Bucket if month is in window
+        const bucket = buckets[dueKey]
+        if (bucket) {
+          bucket.count++
+          if (paid) bucket.received += amount
+          else if (dueMs < todayMs) bucket.overdue += amount
+          else bucket.expected += amount
+        }
+
+        // Current-month KPIs
+        if (dueKey === todayKey) {
+          if (paid) receivedThisMonth += amount
+          else expectedThisMonth += amount
+        }
+        // Overdue total (regardless of month window)
+        if (!paid && dueMs < todayMs) overdueTotal += amount
+        // Next 12 months total expected
+        if (!paid && dueKey in buckets) expectedNext12 += amount
+      }
+    }
+
+    return {
+      months,
+      buckets,
+      kpi: { receivedThisMonth, expectedThisMonth, overdueTotal, expectedNext12, receivedYTD },
+    }
+  }, [prospects])
+
+  // Max bucket total for bar scaling
+  const maxBucket = Math.max(
+    1,
+    ...months.map(m => {
+      const b = buckets[m.key]
+      return (b.received + b.expected + b.overdue)
+    })
+  )
+
+  const fmt = (n: number) => n.toLocaleString('fr-FR')
+
+  return (
+    <div className="rounded-xl p-4 mb-5" style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold" style={{ color: 'var(--text)' }}>Revenus prévisionnels</h2>
+          <span className="text-[10px]" style={{ color: 'var(--text3)' }}>· basés sur les plans de paiement des prospects closés</span>
+        </div>
+      </div>
+
+      {/* KPI row */}
+      <div className="grid grid-cols-5 gap-2 mb-4">
+        <div className="rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)' }}>
+          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: 'var(--green)' }}>Reçu ce mois-ci</div>
+          <div className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--green)' }}>{fmt(kpi.receivedThisMonth)}€</div>
+        </div>
+        <div className="rounded-lg p-3" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: 'var(--text3)' }}>Prévu ce mois-ci</div>
+          <div className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--text)' }}>{fmt(kpi.expectedThisMonth)}€</div>
+        </div>
+        <div className="rounded-lg p-3" style={{ background: kpi.overdueTotal > 0 ? 'rgba(239,68,68,0.08)' : 'var(--bg3)', border: `1px solid ${kpi.overdueTotal > 0 ? 'rgba(239,68,68,0.3)' : 'var(--border)'}` }}>
+          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: kpi.overdueTotal > 0 ? '#ef4444' : 'var(--text3)' }}>En retard</div>
+          <div className="text-lg font-extrabold mt-0.5" style={{ color: kpi.overdueTotal > 0 ? '#ef4444' : 'var(--text)' }}>{fmt(kpi.overdueTotal)}€</div>
+        </div>
+        <div className="rounded-lg p-3" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: 'var(--text3)' }}>À venir (12 mois)</div>
+          <div className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--text)' }}>{fmt(kpi.expectedNext12)}€</div>
+        </div>
+        <div className="rounded-lg p-3" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: 'var(--text3)' }}>Reçu cette année</div>
+          <div className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--text)' }}>{fmt(kpi.receivedYTD)}€</div>
+        </div>
+      </div>
+
+      {/* 12-month bars */}
+      <div className="grid grid-cols-12 gap-1.5">
+        {months.map(m => {
+          const b = buckets[m.key]
+          const total = b.received + b.expected + b.overdue
+          const hRecv = (b.received / maxBucket) * 100
+          const hExp = (b.expected / maxBucket) * 100
+          const hOver = (b.overdue / maxBucket) * 100
+          return (
+            <div
+              key={m.key}
+              className="rounded-lg p-2"
+              style={{
+                background: m.isCurrent ? 'rgba(34,197,94,0.06)' : 'var(--bg3)',
+                border: `1px solid ${m.isCurrent ? 'var(--green)' : 'var(--border)'}`,
+              }}
+              title={`${m.label} · Reçu ${fmt(b.received)}€ · Prévu ${fmt(b.expected)}€${b.overdue > 0 ? ` · Retard ${fmt(b.overdue)}€` : ''}`}
+            >
+              <div className="text-[9px] uppercase tracking-wider font-bold capitalize" style={{ color: m.isCurrent ? 'var(--green)' : 'var(--text3)' }}>
+                {m.label}
+              </div>
+              <div className="text-[11px] font-bold mt-0.5" style={{ color: 'var(--text)' }}>
+                {total > 0 ? `${fmt(total)}€` : <span style={{ color: 'var(--text3)' }}>—</span>}
+              </div>
+              {/* Stacked bar */}
+              <div className="mt-2 h-12 rounded flex flex-col-reverse overflow-hidden" style={{ background: 'var(--bg2)' }}>
+                {b.received > 0 && (
+                  <div style={{ height: `${hRecv}%`, background: '#22c55e', minHeight: 2 }} title={`Reçu ${fmt(b.received)}€`} />
+                )}
+                {b.expected > 0 && (
+                  <div style={{ height: `${hExp}%`, background: 'rgba(34,197,94,0.35)', minHeight: 2 }} title={`Prévu ${fmt(b.expected)}€`} />
+                )}
+                {b.overdue > 0 && (
+                  <div style={{ height: `${hOver}%`, background: '#ef4444', minHeight: 2 }} title={`En retard ${fmt(b.overdue)}€`} />
+                )}
+              </div>
+              <div className="text-[9px] mt-1" style={{ color: 'var(--text3)' }}>
+                {b.count > 0 ? `${b.count} éch.` : <>&nbsp;</>}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 mt-3 text-[10px]" style={{ color: 'var(--text3)' }}>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: '#22c55e' }} /> Reçu
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: 'rgba(34,197,94,0.35)' }} /> Prévu
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: '#ef4444' }} /> En retard
+        </span>
       </div>
     </div>
   )
