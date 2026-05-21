@@ -28,6 +28,7 @@ interface Body {
   note?: string
   test_mode?: boolean
   test_email?: string
+  custom_html?: string
 }
 
 function renderClosingTemplate(
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
       note,
       test_mode,
       test_email,
+      custom_html,
     } = body
 
     if (!amount || !date_demarrage || !payment_method) {
@@ -127,29 +129,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email destinataire manquant' }, { status: 400 })
     }
 
-    // Load template
-    const templatePath = path.join(process.cwd(), 'public', 'email_closing_clean.html')
-    const template = await fs.readFile(templatePath, 'utf-8')
-
-    const html = renderClosingTemplate(
-      template,
-      {
-        PRENOM: prenom || 'à toi',
-        DATE_DEMARRAGE: date_demarrage,
-        MONTANT: amount,
-        LIEN_STRIPE: stripe_link || '#',
-        TITULAIRE: titulaire || '',
-        IBAN: iban || '',
-        BIC: bic || '',
-        REFERENCE_VIREMENT: reference || '',
-        NOTE_PERSONNALISEE: note || '',
-      },
-      {
-        stripe: showStripe,
-        virement: showVirement,
-        note: !!note?.trim(),
-      }
-    )
+    // Build HTML: either use the caller-provided custom_html (edited in UI)
+    // or render the template from the form variables.
+    let html: string
+    if (custom_html && custom_html.trim()) {
+      html = custom_html
+    } else {
+      const templatePath = path.join(process.cwd(), 'public', 'email_closing_clean.html')
+      const template = await fs.readFile(templatePath, 'utf-8')
+      html = renderClosingTemplate(
+        template,
+        {
+          PRENOM: prenom || 'à toi',
+          DATE_DEMARRAGE: date_demarrage,
+          MONTANT: amount,
+          LIEN_STRIPE: stripe_link || '#',
+          TITULAIRE: titulaire || '',
+          IBAN: iban || '',
+          BIC: bic || '',
+          REFERENCE_VIREMENT: reference || '',
+          NOTE_PERSONNALISEE: note || '',
+        },
+        {
+          stripe: showStripe,
+          virement: showVirement,
+          note: !!note?.trim(),
+        }
+      )
+    }
 
     const from = process.env.EMAIL_FROM || 'ATP coaching <noreply@alphatradingpro-coaching.fr>'
     const finalSubject = (subject?.trim() || `Bienvenue dans ATP ULTRA — Finalise ton inscription`)

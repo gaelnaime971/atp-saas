@@ -22,6 +22,7 @@ interface Body {
   reference: string
   test_mode?: boolean
   test_email?: string
+  custom_html?: string
 }
 
 function renderTemplate(template: string, vars: Record<string, string>): string {
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
       reference,
       test_mode,
       test_email,
+      custom_html,
     } = body
 
     if (!amount || !date_paiement || !reference) {
@@ -75,15 +77,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email destinataire manquant' }, { status: 400 })
     }
 
-    const templatePath = path.join(process.cwd(), 'public', 'email_bienvenue_atp.html')
-    const template = await fs.readFile(templatePath, 'utf-8')
-
-    const html = renderTemplate(template, {
-      PRENOM: prenom || 'à toi',
-      MONTANT: amount,
-      DATE_PAIEMENT: date_paiement,
-      REFERENCE: reference,
-    })
+    let html: string
+    if (custom_html && custom_html.trim()) {
+      html = custom_html
+    } else {
+      const templatePath = path.join(process.cwd(), 'public', 'email_bienvenue_atp.html')
+      const template = await fs.readFile(templatePath, 'utf-8')
+      html = renderTemplate(template, {
+        PRENOM: prenom || 'à toi',
+        MONTANT: amount,
+        DATE_PAIEMENT: date_paiement,
+        REFERENCE: reference,
+      })
+    }
 
     const from = process.env.EMAIL_FROM || 'ATP coaching <noreply@alphatradingpro-coaching.fr>'
     const finalSubject = subject?.trim() || `Paiement reçu — Bienvenue dans ATP ULTRA`
