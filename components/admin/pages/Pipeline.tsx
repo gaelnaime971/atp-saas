@@ -2160,12 +2160,7 @@ function ClosingEmailModal({
   const showStripe = paymentMethod === 'stripe' || paymentMethod === 'both'
   const showVirement = paymentMethod === 'virement' || paymentMethod === 'both'
 
-  // Edit-HTML mode: when editedHtml is non-null, it overrides the rendered preview
-  // and is what gets sent. Switching it on snapshots the current generated HTML.
-  const [editedHtml, setEditedHtml] = useState<string | null>(null)
-  const [editMode, setEditMode] = useState<boolean>(false)
-
-  const generatedHtml = useMemo(() => {
+  const previewHtml = useMemo(() => {
     if (!template) return ''
     return renderClosingTemplateClient(
       template,
@@ -2187,18 +2182,6 @@ function ClosingEmailModal({
       }
     )
   }, [template, prospect.prenom, dateDemarrage, amount, stripeLink, titulaire, iban, bic, reference, note, showStripe, showVirement])
-
-  const previewHtml = editedHtml ?? generatedHtml
-
-  const enterEditMode = () => {
-    setEditedHtml(generatedHtml)
-    setEditMode(true)
-  }
-  const exitEditMode = () => setEditMode(false)
-  const resetToForm = () => {
-    setEditedHtml(null)
-    setEditMode(false)
-  }
 
   const canSubmit = () => {
     if (!amount.trim()) return false
@@ -2233,7 +2216,6 @@ function ClosingEmailModal({
           note: note || undefined,
           test_mode: testMode,
           test_email: testMode ? testEmail : undefined,
-          custom_html: editedHtml || undefined,
         }),
       })
       const data = await res.json()
@@ -2458,62 +2440,15 @@ function ClosingEmailModal({
             )}
           </div>
 
-          {/* Preview / editor */}
+          {/* Preview */}
           <div className="overflow-hidden flex flex-col" style={{ background: '#0a0a0a' }}>
-            <div className="px-4 py-2 text-[10px] uppercase tracking-wider font-bold flex items-center justify-between gap-2" style={{ color: 'var(--text3)', borderBottom: '1px solid var(--border)' }}>
-              <span className="flex items-center gap-2">
-                {editMode ? 'Édition du HTML' : 'Aperçu en direct'}
-                {editedHtml !== null && !editMode && (
-                  <span className="px-1.5 py-0.5 rounded text-[9px]" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)' }}>
-                    HTML modifié
-                  </span>
-                )}
-              </span>
-              <div className="flex items-center gap-2">
-                {editedHtml !== null && (
-                  <button
-                    onClick={resetToForm}
-                    className="px-2 py-1 rounded text-[10px] font-bold"
-                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', cursor: 'pointer' }}
-                    title="Annule les modifications et reprend la version générée depuis le formulaire"
-                  >
-                    ↻ Réinitialiser
-                  </button>
-                )}
-                {!editMode ? (
-                  <button
-                    onClick={enterEditMode}
-                    disabled={!template}
-                    className="px-2 py-1 rounded text-[10px] font-bold"
-                    style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.35)', color: '#a855f7', cursor: template ? 'pointer' : 'not-allowed' }}
-                    title="Modifier le code HTML avant l'envoi"
-                  >
-                    ✎ Modifier le HTML
-                  </button>
-                ) : (
-                  <button
-                    onClick={exitEditMode}
-                    className="px-2 py-1 rounded text-[10px] font-bold"
-                    style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', color: '#22c55e', cursor: 'pointer' }}
-                    title="Repasser en mode aperçu"
-                  >
-                    👁 Aperçu
-                  </button>
-                )}
-                <span style={{ color: 'var(--green)' }}>● {editMode ? 'EDIT' : 'LIVE'}</span>
-              </div>
+            <div className="px-4 py-2 text-[10px] uppercase tracking-wider font-bold flex items-center justify-between" style={{ color: 'var(--text3)', borderBottom: '1px solid var(--border)' }}>
+              <span>Aperçu en direct</span>
+              <span style={{ color: 'var(--green)' }}>● LIVE</span>
             </div>
             <div className="flex-1 overflow-hidden">
               {templateLoading ? (
                 <div className="text-center py-12 text-xs" style={{ color: 'var(--text3)' }}>Chargement du template…</div>
-              ) : editMode ? (
-                <textarea
-                  value={editedHtml ?? ''}
-                  onChange={e => setEditedHtml(e.target.value)}
-                  spellCheck={false}
-                  className="w-full h-full border-0 outline-none p-3 font-mono text-[11px] leading-relaxed resize-none"
-                  style={{ background: '#0a0a0a', color: '#d1d5db' }}
-                />
               ) : (
                 <iframe
                   srcDoc={previewHtml}
@@ -2613,10 +2548,7 @@ function WelcomeEmailModal({
     return () => { cancelled = true }
   }, [])
 
-  const [editedHtml, setEditedHtml] = useState<string | null>(null)
-  const [editMode, setEditMode] = useState<boolean>(false)
-
-  const generatedHtml = useMemo(() => {
+  const previewHtml = useMemo(() => {
     if (!template) return ''
     return renderWelcomeTemplate(template, {
       PRENOM: prospect.prenom || 'à toi',
@@ -2625,18 +2557,6 @@ function WelcomeEmailModal({
       REFERENCE: reference,
     })
   }, [template, prospect.prenom, amount, datePaiement, reference])
-
-  const previewHtml = editedHtml ?? generatedHtml
-
-  const enterEditMode = () => {
-    setEditedHtml(generatedHtml)
-    setEditMode(true)
-  }
-  const exitEditMode = () => setEditMode(false)
-  const resetToForm = () => {
-    setEditedHtml(null)
-    setEditMode(false)
-  }
 
   const canSubmit = () => {
     if (!amount.trim()) return false
@@ -2664,7 +2584,6 @@ function WelcomeEmailModal({
           reference,
           test_mode: testMode,
           test_email: testMode ? testEmail : undefined,
-          custom_html: editedHtml || undefined,
         }),
       })
       const data = await res.json()
@@ -2794,60 +2713,13 @@ function WelcomeEmailModal({
           </div>
 
           <div className="overflow-hidden flex flex-col" style={{ background: '#0a0a0a' }}>
-            <div className="px-4 py-2 text-[10px] uppercase tracking-wider font-bold flex items-center justify-between gap-2" style={{ color: 'var(--text3)', borderBottom: '1px solid var(--border)' }}>
-              <span className="flex items-center gap-2">
-                {editMode ? 'Édition du HTML' : 'Aperçu en direct'}
-                {editedHtml !== null && !editMode && (
-                  <span className="px-1.5 py-0.5 rounded text-[9px]" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)' }}>
-                    HTML modifié
-                  </span>
-                )}
-              </span>
-              <div className="flex items-center gap-2">
-                {editedHtml !== null && (
-                  <button
-                    onClick={resetToForm}
-                    className="px-2 py-1 rounded text-[10px] font-bold"
-                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', cursor: 'pointer' }}
-                    title="Annule les modifications et reprend la version générée depuis le formulaire"
-                  >
-                    ↻ Réinitialiser
-                  </button>
-                )}
-                {!editMode ? (
-                  <button
-                    onClick={enterEditMode}
-                    disabled={!template}
-                    className="px-2 py-1 rounded text-[10px] font-bold"
-                    style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.35)', color: '#a855f7', cursor: template ? 'pointer' : 'not-allowed' }}
-                    title="Modifier le code HTML avant l'envoi"
-                  >
-                    ✎ Modifier le HTML
-                  </button>
-                ) : (
-                  <button
-                    onClick={exitEditMode}
-                    className="px-2 py-1 rounded text-[10px] font-bold"
-                    style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', color: '#22c55e', cursor: 'pointer' }}
-                    title="Repasser en mode aperçu"
-                  >
-                    👁 Aperçu
-                  </button>
-                )}
-                <span style={{ color: 'var(--green)' }}>● {editMode ? 'EDIT' : 'LIVE'}</span>
-              </div>
+            <div className="px-4 py-2 text-[10px] uppercase tracking-wider font-bold flex items-center justify-between" style={{ color: 'var(--text3)', borderBottom: '1px solid var(--border)' }}>
+              <span>Aperçu en direct</span>
+              <span style={{ color: 'var(--green)' }}>● LIVE</span>
             </div>
             <div className="flex-1 overflow-hidden">
               {templateLoading ? (
                 <div className="text-center py-12 text-xs" style={{ color: 'var(--text3)' }}>Chargement du template…</div>
-              ) : editMode ? (
-                <textarea
-                  value={editedHtml ?? ''}
-                  onChange={e => setEditedHtml(e.target.value)}
-                  spellCheck={false}
-                  className="w-full h-full border-0 outline-none p-3 font-mono text-[11px] leading-relaxed resize-none"
-                  style={{ background: '#0a0a0a', color: '#d1d5db' }}
-                />
               ) : (
                 <iframe
                   srcDoc={previewHtml}
