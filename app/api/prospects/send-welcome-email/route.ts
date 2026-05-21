@@ -56,6 +56,7 @@ export async function POST(request: Request) {
       )
     }
 
+    // Caller-provided email wins; DB is only a fallback
     let toEmail = test_mode ? test_email : recipient_email
     let prenom = recipient_prenom || ''
 
@@ -66,8 +67,8 @@ export async function POST(request: Request) {
         .eq('id', prospect_id)
         .single()
       if (prospect) {
-        toEmail = prospect.email
-        prenom = prospect.prenom || prenom
+        if (!toEmail) toEmail = prospect.email
+        if (!prenom) prenom = prospect.prenom || ''
       }
     }
 

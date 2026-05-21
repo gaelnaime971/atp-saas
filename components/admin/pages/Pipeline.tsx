@@ -2143,6 +2143,9 @@ function ClosingEmailModal({
   const [sending, setSending] = useState(false)
   const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null)
 
+  // Editable recipient email (overrides prospect.email for this send)
+  const [recipientEmail, setRecipientEmail] = useState<string>(prospect.email || '')
+
   // Test mode
   const [testMode, setTestMode] = useState(false)
   const [testEmail, setTestEmail] = useState('gael.n971@gmail.com')
@@ -2189,6 +2192,7 @@ function ClosingEmailModal({
     if (showStripe && !stripeLink.trim()) return false
     if (showVirement && (!titulaire.trim() || !iban.trim() || !bic.trim())) return false
     if (testMode && !testEmail.trim()) return false
+    if (!testMode && !recipientEmail.trim()) return false
     return true
   }
 
@@ -2202,7 +2206,7 @@ function ClosingEmailModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prospect_id: prospect.id,
-          recipient_email: prospect.email,
+          recipient_email: recipientEmail.trim(),
           recipient_prenom: prospect.prenom,
           subject,
           amount,
@@ -2226,7 +2230,7 @@ function ClosingEmailModal({
           ok: true,
           message: testMode
             ? `Test envoyé à ${testEmail}`
-            : `Email envoyé à ${prospect.email}`,
+            : `Email envoyé à ${recipientEmail.trim()}`,
         })
       }
     } catch (e) {
@@ -2249,13 +2253,38 @@ function ClosingEmailModal({
       >
         {/* Header */}
         <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold" style={{ color: 'var(--text)' }}>Email de closing</h2>
-            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text3)' }}>
-              Destinataire : <span style={{ color: 'var(--text2)' }}>{prospect.prenom || ''} {prospect.nom || ''}</span>
-              {prospect.email && (
-                <> · <span style={{ color: 'var(--text2)' }}>{prospect.email}</span></>
-              )}
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
+                Destinataire : <span style={{ color: 'var(--text2)' }}>{prospect.prenom || ''} {prospect.nom || ''}</span>
+              </span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={e => setRecipientEmail(e.target.value)}
+                  placeholder="email@destinataire.com"
+                  className="px-2 py-1 rounded text-[11px] outline-none"
+                  style={{
+                    background: 'var(--bg3)',
+                    border: `1px solid ${recipientEmail.trim() === (prospect.email || '').trim() ? 'var(--border)' : 'rgba(245,158,11,0.5)'}`,
+                    color: 'var(--text)',
+                    minWidth: 240,
+                  }}
+                  title="Modifie l'adresse si elle est incorrecte"
+                />
+                {recipientEmail.trim() !== (prospect.email || '').trim() && prospect.email && (
+                  <button
+                    onClick={() => setRecipientEmail(prospect.email || '')}
+                    className="text-[10px] px-1.5 py-0.5 rounded"
+                    style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text3)', cursor: 'pointer' }}
+                    title="Reprendre l'email du prospect"
+                  >
+                    ↻
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="text-xl px-2" style={{ color: 'var(--text3)', cursor: 'pointer' }}>✕</button>
@@ -2464,7 +2493,7 @@ function ClosingEmailModal({
         {/* Footer */}
         <div className="p-4 border-t flex items-center gap-2" style={{ borderColor: 'var(--border)' }}>
           <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
-            {testMode ? `Sera envoyé en TEST à ${testEmail}` : `Sera envoyé à ${prospect.email || 'aucune adresse'}`}
+            {testMode ? `Sera envoyé en TEST à ${testEmail}` : `Sera envoyé à ${recipientEmail.trim() || 'aucune adresse'}`}
           </div>
           <div className="flex-1" />
           <button
@@ -2536,6 +2565,8 @@ function WelcomeEmailModal({
   const [sending, setSending] = useState(false)
   const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null)
 
+  const [recipientEmail, setRecipientEmail] = useState<string>(prospect.email || '')
+
   const [testMode, setTestMode] = useState(false)
   const [testEmail, setTestEmail] = useState('gael.n971@gmail.com')
 
@@ -2563,6 +2594,7 @@ function WelcomeEmailModal({
     if (!datePaiement.trim()) return false
     if (!reference.trim()) return false
     if (testMode && !testEmail.trim()) return false
+    if (!testMode && !recipientEmail.trim()) return false
     return true
   }
 
@@ -2576,7 +2608,7 @@ function WelcomeEmailModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prospect_id: prospect.id,
-          recipient_email: prospect.email,
+          recipient_email: recipientEmail.trim(),
           recipient_prenom: prospect.prenom,
           subject,
           amount,
@@ -2594,7 +2626,7 @@ function WelcomeEmailModal({
           ok: true,
           message: testMode
             ? `Test envoyé à ${testEmail}`
-            : `Email envoyé à ${prospect.email}`,
+            : `Email envoyé à ${recipientEmail.trim()}`,
         })
       }
     } catch (e) {
@@ -2616,13 +2648,40 @@ function WelcomeEmailModal({
         onClick={e => e.stopPropagation()}
       >
         <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
               <span style={{ color: 'var(--green)' }}>✓</span> Email de bienvenue (accès)
             </h2>
-            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text3)' }}>
-              Destinataire : <span style={{ color: 'var(--text2)' }}>{prospect.prenom || ''} {prospect.nom || ''}</span>
-              {prospect.email && (<> · <span style={{ color: 'var(--text2)' }}>{prospect.email}</span></>)}
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
+                Destinataire : <span style={{ color: 'var(--text2)' }}>{prospect.prenom || ''} {prospect.nom || ''}</span>
+              </span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={e => setRecipientEmail(e.target.value)}
+                  placeholder="email@destinataire.com"
+                  className="px-2 py-1 rounded text-[11px] outline-none"
+                  style={{
+                    background: 'var(--bg3)',
+                    border: `1px solid ${recipientEmail.trim() === (prospect.email || '').trim() ? 'var(--border)' : 'rgba(245,158,11,0.5)'}`,
+                    color: 'var(--text)',
+                    minWidth: 240,
+                  }}
+                  title="Modifie l'adresse si elle est incorrecte"
+                />
+                {recipientEmail.trim() !== (prospect.email || '').trim() && prospect.email && (
+                  <button
+                    onClick={() => setRecipientEmail(prospect.email || '')}
+                    className="text-[10px] px-1.5 py-0.5 rounded"
+                    style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text3)', cursor: 'pointer' }}
+                    title="Reprendre l'email du prospect"
+                  >
+                    ↻
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="text-xl px-2" style={{ color: 'var(--text3)', cursor: 'pointer' }}>✕</button>
@@ -2734,7 +2793,7 @@ function WelcomeEmailModal({
 
         <div className="p-4 border-t flex items-center gap-2" style={{ borderColor: 'var(--border)' }}>
           <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
-            {testMode ? `Sera envoyé en TEST à ${testEmail}` : `Sera envoyé à ${prospect.email || 'aucune adresse'}`}
+            {testMode ? `Sera envoyé en TEST à ${testEmail}` : `Sera envoyé à ${recipientEmail.trim() || 'aucune adresse'}`}
           </div>
           <div className="flex-1" />
           <button
