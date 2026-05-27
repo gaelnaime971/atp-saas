@@ -415,7 +415,7 @@ export default function Pipeline() {
       </div>
 
       {/* Revenue forecast */}
-      <RevenueForecast prospects={prospects} />
+      <RevenueForecast prospects={prospects} onOpenProspect={(p) => setSelected(p)} />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
@@ -819,8 +819,9 @@ function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-function RevenueForecast({ prospects }: { prospects: Prospect[] }) {
+function RevenueForecast({ prospects, onOpenProspect }: { prospects: Prospect[]; onOpenProspect: (p: Prospect) => void }) {
   const MONTHS_AHEAD = 12
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null)
 
   const { months, buckets, kpi } = useMemo(() => {
     const today = new Date()
@@ -903,6 +904,46 @@ function RevenueForecast({ prospects }: { prospects: Prospect[] }) {
     })
   )
 
+  // Details for the selected month: per-installment rows with prospect attached
+  type DetailRow = {
+    prospect: Prospect
+    installment: PaymentInstallment
+    status: 'paid' | 'overdue' | 'expected'
+  }
+  const monthDetails = useMemo<DetailRow[] | null>(() => {
+    if (!selectedMonth) return null
+    const todayMs = new Date().getTime()
+    const rows: DetailRow[] = []
+    for (const p of prospects) {
+      if (p.status !== 'close') continue
+      const schedule = p.payment_schedule || []
+      for (const inst of schedule) {
+        if (!inst.due_date) continue
+        const due = new Date(inst.due_date)
+        if (monthKey(due) !== selectedMonth) continue
+        const amount = Number(inst.amount) || 0
+        if (amount <= 0) continue
+        const status: DetailRow['status'] = inst.paid_at
+          ? 'paid'
+          : (due.getTime() < todayMs ? 'overdue' : 'expected')
+        rows.push({ prospect: p, installment: inst, status })
+      }
+    }
+    rows.sort((a, b) => {
+      const order: Record<DetailRow['status'], number> = { overdue: 0, expected: 1, paid: 2 }
+      if (a.status !== b.status) return order[a.status] - order[b.status]
+      const ad = new Date(a.installment.due_date!).getTime()
+      const bd = new Date(b.installment.due_date!).getTime()
+      return ad - bd
+    })
+    return rows
+  }, [selectedMonth, prospects])
+
+  const selectedMonthLabel = selectedMonth
+    ? months.find(m => m.key === selectedMonth)?.label || selectedMonth
+    : null
+  const selectedBucket = selectedMonth ? buckets[selectedMonth] : null
+
   const fmt = (n: number) => n.toLocaleString('fr-FR')
 
   return (
@@ -946,15 +987,29 @@ function RevenueForecast({ prospects }: { prospects: Prospect[] }) {
           const hRecv = (b.received / maxBucket) * 100
           const hExp = (b.expected / maxBucket) * 100
           const hOver = (b.overdue / maxBucket) * 100
+          const isSelected = selectedMonth === m.key
+          const clickable = b.count > 0
           return (
-            <div
+            <button
               key={m.key}
-              className="rounded-lg p-2"
+              onClick={() => clickable && setSelectedMonth(prev => prev === m.key ? null : m.key)}
+              disabled={!clickable}
+              type="button"
+              className="rounded-lg p-2 text-left transition-all"
               style={{
-                background: m.isCurrent ? 'rgba(34,197,94,0.06)' : 'var(--bg3)',
-                border: `1px solid ${m.isCurrent ? 'var(--green)' : 'var(--border)'}`,
+                background: isSelected
+                  ? 'rgba(34,197,94,0.14)'
+                  : m.isCurrent ? 'rgba(34,197,94,0.06)' : 'var(--bg3)',
+                border: `1px solid ${
+                  isSelected
+                    ? 'var(--green)'
+                    : m.isCurrent ? 'var(--green)' : 'var(--border)'
+                }`,
+                boxShadow: isSelected ? '0 0 0 1px var(--green)' : 'none',
+                cursor: clickable ? 'pointer' : 'default',
+                opacity: clickable ? 1 : 0.7,
               }}
-              title={`${m.label} · Reçu ${fmt(b.received)}€ · Prévu ${fmt(b.expected)}€${b.overdue > 0 ? ` · Retard ${fmt(b.overdue)}€` : ''}`}
+              title={clickable ? `Cliquer pour voir le détail · ${m.label} · Reçu ${fmt(b.received)}€ · Prévu ${fmt(b.expected)}€${b.overdue > 0 ? ` · Retard ${fmt(b.overdue)}€` : ''}` : `${m.label} · aucune échéance`}
             >
               <div className="text-[9px] uppercase tracking-wider font-bold capitalize" style={{ color: m.isCurrent ? 'var(--green)' : 'var(--text3)' }}>
                 {m.label}
@@ -965,19 +1020,19 @@ function RevenueForecast({ prospects }: { prospects: Prospect[] }) {
               {/* Stacked bar */}
               <div className="mt-2 h-12 rounded flex flex-col-reverse overflow-hidden" style={{ background: 'var(--bg2)' }}>
                 {b.received > 0 && (
-                  <div style={{ height: `${hRecv}%`, background: '#22c55e', minHeight: 2 }} title={`Reçu ${fmt(b.received)}€`} />
+                  <div style={{ height: `${hRecv}%`, background: '#22c55e', minHeight: 2 }} />
                 )}
                 {b.expected > 0 && (
-                  <div style={{ height: `${hExp}%`, background: 'rgba(34,197,94,0.35)', minHeight: 2 }} title={`Prévu ${fmt(b.expected)}€`} />
+                  <div style={{ height: `${hExp}%`, background: 'rgba(34,197,94,0.35)', minHeight: 2 }} />
                 )}
                 {b.overdue > 0 && (
-                  <div style={{ height: `${hOver}%`, background: '#ef4444', minHeight: 2 }} title={`En retard ${fmt(b.overdue)}€`} />
+                  <div style={{ height: `${hOver}%`, background: '#ef4444', minHeight: 2 }} />
                 )}
               </div>
               <div className="text-[9px] mt-1" style={{ color: 'var(--text3)' }}>
                 {b.count > 0 ? `${b.count} éch.` : <>&nbsp;</>}
               </div>
-            </div>
+            </button>
           )
         })}
       </div>
@@ -993,7 +1048,110 @@ function RevenueForecast({ prospects }: { prospects: Prospect[] }) {
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: '#ef4444' }} /> En retard
         </span>
+        <span className="ml-auto" style={{ color: 'var(--text3)' }}>Astuce : clique sur un mois pour voir le détail</span>
       </div>
+
+      {/* Detail panel for selected month */}
+      {selectedMonth && monthDetails && selectedBucket && (
+        <div
+          className="mt-4 rounded-xl p-3"
+          style={{ background: 'var(--bg3)', border: '1px solid var(--green)' }}
+        >
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-bold capitalize" style={{ color: 'var(--green)' }}>
+                Détail · {selectedMonthLabel}
+              </span>
+              <span className="text-[10px]" style={{ color: 'var(--text3)' }}>
+                {monthDetails.length} échéance{monthDetails.length > 1 ? 's' : ''}
+              </span>
+              <span className="flex items-center gap-3 text-[10px]">
+                {selectedBucket.received > 0 && (
+                  <span style={{ color: '#22c55e' }}><strong>{fmt(selectedBucket.received)}€</strong> reçu</span>
+                )}
+                {selectedBucket.expected > 0 && (
+                  <span style={{ color: 'rgba(34,197,94,0.7)' }}><strong>{fmt(selectedBucket.expected)}€</strong> prévu</span>
+                )}
+                {selectedBucket.overdue > 0 && (
+                  <span style={{ color: '#ef4444' }}><strong>{fmt(selectedBucket.overdue)}€</strong> en retard</span>
+                )}
+              </span>
+            </div>
+            <button
+              onClick={() => setSelectedMonth(null)}
+              className="text-[10px] px-2 py-1 rounded-md"
+              style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text3)', cursor: 'pointer' }}
+            >
+              ✕ Fermer
+            </button>
+          </div>
+
+          {monthDetails.length === 0 ? (
+            <div className="text-center py-4 text-xs italic" style={{ color: 'var(--text3)' }}>
+              Aucune échéance pour ce mois.
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {monthDetails.map((row, idx) => {
+                const fullName = ((row.prospect.prenom || '') + (row.prospect.nom ? ' ' + row.prospect.nom : '')).trim() || row.prospect.email || 'Sans nom'
+                const dueDate = row.installment.due_date ? new Date(row.installment.due_date) : null
+                const dueLabel = dueDate ? dueDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+                const methodOpt = PAYMENT_METHOD_OPTIONS.find(m => m.value === row.installment.method)
+                const statusColor = row.status === 'paid' ? '#22c55e' : row.status === 'overdue' ? '#ef4444' : 'rgba(34,197,94,0.7)'
+                const statusBg = row.status === 'paid' ? 'rgba(34,197,94,0.12)' : row.status === 'overdue' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.05)'
+                const statusLabel = row.status === 'paid' ? '✓ Reçu' : row.status === 'overdue' ? '⚠ En retard' : '⏳ À recevoir'
+                return (
+                  <div
+                    key={`${row.prospect.id}-${row.installment.num}-${idx}`}
+                    className="rounded-md p-2 flex items-center gap-3 transition-all hover:opacity-90"
+                    style={{ background: 'var(--bg2)', border: `1px solid ${row.status === 'overdue' ? 'rgba(239,68,68,0.3)' : 'var(--border)'}` }}
+                  >
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0"
+                      style={{ background: statusBg, color: statusColor }}
+                    >
+                      {statusLabel}
+                    </span>
+                    <button
+                      onClick={() => onOpenProspect(row.prospect)}
+                      className="text-xs font-semibold hover:underline text-left flex-1 min-w-0 truncate"
+                      style={{ color: 'var(--text)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                      title="Ouvrir la fiche prospect"
+                    >
+                      {fullName}
+                    </button>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--bg3)', color: 'var(--text3)' }}>
+                      #{row.installment.num}
+                      {row.prospect.payment_installments && row.prospect.payment_installments > 1 && (
+                        <span> / {row.prospect.payment_installments}</span>
+                      )}
+                    </span>
+                    {methodOpt && (
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded shrink-0"
+                        style={{ background: methodOpt.bg, color: methodOpt.color }}
+                      >
+                        {methodOpt.label}
+                      </span>
+                    )}
+                    <span className="text-[10px] shrink-0 font-mono" style={{ color: 'var(--text3)', minWidth: 90, textAlign: 'right' }}>
+                      {dueLabel}
+                    </span>
+                    {row.installment.reference && (
+                      <span className="text-[10px] font-mono shrink-0 hidden md:inline" style={{ color: 'var(--text3)' }}>
+                        {row.installment.reference}
+                      </span>
+                    )}
+                    <span className="text-sm font-extrabold shrink-0" style={{ color: statusColor, minWidth: 80, textAlign: 'right' }}>
+                      {fmt(Number(row.installment.amount) || 0)}€
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
