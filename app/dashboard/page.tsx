@@ -12,6 +12,7 @@ import AnalyseIA from '@/components/dashboard/pages/AnalyseIA'
 import Notebook from '@/components/dashboard/pages/Notebook'
 import PropFirm from '@/components/dashboard/pages/PropFirm'
 import Calculateur from '@/components/dashboard/pages/Calculateur'
+import StockAnalysis from '@/components/dashboard/pages/StockAnalysis'
 import Coaching from '@/components/dashboard/pages/Coaching'
 import Progression from '@/components/dashboard/pages/Progression'
 import Formation from '@/components/dashboard/pages/Formation'
@@ -37,6 +38,7 @@ const pageTitles: Record<DashboardPage, string> = {
   notebook: 'Mon cahier',
   propfirm: 'Prop Firm',
   calculateur: 'Calculateur de risque — Futures',
+  'stock-analysis': 'Analyse d\'action',
   coaching: 'Sessions coaching',
   'recap-live': 'Trades Live Coach',
   progression: 'Ma progression',
@@ -62,6 +64,7 @@ export default function TraderDashboard() {
       case 'notebook': return <Notebook />
       case 'propfirm': return <PropFirm />
       case 'calculateur': return <Calculateur />
+      case 'stock-analysis': return <StockAnalysis />
       case 'pre-market': return <PreMarket />
       case 'coaching': return <Coaching />
       case 'recap-live': return <RecapTradeLive />

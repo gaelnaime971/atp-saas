@@ -16,6 +16,7 @@ export type DashboardPage =
   | 'notebook'
   | 'propfirm'
   | 'calculateur'
+  | 'stock-analysis'
   | 'coaching'
   | 'progression'
   | 'recap-live'
@@ -128,6 +129,15 @@ const sections: NavSection[] = [
         icon: (
           <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25v-.008zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008v-.008zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008v-.008zm1.5 1.5h.008v.008h-.008v-.008zm0-2.25h.008v.008h-.008v-.008zM8.25 6h7.5v2.25h-7.5V6zM6 6.75A.75.75 0 016.75 6h10.5a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75H6.75a.75.75 0 01-.75-.75V6.75z" />
+          </svg>
+        ),
+      },
+      {
+        id: 'stock-analysis',
+        label: 'Analyse d\'action',
+        icon: (
+          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 18L9 11.25l4.306 4.306a11.95 11.95 0 015.814-5.518l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
           </svg>
         ),
       },
