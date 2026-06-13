@@ -255,16 +255,38 @@ export default function PadelPage() {
 
         {/* Form URL */}
         <Section title="1. Lien du Google Form">
-          <input
-            type="url"
-            value={formUrl}
-            onChange={e => setFormUrl(e.target.value)}
-            placeholder="https://docs.google.com/forms/d/e/.../viewform"
-            style={inputStyle}
-          />
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              type="url"
+              value={formUrl}
+              onChange={e => setFormUrl(e.target.value)}
+              placeholder="https://docs.google.com/forms/d/e/.../viewform"
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            {formUrl.trim() && (
+              <a
+                href={formUrl.trim()}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', textDecoration: 'none', whiteSpace: 'nowrap' }}
+                title="Ouvre le lien dans un nouvel onglet (utile pour les liens forms.gle — copie ensuite l'URL longue depuis la barre d'adresse)"
+              >
+                🔗 Ouvrir
+              </a>
+            )}
+          </div>
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {parsing && <span style={{ fontSize: 11, color: '#9ca3af' }}>Détection en cours…</span>}
-            {parseError && <span style={{ fontSize: 11, color: '#ef4444' }}>⚠ {parseError}</span>}
+            {parseError && (
+              <span style={{ fontSize: 11, color: '#ef4444', lineHeight: 1.4 }}>
+                ⚠ {parseError}
+                {/forms\.gle|goo\.gl/.test(formUrl) && (
+                  <span style={{ display: 'block', color: '#f59e0b', marginTop: 4 }}>
+                    💡 Astuce : clique 🔗 Ouvrir → laisse Google rediriger → copie l&apos;URL <strong>docs.google.com/forms/d/e/...</strong> depuis la barre d&apos;adresse → reviens et colle-la ici.
+                  </span>
+                )}
+              </span>
+            )}
             {parsed && !parsing && (
               <>
                 <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>

@@ -1,4 +1,32 @@
 import { NextResponse } from 'next/server'
+import https from 'https'
+
+// Resolve a short URL (forms.gle, goo.gl) via raw HTTPS without following
+// redirects — undici/fetch in Next 16 silently swallows the Location header
+// for these hosts. Returns the Location header value, or null.
+function resolveShortLink(rawUrl: string): Promise<string | null> {
+  return new Promise(resolve => {
+    try {
+      const u = new URL(rawUrl)
+      const req = https.request({
+        host: u.host,
+        path: u.pathname + u.search,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'text/html',
+        },
+      }, res => {
+        const loc = res.headers.location
+        res.resume()
+        resolve(typeof loc === 'string' ? loc : null)
+      })
+      req.on('error', () => resolve(null))
+      req.setTimeout(5000, () => { req.destroy(); resolve(null) })
+      req.end()
+    } catch { resolve(null) }
+  })
+}
 
 interface ParsedField {
   index: number
@@ -23,8 +51,24 @@ export async function POST(request: Request) {
     const { url } = (await request.json()) as { url?: string }
     if (!url) return NextResponse.json({ error: 'url requise' }, { status: 400 })
 
+    // Short link (forms.gle/XXX or goo.gl/forms/XXX) → try server-side resolution.
+    // Google now serves a JS-only deep-link page that we can't follow without a
+    // browser, so this often fails. Surface a clear instruction in that case.
+    let resolved = url.trim()
+    if (/forms\.gle\//.test(resolved) || /goo\.gl\/forms\//.test(resolved)) {
+      const loc = await resolveShortLink(resolved)
+      if (loc && /\/forms\/d\//.test(loc)) {
+        resolved = loc
+      } else {
+        return NextResponse.json({
+          error: 'Lien court non résolvable. Ouvre-le dans ton navigateur puis colle l\'URL longue (docs.google.com/forms/d/e/…) qui apparaît dans la barre d\'adresse.',
+          shortLink: true,
+        }, { status: 422 })
+      }
+    }
+
     // Normalize: accept /viewform, /edit, with or without query string
-    const formIdMatch = url.match(/\/forms\/d\/e\/([a-zA-Z0-9_-]+)/) || url.match(/\/forms\/d\/([a-zA-Z0-9_-]+)/)
+    const formIdMatch = resolved.match(/\/forms\/d\/e\/([a-zA-Z0-9_-]+)/) || resolved.match(/\/forms\/d\/([a-zA-Z0-9_-]+)/)
     if (!formIdMatch) {
       return NextResponse.json({ error: 'URL de Google Form invalide' }, { status: 400 })
     }
