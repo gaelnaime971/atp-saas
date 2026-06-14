@@ -1,13 +1,40 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Card from '@/components/ui/Card'
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  PieChart,
+  Pie,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip as RTooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import type { Stats as LibStats } from '@/lib/trader-metrics'
 
 // ---------- Types ----------
 type Impact = 'ÉLEVÉ' | 'MODÉRÉ' | 'FAIBLE'
 type Priority = 'HAUTE' | 'MOYENNE' | 'BASSE'
 type AlertLevel = 'CRITIQUE' | 'ATTENTION' | 'INFO'
 type Trend = 'PROGRESSION' | 'STAGNATION' | 'DEGRADATION'
+
+type PeriodPreset = '7d' | '30d' | '90d' | '6mo' | '1y' | 'all' | 'custom'
+
+interface ChatMessage { role: 'user' | 'assistant'; content: string }
+interface FilterOptions {
+  instruments: string[]
+  accounts: Array<{ id: string; label: string; propfirm_name: string | null }>
+}
 
 interface ForceItem { titre: string; detail: string; impact: Impact }
 interface WeaknessItem { titre: string; detail: string; impact: Impact; fix: string }
@@ -41,60 +68,7 @@ interface Analysis {
   message_motivant: string
 }
 
-interface InstrumentStat { instrument: string; count: number; pnl: number; win_rate: number; avg_r: number | null }
-interface DayStat { day: string; count: number; pnl: number; avg_pnl: number; win_rate: number }
-interface PeriodStats { count: number; pnl: number; win_rate: number; avg_r: number | null }
-interface RDistribution { lt_minus2: number; m2_to_m1: number; m1_to_0: number; z0_to_1: number; p1_to_2: number; gt_2: number }
-interface MoodStat { mood: string; count: number; avg_pnl: number; win_rate: number }
-interface AccountStat { account_id: string; count: number; pnl: number }
-interface BtSetupStat { name: string; wr: number; n: number; avg_r: number }
-interface BtSignalStat { name: string; wr: number; n: number }
-interface ConfluenceSide { count: number; win_rate: number; avg_r: number | null }
-
-interface Stats {
-  period_days: number
-  sessions_count: number
-  backtests_count: number
-  total_pnl: number
-  win_rate: number
-  wins: number
-  losses: number
-  breakevens: number
-  profit_factor: number | null
-  avg_winner_eur: number | null
-  avg_loser_eur: number | null
-  risk_reward: number | null
-  avg_plan_score: number | null
-  avg_sessions_per_week: number | null
-  max_win_streak: number
-  max_loss_streak: number
-  current_streak: { type: 'win' | 'loss' | 'none'; length: number }
-  r_distribution: RDistribution
-  trades_distribution: { light_1_3: number; medium_4_6: number; heavy_7_plus: number }
-  day_of_week: DayStat[]
-  best_day: DayStat | null
-  worst_day: DayStat | null
-  recent_vs_older: { recent_15d: PeriodStats; older_15d: PeriodStats }
-  instruments: InstrumentStat[]
-  mood_stats: MoodStat[]
-  best_mood: MoodStat | null
-  plan_score_correlation: {
-    count_high_plan: number
-    count_low_plan: number
-    avg_pnl_high_plan: number | null
-    avg_pnl_low_plan: number | null
-    avg_plan_score: number | null
-  }
-  top_accounts: AccountStat[]
-  top_setups_backtest: BtSetupStat[]
-  top_signals_backtest: BtSignalStat[]
-  best_timeframe: { name: string; wr: number; n: number } | null
-  timeframe_stats: { name: string; wr: number; n: number }[]
-  confluence_comparison: {
-    with_confluence: ConfluenceSide
-    without_confluence: ConfluenceSide
-  }
-}
+type Stats = LibStats
 
 interface HistoryEntry {
   date: string
@@ -197,6 +171,61 @@ function saveHistory(entries: HistoryEntry[]): void {
   }
 }
 
+// ---------- Reusable UI helpers ----------
+function KpiCard({ label, value, sub, color = 'var(--text)' }: { label: string; value: React.ReactNode; sub?: React.ReactNode; color?: string }) {
+  return (
+    <div style={{ padding: '10px 12px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+      <div style={{ fontSize: 16, fontWeight: 800, marginTop: 4, color, fontFamily: 'monospace' }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+
+function SectionTitle({ icon, label, right }: { icon: string; label: string; right?: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 14 }}>{icon}</span>
+        <h3 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</h3>
+      </div>
+      {right && <div style={{ fontSize: 10, color: 'var(--text3)' }}>{right}</div>}
+    </div>
+  )
+}
+
+// ---------- Period helpers ----------
+const PERIOD_PRESETS: Array<{ id: PeriodPreset; label: string; days: number }> = [
+  { id: '7d', label: '7 jours', days: 7 },
+  { id: '30d', label: '30 jours', days: 30 },
+  { id: '90d', label: '90 jours', days: 90 },
+  { id: '6mo', label: '6 mois', days: 180 },
+  { id: '1y', label: '1 an', days: 365 },
+  { id: 'all', label: 'Tout', days: 3650 },
+  { id: 'custom', label: 'Custom', days: 0 },
+]
+
+function presetDates(preset: PeriodPreset): { from: string; to: string; label: string } {
+  const today = new Date()
+  const to = today.toISOString().slice(0, 10)
+  if (preset === 'all') {
+    return { from: '2020-01-01', to, label: 'Tout l\'historique' }
+  }
+  const cfg = PERIOD_PRESETS.find(p => p.id === preset) || PERIOD_PRESETS[1]
+  const fromDate = new Date(today)
+  fromDate.setDate(fromDate.getDate() - cfg.days + 1)
+  return { from: fromDate.toISOString().slice(0, 10), to, label: cfg.label }
+}
+
+const QUICK_QUESTIONS = [
+  'Pourquoi mes lundis sont mauvais ?',
+  'Quels instruments je dois arrêter ?',
+  'Compare mes 15 derniers jours aux 15 précédents',
+  'Quel est mon plus gros levier d\'amélioration ?',
+  'Suis-je en train de progresser ou stagner ?',
+  'Que faire pour reconstruire après ma série de pertes ?',
+]
+
 // ---------- Component ----------
 export default function AnalyseIA() {
   const [loading, setLoading] = useState(false)
@@ -213,10 +242,104 @@ export default function AnalyseIA() {
   const [showHistoryPanel, setShowHistoryPanel] = useState(false)
   const [savedToast, setSavedToast] = useState(false)
 
+  // ─── Period + filters ───
+  const [period, setPeriod] = useState<PeriodPreset>('30d')
+  const [customFrom, setCustomFrom] = useState<string>(() => {
+    const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10)
+  })
+  const [customTo, setCustomTo] = useState<string>(() => new Date().toISOString().slice(0, 10))
+  const [filterInstrument, setFilterInstrument] = useState<string | null>(null)
+  const [filterAccount, setFilterAccount] = useState<string | null>(null)
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({ instruments: [], accounts: [] })
+
+  // ─── Instant metrics (always loaded for current period) ───
+  const [instantStats, setInstantStats] = useState<Stats | null>(null)
+  const [loadingInstant, setLoadingInstant] = useState(false)
+  const [instantError, setInstantError] = useState<string | null>(null)
+
+  // ─── Chat ───
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const chatScrollRef = useRef<HTMLDivElement | null>(null)
+
+  // Resolve dates from period state
+  const { from: periodFrom, to: periodTo, label: periodLabel } = useMemo(() => {
+    if (period === 'custom') return { from: customFrom, to: customTo, label: `${customFrom} → ${customTo}` }
+    return presetDates(period)
+  }, [period, customFrom, customTo])
+
   // Load history on mount
   useEffect(() => {
     setHistory(loadHistory())
   }, [])
+
+  // Load instant metrics whenever period or filters change (debounced 250ms)
+  useEffect(() => {
+    let cancelled = false
+    const t = setTimeout(async () => {
+      setLoadingInstant(true)
+      setInstantError(null)
+      try {
+        const r = await fetch('/api/ai-coach-metrics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: periodFrom, to: periodTo, periodLabel,
+            instrument: filterInstrument, accountId: filterAccount,
+          }),
+        })
+        if (cancelled) return
+        const d = await r.json()
+        if (!r.ok) { setInstantError(d.error || `Erreur (${r.status})`); setInstantStats(null); return }
+        setInstantStats(d.stats || null)
+        if (d.filters) setFilterOptions(d.filters)
+      } catch (e) {
+        if (!cancelled) setInstantError(e instanceof Error ? e.message : 'Erreur réseau')
+      } finally {
+        if (!cancelled) setLoadingInstant(false)
+      }
+    }, 250)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [periodFrom, periodTo, periodLabel, filterInstrument, filterAccount])
+
+  // Auto-scroll chat to bottom on new message
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
+    }
+  }, [chatMessages, chatLoading])
+
+  // Send chat message
+  const sendChat = useCallback(async (text?: string) => {
+    const userMsg = (text ?? chatInput).trim()
+    if (!userMsg || chatLoading) return
+    const newHistory: ChatMessage[] = [...chatMessages, { role: 'user', content: userMsg }]
+    setChatMessages(newHistory)
+    setChatInput('')
+    setChatLoading(true)
+    try {
+      const r = await fetch('/api/ai-coach-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: newHistory,
+          from: periodFrom, to: periodTo, periodLabel,
+          instrument: filterInstrument, accountId: filterAccount,
+        }),
+      })
+      const d = await r.json()
+      if (!r.ok) {
+        setChatMessages(h => [...h, { role: 'assistant', content: `⚠ ${d.error || 'Erreur'}` }])
+      } else {
+        setChatMessages(h => [...h, { role: 'assistant', content: d.reply || '(réponse vide)' }])
+      }
+    } catch (e) {
+      setChatMessages(h => [...h, { role: 'assistant', content: `⚠ ${e instanceof Error ? e.message : 'Erreur réseau'}` }])
+    } finally {
+      setChatLoading(false)
+    }
+  }, [chatInput, chatMessages, chatLoading, periodFrom, periodTo, periodLabel, filterInstrument, filterAccount])
 
   // Per-analysis actions checklist (key = generatedAt.toISOString())
   const actionsKey = useMemo(() => generatedAt ? `${ACTIONS_KEY_PREFIX}${generatedAt.toISOString().split('T')[0]}` : null, [generatedAt])
@@ -246,7 +369,14 @@ export default function AnalyseIA() {
     setAnalysis(null)
     setStats(null)
     try {
-      const r = await fetch('/api/ai-coach-analysis', { method: 'POST' })
+      const r = await fetch('/api/ai-coach-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: periodFrom, to: periodTo, periodLabel,
+          instrument: filterInstrument, accountId: filterAccount,
+        }),
+      })
       const data = await r.json()
       if (data.error) {
         setError(data.error)
@@ -745,8 +875,8 @@ export default function AnalyseIA() {
       { lbl: '> 2R', val: stats.r_distribution.gt_2, color: '#16a34a' },
     ]
 
-    const recent = stats.recent_vs_older.recent_15d
-    const older = stats.recent_vs_older.older_15d
+    const recent = stats.recent_vs_older.recent
+    const older = stats.recent_vs_older.older
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn 0.4s ease' }}>
@@ -818,12 +948,12 @@ export default function AnalyseIA() {
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <span style={{ fontSize: 18 }}>🔁</span>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>15 derniers jours vs 15 jours précédents</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Évolution dans la période</h3>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
-              { lbl: 'Période précédente (J-30 à J-15)', s: older, color: '#9ca3af' },
-              { lbl: 'Période récente (J-15 à J-0)', s: recent, color: '#22c55e' },
+              { lbl: 'Première moitié', s: older, color: '#9ca3af' },
+              { lbl: 'Deuxième moitié', s: recent, color: '#22c55e' },
             ].map(p => (
               <div key={p.lbl} style={{ background: 'var(--bg3)', border: `1px solid ${p.color}30`, borderTop: `2px solid ${p.color}`, borderRadius: 10, padding: 14 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: p.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>{p.lbl}</div>
@@ -1143,7 +1273,7 @@ export default function AnalyseIA() {
             <span>🧠</span> Analyse IA
           </h1>
           <p style={{ fontSize: 13, color: 'var(--text3)', margin: '6px 0 0 0', lineHeight: 1.5 }}>
-            Diagnostic complet sur 60 jours: forces, faiblesses, patterns, plan d&apos;action et objectifs réalistes.
+            Diagnostic complet sur la période de ton choix : KPI, graphes, verdict IA + coach interactif.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1184,6 +1314,308 @@ export default function AnalyseIA() {
           </button>
         </div>
       </div>
+
+      {/* ──────── CONTROL BAR: Period + Filters ──────── */}
+      <Card style={{ padding: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+          {/* Period presets */}
+          <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg3)', borderRadius: 8, border: '1px solid var(--border)' }}>
+            {PERIOD_PRESETS.map(p => {
+              const active = period === p.id
+              return (
+                <button key={p.id} onClick={() => setPeriod(p.id)}
+                  style={{
+                    padding: '6px 12px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
+                    background: active ? 'var(--green)' : 'transparent',
+                    color: active ? '#09090b' : 'var(--text2)',
+                    border: 'none', whiteSpace: 'nowrap', transition: 'all 0.15s',
+                  }}>
+                  {p.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Custom range inputs */}
+          {period === 'custom' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text3)' }}>
+              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                style={{ padding: '6px 8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11.5, outline: 'none' }} />
+              <span>→</span>
+              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                style={{ padding: '6px 8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11.5, outline: 'none' }} />
+            </div>
+          )}
+
+          {/* Vertical separator */}
+          <div style={{ width: 1, height: 24, background: 'var(--border)' }} />
+
+          {/* Filters */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Filtres :</span>
+            <select value={filterInstrument || ''} onChange={e => setFilterInstrument(e.target.value || null)}
+              style={{ padding: '6px 10px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11.5, cursor: 'pointer', outline: 'none' }}>
+              <option value="">Tous instruments</option>
+              {filterOptions.instruments.map(i => <option key={i} value={i}>{i}</option>)}
+            </select>
+            {filterOptions.accounts.length > 0 && (
+              <select value={filterAccount || ''} onChange={e => setFilterAccount(e.target.value || null)}
+                style={{ padding: '6px 10px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11.5, cursor: 'pointer', outline: 'none' }}>
+                <option value="">Tous comptes</option>
+                {filterOptions.accounts.map(a => (
+                  <option key={a.id} value={a.id}>{a.label}{a.propfirm_name ? ` (${a.propfirm_name})` : ''}</option>
+                ))}
+              </select>
+            )}
+            {(filterInstrument || filterAccount) && (
+              <button onClick={() => { setFilterInstrument(null); setFilterAccount(null) }}
+                style={{ padding: '5px 8px', background: 'transparent', color: 'var(--text3)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>
+                ✕ Reset
+              </button>
+            )}
+          </div>
+
+          {/* Loading indicator on the right */}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text3)' }}>
+            {loadingInstant && <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid var(--bg3)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
+            {instantStats && (
+              <span style={{ fontFamily: 'monospace' }}>
+                <strong style={{ color: 'var(--text)' }}>{instantStats.sessions_count}</strong> sessions
+                {' · '}<strong style={{ color: instantStats.total_pnl >= 0 ? '#22c55e' : '#ef4444' }}>{fmtEur(instantStats.total_pnl)}</strong>
+              </span>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* ──────── KPI STRIP + CHARTS ──────── */}
+      {instantError && (
+        <Card style={{ border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}>
+          <div style={{ fontSize: 12, color: '#ef4444' }}>⚠ {instantError}</div>
+        </Card>
+      )}
+
+      {instantStats && instantStats.sessions_count > 0 && (
+        <>
+          {/* KPI strip (12 cards) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+            <KpiCard label="P&L total" value={fmtEur(instantStats.total_pnl)} color={instantStats.total_pnl >= 0 ? '#22c55e' : '#ef4444'} />
+            <KpiCard label="Win rate" value={`${instantStats.win_rate}%`} sub={`${instantStats.wins}W / ${instantStats.losses}L`} />
+            <KpiCard label="Profit factor" value={instantStats.profit_factor != null ? String(instantStats.profit_factor) : '∞'} color={instantStats.profit_factor != null && instantStats.profit_factor > 1.5 ? '#22c55e' : 'var(--text)'} />
+            <KpiCard label="Expectancy" value={fmtEur(instantStats.expectancy)} sub="par session" />
+            <KpiCard label="Risk : Reward" value={instantStats.risk_reward != null ? `1 : ${instantStats.risk_reward}` : 'N/A'} />
+            <KpiCard label="Sessions" value={String(instantStats.sessions_count)} sub={`${instantStats.trades_count_total} trades`} />
+            <KpiCard label="Max drawdown" value={fmtEur(instantStats.max_drawdown)} color="#ef4444" sub={instantStats.max_drawdown_pct != null ? `${instantStats.max_drawdown_pct}%` : undefined} />
+            <KpiCard label="Max run-up" value={fmtEur(instantStats.max_run_up)} color="#22c55e" />
+            <KpiCard label="Streak gains" value={String(instantStats.max_win_streak)} sub="meilleure série" />
+            <KpiCard label="Streak pertes" value={String(instantStats.max_loss_streak)} color="#ef4444" sub="pire série" />
+            <KpiCard label="Best day" value={fmtEur(instantStats.best_day_value)} color="#22c55e" />
+            <KpiCard label="Worst day" value={fmtEur(instantStats.worst_day_value)} color="#ef4444" />
+          </div>
+
+          {/* Equity curve + Drawdown */}
+          <Card style={{ padding: 14 }}>
+            <SectionTitle icon="📈" label="Equity curve & drawdown" right={`${instantStats.sessions_count} sessions`} />
+            <div style={{ width: '100%', height: 260 }}>
+              <ResponsiveContainer>
+                <ComposedChart data={instantStats.equity_curve} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="equityG" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="ddG" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--text3)' }} tickFormatter={d => d.slice(5)} />
+                  <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={55} tickFormatter={v => `${v}€`} />
+                  <RTooltip
+                    contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+                    formatter={(v: unknown, name: unknown) => {
+                      const n = typeof v === 'number' ? v : Number(v)
+                      const lbl = name === 'cumulative' ? 'P&L cumulé' : name === 'drawdown' ? 'Drawdown' : 'P&L jour'
+                      return [`${n >= 0 ? '+' : ''}${Math.round(n)} €`, lbl]
+                    }}
+                  />
+                  <ReferenceLine y={0} stroke="var(--border)" />
+                  <Area type="monotone" dataKey="drawdown" stroke="#ef4444" strokeWidth={1} fill="url(#ddG)" name="drawdown" />
+                  <Area type="monotone" dataKey="cumulative" stroke="#22c55e" strokeWidth={2} fill="url(#equityG)" name="cumulative" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* Daily P&L bars + Rolling win rate */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 12 }}>
+            <Card style={{ padding: 14 }}>
+              <SectionTitle icon="📊" label="P&L par session" />
+              <div style={{ width: '100%', height: 200 }}>
+                <ResponsiveContainer>
+                  <BarChart data={instantStats.daily_pnl} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--text3)' }} tickFormatter={d => d.slice(5)} />
+                    <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={50} tickFormatter={v => `${v}€`} />
+                    <RTooltip
+                      contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+                      formatter={(v: unknown) => {
+                        const n = typeof v === 'number' ? v : Number(v)
+                        return [`${n >= 0 ? '+' : ''}${Math.round(n)} €`, 'P&L']
+                      }}
+                    />
+                    <ReferenceLine y={0} stroke="var(--border)" />
+                    <Bar dataKey="pnl">
+                      {instantStats.daily_pnl.map((d, i) => <Cell key={i} fill={d.win ? '#22c55e' : '#ef4444'} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            <Card style={{ padding: 14 }}>
+              <SectionTitle icon="🎯" label="Win rate glissant (10 sessions)" />
+              <div style={{ width: '100%', height: 200 }}>
+                <ResponsiveContainer>
+                  <AreaChart data={instantStats.win_rate_rolling} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--text3)' }} tickFormatter={d => d.slice(5)} />
+                    <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} domain={[0, 100]} width={35} tickFormatter={v => `${v}%`} />
+                    <RTooltip
+                      contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+                      formatter={(v: unknown) => [`${v}%`, 'Win rate (10 dernières)']}
+                    />
+                    <ReferenceLine y={50} stroke="var(--border)" strokeDasharray="3 3" />
+                    <Area type="monotone" dataKey="win_rate" stroke="#3b82f6" strokeWidth={2} fill="#3b82f6" fillOpacity={0.2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </div>
+
+          {/* Day of week + R-distribution + Instruments */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12 }}>
+            {instantStats.day_of_week.length > 0 && (
+              <Card style={{ padding: 14 }}>
+                <SectionTitle icon="📅" label="Jour de la semaine" />
+                <div style={{ width: '100%', height: 200 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={instantStats.day_of_week} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                      <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--text3)' }} />
+                      <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={50} tickFormatter={v => `${v}€`} />
+                      <RTooltip
+                        contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+                        formatter={(v: unknown, name: unknown) => {
+                          const n = typeof v === 'number' ? v : Number(v)
+                          return [`${n >= 0 ? '+' : ''}${Math.round(n)} €`, name === 'avg_pnl' ? 'Moy/session' : 'Total']
+                        }}
+                      />
+                      <ReferenceLine y={0} stroke="var(--border)" />
+                      <Bar dataKey="avg_pnl">
+                        {instantStats.day_of_week.map((d, i) => <Cell key={i} fill={d.avg_pnl >= 0 ? '#22c55e' : '#ef4444'} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            )}
+
+            <Card style={{ padding: 14 }}>
+              <SectionTitle icon="📐" label="Distribution R-multiple" />
+              <div style={{ width: '100%', height: 200 }}>
+                <ResponsiveContainer>
+                  <BarChart
+                    data={[
+                      { bucket: '<-2R', val: instantStats.r_distribution.lt_minus2, color: '#dc2626' },
+                      { bucket: '-2/-1', val: instantStats.r_distribution.m2_to_m1, color: '#ef4444' },
+                      { bucket: '-1/0', val: instantStats.r_distribution.m1_to_0, color: '#f59e0b' },
+                      { bucket: '0/1', val: instantStats.r_distribution.z0_to_1, color: '#84cc16' },
+                      { bucket: '1/2', val: instantStats.r_distribution.p1_to_2, color: '#22c55e' },
+                      { bucket: '>2R', val: instantStats.r_distribution.gt_2, color: '#16a34a' },
+                    ]}
+                    margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                    <XAxis dataKey="bucket" tick={{ fontSize: 10, fill: 'var(--text3)' }} />
+                    <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={30} allowDecimals={false} />
+                    <RTooltip contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }} />
+                    <Bar dataKey="val">
+                      {[
+                        '#dc2626', '#ef4444', '#f59e0b', '#84cc16', '#22c55e', '#16a34a',
+                      ].map((c, i) => <Cell key={i} fill={c} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            {instantStats.instruments.length > 0 && (
+              <Card style={{ padding: 14 }}>
+                <SectionTitle icon="🎯" label="Répartition par instrument" />
+                <div style={{ width: '100%', height: 200 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie
+                        data={instantStats.instruments.map(i => ({ name: i.instrument, value: Math.abs(i.pnl), realPnl: i.pnl }))}
+                        dataKey="value" cx="50%" cy="50%" innerRadius={42} outerRadius={75} paddingAngle={2}>
+                        {instantStats.instruments.map((i, idx) => (
+                          <Cell key={idx} fill={i.pnl >= 0 ? ['#22c55e', '#16a34a', '#15803d', '#166534'][idx % 4] : ['#ef4444', '#dc2626', '#b91c1c', '#991b1b'][idx % 4]} />
+                        ))}
+                      </Pie>
+                      <RTooltip
+                        contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+                        formatter={(_v: unknown, _name: unknown, item: unknown) => {
+                          const o = (item as { payload?: { realPnl?: number; name?: string } }).payload
+                          return [`${(o?.realPnl ?? 0) >= 0 ? '+' : ''}${Math.round(o?.realPnl ?? 0)} €`, o?.name || '']
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            )}
+          </div>
+
+          {/* Setup performance bars from backtests (if any) */}
+          {instantStats.top_setups_backtest.length > 0 && (
+            <Card style={{ padding: 14 }}>
+              <SectionTitle icon="🔧" label="Performance des setups (backtests)" right={`${instantStats.backtests_count} trades`} />
+              <div style={{ width: '100%', height: 220 }}>
+                <ResponsiveContainer>
+                  <BarChart data={instantStats.top_setups_backtest} layout="vertical" margin={{ top: 8, right: 20, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
+                    <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: 'var(--text3)' }} tickFormatter={v => `${v}%`} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: 'var(--text2)' }} width={120} />
+                    <RTooltip
+                      contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
+                      formatter={(v: unknown, name: unknown, item: unknown) => {
+                        const o = (item as { payload?: { n?: number; avg_r?: number } }).payload
+                        return [`${v}% WR · ${o?.n} trades · ${o?.avg_r}R avg`, name === 'wr' ? 'Win rate' : String(name)]
+                      }}
+                    />
+                    <Bar dataKey="wr">
+                      {instantStats.top_setups_backtest.map((s, i) => <Cell key={i} fill={s.wr >= 60 ? '#22c55e' : s.wr >= 45 ? '#f59e0b' : '#ef4444'} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* Empty period state */}
+      {instantStats && instantStats.sessions_count === 0 && !loadingInstant && (
+        <Card>
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text3)' }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
+            <div style={{ fontSize: 13 }}>Aucune session sur cette période.</div>
+            <div style={{ fontSize: 11, marginTop: 4 }}>Change la période ou enlève les filtres.</div>
+          </div>
+        </Card>
+      )}
 
       {savedToast && (
         <div style={{ position: 'fixed', top: 24, right: 24, zIndex: 1000, padding: '10px 16px', background: 'rgba(34,197,94,0.95)', color: '#000', borderRadius: 10, fontSize: 12, fontWeight: 700, boxShadow: '0 8px 24px rgba(0,0,0,0.4)', animation: 'fadeIn 0.3s ease' }}>
@@ -1226,7 +1658,7 @@ export default function AnalyseIA() {
             <div style={{ fontSize: 56, marginBottom: 20 }}>🧠</div>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Prêt pour ton diagnostic ?</h3>
             <p style={{ fontSize: 13, color: 'var(--text3)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-              L&apos;IA va analyser <strong style={{ color: 'var(--text)' }}>toutes tes sessions, notes, backtests, instruments, jours de la semaine et streaks</strong> sur les 60 derniers jours pour te livrer un diagnostic complet: 6 scores, plan d&apos;action, objectifs court/moyen/long terme et conseils par instrument.
+              L&apos;IA va analyser <strong style={{ color: 'var(--text)' }}>toutes tes sessions, notes, backtests, instruments, jours de la semaine et streaks</strong> sur <strong style={{ color: 'var(--green)' }}>{periodLabel}</strong> pour te livrer un diagnostic complet: 6 scores, plan d&apos;action, objectifs court/moyen/long terme et conseils par instrument.
             </p>
             <div style={{ marginTop: 24, display: 'inline-flex', gap: 16, padding: '12px 20px', background: 'var(--bg3)', borderRadius: 10, border: '1px solid var(--border)', fontSize: 11, color: 'var(--text3)', flexWrap: 'wrap', justifyContent: 'center' }}>
               <span>⚡ ~12 sec</span>
@@ -1255,7 +1687,7 @@ export default function AnalyseIA() {
         <Card>
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ display: 'inline-block', width: 40, height: 40, border: '3px solid var(--bg3)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-            <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 16, fontWeight: 500 }}>L&apos;IA analyse 60 jours de données...</p>
+            <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 16, fontWeight: 500 }}>L&apos;IA analyse {periodLabel}...</p>
             <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>Quelques secondes — ne ferme pas la page</p>
           </div>
         </Card>
@@ -1295,10 +1727,110 @@ export default function AnalyseIA() {
 
           {generatedAt && (
             <div style={{ textAlign: 'center', fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
-              Analyse générée le {generatedAt.toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · IA Llama 3.3 via Groq · 60 jours de données
+              Analyse générée le {generatedAt.toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · IA Llama 3.3 via Groq · {stats?.period_label || periodLabel}
             </div>
           )}
         </>
+      )}
+
+      {/* ──────── CHAT PANEL ──────── */}
+      {instantStats && instantStats.sessions_count > 0 && (
+        <Card style={{ padding: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14 }}>💬</span>
+              <h3 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coach IA — Pose-lui une question</h3>
+            </div>
+            {chatMessages.length > 0 && (
+              <button onClick={() => setChatMessages([])}
+                style={{ padding: '4px 8px', background: 'transparent', color: 'var(--text3)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 10, cursor: 'pointer' }}>
+                ✕ Effacer
+              </button>
+            )}
+          </div>
+
+          {/* Quick question buttons */}
+          {chatMessages.length === 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 6, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Questions rapides</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {QUICK_QUESTIONS.map(q => (
+                  <button key={q} onClick={() => sendChat(q)} disabled={chatLoading}
+                    style={{
+                      padding: '6px 10px', background: 'var(--bg3)', color: 'var(--text2)',
+                      border: '1px solid var(--border)', borderRadius: 6, fontSize: 11, cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}>
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Messages */}
+          {chatMessages.length > 0 && (
+            <div ref={chatScrollRef} style={{ maxHeight: 400, overflowY: 'auto', padding: '6px 0', marginBottom: 10 }}>
+              {chatMessages.map((m, i) => (
+                <div key={i} style={{
+                  marginBottom: 10,
+                  padding: '10px 12px',
+                  background: m.role === 'user' ? 'rgba(34,197,94,0.06)' : 'var(--bg3)',
+                  border: `1px solid ${m.role === 'user' ? 'rgba(34,197,94,0.2)' : 'var(--border)'}`,
+                  borderLeft: `3px solid ${m.role === 'user' ? '#22c55e' : '#3b82f6'}`,
+                  borderRadius: 8,
+                  fontSize: 12.5,
+                  color: 'var(--text)',
+                  lineHeight: 1.6,
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: m.role === 'user' ? '#22c55e' : '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                    {m.role === 'user' ? '🙋 Toi' : '🧠 Coach IA'}
+                  </div>
+                  {m.content}
+                </div>
+              ))}
+              {chatLoading && (
+                <div style={{ padding: '10px 12px', background: 'var(--bg3)', border: '1px solid var(--border)', borderLeft: '3px solid #3b82f6', borderRadius: 8, fontSize: 11, color: 'var(--text3)' }}>
+                  <span style={{ display: 'inline-block', width: 10, height: 10, border: '2px solid var(--bg2)', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8, verticalAlign: 'middle' }} />
+                  Le coach réfléchit…
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Input */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat() } }}
+              placeholder="Pose ta question au coach… (Entrée pour envoyer)"
+              disabled={chatLoading}
+              style={{
+                flex: 1, padding: '10px 12px', background: 'var(--bg3)', border: '1px solid var(--border)',
+                borderRadius: 8, color: 'var(--text)', fontSize: 13, outline: 'none',
+              }}
+            />
+            <button
+              onClick={() => sendChat()}
+              disabled={chatLoading || !chatInput.trim()}
+              style={{
+                padding: '10px 16px',
+                background: chatLoading || !chatInput.trim() ? 'var(--bg3)' : 'var(--green)',
+                color: chatLoading || !chatInput.trim() ? 'var(--text3)' : '#000',
+                border: '1px solid var(--border)',
+                borderRadius: 8, fontSize: 12, fontWeight: 700,
+                cursor: chatLoading || !chatInput.trim() ? 'not-allowed' : 'pointer',
+              }}>
+              Envoyer
+            </button>
+          </div>
+          <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 6, textAlign: 'center' }}>
+            Le coach a accès à tes statistiques sur <strong>{periodLabel}</strong> {filterInstrument && <>· instrument <strong>{filterInstrument}</strong></>}
+          </div>
+        </Card>
       )}
     </div>
   )
