@@ -113,6 +113,9 @@ export default function Backtest() {
   const [instrument, setInstrument] = useState('ES')
   const [direction, setDirection] = useState<'LONG' | 'SHORT'>('LONG')
   const [setupTypes, setSetupTypes] = useState<string[]>([])
+  const [customSetups, setCustomSetups] = useState<string[]>([])
+  const [newSetupName, setNewSetupName] = useState('')
+  const [addingSetup, setAddingSetup] = useState(false)
   const [signals, setSignals] = useState<string[]>([])
   const [hasConfluence, setHasConfluence] = useState(false)
   const [points, setPoints] = useState('')
@@ -152,12 +155,21 @@ export default function Backtest() {
     if (data) setEntries(data as BacktestEntry[])
   }
 
+  async function fetchCustomSetups(uid: string) {
+    const { data } = await supabase
+      .from('user_custom_setups')
+      .select('setup_name')
+      .eq('trader_id', uid)
+      .order('created_at', { ascending: true })
+    if (data) setCustomSetups(data.map(d => (d as { setup_name: string }).setup_name))
+  }
+
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       setUserId(user.id)
-      await fetchEntries(user.id)
+      await Promise.all([fetchEntries(user.id), fetchCustomSetups(user.id)])
       setLoading(false)
     }
     init()
@@ -167,6 +179,47 @@ export default function Backtest() {
 
   function toggleChip(value: string, list: string[], setter: (v: string[]) => void) {
     setter(list.includes(value) ? list.filter(v => v !== value) : [...list, value])
+  }
+
+  async function addCustomSetup() {
+    if (!userId) return
+    const name = newSetupName.trim()
+    if (!name) return
+    // Reject duplicates (predefined or already-custom)
+    const exists = ALL_SETUPS.some(s => s.toLowerCase() === name.toLowerCase())
+      || customSetups.some(s => s.toLowerCase() === name.toLowerCase())
+    if (exists) {
+      alert('Ce setup existe déjà.')
+      return
+    }
+    setAddingSetup(true)
+    const { error } = await supabase
+      .from('user_custom_setups')
+      .insert({ trader_id: userId, setup_name: name })
+    setAddingSetup(false)
+    if (error) {
+      alert('Erreur: ' + error.message)
+      return
+    }
+    setCustomSetups(prev => [...prev, name])
+    setSetupTypes(prev => prev.includes(name) ? prev : [...prev, name]) // auto-select the new one
+    setNewSetupName('')
+  }
+
+  async function deleteCustomSetup(name: string) {
+    if (!userId) return
+    if (!confirm(`Supprimer le setup perso "${name}" ?`)) return
+    const { error } = await supabase
+      .from('user_custom_setups')
+      .delete()
+      .eq('trader_id', userId)
+      .eq('setup_name', name)
+    if (error) {
+      alert('Erreur: ' + error.message)
+      return
+    }
+    setCustomSetups(prev => prev.filter(s => s !== name))
+    setSetupTypes(prev => prev.filter(s => s !== name))
   }
 
   async function uploadImage(file: File) {
@@ -418,6 +471,90 @@ export default function Backtest() {
                 </div>
               </div>
             ))}
+
+            {/* Custom setups */}
+            <div style={{ marginTop: 10 }}>
+              <p style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>Mes setups perso</span>
+                {customSetups.length > 0 && (
+                  <span style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 400 }}>({customSetups.length})</span>
+                )}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                {customSetups.map(item => {
+                  const active = setupTypes.includes(item)
+                  return (
+                    <span
+                      key={item}
+                      style={{
+                        ...(active ? chipActive : chipBase),
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        paddingRight: 4,
+                      }}
+                    >
+                      <span onClick={() => toggleChip(item, setupTypes, setSetupTypes)} style={{ cursor: 'pointer' }}>
+                        {item}
+                      </span>
+                      <button
+                        onClick={() => deleteCustomSetup(item)}
+                        title="Supprimer ce setup"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: active ? '#22c55e' : 'var(--text3)',
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          padding: '0 4px',
+                          lineHeight: 1,
+                          opacity: 0.7,
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  )
+                })}
+
+                {/* Add input */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <input
+                    type="text"
+                    value={newSetupName}
+                    onChange={e => setNewSetupName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomSetup() } }}
+                    placeholder="+ Ajouter un setup…"
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      border: '1px dashed var(--border)',
+                      background: 'var(--bg3)',
+                      color: 'var(--text)',
+                      outline: 'none',
+                      width: 160,
+                    }}
+                  />
+                  <button
+                    onClick={addCustomSetup}
+                    disabled={addingSetup || !newSetupName.trim()}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      border: '1px solid var(--border)',
+                      background: addingSetup || !newSetupName.trim() ? 'var(--bg3)' : 'rgba(34,197,94,0.15)',
+                      color: addingSetup || !newSetupName.trim() ? 'var(--text3)' : '#22c55e',
+                      cursor: addingSetup || !newSetupName.trim() ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {addingSetup ? '…' : 'Ajouter'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Signal d'entree */}
