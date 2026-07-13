@@ -218,6 +218,7 @@ export default function Pipeline() {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
   const [closingEmailFor, setClosingEmailFor] = useState<Prospect | null>(null)
   const [welcomeEmailFor, setWelcomeEmailFor] = useState<Prospect | null>(null)
+  const [reminderEmailFor, setReminderEmailFor] = useState<Prospect | null>(null)
 
   // ── Fetch ────────────────────────────────────────────────────────
 
@@ -525,6 +526,7 @@ export default function Pipeline() {
                       onMove={(s) => moveToStatus(p.id, s)}
                       onSendClosingEmail={() => setClosingEmailFor(p)}
                       onSendWelcomeEmail={() => setWelcomeEmailFor(p)}
+                      onSendReminderEmail={() => setReminderEmailFor(p)}
                     />
                   ))}
                 </div>
@@ -544,6 +546,7 @@ export default function Pipeline() {
           supabase={supabase}
           onSendClosingEmail={() => setClosingEmailFor(selected)}
           onSendWelcomeEmail={() => setWelcomeEmailFor(selected)}
+          onSendReminderEmail={() => setReminderEmailFor(selected)}
         />
       )}
 
@@ -571,6 +574,14 @@ export default function Pipeline() {
           onClose={() => setWelcomeEmailFor(null)}
         />
       )}
+
+      {/* Payment reminder modal */}
+      {reminderEmailFor && (
+        <PaymentReminderEmailModal
+          prospect={reminderEmailFor}
+          onClose={() => setReminderEmailFor(null)}
+        />
+      )}
     </div>
   )
 }
@@ -587,6 +598,7 @@ function PipelineCard({
   onMove,
   onSendClosingEmail,
   onSendWelcomeEmail,
+  onSendReminderEmail,
 }: {
   prospect: Prospect
   column: typeof STATUS_COLUMNS[number]
@@ -597,6 +609,7 @@ function PipelineCard({
   onMove: (status: string) => void
   onSendClosingEmail: () => void
   onSendWelcomeEmail: () => void
+  onSendReminderEmail: () => void
 }) {
   const [hover, setHover] = useState(false)
   const [moveOpen, setMoveOpen] = useState(false)
@@ -710,42 +723,64 @@ function PipelineCard({
       )}
 
       {/* Email buttons (only for closed prospects with email) */}
-      {p.status === 'close' && p.email && (
-        <div data-no-card-click className="mb-2 flex gap-1">
-          <button
-            onClick={(e) => { e.stopPropagation(); onSendClosingEmail() }}
-            className="flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all flex items-center justify-center gap-1 hover:opacity-90"
-            style={{
-              background: 'rgba(168,85,247,0.12)',
-              border: '1px solid rgba(168,85,247,0.35)',
-              color: '#a855f7',
-              cursor: 'pointer',
-            }}
-            title="Envoyer l'email de closing (lien Stripe ou virement)"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            Closing
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onSendWelcomeEmail() }}
-            className="flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all flex items-center justify-center gap-1 hover:opacity-90"
-            style={{
-              background: 'rgba(34,197,94,0.12)',
-              border: '1px solid rgba(34,197,94,0.35)',
-              color: '#22c55e',
-              cursor: 'pointer',
-            }}
-            title="Envoyer l'email de bienvenue (paiement reçu + accès)"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Accès
-          </button>
-        </div>
-      )}
+      {p.status === 'close' && p.email && (() => {
+        const hasUnpaidInstallment = (p.payment_schedule || []).some(i => !i.paid_at)
+        const isMulti = (p.payment_installments ?? 1) > 1
+        return (
+          <div data-no-card-click className="mb-2 flex gap-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); onSendClosingEmail() }}
+              className="flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all flex items-center justify-center gap-1 hover:opacity-90"
+              style={{
+                background: 'rgba(168,85,247,0.12)',
+                border: '1px solid rgba(168,85,247,0.35)',
+                color: '#a855f7',
+                cursor: 'pointer',
+              }}
+              title="Envoyer l'email de closing (lien Stripe ou virement)"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Closing
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onSendWelcomeEmail() }}
+              className="flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all flex items-center justify-center gap-1 hover:opacity-90"
+              style={{
+                background: 'rgba(34,197,94,0.12)',
+                border: '1px solid rgba(34,197,94,0.35)',
+                color: '#22c55e',
+                cursor: 'pointer',
+              }}
+              title="Envoyer l'email de bienvenue (paiement reçu + accès)"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Accès
+            </button>
+            {isMulti && hasUnpaidInstallment && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onSendReminderEmail() }}
+                className="flex-1 px-2 py-1.5 rounded-md text-[10px] font-bold transition-all flex items-center justify-center gap-1 hover:opacity-90"
+                style={{
+                  background: 'rgba(245,158,11,0.12)',
+                  border: '1px solid rgba(245,158,11,0.35)',
+                  color: '#f59e0b',
+                  cursor: 'pointer',
+                }}
+                title="Envoyer une relance pour la prochaine échéance non payée"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Relance
+              </button>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Date row */}
       <div className="flex items-center justify-between gap-2 text-[10px]" style={{ color: 'var(--text3)' }}>
@@ -1375,6 +1410,7 @@ function ProspectDetailModal({
   supabase,
   onSendClosingEmail,
   onSendWelcomeEmail,
+  onSendReminderEmail,
 }: {
   prospect: Prospect
   onClose: () => void
@@ -1383,6 +1419,7 @@ function ProspectDetailModal({
   supabase: SupabaseClient
   onSendClosingEmail: () => void
   onSendWelcomeEmail: () => void
+  onSendReminderEmail: () => void
 }) {
   const [draft, setDraft] = useState<Prospect>(prospect)
   const [notes, setNotes] = useState<CallNote[]>([])
@@ -1854,6 +1891,17 @@ function ProspectDetailModal({
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Email accès
+            </button>
+          )}
+          {prospect.email && (prospect.payment_installments ?? 1) > 1 && (prospect.payment_schedule || []).some(i => !i.paid_at) && (
+            <button
+              onClick={onSendReminderEmail}
+              className="px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
+              style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', color: '#f59e0b', cursor: 'pointer' }}
+              title="Envoyer une relance de paiement pour la prochaine échéance"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Relance paiement
             </button>
           )}
           <div className="flex-1" />
@@ -2978,6 +3026,464 @@ function WelcomeEmailModal({
               <>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                 {testMode ? 'Envoyer le test' : 'Envoyer l\'email'}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+// ── Payment reminder modal ───────────────────────────────────
+
+function renderReminderTemplate(
+  template: string,
+  vars: Record<string, string>,
+  flags: { stripe: boolean; virement: boolean; note: boolean; alreadyPaidNotice: boolean }
+): string {
+  let html = template
+  const sections: Array<{ name: string; show: boolean }> = [
+    { name: 'STRIPE', show: flags.stripe },
+    { name: 'VIREMENT', show: flags.virement },
+    { name: 'BOTH', show: flags.stripe && flags.virement },
+    { name: 'NOTE', show: flags.note },
+    { name: 'ALREADY_PAID_NOTICE', show: flags.alreadyPaidNotice },
+  ]
+  for (const { name, show } of sections) {
+    const blockRegex = new RegExp(`<!-- IF_${name}_START -->[\\s\\S]*?<!-- IF_${name}_END -->`, 'g')
+    if (!show) {
+      html = html.replace(blockRegex, '')
+    } else {
+      html = html.replace(new RegExp(`<!-- IF_${name}_START -->`, 'g'), '')
+      html = html.replace(new RegExp(`<!-- IF_${name}_END -->`, 'g'), '')
+    }
+  }
+  for (const [key, value] of Object.entries(vars)) {
+    const safe = (value ?? '').toString().replace(/\$/g, '$$$$')
+    html = html.replace(new RegExp(`{{${key}}}`, 'g'), safe)
+  }
+  return html
+}
+
+function PaymentReminderEmailModal({
+  prospect,
+  onClose,
+}: {
+  prospect: Prospect
+  onClose: () => void
+}) {
+  const [template, setTemplate] = useState<string>('')
+  const [templateLoading, setTemplateLoading] = useState(true)
+
+  const schedule = prospect.payment_schedule || []
+  const totalInst = prospect.payment_installments ?? (schedule.length || 1)
+  const nextUnpaid = useMemo(() => {
+    const unpaid = schedule.filter(i => !i.paid_at).slice().sort((a, b) => (a.due_date || '').localeCompare(b.due_date || ''))
+    return unpaid[0] || null
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schedule.length])
+
+  const formatDateFR = useCallback((iso: string | null | undefined) => {
+    if (!iso) return ''
+    try {
+      const d = new Date(iso)
+      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    } catch { return iso || '' }
+  }, [])
+
+  const [subject, setSubject] = useState(`Rappel échéance${nextUnpaid ? ` ${nextUnpaid.num}/${totalInst}` : ''} — ATP ULTRA`)
+  const [amount, setAmount] = useState<string>(nextUnpaid?.amount ? `${Number(nextUnpaid.amount).toLocaleString('fr-FR')} €` : '')
+  const [echeanceNumero, setEcheanceNumero] = useState<string>(String(nextUnpaid?.num ?? 1))
+  const [echeanceTotal, setEcheanceTotal] = useState<string>(String(totalInst))
+  const [dateEcheance, setDateEcheance] = useState<string>(formatDateFR(nextUnpaid?.due_date))
+
+  const defaultMethod: 'stripe' | 'virement' | 'both' =
+    prospect.payment_method === 'stripe' ? 'stripe'
+    : prospect.payment_method === 'virement' ? 'virement'
+    : nextUnpaid?.method === 'stripe' ? 'stripe'
+    : 'virement'
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'virement' | 'both'>(defaultMethod)
+  const [stripeLink, setStripeLink] = useState('')
+  const [titulaire, setTitulaire] = useState('OMEGA INVESTMENT')
+  const [iban, setIban] = useState('')
+  const [bic, setBic] = useState('')
+  const [reference, setReference] = useState<string>(
+    nextUnpaid?.reference || `ATP-${(prospect.prenom || '').toUpperCase().slice(0, 6) || 'CLIENT'}-E${nextUnpaid?.num ?? 1}`
+  )
+  const [note, setNote] = useState('')
+  const [showAlreadyPaid, setShowAlreadyPaid] = useState(true)
+
+  const [sending, setSending] = useState(false)
+  const [sendResult, setSendResult] = useState<{ ok: boolean; message: string } | null>(null)
+
+  const [recipientEmail, setRecipientEmail] = useState<string>(prospect.email || '')
+  const [testMode, setTestMode] = useState(false)
+  const [testEmail, setTestEmail] = useState('gael.n971@gmail.com')
+
+  const [editedHtml, setEditedHtml] = useState<string | null>(null)
+  const [editMode, setEditMode] = useState<boolean>(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/email_relance_paiement.html')
+      .then(r => r.text())
+      .then(t => { if (!cancelled) { setTemplate(t); setTemplateLoading(false) } })
+      .catch(() => { if (!cancelled) setTemplateLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  const showStripe = paymentMethod === 'stripe' || paymentMethod === 'both'
+  const showVirement = paymentMethod === 'virement' || paymentMethod === 'both'
+
+  const generatedHtml = useMemo(() => {
+    if (!template) return ''
+    return renderReminderTemplate(
+      template,
+      {
+        PRENOM: prospect.prenom || 'à toi',
+        MONTANT: amount,
+        ECHEANCE_NUMERO: echeanceNumero,
+        ECHEANCE_TOTAL: echeanceTotal,
+        DATE_ECHEANCE: dateEcheance,
+        LIEN_STRIPE: stripeLink || '#',
+        TITULAIRE: titulaire,
+        IBAN: iban,
+        BIC: bic,
+        REFERENCE_VIREMENT: reference,
+        NOTE_PERSONNALISEE: note,
+      },
+      {
+        stripe: showStripe, virement: showVirement,
+        note: !!note.trim(), alreadyPaidNotice: showAlreadyPaid,
+      }
+    )
+  }, [template, prospect.prenom, amount, echeanceNumero, echeanceTotal, dateEcheance, stripeLink, titulaire, iban, bic, reference, note, showStripe, showVirement, showAlreadyPaid])
+
+  const previewHtml = editedHtml ?? generatedHtml
+
+  const enterEditMode = () => { setEditedHtml(generatedHtml); setEditMode(true) }
+  const exitEditMode = () => setEditMode(false)
+  const resetToForm = () => { setEditedHtml(null); setEditMode(false) }
+
+  const canSubmit = () => {
+    if (!amount.trim()) return false
+    if (!dateEcheance.trim()) return false
+    if (!echeanceNumero.trim()) return false
+    if (showStripe && !stripeLink.trim()) return false
+    if (showVirement && (!titulaire.trim() || !iban.trim() || !bic.trim())) return false
+    if (testMode && !testEmail.trim()) return false
+    if (!testMode && !recipientEmail.trim()) return false
+    return true
+  }
+
+  const handleSend = async () => {
+    if (!canSubmit()) return
+    setSending(true)
+    setSendResult(null)
+    try {
+      const res = await fetch('/api/prospects/send-payment-reminder-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prospect_id: prospect.id,
+          recipient_email: recipientEmail.trim(),
+          recipient_prenom: prospect.prenom,
+          subject, amount,
+          echeance_numero: echeanceNumero,
+          echeance_total: echeanceTotal,
+          date_echeance: dateEcheance,
+          payment_method: paymentMethod,
+          stripe_link: stripeLink || undefined,
+          titulaire: titulaire || undefined,
+          iban: iban || undefined,
+          bic: bic || undefined,
+          reference: reference || undefined,
+          note: note || undefined,
+          show_already_paid_notice: showAlreadyPaid,
+          test_mode: testMode,
+          test_email: testMode ? testEmail : undefined,
+          custom_html: editedHtml || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) setSendResult({ ok: false, message: data.error || `Erreur (${res.status})` })
+      else setSendResult({ ok: true, message: testMode ? `Test envoyé à ${testEmail}` : `Relance envoyée à ${recipientEmail.trim()}` })
+    } catch (e) {
+      setSendResult({ ok: false, message: e instanceof Error ? e.message : 'Erreur réseau' })
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-6xl rounded-2xl flex flex-col"
+        style={{ background: 'var(--bg2)', border: '1px solid var(--border)', maxHeight: '94vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <span style={{ color: '#f59e0b' }}>⏰</span> Relance paiement
+              {nextUnpaid && (
+                <span className="text-[10px] px-2 py-0.5 rounded font-mono" style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}>
+                  Échéance {nextUnpaid.num}/{totalInst} — auto-détectée
+                </span>
+              )}
+            </h2>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
+                Destinataire : <span style={{ color: 'var(--text2)' }}>{prospect.prenom || ''} {prospect.nom || ''}</span>
+              </span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={e => setRecipientEmail(e.target.value)}
+                  placeholder="email@destinataire.com"
+                  className="px-2 py-1 rounded text-[11px] outline-none"
+                  style={{
+                    background: 'var(--bg3)',
+                    border: `1px solid ${recipientEmail.trim() === (prospect.email || '').trim() ? 'var(--border)' : 'rgba(245,158,11,0.5)'}`,
+                    color: 'var(--text)', minWidth: 240,
+                  }}
+                />
+                {recipientEmail.trim() !== (prospect.email || '').trim() && prospect.email && (
+                  <button onClick={() => setRecipientEmail(prospect.email || '')}
+                    className="text-[10px] px-1.5 py-0.5 rounded"
+                    style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text3)', cursor: 'pointer' }}>
+                    ↻
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-xl px-2" style={{ color: 'var(--text3)', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        <div className="flex-1 overflow-hidden grid" style={{ gridTemplateColumns: '380px 1fr' }}>
+          <div className="overflow-y-auto p-5 space-y-4" style={{ borderRight: '1px solid var(--border)' }}>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Sujet</label>
+              <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Échéance n°</label>
+                <input type="text" value={echeanceNumero} onChange={e => setEcheanceNumero(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-xs outline-none font-bold tabular-nums"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Sur</label>
+                <input type="text" value={echeanceTotal} onChange={e => setEcheanceTotal(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-xs outline-none font-bold tabular-nums"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Montant de cette échéance</label>
+              <input type="text" value={amount} onChange={e => setAmount(e.target.value)}
+                placeholder="500 €"
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none font-bold"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--green)', color: 'var(--green)' }} />
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Date d&apos;échéance</label>
+              <input type="text" value={dateEcheance} onChange={e => setDateEcheance(e.target.value)}
+                placeholder="15 juillet 2026"
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Méthode de paiement</label>
+              <div className="flex gap-1.5">
+                {(['stripe', 'virement', 'both'] as const).map(m => {
+                  const active = paymentMethod === m
+                  const label = m === 'stripe' ? 'Stripe' : m === 'virement' ? 'Virement' : 'Les deux'
+                  return (
+                    <button key={m} onClick={() => setPaymentMethod(m)}
+                      className="flex-1 px-2 py-2 rounded-md text-[10px] font-bold transition-all"
+                      style={{
+                        background: active ? 'rgba(245,158,11,0.12)' : 'var(--bg3)',
+                        border: `1px solid ${active ? '#f59e0b' : 'var(--border)'}`,
+                        color: active ? '#f59e0b' : 'var(--text3)',
+                        cursor: 'pointer',
+                      }}>
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {showStripe && (
+              <div>
+                <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Lien Stripe</label>
+                <input type="url" value={stripeLink} onChange={e => setStripeLink(e.target.value)}
+                  placeholder="https://buy.stripe.com/..."
+                  className="w-full px-3 py-2 rounded-lg text-xs outline-none"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              </div>
+            )}
+
+            {showVirement && (
+              <div className="space-y-2 rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.15)' }}>
+                <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--green)' }}>Coordonnées bancaires</div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>Titulaire</label>
+                  <input type="text" value={titulaire} onChange={e => setTitulaire(e.target.value)}
+                    className="w-full px-2 py-1.5 rounded-md text-xs outline-none"
+                    style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>IBAN</label>
+                  <input type="text" value={iban} onChange={e => setIban(e.target.value)}
+                    placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX"
+                    className="w-full px-2 py-1.5 rounded-md text-xs outline-none font-mono"
+                    style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>BIC / SWIFT</label>
+                    <input type="text" value={bic} onChange={e => setBic(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-md text-xs outline-none font-mono"
+                      style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>Référence</label>
+                    <input type="text" value={reference} onChange={e => setReference(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-md text-xs outline-none font-mono"
+                      style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--text2)' }}>
+              <input type="checkbox" checked={showAlreadyPaid} onChange={e => setShowAlreadyPaid(e.target.checked)} className="cursor-pointer" />
+              Inclure le message &laquo;si déjà payé, ignorer&raquo;
+            </label>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold mb-1.5 block" style={{ color: 'var(--text3)' }}>Note personnalisée (optionnel)</label>
+              <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
+                placeholder="Un mot personnel pour cette relance…"
+                className="w-full px-3 py-2 rounded-lg text-xs outline-none resize-none"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+            </div>
+
+            <div className="rounded-lg p-3" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+              <label className="flex items-center gap-2 cursor-pointer mb-2">
+                <input type="checkbox" checked={testMode} onChange={e => setTestMode(e.target.checked)} className="cursor-pointer" />
+                <span className="text-xs font-semibold" style={{ color: 'var(--text2)' }}>Mode test</span>
+              </label>
+              {testMode && (
+                <input type="email" value={testEmail} onChange={e => setTestEmail(e.target.value)}
+                  placeholder="ton@email.com"
+                  className="w-full px-3 py-2 rounded-md text-xs outline-none"
+                  style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              )}
+            </div>
+
+            {sendResult && (
+              <div className="text-xs px-3 py-2 rounded-lg"
+                style={{
+                  background: sendResult.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                  color: sendResult.ok ? '#22c55e' : '#ef4444',
+                  border: `1px solid ${sendResult.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                }}>
+                {sendResult.ok ? '✓ ' : '⚠ '}{sendResult.message}
+              </div>
+            )}
+          </div>
+
+          <div className="overflow-hidden flex flex-col" style={{ background: '#0a0a0a' }}>
+            <div className="px-4 py-2 text-[10px] uppercase tracking-wider font-bold flex items-center justify-between gap-2"
+              style={{ color: 'var(--text3)', borderBottom: '1px solid var(--border)' }}>
+              <span className="flex items-center gap-2">
+                {editMode ? 'Édition du HTML' : 'Aperçu en direct'}
+                {editedHtml !== null && !editMode && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px]"
+                    style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)' }}>
+                    HTML modifié
+                  </span>
+                )}
+              </span>
+              <div className="flex items-center gap-2">
+                {editedHtml !== null && (
+                  <button onClick={resetToForm} className="px-2 py-1 rounded text-[10px] font-bold"
+                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', cursor: 'pointer' }}>
+                    ↻ Réinitialiser
+                  </button>
+                )}
+                {!editMode ? (
+                  <button onClick={enterEditMode} disabled={!template} className="px-2 py-1 rounded text-[10px] font-bold"
+                    style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.35)', color: '#a855f7', cursor: template ? 'pointer' : 'not-allowed' }}>
+                    ✎ Modifier le HTML
+                  </button>
+                ) : (
+                  <button onClick={exitEditMode} className="px-2 py-1 rounded text-[10px] font-bold"
+                    style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', color: '#22c55e', cursor: 'pointer' }}>
+                    👁 Aperçu
+                  </button>
+                )}
+                <span style={{ color: '#f59e0b' }}>● {editMode ? 'EDIT' : 'LIVE'}</span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {templateLoading ? (
+                <div className="text-center py-12 text-xs" style={{ color: 'var(--text3)' }}>Chargement du template…</div>
+              ) : editMode ? (
+                <textarea
+                  value={editedHtml ?? ''}
+                  onChange={e => setEditedHtml(e.target.value)}
+                  spellCheck={false}
+                  className="w-full h-full border-0 outline-none p-3 font-mono text-[11px] leading-relaxed resize-none"
+                  style={{ background: '#0a0a0a', color: '#d1d5db' }}
+                />
+              ) : (
+                <iframe srcDoc={previewHtml} title="Reminder preview" className="w-full h-full border-0" style={{ background: '#0a0a0a' }} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t flex items-center gap-2" style={{ borderColor: 'var(--border)' }}>
+          <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
+            {testMode ? `Sera envoyé en TEST à ${testEmail}` : `Sera envoyé à ${recipientEmail.trim() || 'aucune adresse'}`}
+          </div>
+          <div className="flex-1" />
+          <button onClick={onClose}
+            className="px-4 py-2 rounded-lg text-xs font-semibold"
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)', cursor: 'pointer' }}>
+            Annuler
+          </button>
+          <button onClick={handleSend} disabled={!canSubmit() || sending}
+            className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
+            style={{
+              background: canSubmit() && !sending ? '#f59e0b' : 'var(--bg3)',
+              color: canSubmit() && !sending ? '#09090b' : 'var(--text3)',
+              cursor: canSubmit() && !sending ? 'pointer' : 'not-allowed',
+              border: '1px solid var(--border)',
+            }}>
+            {sending ? 'Envoi…' : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                {testMode ? 'Envoyer le test' : 'Envoyer la relance'}
               </>
             )}
           </button>
