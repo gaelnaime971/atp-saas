@@ -21,10 +21,11 @@ import Prospects from '@/components/admin/pages/Prospects'
 import Pipeline from '@/components/admin/pages/Pipeline'
 import ContentManager from '@/components/admin/pages/ContentManager'
 import RecapTradeLive from '@/components/admin/pages/RecapTradeLive'
+import TradingPerso from '@/components/admin/pages/TradingPerso'
 import AdminTopbarStats from '@/components/admin/TopbarStats'
 import AdminChatWidget from '@/components/chat/AdminChatWidget'
 
-type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'coaching' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'recap-live' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks' | 'prospects' | 'pipeline' | 'content'
+type AdminPage = 'overview' | 'traders' | 'results' | 'calendar' | 'sessions' | 'coaching' | 'revenus' | 'bibliotheque' | 'broadcast' | 'bilan' | 'recap-live' | 'trading-perso' | 'settings' | 'crm' | 'notes' | 'reports' | 'tasks' | 'prospects' | 'pipeline' | 'content'
 
 const pageTitles: Record<AdminPage, string> = {
   overview: 'Vue Globale',
@@ -45,6 +46,7 @@ const pageTitles: Record<AdminPage, string> = {
   bibliotheque: 'Bibliothèque',
   bilan: 'Bilan de compétences',
   'recap-live': 'Récap Trade Live',
+  'trading-perso': 'Trading Perso',
   settings: 'Paramètres',
 }
 
@@ -82,6 +84,7 @@ export default function AdminDashboard() {
       case 'bibliotheque': return <Bibliotheque />
       case 'bilan': return <BilanCompetences />
       case 'recap-live': return <RecapTradeLive />
+      case 'trading-perso': return <TradingPerso />
       case 'settings': return <Settings />
       default: return <Overview />
     }
