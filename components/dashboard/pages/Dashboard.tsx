@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
+import PageHeader from '@/components/ui/PageHeader'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
 import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
@@ -260,51 +261,47 @@ export default function Dashboard() {
         />
       )}
       {/* Welcome bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-            Bonjour, {profile?.full_name ?? 'Trader'} 👋
-          </h1>
-          <p style={{ fontSize: 14, color: 'var(--text3)', margin: '4px 0 0 0', textTransform: 'capitalize' }}>
-            {dateDisplay}
-          </p>
-        </div>
-        {accounts.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setSelectedAccounts(new Set(['all']))}
-              style={{
-                padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600,
-                background: selectedAccounts.has('all') ? 'var(--green)' : 'var(--bg2)',
-                border: `1px solid ${selectedAccounts.has('all') ? 'transparent' : 'var(--border)'}`,
-                color: selectedAccounts.has('all') ? 'var(--color-surface-0)' : 'var(--text3)',
-                cursor: 'pointer', transition: 'all 0.15s',
-              }}
-            >
-              Tous
-            </button>
-            {accounts.map(acc => {
-              const sel = selectedAccounts.has(acc.id)
-              const tc = acc.account_type === 'funded' ? 'var(--color-profit)' : acc.account_type === 'challenge' ? '#60a5fa' : 'var(--color-warn)'
-              return (
-                <button
-                  key={acc.id}
-                  onClick={() => toggleAccount(acc.id)}
-                  style={{
-                    padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600,
-                    background: sel ? `${tc}18` : 'var(--bg2)',
-                    border: `1px solid ${sel ? tc : 'var(--border)'}`,
-                    color: sel ? tc : 'var(--text3)',
-                    cursor: 'pointer', transition: 'all 0.15s',
-                  }}
-                >
-                  {sel ? '✓ ' : ''}{acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title={<>Bonjour, {profile?.full_name ?? 'Trader'} 👋</>}
+        subtitle={<span style={{ textTransform: 'capitalize' }}>{dateDisplay}</span>}
+        actions={
+          accounts.length > 0 ? (
+            <>
+              <button
+                onClick={() => setSelectedAccounts(new Set(['all']))}
+                style={{
+                  padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600,
+                  background: selectedAccounts.has('all') ? 'var(--green)' : 'var(--bg2)',
+                  border: `1px solid ${selectedAccounts.has('all') ? 'transparent' : 'var(--border)'}`,
+                  color: selectedAccounts.has('all') ? 'var(--color-surface-0)' : 'var(--text3)',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+              >
+                Tous
+              </button>
+              {accounts.map(acc => {
+                const sel = selectedAccounts.has(acc.id)
+                const tc = acc.account_type === 'funded' ? 'var(--color-profit)' : acc.account_type === 'challenge' ? '#60a5fa' : 'var(--color-warn)'
+                return (
+                  <button
+                    key={acc.id}
+                    onClick={() => toggleAccount(acc.id)}
+                    style={{
+                      padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600,
+                      background: sel ? `${tc}18` : 'var(--bg2)',
+                      border: `1px solid ${sel ? tc : 'var(--border)'}`,
+                      color: sel ? tc : 'var(--text3)',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                  >
+                    {sel ? '✓ ' : ''}{acc.label || `${acc.propfirm_name} ${Number(acc.capital).toLocaleString()}$`}
+                  </button>
+                )
+              })}
+            </>
+          ) : undefined
+        }
+      />
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>

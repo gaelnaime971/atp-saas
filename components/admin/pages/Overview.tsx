@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface KPIData {
   monthlyRevenue: number
@@ -261,10 +262,10 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-[#e8edf5]">Vue Globale</h1>
-        <p className="text-[var(--color-neutral)] text-sm mt-1">Aperçu de votre activité de coaching</p>
-      </div>
+      <PageHeader
+        title="Vue Globale"
+        subtitle="Aperçu de votre activité de coaching"
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
