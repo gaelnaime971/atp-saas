@@ -60,16 +60,13 @@ et lequel bascule vers `--color-text-2` ou `--color-text-3`.
 **Action prévue en commit 2** : supprimer Geist, migrer Outfit + DM Mono vers
 `next/font/google` (self-hosting, plus rapide, pas de FOUT).
 
-### Poids 800 et 900 non chargés mais réclamés par le code
+### Poids 800 chargé, 900 en synthèse — décidé
 
-Le code utilise `font-extrabold` (Tailwind 800, **95 occurrences**) et `font-black`
-(900, 16 occ.) mais Outfit n'est chargé qu'en 300-700. Aujourd'hui le navigateur
-synthétise ces poids depuis 700. Après commit 2, comportement identique (mêmes
-poids chargés).
-
-**Décision reportée** : ajouter 800 et 900 aux poids chargés ferait rendre le
-texte concerné à son poids réel — c'est un léger changement visuel (texte
-légèrement plus gras / plus fin selon les cas). À valider consciemment.
+- **800** : chargé (mars 2026). Le bold synthétique déformait les gros chiffres
+  KPI où `font-extrabold` est utilisé (95 occurrences). Résultat : léger
+  changement visuel volontaire sur les valeurs monétaires — elles deviennent
+  franchement plus propres.
+- **900** : laissé en synthèse pour l'instant (16 occurrences, moins critique).
 
 ### Bug latent — `--font-sans: var(--font-sans)`
 
@@ -97,4 +94,17 @@ globals.css devient ATP-only.
 
 ## Étape 4 — Codemod
 
-Rapport détaillé attendu dans `REFONTE-couleurs.md`.
+Rapport détaillé dans `REFONTE-couleurs.md`. **Appliqué** sur 71 fichiers,
+excluant TradingPerso.tsx, Pipeline.tsx et les deux versions de
+RecapTradeLive.tsx + AnalyseIA.tsx (à traiter à l'étape 2 des primitives).
+
+---
+
+## Décisions actées (ne plus reporter)
+
+### Scale de radius — DÉFINITIVE
+
+La scale reste celle héritée de shadcn : base 0.625rem, multiples 0.6/0.8/1/1.4/…
+Toucher 411 usages pour gagner 2px sur `rounded-lg` ne vaut pas le risque.
+Les valeurs sont **hardcodées** dans le `@theme` ATP de globals.css et ne
+dépendent plus de shadcn.

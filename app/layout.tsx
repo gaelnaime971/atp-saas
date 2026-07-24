@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import { Outfit, DM_Mono } from "next/font/google";
 import "./globals.css";
 
-// Poids alignés exactement sur l'ancien @import Google CSS pour ne rien
-// changer visuellement. Le code appelle occasionnellement font-extrabold (800)
-// et font-black (900) — comme avant, ces poids ne sont pas chargés et le
-// navigateur synthétise depuis 700. Voir REFONTE.md pour l'action future.
+// Poids chargés : 300/400/500/600/700 + 800.
+// Le 800 est ajouté car font-extrabold est utilisé 95 fois dans le code, notamment
+// sur les gros chiffres de KPI. Sans le vrai poids, le navigateur synthétise depuis
+// 700 et déforme les lettres — visible sur les valeurs monétaires. Le 900 (16 occ.)
+// reste synthétique pour l'instant (statu quo).
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
