@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Revenue } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 
 type PaymentMethod = 'virement' | 'stripe_comptant' | 'stripe_2x' | 'stripe_3x' | 'stripe_4x' | 'crypto'
 
@@ -178,18 +179,19 @@ export default function Revenus() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[#e8edf5]">Revenus</h1>
-          <p className="text-[var(--color-neutral)] text-sm mt-1">Suivi des paiements de coaching</p>
-        </div>
-        <Button onClick={() => setShowForm(true)}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Nouveau Paiement
-        </Button>
-      </div>
+      <PageHeader
+        size="sm"
+        title="Revenus"
+        subtitle="Suivi des paiements de coaching"
+        actions={
+          <Button onClick={() => setShowForm(true)}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nouveau Paiement
+          </Button>
+        }
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">

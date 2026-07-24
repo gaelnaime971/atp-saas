@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface AdminNote {
   id: string
@@ -86,13 +87,11 @@ export default function Notes() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-[#e8edf5]">Notes privées</h1>
-        <p className="text-[var(--color-neutral)] text-sm mt-1">
-          Notes personnelles par trader &middot; {traders.length} trader{traders.length !== 1 ? 's' : ''}
-        </p>
-      </div>
+      <PageHeader
+        size="sm"
+        title="Notes privées"
+        subtitle={<>Notes personnelles par trader &middot; {traders.length} trader{traders.length !== 1 ? 's' : ''}</>}
+      />
 
       {/* Grid layout */}
       <div className="grid grid-cols-2 gap-6">

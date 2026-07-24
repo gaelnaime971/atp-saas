@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Card from '@/components/ui/Card'
+import PageHeader from '@/components/ui/PageHeader'
 
 /* ─── Constants ─── */
 
@@ -230,13 +231,10 @@ export default function PreMarket() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* ═══ Header ═══ */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#e8edf5', margin: 0 }}>
-              Routine Pré-Marché
-            </h1>
-            <p style={{ fontSize: 13, color: '#6b7688', marginTop: 4, textTransform: 'capitalize' }}>{today}</p>
-          </div>
+        <PageHeader
+          title="Routine Pré-Marché"
+          subtitle={<span style={{ textTransform: 'capitalize' }}>{today}</span>}
+          actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {isReady && (
               <span style={{
@@ -271,7 +269,8 @@ export default function PreMarket() {
               Réinitialiser
             </button>
           </div>
-        </div>
+          }
+        />
 
         {/* ═══ Global progress ═══ */}
         <div style={{

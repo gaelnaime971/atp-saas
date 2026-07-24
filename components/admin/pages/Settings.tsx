@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import AvatarUpload from '@/components/ui/AvatarUpload'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface TraderInfo {
   id: string
@@ -207,13 +208,12 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[#e8edf5]">Paramètres</h1>
-          <p className="text-[var(--color-neutral)] text-sm mt-1">Gérer les traders, invitations et configuration</p>
-        </div>
-        {adminId && (
-          <div className="flex items-center gap-4">
+      <PageHeader
+        size="sm"
+        title="Paramètres"
+        subtitle="Gérer les traders, invitations et configuration"
+        actions={adminId ? (
+          <>
             <AvatarUpload
               userId={adminId}
               currentUrl={adminAvatar}
@@ -225,9 +225,9 @@ export default function Settings() {
               <p className="text-sm font-medium text-[#e8edf5]">{adminName}</p>
               <p className="text-xs text-[var(--color-neutral)]">Modifier ma photo</p>
             </div>
-          </div>
-        )}
-      </div>
+          </>
+        ) : undefined}
+      />
 
       {/* Tabs */}
       <div className="flex gap-2">

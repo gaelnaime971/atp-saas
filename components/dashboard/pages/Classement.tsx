@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface SessionData {
   pnl: number
@@ -124,10 +125,11 @@ export default function Classement() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>Achievements</h1>
-        <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>{unlockedCount} / {badges.length} débloqués</p>
-      </div>
+      <PageHeader
+        size="sm"
+        title="Achievements"
+        subtitle={`${unlockedCount} / ${badges.length} débloqués`}
+      />
 
       {/* Level card */}
       <Card>

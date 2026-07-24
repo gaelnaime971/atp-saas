@@ -20,6 +20,11 @@ export interface PageHeaderProps {
   actions?: ReactNode
   /** Fil d'ariane optionnel affiché AU-DESSUS du titre (mono uppercase tracked). */
   breadcrumb?: ReactNode
+  /**
+   * Taille du titre. Par défaut `md` (24px, dashboards principaux).
+   * `sm` (20px) pour les pages admin denses (tables, listes).
+   */
+  size?: 'sm' | 'md'
   /** Classe additionnelle sur le wrapper. */
   className?: string
 }
@@ -29,8 +34,10 @@ export default function PageHeader({
   subtitle,
   actions,
   breadcrumb,
+  size = 'md',
   className = '',
 }: PageHeaderProps) {
+  const titleSize = size === 'sm' ? '1.25rem' /* 20px */ : '1.5rem' /* 24px */
   return (
     <header
       className={`flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6 ${className}`}
@@ -54,7 +61,7 @@ export default function PageHeader({
         <h1
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: '1.5rem',           // 24px — unifié
+            fontSize: titleSize,
             fontWeight: 700,
             color: 'var(--color-text-1)',
             margin: 0,
@@ -69,7 +76,7 @@ export default function PageHeader({
             style={{
               fontFamily: 'var(--font-display)',
               fontSize: 'var(--text-body)',
-              color: 'var(--color-text-3)',
+              color: 'var(--color-neutral)',
               margin: '0.25rem 0 0 0',
               lineHeight: 1.5,
             }}

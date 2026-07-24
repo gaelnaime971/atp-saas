@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 
 type TaskStatus = 'todo' | 'in_progress' | 'done'
 
@@ -167,21 +168,19 @@ export default function Tasks() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[#e8edf5]">Tâches</h1>
-          <p className="text-[var(--color-neutral)] text-sm mt-1">
-            {tasks.filter(t => t.status !== 'done').length} en cours · {tasks.filter(t => t.status === 'done').length} terminée{tasks.filter(t => t.status === 'done').length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <Button onClick={() => { resetTaskForm(); setShowForm(true) }}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Nouvelle tâche
-        </Button>
-      </div>
+      <PageHeader
+        size="sm"
+        title="Tâches"
+        subtitle={`${tasks.filter(t => t.status !== 'done').length} en cours · ${tasks.filter(t => t.status === 'done').length} terminée${tasks.filter(t => t.status === 'done').length !== 1 ? 's' : ''}`}
+        actions={
+          <Button onClick={() => { resetTaskForm(); setShowForm(true) }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nouvelle tâche
+          </Button>
+        }
+      />
 
       {/* Add task form */}
       {showForm && (

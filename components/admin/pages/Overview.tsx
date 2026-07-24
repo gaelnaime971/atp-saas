@@ -263,6 +263,7 @@ export default function Overview() {
   return (
     <div className="space-y-6">
       <PageHeader
+        size="sm"
         title="Vue Globale"
         subtitle="Aperçu de votre activité de coaching"
       />

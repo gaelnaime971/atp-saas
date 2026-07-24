@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { JournalEntry } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 
 type Category = 'Technique' | 'Psychologie' | 'Macro' | 'Risk' | 'Autre'
 
@@ -96,14 +97,11 @@ export default function Journal() {
 
   return (
     <div>
-      {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
-          Journal
-        </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text3)' }}>
-          Notez vos observations et réflexions de trading
-        </p>
+        <PageHeader
+          title="Journal"
+          subtitle="Notez vos observations et réflexions de trading"
+        />
       </div>
 
       {/* Grid-2 layout */}

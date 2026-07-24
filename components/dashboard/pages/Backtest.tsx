@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 
 // ── Constants ──────────────────────────────────────────────
 
@@ -381,12 +382,11 @@ export default function Backtest() {
 
   return (
     <div>
-      {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Backtest</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text3)' }}>
-          Analysez vos setups ATP et identifiez vos patterns les plus profitables
-        </p>
+        <PageHeader
+          title="Backtest"
+          subtitle="Analysez vos setups ATP et identifiez vos patterns les plus profitables"
+        />
       </div>
 
       {/* Tab bar */}

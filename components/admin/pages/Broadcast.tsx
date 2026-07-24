@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 
 type RecipientMode = 'all' | 'active' | 'manual'
 
@@ -100,11 +101,11 @@ export default function Broadcast() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-[#e8edf5]">Broadcast</h1>
-        <p className="text-[var(--color-neutral)] text-sm mt-1">Envoyer un message à tous vos traders</p>
-      </div>
+      <PageHeader
+        size="sm"
+        title="Broadcast"
+        subtitle="Envoyer un message à tous vos traders"
+      />
 
       {/* Result banner */}
       {result && (

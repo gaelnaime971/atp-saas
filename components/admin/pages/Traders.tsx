@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 import NewTraderModal from '@/components/admin/modals/NewTraderModal'
 import TraderProfileModal from '@/components/admin/modals/TraderProfileModal'
 
@@ -167,16 +168,14 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[#e8edf5]">Traders</h1>
-          <p className="text-[var(--color-neutral)] text-sm mt-1">
-            {active.length} actif{active.length !== 1 ? 's' : ''}
-            {pending.length > 0 && <> · {pending.length} en attente</>}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Blur toggle */}
+      <PageHeader
+        size="sm"
+        title="Traders"
+        subtitle={<>
+          {active.length} actif{active.length !== 1 ? 's' : ''}
+          {pending.length > 0 && <> · {pending.length} en attente</>}
+        </>}
+        actions={<>
           <button
             onClick={() => setBlurNames(b => !b)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border"
@@ -201,8 +200,8 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
             </svg>
             Nouveau Trader
           </Button>
-        </div>
-      </div>
+        </>}
+      />
 
       {/* Date filter bar */}
       <div

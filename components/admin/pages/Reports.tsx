@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
+import PageHeader from '@/components/ui/PageHeader'
 
 const MONTH_NAMES = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -232,13 +233,11 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      {/* Header + Month selector */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[#e8edf5]">Rapports Mensuels</h1>
-          <p className="text-[var(--color-neutral)] text-sm mt-1">Récapitulatif mensuel de votre activité</p>
-        </div>
-        <div className="flex items-center gap-3">
+      <PageHeader
+        size="sm"
+        title="Rapports Mensuels"
+        subtitle="Récapitulatif mensuel de votre activité"
+        actions={<>
           <button
             onClick={goToPrevMonth}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] text-[#a0aec0] hover:text-[#e8edf5] hover:border-[rgba(255,255,255,0.15)] transition-colors"
@@ -258,8 +257,8 @@ export default function Reports() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
-        </div>
-      </div>
+        </>}
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">

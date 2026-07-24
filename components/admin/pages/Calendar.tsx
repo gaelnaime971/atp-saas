@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface CalendarSession {
   id: string
@@ -79,10 +80,11 @@ export default function Calendar() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-[#e8edf5]">Calendrier</h1>
-        <p className="text-[var(--color-neutral)] text-sm mt-1">Sessions de coaching planifiées</p>
-      </div>
+      <PageHeader
+        size="sm"
+        title="Calendrier"
+        subtitle="Sessions de coaching planifiées"
+      />
 
       <div className="grid grid-cols-3 gap-6">
         {/* Calendar */}

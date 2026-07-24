@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { TradingSession } from '@/lib/types'
 import type { TraderAccount } from '@/lib/types'
 import Card from '@/components/ui/Card'
+import PageHeader from '@/components/ui/PageHeader'
 import Button from '@/components/ui/Button'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
@@ -135,14 +136,11 @@ export default function Stats() {
 
   return (
     <div>
-      {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
-          Stats & Performance
-        </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text3)' }}>
-          Analyse de vos performances de trading
-        </p>
+        <PageHeader
+          title="Stats & Performance"
+          subtitle="Analyse de vos performances de trading"
+        />
       </div>
 
       {/* Filters */}

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Resource } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -434,21 +435,18 @@ export default function Bibliotheque() {
 
   return (
     <div className="p-6 space-y-6" style={{ background: 'var(--bg)', minHeight: '100%' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Bibliothèque</h1>
-          <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>
-            Gérer le contenu pédagogique e-learning (vidéos &amp; documents)
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          {tab === 'video' ? 'Nouvelle vidéo' : 'Nouveau document'}
-        </Button>
-      </div>
+      <PageHeader
+        title="Bibliothèque"
+        subtitle="Gérer le contenu pédagogique e-learning (vidéos & documents)"
+        actions={
+          <Button onClick={openCreate}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            {tab === 'video' ? 'Nouvelle vidéo' : 'Nouveau document'}
+          </Button>
+        }
+      />
 
       {/* Stats card */}
       <div className="grid grid-cols-4 gap-3">

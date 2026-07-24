@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
 import Card from '@/components/ui/Card'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface TraderActivity extends Profile {
   last_session: string | null
@@ -151,13 +152,11 @@ export default function CRM() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-[#e8edf5]">Vue CRM</h1>
-        <p className="text-[var(--color-neutral)] text-sm mt-1">
-          Suivi d&apos;activit&eacute; de vos traders &middot; {traders.length} trader{traders.length !== 1 ? 's' : ''}
-        </p>
-      </div>
+      <PageHeader
+        size="sm"
+        title="Vue CRM"
+        subtitle={<>Suivi d&apos;activit&eacute; de vos traders &middot; {traders.length} trader{traders.length !== 1 ? 's' : ''}</>}
+      />
 
       {/* Alert banner */}
       {alertTraders.length > 0 && (

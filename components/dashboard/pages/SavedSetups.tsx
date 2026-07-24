@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import PageHeader from '@/components/ui/PageHeader'
 
 const INSTRUMENTS = ['ES', 'NQ', 'DAX', 'YM', 'MYM', 'MNQ', 'GC', 'MGC']
 
@@ -114,20 +115,19 @@ export default function SavedSetups() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>Bibliothèque de Setups</h1>
-          <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>{setups.length} setup{setups.length !== 1 ? 's' : ''} sauvegardé{setups.length !== 1 ? 's' : ''}</p>
-        </div>
-        {!showForm && (
+      <PageHeader
+        size="sm"
+        title="Bibliothèque de Setups"
+        subtitle={`${setups.length} setup${setups.length !== 1 ? 's' : ''} sauvegardé${setups.length !== 1 ? 's' : ''}`}
+        actions={!showForm ? (
           <Button onClick={() => setShowForm(true)}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Nouveau setup
           </Button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Add form */}
       {showForm && (

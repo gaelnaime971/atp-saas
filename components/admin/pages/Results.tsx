@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
+import PageHeader from '@/components/ui/PageHeader'
 
 interface SessionRow {
   id: string
@@ -61,10 +62,11 @@ export default function Results() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-[#e8edf5]">Résultats</h1>
-        <p className="text-[var(--color-neutral)] text-sm mt-1">Toutes les sessions de trading</p>
-      </div>
+      <PageHeader
+        size="sm"
+        title="Résultats"
+        subtitle="Toutes les sessions de trading"
+      />
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">
