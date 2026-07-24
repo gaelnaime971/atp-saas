@@ -22,7 +22,7 @@ SUJET : "5 choses que le hedge fund m'a appris que les traders retail ignorent"
 HOOK SLIDE 1 : "J'ai tradé pour un hedge fund. Voici ce qu'aucun formateur ne vous dira."
 TON : Professionnel, direct, crédible. Pas de hype. Parle comme un insider.
 FORMAT : Titre accrocheur par slide + 2-3 lignes de contenu max.
-BRANDING : Fond noir, texte blanc/vert #22c55e, police Orbitron pour les titres.
+BRANDING : Fond noir, texte blanc/vert var(--color-profit), police Orbitron pour les titres.
 CTA LAST SLIDE : "Rejoins la communauté ATP → lien en bio"
 Génère le texte complet de chaque slide.`,
 
@@ -393,11 +393,11 @@ function getWeeks(): Date[][] {
 
 // ─── STYLES ─────────────────────────────────────────────────────────────────
 const V = {
-  g: '#22c55e', g2: '#16a34a', g3: 'rgba(34,197,94,0.1)', g4: 'rgba(34,197,94,0.06)',
+  g: 'var(--color-profit)', g2: '#16a34a', g3: 'rgba(var(--color-profit-rgb), 0.1)', g4: 'rgba(var(--color-profit-rgb), 0.06)',
   bg: '#0a0a0a', bg2: '#111', bg3: '#161616', bg4: '#1a1a1a',
-  border: 'rgba(255,255,255,0.07)', border2: 'rgba(34,197,94,0.25)',
+  border: 'rgba(255,255,255,0.07)', border2: 'rgba(var(--color-profit-rgb), 0.25)',
   text: '#e5e5e5', muted: '#666', dim: '#2a2a2a',
-  amber: '#f59e0b', red: '#ef4444', discord: '#5865f2',
+  amber: 'var(--color-warn)', red: 'var(--color-loss)', discord: '#5865f2',
   mono: "'JetBrains Mono', monospace", orb: "'Orbitron', sans-serif",
 }
 
@@ -678,7 +678,7 @@ export default function ContentManager() {
       if (btn.cls === 'fi') return { ...base, background: 'rgba(225,48,108,0.1)', borderColor: 'rgba(225,48,108,0.3)', color: '#e1306c' }
       if (btn.cls === 'fx') return { ...base, background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.2)', color: '#ccc' }
       if (btn.cls === 'fd') return { ...base, background: 'rgba(88,101,242,0.1)', borderColor: 'rgba(88,101,242,0.3)', color: V.discord }
-      if (btn.cls === 'fw') return { ...base, background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.3)', color: V.amber }
+      if (btn.cls === 'fw') return { ...base, background: 'rgba(var(--color-warn-rgb), 0.1)', borderColor: 'rgba(var(--color-warn-rgb), 0.3)', color: V.amber }
       if (btn.key === 'pub') return { ...base, borderColor: V.border2, color: V.g, background: V.g4 }
       return { ...base, borderColor: V.border2, color: V.g, background: V.g4 }
     }
@@ -692,8 +692,8 @@ export default function ContentManager() {
       fontSize: 7, fontWeight: 700, letterSpacing: '0.06em',
       padding: '2px 6px', borderRadius: 3, marginTop: 4, cursor: 'pointer', transition: 'all .12s',
     }
-    if (status === 'wip') return { ...base, background: 'rgba(245,158,11,0.1)', color: V.amber, border: '1px solid rgba(245,158,11,0.25)' }
-    if (status === 'pub') return { ...base, background: 'rgba(34,197,94,0.1)', color: V.g, border: '1px solid rgba(34,197,94,0.25)' }
+    if (status === 'wip') return { ...base, background: 'rgba(var(--color-warn-rgb), 0.1)', color: V.amber, border: '1px solid rgba(var(--color-warn-rgb), 0.25)' }
+    if (status === 'pub') return { ...base, background: 'rgba(var(--color-profit-rgb), 0.1)', color: V.g, border: '1px solid rgba(var(--color-profit-rgb), 0.25)' }
     return { ...base, background: 'rgba(255,255,255,0.05)', color: V.muted, border: `1px solid ${V.dim}` }
   }
 
@@ -1006,7 +1006,7 @@ export default function ContentManager() {
                                 {isPromptOpen && (
                                   <div style={{
                                     marginTop: 6, padding: '6px 8px',
-                                    background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.12)',
+                                    background: 'rgba(var(--color-profit-rgb), 0.04)', border: '1px solid rgba(var(--color-profit-rgb), 0.12)',
                                     borderRadius: 3,
                                   }}>
                                     <div style={{ whiteSpace: 'pre-wrap', fontSize: 8, color: '#8be5a0', lineHeight: 1.6 }}>

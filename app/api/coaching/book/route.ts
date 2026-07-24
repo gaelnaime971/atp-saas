@@ -118,15 +118,15 @@ export async function POST(request: Request) {
           subject: `Coaching ATP confirmé — ${dateFmt}`,
           html: `
             <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#0a0a0a;color:#eee;border-radius:12px">
-              <h2 style="color:#22c55e;margin:0 0 16px;">Coaching confirmé</h2>
+              <h2 style="color:var(--color-profit);margin:0 0 16px;">Coaching confirmé</h2>
               <p>Salut ${traderName},</p>
               <p>Ton coaching est réservé :</p>
-              <div style="padding:14px 18px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:8px;margin:16px 0">
-                <strong style="color:#22c55e;font-size:16px">${dateFmt}</strong><br>
+              <div style="padding:14px 18px;background:rgba(var(--color-profit-rgb), 0.06);border:1px solid rgba(var(--color-profit-rgb), 0.25);border-radius:8px;margin:16px 0">
+                <strong style="color:var(--color-profit);font-size:16px">${dateFmt}</strong><br>
                 <span style="color:#888;font-size:13px">Durée : ${duration_minutes} minutes</span>
               </div>
               <p style="font-size:13px;color:#bbb;line-height:1.6">Rejoins l'appel depuis ton dashboard 5 minutes avant l'heure prévue. Le bouton "Rejoindre" apparaîtra sur ta page Coaching.</p>
-              <a href="${dashboardUrl}" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#22c55e;color:#000;text-decoration:none;border-radius:8px;font-weight:bold">Ouvrir mon dashboard</a>
+              <a href="${dashboardUrl}" style="display:inline-block;margin-top:12px;padding:12px 24px;background:var(--color-profit);color:#000;text-decoration:none;border-radius:8px;font-weight:bold">Ouvrir mon dashboard</a>
               <p style="font-size:11px;color:#555;margin-top:24px">— Alpha Trading Pro</p>
             </div>
           `,

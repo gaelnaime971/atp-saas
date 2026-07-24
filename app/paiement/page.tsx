@@ -9,7 +9,7 @@ const COMPANY_ADDRESS = '316 Route De Neron, 97160, Le Moule, Guadeloupe, France
 export default function Paiement() {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['cgv', 'refund', 'legal']))
 
-  const G = '#22c55e'
+  const G = 'var(--color-profit)'
 
   const toggleSection = (id: string) => setOpenSections(prev => {
     const next = new Set(prev)
@@ -57,15 +57,15 @@ export default function Paiement() {
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;600;700;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#040a04;color:#fff;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
-body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:700px;background:radial-gradient(ellipse,rgba(34,197,94,0.06) 0%,transparent 70%);pointer-events:none;z-index:0;}
+body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:700px;background:radial-gradient(ellipse,rgba(var(--color-profit-rgb), 0.06) 0%,transparent 70%);pointer-events:none;z-index:0;}
 .pay-wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:60px 24px 80px;}
 .pay-nav{display:flex;align-items:center;justify-content:center;padding:0 0 40px;}
 .pay-nav img{height:32px;}
-.pay-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:100px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.18);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;}
+.pay-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:100px;background:rgba(var(--color-profit-rgb), 0.08);border:1px solid rgba(var(--color-profit-rgb), 0.18);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;}
 .pay-h1{font-family:'Orbitron',sans-serif;font-size:clamp(32px,5vw,44px);font-weight:900;line-height:1.1;letter-spacing:-0.02em;}
 .pay-sub{font-size:15px;color:#888;line-height:1.7;font-weight:300;}
-.btn-pay{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:18px 40px;background:#22c55e;color:#000;border:none;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:800;letter-spacing:0.08em;text-decoration:none;cursor:pointer;transition:all 0.25s;text-transform:uppercase;}
-.btn-pay:hover{box-shadow:0 6px 30px rgba(34,197,94,0.4);transform:translateY(-1px);}
+.btn-pay{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:18px 40px;background:var(--color-profit);color:#000;border:none;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:14px;font-weight:800;letter-spacing:0.08em;text-decoration:none;cursor:pointer;transition:all 0.25s;text-transform:uppercase;}
+.btn-pay:hover{box-shadow:0 6px 30px rgba(var(--color-profit-rgb), 0.4);transform:translateY(-1px);}
 @media(max-width:480px){.pay-wrap{padding:36px 16px 60px;}}
       `}</style>
 
@@ -90,8 +90,8 @@ body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(
         </div>
 
         {/* Offer card */}
-        <div style={{ background: '#0a0a0a', border: '1px solid rgba(34,197,94,0.18)', borderRadius: 16, padding: 32, marginBottom: 28, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: -100, right: -100, width: 280, height: 280, background: 'radial-gradient(circle, rgba(34,197,94,0.12), transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ background: '#0a0a0a', border: '1px solid rgba(var(--color-profit-rgb), 0.18)', borderRadius: 16, padding: 32, marginBottom: 28, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -100, right: -100, width: 280, height: 280, background: 'radial-gradient(circle, rgba(var(--color-profit-rgb), 0.12), transparent 70%)', pointerEvents: 'none' }} />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'center', position: 'relative' }}>
             <div>
@@ -205,7 +205,7 @@ body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(
           <div>
             <div style={{ color: G, fontWeight: 700, marginBottom: 8, fontSize: 13, letterSpacing: '0.04em' }}>Comment exercer mon droit de rétractation</div>
             <p>Pour exercer votre droit de rétractation, vous devez nous notifier votre décision par une déclaration dénuée d&apos;ambiguïté :</p>
-            <div style={{ marginTop: 12, padding: '14px 18px', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 10 }}>
+            <div style={{ marginTop: 12, padding: '14px 18px', background: 'rgba(var(--color-profit-rgb), 0.05)', border: '1px solid rgba(var(--color-profit-rgb), 0.15)', borderRadius: 10 }}>
               <div style={{ marginBottom: 6 }}><strong style={{ color: '#fff' }}>Par email :</strong> <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: G }}>{CONTACT_EMAIL}</a></div>
               <div><strong style={{ color: '#fff' }}>Par courrier :</strong> Omega Investment, {COMPANY_ADDRESS}</div>
             </div>

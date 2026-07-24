@@ -75,13 +75,13 @@ function statusBadge(status: MeetingStatus | null): { label: string; color: stri
     case 'scheduled':
       return { label: 'Planifié', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' }
     case 'in_progress':
-      return { label: 'En cours', color: '#22c55e', bg: 'rgba(34,197,94,0.15)' }
+      return { label: 'En cours', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.15)' }
     case 'completed':
-      return { label: 'Terminé', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' }
+      return { label: 'Terminé', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.1)' }
     case 'cancelled':
-      return { label: 'Annulé', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' }
+      return { label: 'Annulé', color: 'var(--color-loss)', bg: 'rgba(var(--color-loss-rgb), 0.1)' }
     case 'no_show':
-      return { label: 'Absent', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' }
+      return { label: 'Absent', color: 'var(--color-warn)', bg: 'rgba(var(--color-warn-rgb), 0.1)' }
     default:
       return { label: '—', color: 'var(--text3)', bg: 'var(--bg3)' }
   }
@@ -371,7 +371,7 @@ export default function Coaching() {
                     transition: 'border-color 150ms, background 150ms',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(34,197,94,0.3)'
+                    e.currentTarget.style.borderColor = 'rgba(var(--color-profit-rgb), 0.3)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = 'var(--border)'
@@ -488,8 +488,8 @@ export default function Coaching() {
                         disabled={cancellingId === s.id}
                         style={{
                           background: 'transparent',
-                          color: '#ef4444',
-                          border: '1px solid rgba(239,68,68,0.3)',
+                          color: 'var(--color-loss)',
+                          border: '1px solid rgba(var(--color-loss-rgb), 0.3)',
                           padding: '10px 14px',
                           borderRadius: 8,
                           fontSize: 12,
@@ -603,17 +603,17 @@ export default function Coaching() {
                             borderRadius: 8,
                             fontSize: 12,
                             fontWeight: 600,
-                            background: 'rgba(34,197,94,0.1)',
+                            background: 'rgba(var(--color-profit-rgb), 0.1)',
                             color: 'var(--green)',
-                            border: '1px solid rgba(34,197,94,0.25)',
+                            border: '1px solid rgba(var(--color-profit-rgb), 0.25)',
                             cursor: 'pointer',
                             transition: 'background 120ms',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(34,197,94,0.2)'
+                            e.currentTarget.style.background = 'rgba(var(--color-profit-rgb), 0.2)'
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(34,197,94,0.1)'
+                            e.currentTarget.style.background = 'rgba(var(--color-profit-rgb), 0.1)'
                           }}
                         >
                           {time}
@@ -729,7 +729,7 @@ export default function Coaching() {
                           color: 'var(--green)',
                           textDecoration: 'none',
                           padding: '4px 10px',
-                          border: '1px solid rgba(34,197,94,0.3)',
+                          border: '1px solid rgba(var(--color-profit-rgb), 0.3)',
                           borderRadius: 6,
                           whiteSpace: 'nowrap',
                         }}
@@ -780,8 +780,8 @@ export default function Coaching() {
 
             <div
               style={{
-                background: 'rgba(34,197,94,0.08)',
-                border: '1px solid rgba(34,197,94,0.25)',
+                background: 'rgba(var(--color-profit-rgb), 0.08)',
+                border: '1px solid rgba(var(--color-profit-rgb), 0.25)',
                 padding: 14,
                 borderRadius: 10,
                 marginBottom: 14,
@@ -834,8 +834,8 @@ export default function Coaching() {
                 style={{
                   fontSize: 12,
                   color: '#fca5a5',
-                  background: 'rgba(239,68,68,0.1)',
-                  border: '1px solid rgba(239,68,68,0.3)',
+                  background: 'rgba(var(--color-loss-rgb), 0.1)',
+                  border: '1px solid rgba(var(--color-loss-rgb), 0.3)',
                   padding: 8,
                   borderRadius: 8,
                   marginTop: 12,

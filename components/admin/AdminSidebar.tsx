@@ -208,16 +208,16 @@ export default function AdminSidebar({ activePage, onPageChange }: AdminSidebarP
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-56 bg-[#111113] border-r border-[rgba(255,255,255,0.07)] flex flex-col z-40">
+    <aside className="fixed left-0 top-0 h-screen w-56 bg-[var(--color-surface-1)] border-r border-[rgba(255,255,255,0.07)] flex flex-col z-40">
       {/* Logo + Admin badge */}
       <div className="px-5 py-4 border-b border-[rgba(255,255,255,0.07)]">
         <img src="/logo-atp.png" alt="Alpha Trading Pro" className="h-7" />
         <span
           className="inline-block mt-2 text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded"
           style={{
-            background: 'rgba(239,68,68,0.15)',
-            color: '#ef4444',
-            border: '1px solid rgba(239,68,68,0.3)',
+            background: 'rgba(var(--color-loss-rgb), 0.15)',
+            color: 'var(--color-loss)',
+            border: '1px solid rgba(var(--color-loss-rgb), 0.3)',
             fontSize: 9,
             letterSpacing: '0.12em',
           }}
@@ -237,7 +237,7 @@ export default function AdminSidebar({ activePage, onPageChange }: AdminSidebarP
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
-                color: '#5a6a82',
+                color: 'var(--color-neutral)',
               }}
             >
               {section.label}
@@ -253,7 +253,7 @@ export default function AdminSidebar({ activePage, onPageChange }: AdminSidebarP
                         : 'text-[#a0aec0] hover:text-[#e8edf5] hover:bg-[rgba(255,255,255,0.04)] border-l-2 border-transparent'
                     }`}
                   >
-                    <span className={activePage === item.id ? 'text-green-400' : 'text-[#5a6a82]'}>
+                    <span className={activePage === item.id ? 'text-green-400' : 'text-[var(--color-neutral)]'}>
                       {item.icon}
                     </span>
                     {item.label}
@@ -275,7 +275,7 @@ export default function AdminSidebar({ activePage, onPageChange }: AdminSidebarP
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#5a6a82] hover:text-red-400 hover:bg-red-500/5 transition-all duration-150"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--color-neutral)] hover:text-red-400 hover:bg-red-500/5 transition-all duration-150"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

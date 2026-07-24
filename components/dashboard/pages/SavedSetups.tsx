@@ -208,7 +208,7 @@ export default function SavedSetups() {
                 )}
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {s.tags.slice(0, 4).map(tag => (
-                    <span key={tag} className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>{tag}</span>
+                    <span key={tag} className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}>{tag}</span>
                   ))}
                 </div>
                 <p className="text-xs mt-2 font-mono" style={{ color: 'var(--text3)' }}>
@@ -237,7 +237,7 @@ export default function SavedSetups() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => deleteSetup(viewSetup.id)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>Supprimer</button>
+                  <button onClick={() => deleteSetup(viewSetup.id)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: 'rgba(var(--color-loss-rgb), 0.1)', color: 'var(--color-loss)', border: '1px solid rgba(var(--color-loss-rgb), 0.2)' }}>Supprimer</button>
                   <button onClick={() => setViewSetup(null)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: 'var(--bg3)', color: 'var(--text3)', border: '1px solid var(--border)' }}>Fermer</button>
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function SavedSetups() {
               {viewSetup.tags.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
                   {viewSetup.tags.map(tag => (
-                    <span key={tag} className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>{tag}</span>
+                    <span key={tag} className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}>{tag}</span>
                   ))}
                 </div>
               )}

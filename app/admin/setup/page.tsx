@@ -103,7 +103,7 @@ export default function AdminSetupPage() {
         {/* Info banner */}
         <div
           className="flex items-start gap-3 px-4 py-3 rounded-xl border mb-6 text-xs"
-          style={{ background: 'rgba(34,197,94,0.05)', borderColor: 'rgba(34,197,94,0.2)', color: 'var(--text2)' }}
+          style={{ background: 'rgba(var(--color-profit-rgb), 0.05)', borderColor: 'rgba(var(--color-profit-rgb), 0.2)', color: 'var(--text2)' }}
         >
           <svg className="w-4 h-4 text-green-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -188,7 +188,7 @@ export default function AdminSetupPage() {
                   className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
                   style={{
                     background: 'var(--bg3)',
-                    border: `1px solid ${form.confirm && form.confirm !== form.password ? '#ef4444' : 'var(--border)'}`,
+                    border: `1px solid ${form.confirm && form.confirm !== form.password ? 'var(--color-loss)' : 'var(--border)'}`,
                     color: 'var(--text)',
                   }}
                 />
@@ -206,7 +206,7 @@ export default function AdminSetupPage() {
                 className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
                 style={{
                   background: 'var(--green)',
-                  color: '#09090b',
+                  color: 'var(--color-surface-0)',
                   opacity: loading ? 0.7 : 1,
                   cursor: loading ? 'not-allowed' : 'pointer',
                 }}

@@ -20,11 +20,11 @@ interface MonthlyData {
 }
 
 const progressionAxes = [
-  { label: 'Discipline (plan ATP)', score: 7.0, color: 'var(--green, #22c55e)' },
-  { label: 'Gestion du risque', score: 8.0, color: 'var(--green, #22c55e)' },
-  { label: 'Lecture du marche', score: 6.2, color: 'var(--amber, #f59e0b)' },
-  { label: 'Psychologie', score: 6.5, color: 'var(--amber, #f59e0b)' },
-  { label: 'Constance', score: 5.5, color: 'var(--red, #ef4444)' },
+  { label: 'Discipline (plan ATP)', score: 7.0, color: 'var(--green, var(--color-profit))' },
+  { label: 'Gestion du risque', score: 8.0, color: 'var(--green, var(--color-profit))' },
+  { label: 'Lecture du marche', score: 6.2, color: 'var(--amber, var(--color-warn))' },
+  { label: 'Psychologie', score: 6.5, color: 'var(--amber, var(--color-warn))' },
+  { label: 'Constance', score: 5.5, color: 'var(--red, var(--color-loss))' },
 ]
 
 export default function Progression() {
@@ -246,11 +246,11 @@ export default function Progression() {
                 labels: chartData.labels,
                 datasets: [{
                   data: chartData.reversed.map(m => m.pnl),
-                  borderColor: '#22c55e',
-                  backgroundColor: 'rgba(34,197,94,0.1)',
+                  borderColor: 'var(--color-profit)',
+                  backgroundColor: 'rgba(var(--color-profit-rgb), 0.1)',
                   fill: true,
                   tension: 0.3,
-                  pointBackgroundColor: chartData.reversed.map(m => m.pnl < 0 ? '#ef4444' : '#22c55e'),
+                  pointBackgroundColor: chartData.reversed.map(m => m.pnl < 0 ? 'var(--color-loss)' : 'var(--color-profit)'),
                   pointRadius: 4,
                 }],
               }}
@@ -274,8 +274,8 @@ export default function Progression() {
                 labels: chartData.labels,
                 datasets: [{
                   data: chartData.reversed.map(m => m.winRate),
-                  borderColor: '#f59e0b',
-                  backgroundColor: 'rgba(245,158,11,0.1)',
+                  borderColor: 'var(--color-warn)',
+                  backgroundColor: 'rgba(var(--color-warn-rgb), 0.1)',
                   fill: true,
                   tension: 0.3,
                   pointRadius: 4,
@@ -305,7 +305,7 @@ export default function Progression() {
                 labels: chartData.labels,
                 datasets: [{
                   data: chartData.reversed.map(m => m.pf),
-                  backgroundColor: chartData.reversed.map(m => m.pf >= 1.5 ? '#22c55e' : m.pf >= 1 ? '#f59e0b' : '#ef4444'),
+                  backgroundColor: chartData.reversed.map(m => m.pf >= 1.5 ? 'var(--color-profit)' : m.pf >= 1 ? 'var(--color-warn)' : 'var(--color-loss)'),
                   borderRadius: 4,
                 }],
               }}
@@ -329,7 +329,7 @@ export default function Progression() {
                 labels: chartData.labels,
                 datasets: [{
                   data: chartData.planScores,
-                  backgroundColor: '#22c55e',
+                  backgroundColor: 'var(--color-profit)',
                   borderRadius: 4,
                 }],
               }}
@@ -410,13 +410,13 @@ export default function Progression() {
                   {
                     label: 'Meilleur R',
                     data: chartData.bestR,
-                    backgroundColor: '#22c55e',
+                    backgroundColor: 'var(--color-profit)',
                     borderRadius: 4,
                   },
                   {
                     label: 'Pire R',
                     data: chartData.worstR,
-                    backgroundColor: '#ef4444',
+                    backgroundColor: 'var(--color-loss)',
                     borderRadius: 4,
                   },
                 ],
@@ -458,7 +458,7 @@ export default function Progression() {
             >
               <span style={{ fontSize: 12, color: 'var(--text2)' }}>{axis.label}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 120, height: 6, background: 'var(--bg3, #222225)', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ width: 120, height: 6, background: 'var(--bg3, var(--color-surface-3))', borderRadius: 99, overflow: 'hidden' }}>
                   <div style={{
                     width: `${axis.score * 10}%`,
                     height: '100%',
@@ -537,9 +537,9 @@ export default function Progression() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {tags.map((tag, i) => {
                 const colors = {
-                  green: { bg: 'rgba(34,197,94,0.1)', color: 'var(--green, #22c55e)', border: 'rgba(34,197,94,0.3)' },
-                  red: { bg: 'rgba(239,68,68,0.1)', color: 'var(--red, #ef4444)', border: 'rgba(239,68,68,0.3)' },
-                  amber: { bg: 'rgba(245,158,11,0.1)', color: 'var(--amber, #f59e0b)', border: 'rgba(245,158,11,0.3)' },
+                  green: { bg: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--green, var(--color-profit))', border: 'rgba(var(--color-profit-rgb), 0.3)' },
+                  red: { bg: 'rgba(var(--color-loss-rgb), 0.1)', color: 'var(--red, var(--color-loss))', border: 'rgba(var(--color-loss-rgb), 0.3)' },
+                  amber: { bg: 'rgba(var(--color-warn-rgb), 0.1)', color: 'var(--amber, var(--color-warn))', border: 'rgba(var(--color-warn-rgb), 0.3)' },
                 }
                 const c = colors[tag.type]
                 return (

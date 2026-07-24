@@ -47,27 +47,27 @@ function todayISO() {
 }
 
 function resultColor(r: string) {
-  if (r === 'win') return '#22c55e'
-  if (r === 'loss') return '#ef4444'
+  if (r === 'win') return 'var(--color-profit)'
+  if (r === 'loss') return 'var(--color-loss)'
   return '#fbbf24'
 }
 
 function resultBg(r: string) {
-  if (r === 'win') return 'rgba(34,197,94,0.12)'
-  if (r === 'loss') return 'rgba(239,68,68,0.12)'
+  if (r === 'win') return 'rgba(var(--color-profit-rgb), 0.12)'
+  if (r === 'loss') return 'rgba(var(--color-loss-rgb), 0.12)'
   return 'rgba(251,191,36,0.12)'
 }
 
 function winRateColor(wr: number) {
-  if (wr >= 60) return '#22c55e'
+  if (wr >= 60) return 'var(--color-profit)'
   if (wr >= 40) return '#fbbf24'
-  return '#ef4444'
+  return 'var(--color-loss)'
 }
 
 function winRateBg(wr: number) {
-  if (wr >= 60) return 'rgba(34,197,94,0.10)'
+  if (wr >= 60) return 'rgba(var(--color-profit-rgb), 0.10)'
   if (wr >= 40) return 'rgba(251,191,36,0.10)'
-  return 'rgba(239,68,68,0.10)'
+  return 'rgba(var(--color-loss-rgb), 0.10)'
 }
 
 // ── Styles ─────────────────────────────────────────────────
@@ -91,7 +91,7 @@ const chipBase: React.CSSProperties = {
 
 const chipActive: React.CSSProperties = {
   ...chipBase,
-  background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.35)',
+  background: 'rgba(var(--color-profit-rgb), 0.15)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.35)',
 }
 
 const kpiCardStyle: React.CSSProperties = {
@@ -398,7 +398,7 @@ export default function Backtest() {
             style={{
               padding: '8px 24px', borderRadius: 8, fontSize: 13, fontWeight: 600,
               border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-              background: tab === t ? 'var(--green, #22c55e)' : 'transparent',
+              background: tab === t ? 'var(--green, var(--color-profit))' : 'transparent',
               color: tab === t ? '#000' : 'var(--text3)',
             }}
           >
@@ -438,10 +438,10 @@ export default function Backtest() {
                       border: direction === d ? 'none' : '1px solid var(--border)',
                       cursor: 'pointer', transition: 'all 0.15s',
                       background: direction === d
-                        ? (d === 'LONG' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)')
+                        ? (d === 'LONG' ? 'rgba(var(--color-profit-rgb), 0.2)' : 'rgba(var(--color-loss-rgb), 0.2)')
                         : 'var(--bg3)',
                       color: direction === d
-                        ? (d === 'LONG' ? '#22c55e' : '#ef4444')
+                        ? (d === 'LONG' ? 'var(--color-profit)' : 'var(--color-loss)')
                         : 'var(--text3)',
                     }}
                   >
@@ -503,7 +503,7 @@ export default function Backtest() {
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: active ? '#22c55e' : 'var(--text3)',
+                          color: active ? 'var(--color-profit)' : 'var(--text3)',
                           cursor: 'pointer',
                           fontSize: 12,
                           padding: '0 4px',
@@ -545,8 +545,8 @@ export default function Backtest() {
                       fontSize: 11,
                       fontWeight: 700,
                       border: '1px solid var(--border)',
-                      background: addingSetup || !newSetupName.trim() ? 'var(--bg3)' : 'rgba(34,197,94,0.15)',
-                      color: addingSetup || !newSetupName.trim() ? 'var(--text3)' : '#22c55e',
+                      background: addingSetup || !newSetupName.trim() ? 'var(--bg3)' : 'rgba(var(--color-profit-rgb), 0.15)',
+                      color: addingSetup || !newSetupName.trim() ? 'var(--text3)' : 'var(--color-profit)',
                       cursor: addingSetup || !newSetupName.trim() ? 'not-allowed' : 'pointer',
                     }}
                   >
@@ -580,12 +580,12 @@ export default function Backtest() {
               style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' }}
             >
               <div style={{
-                width: 20, height: 20, borderRadius: 6, border: hasConfluence ? '2px solid #22c55e' : '2px solid var(--border)',
-                background: hasConfluence ? 'rgba(34,197,94,0.15)' : 'var(--bg3)',
+                width: 20, height: 20, borderRadius: 6, border: hasConfluence ? '2px solid var(--color-profit)' : '2px solid var(--border)',
+                background: hasConfluence ? 'rgba(var(--color-profit-rgb), 0.15)' : 'var(--bg3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
               }}>
                 {hasConfluence && (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-profit)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 )}
@@ -618,7 +618,7 @@ export default function Backtest() {
               <label style={labelStyle}>R (auto)</label>
               <div style={{
                 ...inputStyle, display: 'flex', alignItems: 'center',
-                fontWeight: 700, color: rResult > 0 ? '#22c55e' : rResult < 0 ? '#ef4444' : 'var(--text3)',
+                fontWeight: 700, color: rResult > 0 ? 'var(--color-profit)' : rResult < 0 ? 'var(--color-loss)' : 'var(--text3)',
                 background: 'var(--bg)', cursor: 'default',
               }}>
                 {rResult > 0 ? '+' : ''}{rResult}R
@@ -733,18 +733,18 @@ export default function Backtest() {
             </div>
             <div style={kpiCardStyle}>
               <p style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>R Moyen</p>
-              <p style={{ fontSize: 28, fontWeight: 800, color: stats.avgR >= 0 ? '#22c55e' : '#ef4444', lineHeight: 1 }}>
+              <p style={{ fontSize: 28, fontWeight: 800, color: stats.avgR >= 0 ? 'var(--color-profit)' : 'var(--color-loss)', lineHeight: 1 }}>
                 {stats.avgR > 0 ? '+' : ''}{stats.avgR}R
               </p>
             </div>
             <div style={kpiCardStyle}>
               <p style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Meilleur setup</p>
-              <p style={{ fontSize: 16, fontWeight: 800, color: '#22c55e', lineHeight: 1.3 }}>{stats.bestSetup}</p>
+              <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-profit)', lineHeight: 1.3 }}>{stats.bestSetup}</p>
               {stats.bestSetup !== '-' && <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{stats.bestSetupWR}% WR</p>}
             </div>
             <div style={kpiCardStyle}>
               <p style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Profit Factor</p>
-              <p style={{ fontSize: 28, fontWeight: 800, color: stats.profitFactor >= 1 ? '#22c55e' : '#ef4444', lineHeight: 1 }}>
+              <p style={{ fontSize: 28, fontWeight: 800, color: stats.profitFactor >= 1 ? 'var(--color-profit)' : 'var(--color-loss)', lineHeight: 1 }}>
                 {stats.profitFactor === Infinity ? '++' : stats.profitFactor}
               </p>
             </div>
@@ -862,8 +862,8 @@ export default function Backtest() {
                   <div style={{ display: 'flex', gap: 16 }}>
                     <div style={{
                       flex: 1, padding: 20, borderRadius: 12, textAlign: 'center',
-                      background: stats.confWR >= stats.singleWR ? 'rgba(34,197,94,0.08)' : 'var(--bg3)',
-                      border: stats.confWR >= stats.singleWR ? '1px solid rgba(34,197,94,0.25)' : '1px solid var(--border)',
+                      background: stats.confWR >= stats.singleWR ? 'rgba(var(--color-profit-rgb), 0.08)' : 'var(--bg3)',
+                      border: stats.confWR >= stats.singleWR ? '1px solid rgba(var(--color-profit-rgb), 0.25)' : '1px solid var(--border)',
                     }}>
                       <p style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 8 }}>Confluence</p>
                       <p style={{ fontSize: 32, fontWeight: 800, color: winRateColor(stats.confWR), lineHeight: 1 }}>{stats.confWR}%</p>
@@ -871,8 +871,8 @@ export default function Backtest() {
                     </div>
                     <div style={{
                       flex: 1, padding: 20, borderRadius: 12, textAlign: 'center',
-                      background: stats.singleWR > stats.confWR ? 'rgba(34,197,94,0.08)' : 'var(--bg3)',
-                      border: stats.singleWR > stats.confWR ? '1px solid rgba(34,197,94,0.25)' : '1px solid var(--border)',
+                      background: stats.singleWR > stats.confWR ? 'rgba(var(--color-profit-rgb), 0.08)' : 'var(--bg3)',
+                      border: stats.singleWR > stats.confWR ? '1px solid rgba(var(--color-profit-rgb), 0.25)' : '1px solid var(--border)',
                     }}>
                       <p style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 8 }}>Single</p>
                       <p style={{ fontSize: 32, fontWeight: 800, color: winRateColor(stats.singleWR), lineHeight: 1 }}>{stats.singleWR}%</p>
@@ -906,7 +906,7 @@ export default function Backtest() {
                             <span style={{ padding: '2px 6px', borderRadius: 4, background: 'var(--bg3)', color: 'var(--text2)', fontWeight: 600, fontSize: 11 }}>{e.instrument}</span>
                           </td>
                           <td style={{ padding: '10px' }}>
-                            <span style={{ color: e.direction === 'LONG' ? '#22c55e' : '#ef4444', fontWeight: 700, fontSize: 11 }}>{e.direction}</span>
+                            <span style={{ color: e.direction === 'LONG' ? 'var(--color-profit)' : 'var(--color-loss)', fontWeight: 700, fontSize: 11 }}>{e.direction}</span>
                           </td>
                           <td style={{ padding: '10px', maxWidth: 180 }}>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
@@ -926,12 +926,12 @@ export default function Backtest() {
                           </td>
                           <td style={{ padding: '10px', textAlign: 'center' }}>
                             {e.has_confluence && (
-                              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22c55e' }} />
+                              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--color-profit)' }} />
                             )}
                           </td>
                           <td style={{ padding: '10px', color: 'var(--text)', fontFamily: 'monospace', fontWeight: 600 }}>{e.points}</td>
                           <td style={{ padding: '10px', color: 'var(--text3)', fontFamily: 'monospace' }}>{e.sl_points}</td>
-                          <td style={{ padding: '10px', fontFamily: 'monospace', fontWeight: 700, color: e.r_result > 0 ? '#22c55e' : e.r_result < 0 ? '#ef4444' : 'var(--text3)' }}>
+                          <td style={{ padding: '10px', fontFamily: 'monospace', fontWeight: 700, color: e.r_result > 0 ? 'var(--color-profit)' : e.r_result < 0 ? 'var(--color-loss)' : 'var(--text3)' }}>
                             {e.r_result > 0 ? '+' : ''}{e.r_result}R
                           </td>
                           <td style={{ padding: '10px' }}>

@@ -175,7 +175,7 @@ export default function Settings() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '8px 12px',
-    background: '#18181b',
+    background: 'var(--color-surface-2)',
     border: '1px solid rgba(255,255,255,0.07)',
     borderRadius: 8,
     color: '#e8edf5',
@@ -186,7 +186,7 @@ export default function Settings() {
   const labelStyle: React.CSSProperties = {
     display: 'block',
     fontSize: 11,
-    color: '#5a6a82',
+    color: 'var(--color-neutral)',
     marginBottom: 4,
     fontWeight: 500,
   }
@@ -210,7 +210,7 @@ export default function Settings() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-[#e8edf5]">Paramètres</h1>
-          <p className="text-[#5a6a82] text-sm mt-1">Gérer les traders, invitations et configuration</p>
+          <p className="text-[var(--color-neutral)] text-sm mt-1">Gérer les traders, invitations et configuration</p>
         </div>
         {adminId && (
           <div className="flex items-center gap-4">
@@ -223,7 +223,7 @@ export default function Settings() {
             />
             <div>
               <p className="text-sm font-medium text-[#e8edf5]">{adminName}</p>
-              <p className="text-xs text-[#5a6a82]">Modifier ma photo</p>
+              <p className="text-xs text-[var(--color-neutral)]">Modifier ma photo</p>
             </div>
           </div>
         )}
@@ -237,9 +237,9 @@ export default function Settings() {
             onClick={() => setTab(t.id)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={{
-              background: tab === t.id ? 'rgba(34,197,94,0.1)' : '#18181b',
-              color: tab === t.id ? '#22c55e' : '#5a6a82',
-              border: `1px solid ${tab === t.id ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.07)'}`,
+              background: tab === t.id ? 'rgba(var(--color-profit-rgb), 0.1)' : 'var(--color-surface-2)',
+              color: tab === t.id ? 'var(--color-profit)' : 'var(--color-neutral)',
+              border: `1px solid ${tab === t.id ? 'rgba(var(--color-profit-rgb), 0.2)' : 'rgba(255,255,255,0.07)'}`,
             }}
           >
             {t.label}
@@ -251,14 +251,14 @@ export default function Settings() {
       {tab === 'traders' && (
         <Card>
           {traders.length === 0 ? (
-            <p className="text-center py-8 text-sm" style={{ color: '#5a6a82' }}>Aucun trader</p>
+            <p className="text-center py-8 text-sm" style={{ color: 'var(--color-neutral)' }}>Aucun trader</p>
           ) : (
             <div className="space-y-3">
               {traders.map(t => (
                 <div
                   key={t.id}
                   className="flex items-center gap-4 p-4 rounded-xl border"
-                  style={{ background: '#18181b', borderColor: 'rgba(255,255,255,0.05)' }}
+                  style={{ background: 'var(--color-surface-2)', borderColor: 'rgba(255,255,255,0.05)' }}
                 >
                   {/* Avatar */}
                   <div className="w-9 h-9 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
@@ -268,7 +268,7 @@ export default function Settings() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#e8edf5] truncate">{t.full_name ?? 'Unnamed'}</p>
-                    <p className="text-xs text-[#5a6a82] truncate">{t.email}</p>
+                    <p className="text-xs text-[var(--color-neutral)] truncate">{t.email}</p>
                   </div>
 
                   {/* Tags */}
@@ -277,10 +277,10 @@ export default function Settings() {
                       <span className="text-xs px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">{t.plan_type}</span>
                     )}
                     {t.propfirm_name && (
-                      <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: '#222225', color: '#a0aec0' }}>{t.propfirm_name}</span>
+                      <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: 'var(--color-surface-3)', color: '#a0aec0' }}>{t.propfirm_name}</span>
                     )}
                     {Number(t.capital) > 0 && (
-                      <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: '#222225', color: '#a0aec0' }}>
+                      <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: 'var(--color-surface-3)', color: '#a0aec0' }}>
                         {(Number(t.capital) * (t.nb_accounts || 1) / 1000).toFixed(0)}K
                       </span>
                     )}
@@ -291,7 +291,7 @@ export default function Settings() {
                     <button
                       onClick={() => startEdit(t)}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
-                      style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}
+                      style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}
                     >
                       Modifier
                     </button>
@@ -305,7 +305,7 @@ export default function Settings() {
                     <button
                       onClick={() => deleteTrader(t)}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
-                      style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                      style={{ background: 'rgba(var(--color-loss-rgb), 0.1)', color: 'var(--color-loss)', border: '1px solid rgba(var(--color-loss-rgb), 0.2)' }}
                     >
                       Supprimer
                     </button>
@@ -321,7 +321,7 @@ export default function Settings() {
       {tab === 'invites' && (
         <Card>
           {invites.length === 0 ? (
-            <p className="text-center py-8 text-sm" style={{ color: '#5a6a82' }}>Aucune invitation en attente</p>
+            <p className="text-center py-8 text-sm" style={{ color: 'var(--color-neutral)' }}>Aucune invitation en attente</p>
           ) : (
             <div className="space-y-3">
               {invites.map(inv => {
@@ -330,26 +330,26 @@ export default function Settings() {
                   <div
                     key={inv.id}
                     className="flex items-center gap-4 p-4 rounded-xl border"
-                    style={{ background: '#18181b', borderColor: 'rgba(255,255,255,0.05)' }}
+                    style={{ background: 'var(--color-surface-2)', borderColor: 'rgba(255,255,255,0.05)' }}
                   >
                     <div className="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
                       <span className="text-amber-400 text-xs font-bold">{inv.full_name[0].toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#e8edf5]">{inv.full_name}</p>
-                      <p className="text-xs text-[#5a6a82]">{inv.email}</p>
+                      <p className="text-xs text-[var(--color-neutral)]">{inv.email}</p>
                     </div>
-                    <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
+                    <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}>
                       {inv.code}
                     </span>
-                    <span className="text-xs text-[#5a6a82]">{inv.plan_type}</span>
-                    <span className={`text-xs font-mono ${expiresIn <= 2 ? 'text-amber-400' : 'text-[#5a6a82]'}`}>
+                    <span className="text-xs text-[var(--color-neutral)]">{inv.plan_type}</span>
+                    <span className={`text-xs font-mono ${expiresIn <= 2 ? 'text-amber-400' : 'text-[var(--color-neutral)]'}`}>
                       {expiresIn}j restants
                     </span>
                     <button
                       onClick={() => cancelInvite(inv.id)}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
-                      style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                      style={{ background: 'rgba(var(--color-loss-rgb), 0.1)', color: 'var(--color-loss)', border: '1px solid rgba(var(--color-loss-rgb), 0.2)' }}
                     >
                       Annuler
                     </button>
@@ -443,12 +443,12 @@ export default function Settings() {
           style={{ background: 'rgba(0,0,0,0.7)' }}
           onClick={e => e.target === e.currentTarget && setEditingTrader(null)}
         >
-          <div className="w-full max-w-md rounded-xl border" style={{ background: '#111113', borderColor: 'rgba(255,255,255,0.07)' }}>
+          <div className="w-full max-w-md rounded-xl border" style={{ background: 'var(--color-surface-1)', borderColor: 'rgba(255,255,255,0.07)' }}>
             <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
               <h2 className="text-sm font-semibold text-[#e8edf5]">
                 Modifier — {editingTrader.full_name}
               </h2>
-              <button onClick={() => setEditingTrader(null)} className="text-[#5a6a82] hover:text-[#e8edf5]">
+              <button onClick={() => setEditingTrader(null)} className="text-[var(--color-neutral)] hover:text-[#e8edf5]">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -488,16 +488,16 @@ export default function Settings() {
               <div>
                 <label style={labelStyle}>Statut</label>
                 <div className="flex gap-2">
-                  {[{ value: true, label: 'Actif', color: '#22c55e' }, { value: false, label: 'Désactivé', color: '#ef4444' }].map(opt => (
+                  {[{ value: true, label: 'Actif', color: 'var(--color-profit)' }, { value: false, label: 'Désactivé', color: 'var(--color-loss)' }].map(opt => (
                     <button
                       key={String(opt.value)}
                       type="button"
                       onClick={() => setEditForm(f => ({ ...f, is_active: opt.value }))}
                       style={{
                         flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                        background: editForm.is_active === opt.value ? `${opt.color}15` : '#18181b',
+                        background: editForm.is_active === opt.value ? `${opt.color}15` : 'var(--color-surface-2)',
                         border: editForm.is_active === opt.value ? `1px solid ${opt.color}40` : '1px solid rgba(255,255,255,0.07)',
-                        color: editForm.is_active === opt.value ? opt.color : '#5a6a82',
+                        color: editForm.is_active === opt.value ? opt.color : 'var(--color-neutral)',
                       }}
                     >
                       {opt.label}

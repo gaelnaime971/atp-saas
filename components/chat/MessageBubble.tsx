@@ -37,7 +37,7 @@ export default function MessageBubble({ message, isMine }: MessageBubbleProps) {
             borderRadius: isMine ? '10px 10px 2px 10px' : '10px 10px 10px 2px',
             padding: '8px 11px',
             fontSize: 13,
-            color: isMine ? '#09090b' : 'var(--text)',
+            color: isMine ? 'var(--color-surface-0)' : 'var(--text)',
             lineHeight: 1.5,
             wordBreak: 'break-word',
           }}

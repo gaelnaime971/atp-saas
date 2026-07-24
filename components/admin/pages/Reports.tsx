@@ -236,12 +236,12 @@ export default function Reports() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-[#e8edf5]">Rapports Mensuels</h1>
-          <p className="text-[#5a6a82] text-sm mt-1">Récapitulatif mensuel de votre activité</p>
+          <p className="text-[var(--color-neutral)] text-sm mt-1">Récapitulatif mensuel de votre activité</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={goToPrevMonth}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#18181b] border border-[rgba(255,255,255,0.07)] text-[#a0aec0] hover:text-[#e8edf5] hover:border-[rgba(255,255,255,0.15)] transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] text-[#a0aec0] hover:text-[#e8edf5] hover:border-[rgba(255,255,255,0.15)] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -252,7 +252,7 @@ export default function Reports() {
           </span>
           <button
             onClick={goToNextMonth}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#18181b] border border-[rgba(255,255,255,0.07)] text-[#a0aec0] hover:text-[#e8edf5] hover:border-[rgba(255,255,255,0.15)] transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] text-[#a0aec0] hover:text-[#e8edf5] hover:border-[rgba(255,255,255,0.15)] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -269,7 +269,7 @@ export default function Reports() {
               {kpi.icon}
             </div>
             <p className={`text-2xl font-bold ${kpi.color} font-mono`}>{kpi.value}</p>
-            <p className="text-[#5a6a82] text-xs mt-1">{kpi.label}</p>
+            <p className="text-[var(--color-neutral)] text-xs mt-1">{kpi.label}</p>
           </Card>
         ))}
       </div>
@@ -280,16 +280,16 @@ export default function Reports() {
         <Card>
           <h2 className="text-sm font-semibold text-[#e8edf5] mb-4">Performance traders</h2>
           {traderPerfs.length === 0 ? (
-            <p className="text-[#5a6a82] text-sm py-8 text-center">Aucune session ce mois</p>
+            <p className="text-[var(--color-neutral)] text-sm py-8 text-center">Aucune session ce mois</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                    <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Trader</th>
-                    <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Sessions</th>
-                    <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">P&L</th>
-                    <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Win%</th>
+                    <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trader</th>
+                    <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Sessions</th>
+                    <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">P&L</th>
+                    <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Win%</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
@@ -320,16 +320,16 @@ export default function Reports() {
         <Card>
           <h2 className="text-sm font-semibold text-[#e8edf5] mb-4">Revenus détaillés</h2>
           {revenueRows.length === 0 ? (
-            <p className="text-[#5a6a82] text-sm py-8 text-center">Aucun revenu ce mois</p>
+            <p className="text-[var(--color-neutral)] text-sm py-8 text-center">Aucun revenu ce mois</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                    <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Date</th>
-                    <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Trader</th>
-                    <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Description</th>
-                    <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Montant</th>
+                    <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Date</th>
+                    <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trader</th>
+                    <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Description</th>
+                    <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Montant</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
@@ -374,7 +374,7 @@ export default function Reports() {
             )
           })}
         </div>
-        <p className="text-xs text-[#5a6a82] mt-4">
+        <p className="text-xs text-[var(--color-neutral)] mt-4">
           Evolution par rapport à {MONTH_NAMES[prevMonth]} {prevYear}
         </p>
       </Card>

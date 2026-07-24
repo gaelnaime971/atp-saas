@@ -120,7 +120,7 @@ const ctaSection = {
 
 const ctaButton = {
   display: 'inline-block',
-  backgroundColor: '#22c55e',
+  backgroundColor: 'var(--color-profit)',
   color: '#0f1117',
   fontSize: '13px',
   fontWeight: '700' as const,
@@ -141,7 +141,7 @@ const hr = {
 }
 
 const footer = {
-  color: '#5a6a82',
+  color: 'var(--color-neutral)',
   fontSize: '12px',
   lineHeight: '18px',
   margin: '0 0 6px',

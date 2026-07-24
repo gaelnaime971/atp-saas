@@ -596,7 +596,7 @@ export default function Notebook() {
                       padding: 2,
                       lineHeight: 1,
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-loss)')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
                   >
                     ✕
@@ -849,7 +849,7 @@ export default function Notebook() {
                     /* Callout block */
                     <div style={{
                       flex: 1, display: 'flex', gap: 10, padding: '12px 14px',
-                      background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)',
+                      background: 'rgba(var(--color-profit-rgb), 0.06)', border: '1px solid rgba(var(--color-profit-rgb), 0.15)',
                       borderRadius: 8,
                     }}>
                       <span style={{ fontSize: 20, lineHeight: 1.4, flexShrink: 0, cursor: 'default' }}>💡</span>
@@ -905,7 +905,7 @@ export default function Notebook() {
                         lineHeight: 1,
                         flexShrink: 0,
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-loss)')}
                       onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
                     >
                       ✕
@@ -986,7 +986,7 @@ export default function Notebook() {
 
 // ── Drawing Block Component ─────────────────────────────────────────────────
 
-const DRAW_COLORS = ['#ffffff', '#22c55e', '#ef4444', '#f59e0b', '#3b82f6', '#a855f7', '#ec4899', '#6b7280']
+const DRAW_COLORS = ['#ffffff', 'var(--color-profit)', 'var(--color-loss)', 'var(--color-warn)', '#3b82f6', '#a855f7', '#ec4899', '#6b7280']
 const DRAW_SIZES = [2, 4, 8, 14]
 
 function DrawingBlock({ content, onChange }: { content: string; onChange: (data: string) => void }) {
@@ -1101,9 +1101,9 @@ function DrawingBlock({ content, onChange }: { content: string; onChange: (data:
           onClick={() => setEraser(!eraser)}
           style={{
             padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-            background: eraser ? 'rgba(239,68,68,0.15)' : 'transparent',
-            border: eraser ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)',
-            color: eraser ? '#ef4444' : 'var(--text3)',
+            background: eraser ? 'rgba(var(--color-loss-rgb), 0.15)' : 'transparent',
+            border: eraser ? '1px solid rgba(var(--color-loss-rgb), 0.3)' : '1px solid var(--border)',
+            color: eraser ? 'var(--color-loss)' : 'var(--text3)',
           }}
         >
           Gomme

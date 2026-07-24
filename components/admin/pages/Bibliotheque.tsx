@@ -455,7 +455,7 @@ export default function Bibliotheque() {
         <StatTile label="Vidéos" value={stats.totalVideos.toString()} accent="var(--green)" />
         <StatTile label="Durée totale" value={formatDuration(stats.totalDuration)} accent="#a855f7" />
         <StatTile label="Documents PDF" value={stats.totalPdfs.toString()} accent="#3b82f6" />
-        <StatTile label="Catégories" value={stats.distinctCategories.toString()} accent="#f59e0b" />
+        <StatTile label="Catégories" value={stats.distinctCategories.toString()} accent="var(--color-warn)" />
       </div>
 
       {/* Tabs */}
@@ -593,7 +593,7 @@ export default function Bibliotheque() {
             {errorMsg && (
               <div
                 className="rounded-lg px-3 py-2 text-xs"
-                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+                style={{ background: 'rgba(var(--color-loss-rgb), 0.1)', border: '1px solid rgba(var(--color-loss-rgb), 0.3)', color: 'var(--color-loss)' }}
               >
                 {errorMsg}
               </div>
@@ -869,7 +869,7 @@ function TabButton({
         className="text-[10px] px-1.5 py-0.5 rounded-md font-bold"
         style={{
           background: active ? 'var(--green)' : 'var(--bg3)',
-          color: active ? '#09090b' : 'var(--text2)',
+          color: active ? 'var(--color-surface-0)' : 'var(--text2)',
         }}
       >
         {count}
@@ -928,7 +928,7 @@ function ProviderHint({ url }: { url: string }) {
   const provider = detectVideoProvider(url)
   if (!provider) return null
   const label = provider === 'youtube' ? 'YouTube détecté' : provider === 'vimeo' ? 'Vimeo détecté' : 'URL externe'
-  const color = provider === 'youtube' ? '#ef4444' : provider === 'vimeo' ? '#3b82f6' : 'var(--text3)'
+  const color = provider === 'youtube' ? 'var(--color-loss)' : provider === 'vimeo' ? '#3b82f6' : 'var(--text3)'
   return (
     <p className="text-[11px] mt-1.5" style={{ color }}>
       ✓ {label}
@@ -1033,7 +1033,7 @@ function ResourceRow({
         gridTemplateColumns: tab === 'video'
           ? '36px 80px 56px 140px minmax(0,1fr) 80px minmax(0,1fr) 180px'
           : '36px 56px 140px minmax(0,1fr) minmax(0,1fr) 180px',
-        background: dragOver ? 'rgba(34,197,94,0.08)' : hover ? 'var(--bg3)' : 'transparent',
+        background: dragOver ? 'rgba(var(--color-profit-rgb), 0.08)' : hover ? 'var(--bg3)' : 'transparent',
         borderBottom: '1px solid var(--border)',
         borderTop: dragOver ? '2px solid var(--green)' : 'none',
       }}
@@ -1189,12 +1189,12 @@ function IconBtn({
       disabled={disabled}
       className="rounded-md p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       style={{
-        color: danger ? '#ef4444' : 'var(--text2)',
+        color: danger ? 'var(--color-loss)' : 'var(--text2)',
         background: 'transparent',
       }}
       onMouseEnter={(ev) => {
         if (disabled) return
-        ev.currentTarget.style.background = danger ? 'rgba(239,68,68,0.1)' : 'var(--bg4)'
+        ev.currentTarget.style.background = danger ? 'rgba(var(--color-loss-rgb), 0.1)' : 'var(--bg4)'
       }}
       onMouseLeave={(ev) => {
         ev.currentTarget.style.background = 'transparent'

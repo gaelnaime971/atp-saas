@@ -84,13 +84,13 @@ function statusBadge(status: MeetingStatus | null): { label: string; color: stri
     case 'scheduled':
       return { label: 'Planifié', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' }
     case 'in_progress':
-      return { label: 'En cours', color: '#22c55e', bg: 'rgba(34,197,94,0.15)' }
+      return { label: 'En cours', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.15)' }
     case 'completed':
-      return { label: 'Terminé', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' }
+      return { label: 'Terminé', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.1)' }
     case 'cancelled':
-      return { label: 'Annulé', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' }
+      return { label: 'Annulé', color: 'var(--color-loss)', bg: 'rgba(var(--color-loss-rgb), 0.1)' }
     case 'no_show':
-      return { label: 'Absent', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' }
+      return { label: 'Absent', color: 'var(--color-warn)', bg: 'rgba(var(--color-warn-rgb), 0.1)' }
     default:
       return { label: '—', color: 'var(--text3)', bg: 'var(--bg3)' }
   }
@@ -366,9 +366,9 @@ export default function AdminCoaching() {
               borderRadius: 8,
               fontSize: 12,
               fontWeight: 600,
-              background: tab === t.id ? 'rgba(34,197,94,0.1)' : 'var(--bg3)',
+              background: tab === t.id ? 'rgba(var(--color-profit-rgb), 0.1)' : 'var(--bg3)',
               color: tab === t.id ? 'var(--green)' : 'var(--text2)',
-              border: `1px solid ${tab === t.id ? 'rgba(34,197,94,0.25)' : 'var(--border)'}`,
+              border: `1px solid ${tab === t.id ? 'rgba(var(--color-profit-rgb), 0.25)' : 'var(--border)'}`,
               cursor: 'pointer',
               transition: 'all 120ms',
             }}
@@ -484,8 +484,8 @@ export default function AdminCoaching() {
                               fontSize: 11,
                               fontWeight: 600,
                               background: 'transparent',
-                              color: '#ef4444',
-                              border: '1px solid rgba(239,68,68,0.3)',
+                              color: 'var(--color-loss)',
+                              border: '1px solid rgba(var(--color-loss-rgb), 0.3)',
                               cursor: 'pointer',
                             }}
                           >
@@ -531,7 +531,7 @@ export default function AdminCoaching() {
                     alignItems: 'center',
                     padding: '10px 12px',
                     background: row.is_active ? 'var(--bg3)' : 'transparent',
-                    border: `1px solid ${row.is_active ? 'rgba(34,197,94,0.2)' : 'var(--border)'}`,
+                    border: `1px solid ${row.is_active ? 'rgba(var(--color-profit-rgb), 0.2)' : 'var(--border)'}`,
                     borderRadius: 10,
                   }}
                 >
@@ -665,8 +665,8 @@ export default function AdminCoaching() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 8,
-                      background: 'rgba(239,68,68,0.08)',
-                      border: '1px solid rgba(239,68,68,0.25)',
+                      background: 'rgba(var(--color-loss-rgb), 0.08)',
+                      border: '1px solid rgba(var(--color-loss-rgb), 0.25)',
                       color: '#fca5a5',
                       padding: '6px 10px',
                       borderRadius: 8,
@@ -837,7 +837,7 @@ export default function AdminCoaching() {
                               color: 'var(--green)',
                               textDecoration: 'none',
                               padding: '4px 10px',
-                              border: '1px solid rgba(34,197,94,0.3)',
+                              border: '1px solid rgba(var(--color-profit-rgb), 0.3)',
                               borderRadius: 6,
                               display: 'inline-block',
                             }}
@@ -941,8 +941,8 @@ function GoogleCalendarStatus({ onToast }: { onToast: (msg: string) => void }) {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "12px 16px",
-        background: connected ? "rgba(34,197,94,0.06)" : "var(--bg3)",
-        border: `1px solid ${connected ? "rgba(34,197,94,0.25)" : "var(--border)"}`,
+        background: connected ? "rgba(var(--color-profit-rgb), 0.06)" : "var(--bg3)",
+        border: `1px solid ${connected ? "rgba(var(--color-profit-rgb), 0.25)" : "var(--border)"}`,
         borderRadius: 10,
         gap: 16,
       }}
@@ -968,8 +968,8 @@ function GoogleCalendarStatus({ onToast }: { onToast: (msg: string) => void }) {
           disabled={disconnecting}
           style={{
             padding: "8px 14px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-            background: "transparent", border: "1px solid rgba(239,68,68,0.3)",
-            color: "#ef4444", cursor: disconnecting ? "default" : "pointer", whiteSpace: "nowrap",
+            background: "transparent", border: "1px solid rgba(var(--color-loss-rgb), 0.3)",
+            color: "var(--color-loss)", cursor: disconnecting ? "default" : "pointer", whiteSpace: "nowrap",
           }}
         >
           {disconnecting ? "..." : "Déconnecter"}

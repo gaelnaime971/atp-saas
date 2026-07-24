@@ -92,24 +92,24 @@ export default function Classement() {
 
   // Level
   const count = sessions.length
-  const level = count >= 100 ? { name: 'Expert', color: '#f59e0b', next: null, progress: 100 }
-    : count >= 60 ? { name: 'Confirmé', color: '#22c55e', next: 100, progress: Math.round(((count - 60) / 40) * 100) }
+  const level = count >= 100 ? { name: 'Expert', color: 'var(--color-warn)', next: null, progress: 100 }
+    : count >= 60 ? { name: 'Confirmé', color: 'var(--color-profit)', next: 100, progress: Math.round(((count - 60) / 40) * 100) }
     : count >= 30 ? { name: 'Intermédiaire', color: '#60a5fa', next: 60, progress: Math.round(((count - 30) / 30) * 100) }
     : count >= 10 ? { name: 'Apprenti', color: '#a78bfa', next: 30, progress: Math.round(((count - 10) / 20) * 100) }
-    : { name: 'Débutant', color: '#5a6a82', next: 10, progress: Math.round((count / 10) * 100) }
+    : { name: 'Débutant', color: 'var(--color-neutral)', next: 10, progress: Math.round((count / 10) * 100) }
 
   const badges: Badge[] = [
     { id: '10sess', title: '10 Sessions', description: 'Enregistrer 10 sessions', icon: '📊', unlocked: count >= 10, progress: Math.min(count, 10), maxProgress: 10, color: '#60a5fa' },
     { id: '50sess', title: '50 Sessions', description: 'Enregistrer 50 sessions', icon: '📈', unlocked: count >= 50, progress: Math.min(count, 50), maxProgress: 50, color: '#a78bfa' },
-    { id: '100sess', title: '100 Sessions', description: 'Enregistrer 100 sessions', icon: '🏆', unlocked: count >= 100, progress: Math.min(count, 100), maxProgress: 100, color: '#f59e0b' },
-    { id: 'wr50', title: 'Win Rate 50%+', description: 'Maintenir un win rate supérieur à 50%', icon: '🎯', unlocked: winRate >= 50 && count >= 5, progress: Math.min(winRate, 50), maxProgress: 50, color: '#22c55e' },
-    { id: 'wr60', title: 'Win Rate 60%+', description: 'Maintenir un win rate supérieur à 60%', icon: '🔥', unlocked: winRate >= 60 && count >= 10, progress: Math.min(winRate, 60), maxProgress: 60, color: '#f59e0b' },
-    { id: 'pf15', title: 'Profit Factor > 1.5', description: 'Avoir un profit factor supérieur à 1.5', icon: '💎', unlocked: profitFactor >= 1.5 && count >= 5, progress: Math.min(Math.round(profitFactor * 10), 15), maxProgress: 15, color: '#22c55e' },
-    { id: 'streak5', title: '5 Wins Streak', description: 'Enchaîner 5 victoires consécutives', icon: '⚡', unlocked: bestWinStreak >= 5, progress: Math.min(bestWinStreak, 5), maxProgress: 5, color: '#f59e0b' },
+    { id: '100sess', title: '100 Sessions', description: 'Enregistrer 100 sessions', icon: '🏆', unlocked: count >= 100, progress: Math.min(count, 100), maxProgress: 100, color: 'var(--color-warn)' },
+    { id: 'wr50', title: 'Win Rate 50%+', description: 'Maintenir un win rate supérieur à 50%', icon: '🎯', unlocked: winRate >= 50 && count >= 5, progress: Math.min(winRate, 50), maxProgress: 50, color: 'var(--color-profit)' },
+    { id: 'wr60', title: 'Win Rate 60%+', description: 'Maintenir un win rate supérieur à 60%', icon: '🔥', unlocked: winRate >= 60 && count >= 10, progress: Math.min(winRate, 60), maxProgress: 60, color: 'var(--color-warn)' },
+    { id: 'pf15', title: 'Profit Factor > 1.5', description: 'Avoir un profit factor supérieur à 1.5', icon: '💎', unlocked: profitFactor >= 1.5 && count >= 5, progress: Math.min(Math.round(profitFactor * 10), 15), maxProgress: 15, color: 'var(--color-profit)' },
+    { id: 'streak5', title: '5 Wins Streak', description: 'Enchaîner 5 victoires consécutives', icon: '⚡', unlocked: bestWinStreak >= 5, progress: Math.min(bestWinStreak, 5), maxProgress: 5, color: 'var(--color-warn)' },
     { id: 'plan80', title: 'Dans le plan 80%+', description: 'Score plan ATP >= 8 sur 80% des sessions', icon: '📋', unlocked: planScores.length >= 5 && (planAbove8 / planScores.length) >= 0.8, progress: planAbove8, maxProgress: Math.max(planScores.length, 1), color: '#60a5fa' },
     { id: 'plan10c', title: '10 sessions dans le plan', description: '10 sessions consécutives avec plan >= 8/10', icon: '🧠', unlocked: maxConsecutivePlan >= 10, progress: Math.min(maxConsecutivePlan, 10), maxProgress: 10, color: '#a78bfa' },
-    { id: 'payout', title: 'Premier Payout', description: 'Obtenir votre premier retrait', icon: '💰', unlocked: hasPayout, progress: hasPayout ? 1 : 0, maxProgress: 1, color: '#22c55e' },
-    { id: 'profitable', title: 'Profitable', description: 'Avoir un P&L total positif', icon: '✅', unlocked: totalPnl > 0 && count >= 5, progress: totalPnl > 0 ? 1 : 0, maxProgress: 1, color: '#22c55e' },
+    { id: 'payout', title: 'Premier Payout', description: 'Obtenir votre premier retrait', icon: '💰', unlocked: hasPayout, progress: hasPayout ? 1 : 0, maxProgress: 1, color: 'var(--color-profit)' },
+    { id: 'profitable', title: 'Profitable', description: 'Avoir un P&L total positif', icon: '✅', unlocked: totalPnl > 0 && count >= 5, progress: totalPnl > 0 ? 1 : 0, maxProgress: 1, color: 'var(--color-profit)' },
   ]
 
   const unlockedCount = badges.filter(b => b.unlocked).length
@@ -147,19 +147,19 @@ export default function Classement() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <p className="text-lg font-bold font-mono" style={{ color: totalPnl >= 0 ? '#22c55e' : '#ef4444' }}>{totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)}$</p>
+              <p className="text-lg font-bold font-mono" style={{ color: totalPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>{totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)}$</p>
               <p className="text-xs" style={{ color: 'var(--text3)' }}>P&L Total</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold font-mono" style={{ color: winRate >= 50 ? '#22c55e' : '#ef4444' }}>{winRate}%</p>
+              <p className="text-lg font-bold font-mono" style={{ color: winRate >= 50 ? 'var(--color-profit)' : 'var(--color-loss)' }}>{winRate}%</p>
               <p className="text-xs" style={{ color: 'var(--text3)' }}>Win Rate</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold font-mono" style={{ color: profitFactor >= 1.5 ? '#22c55e' : profitFactor >= 1 ? '#f59e0b' : '#ef4444' }}>{profitFactor > 0 ? profitFactor.toFixed(2) : '—'}</p>
+              <p className="text-lg font-bold font-mono" style={{ color: profitFactor >= 1.5 ? 'var(--color-profit)' : profitFactor >= 1 ? 'var(--color-warn)' : 'var(--color-loss)' }}>{profitFactor > 0 ? profitFactor.toFixed(2) : '—'}</p>
               <p className="text-xs" style={{ color: 'var(--text3)' }}>Profit Factor</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold font-mono" style={{ color: currentStreak > 0 ? '#22c55e' : 'var(--text2)' }}>{currentStreak}</p>
+              <p className="text-lg font-bold font-mono" style={{ color: currentStreak > 0 ? 'var(--color-profit)' : 'var(--text2)' }}>{currentStreak}</p>
               <p className="text-xs" style={{ color: 'var(--text3)' }}>Streak actuel</p>
             </div>
           </div>

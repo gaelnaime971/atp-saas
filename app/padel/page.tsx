@@ -248,7 +248,7 @@ export default function PadelPage() {
             <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', margin: 0 }}>🎾 Padel · Auto-inscription</h1>
             <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>Submit ultra-rapide aux Google Forms de tournoi</div>
           </div>
-          <div style={{ background: '#111', border: '1px solid #1f2937', borderRadius: 8, padding: '6px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: 14, color: '#22c55e' }}>
+          <div style={{ background: '#111', border: '1px solid #1f2937', borderRadius: 8, padding: '6px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: 14, color: 'var(--color-profit)' }}>
             {now.toLocaleTimeString('fr-FR', { hour12: false })}.<span style={{ color: '#666' }}>{String(now.getMilliseconds()).padStart(3, '0')}</span>
           </div>
         </div>
@@ -278,10 +278,10 @@ export default function PadelPage() {
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {parsing && <span style={{ fontSize: 11, color: '#9ca3af' }}>Détection en cours…</span>}
             {parseError && (
-              <span style={{ fontSize: 11, color: '#ef4444', lineHeight: 1.4 }}>
+              <span style={{ fontSize: 11, color: 'var(--color-loss)', lineHeight: 1.4 }}>
                 ⚠ {parseError}
                 {/forms\.gle|goo\.gl/.test(formUrl) && (
-                  <span style={{ display: 'block', color: '#f59e0b', marginTop: 4 }}>
+                  <span style={{ display: 'block', color: 'var(--color-warn)', marginTop: 4 }}>
                     💡 Astuce : clique 🔗 Ouvrir → laisse Google rediriger → copie l&apos;URL <strong>docs.google.com/forms/d/e/...</strong> depuis la barre d&apos;adresse → reviens et colle-la ici.
                   </span>
                 )}
@@ -289,7 +289,7 @@ export default function PadelPage() {
             )}
             {parsed && !parsing && (
               <>
-                <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>
+                <span style={{ fontSize: 11, color: 'var(--color-profit)', fontWeight: 600 }}>
                   ✓ {parsed.fields.filter(f => f.type !== 11 && f.type !== 12).length} champs détectés
                 </span>
                 <span style={{ fontSize: 11, color: '#9ca3af' }}>· {parsed.title}</span>
@@ -324,7 +324,7 @@ export default function PadelPage() {
                       ))}
                     </select>
                     {matchedField && (
-                      <div style={{ fontSize: 10, color: '#22c55e', marginTop: 2 }}>→ {matchedField.label}</div>
+                      <div style={{ fontSize: 10, color: 'var(--color-profit)', marginTop: 2 }}>→ {matchedField.label}</div>
                     )}
                   </div>
                 )
@@ -340,7 +340,7 @@ export default function PadelPage() {
               {extraFields.map(f => (
                 <div key={f.entryId}>
                   <label style={{ display: 'block', fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>
-                    {f.label} {f.required && <span style={{ color: '#ef4444' }}>*</span>}
+                    {f.label} {f.required && <span style={{ color: 'var(--color-loss)' }}>*</span>}
                   </label>
                   {f.type === 2 || f.type === 3 ? (
                     <select
@@ -370,7 +370,7 @@ export default function PadelPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {([['1', p1, setP1], ['2', p2, setP2]] as const).map(([num, data, setData]) => (
               <div key={num} style={{ padding: 10, background: '#0c0c0c', border: '1px solid #1f2937', borderRadius: 8 }}>
-                <div style={{ fontSize: 11, color: '#22c55e', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <div style={{ fontSize: 11, color: 'var(--color-profit)', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Joueur {num}
                 </div>
                 <input
@@ -423,7 +423,7 @@ export default function PadelPage() {
               {scheduled ? '✕ Annuler programmation' : '⏰ Programmer'}
             </button>
             {scheduled && countdown && (
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 14, color: '#22c55e', fontWeight: 700 }}>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 14, color: 'var(--color-profit)', fontWeight: 700 }}>
                 T-{countdown}
               </span>
             )}
@@ -438,7 +438,7 @@ export default function PadelPage() {
               padding: '14px',
               fontSize: 16,
               fontWeight: 800,
-              background: !canSubmit || sending ? '#1f2937' : '#22c55e',
+              background: !canSubmit || sending ? '#1f2937' : 'var(--color-profit)',
               color: !canSubmit || sending ? '#6b7280' : '#000',
               cursor: !canSubmit || sending ? 'not-allowed' : 'pointer',
             }}
@@ -450,12 +450,12 @@ export default function PadelPage() {
             <div style={{
               marginTop: 10,
               padding: '10px 12px',
-              background: result.success ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-              border: `1px solid ${result.success ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+              background: result.success ? 'rgba(var(--color-profit-rgb), 0.08)' : 'rgba(var(--color-loss-rgb), 0.08)',
+              border: `1px solid ${result.success ? 'rgba(var(--color-profit-rgb), 0.3)' : 'rgba(var(--color-loss-rgb), 0.3)'}`,
               borderRadius: 8,
               fontSize: 12,
             }}>
-              <div style={{ fontWeight: 700, color: result.success ? '#22c55e' : '#ef4444' }}>
+              <div style={{ fontWeight: 700, color: result.success ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                 {result.success ? '✓ Soumis avec succès' : '⚠ Échec'}
               </div>
               <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>

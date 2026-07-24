@@ -14,7 +14,7 @@ export default function Home() {
         <Link
           href="/login"
           className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-          style={{ background: 'var(--green)', color: '#09090b' }}
+          style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
         >
           Connexion
         </Link>
@@ -26,7 +26,7 @@ export default function Home() {
         {/* Badge */}
         <div
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-medium mb-8"
-          style={{ borderColor: 'rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.05)', color: '#22c55e' }}
+          style={{ borderColor: 'rgba(var(--color-profit-rgb), 0.3)', background: 'rgba(var(--color-profit-rgb), 0.05)', color: 'var(--color-profit)' }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           Plateforme de coaching trading professionnelle
@@ -57,7 +57,7 @@ export default function Home() {
           <Link
             href="/login"
             className="px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: '#09090b' }}
+            style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
           >
             Accéder à mon espace →
           </Link>

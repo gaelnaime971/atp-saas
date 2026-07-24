@@ -139,9 +139,9 @@ type Tab = 'synthese' | 'graphique' | 'fondamentaux' | 'valorisation' | 'consens
 
 // ─────────── Helpers ───────────
 
-const GREEN = '#22c55e'
-const RED = '#ef4444'
-const YELLOW = '#f59e0b'
+const GREEN = 'var(--color-profit)'
+const RED = 'var(--color-loss)'
+const YELLOW = 'var(--color-warn)'
 const BLUE = '#3b82f6'
 const PURPLE = '#a855f7'
 const GREY = '#6b7280'
@@ -170,19 +170,19 @@ const fmtDate = (v: string | number | Date | null | undefined): string => {
 
 function recoLabel(mean: number | null | undefined): { label: string; color: string; bg: string } {
   if (mean == null) return { label: '—', color: 'var(--text3)', bg: 'var(--bg3)' }
-  if (mean < 1.7) return { label: 'STRONG BUY', color: GREEN, bg: 'rgba(34,197,94,0.18)' }
-  if (mean < 2.4) return { label: 'BUY', color: GREEN, bg: 'rgba(34,197,94,0.12)' }
-  if (mean < 3.4) return { label: 'HOLD', color: YELLOW, bg: 'rgba(245,158,11,0.12)' }
-  if (mean < 4.4) return { label: 'SELL', color: RED, bg: 'rgba(239,68,68,0.12)' }
-  return { label: 'STRONG SELL', color: RED, bg: 'rgba(239,68,68,0.18)' }
+  if (mean < 1.7) return { label: 'STRONG BUY', color: GREEN, bg: 'rgba(var(--color-profit-rgb), 0.18)' }
+  if (mean < 2.4) return { label: 'BUY', color: GREEN, bg: 'rgba(var(--color-profit-rgb), 0.12)' }
+  if (mean < 3.4) return { label: 'HOLD', color: YELLOW, bg: 'rgba(var(--color-warn-rgb), 0.12)' }
+  if (mean < 4.4) return { label: 'SELL', color: RED, bg: 'rgba(var(--color-loss-rgb), 0.12)' }
+  return { label: 'STRONG SELL', color: RED, bg: 'rgba(var(--color-loss-rgb), 0.18)' }
 }
 
 function verdictStyle(v?: Verdict['verdict']): { color: string; bg: string; border: string } {
   switch (v) {
-    case 'ACHETER': return { color: GREEN, bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.45)' }
-    case 'CONSERVER': return { color: YELLOW, bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.45)' }
-    case 'VENDRE': return { color: RED, bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.45)' }
-    case 'EVITER': return { color: RED, bg: 'rgba(239,68,68,0.18)', border: 'rgba(239,68,68,0.6)' }
+    case 'ACHETER': return { color: GREEN, bg: 'rgba(var(--color-profit-rgb), 0.12)', border: 'rgba(var(--color-profit-rgb), 0.45)' }
+    case 'CONSERVER': return { color: YELLOW, bg: 'rgba(var(--color-warn-rgb), 0.12)', border: 'rgba(var(--color-warn-rgb), 0.45)' }
+    case 'VENDRE': return { color: RED, bg: 'rgba(var(--color-loss-rgb), 0.12)', border: 'rgba(var(--color-loss-rgb), 0.45)' }
+    case 'EVITER': return { color: RED, bg: 'rgba(var(--color-loss-rgb), 0.18)', border: 'rgba(var(--color-loss-rgb), 0.6)' }
     default: return { color: 'var(--text3)', bg: 'var(--bg3)', border: 'var(--border)' }
   }
 }
@@ -595,7 +595,7 @@ function Header({ symbol, symbolName, data, loading }: { symbol: string; symbolN
           {/* Left: identity */}
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center text-base font-extrabold shrink-0"
-              style={{ background: 'rgba(34,197,94,0.12)', color: GREEN, border: '1px solid rgba(34,197,94,0.3)' }}>
+              style={{ background: 'rgba(var(--color-profit-rgb), 0.12)', color: GREEN, border: '1px solid rgba(var(--color-profit-rgb), 0.3)' }}>
               {initial}
             </div>
             <div className="min-w-0">
@@ -918,9 +918,9 @@ function SyntheseTab({
                     <>
                       <span className="text-[10px] tabular-nums shrink-0" style={{ color: RED }}>{fmtNum(r.lo, 0)}</span>
                       <div className="flex-1 h-2 rounded-full relative" style={{ background: 'var(--bg3)' }}>
-                        <div className="absolute h-full rounded-full" style={{ width: '100%', background: 'linear-gradient(90deg, #ef4444, #f59e0b, #22c55e)', opacity: 0.35 }} />
+                        <div className="absolute h-full rounded-full" style={{ width: '100%', background: 'linear-gradient(90deg, var(--color-loss), var(--color-warn), var(--color-profit))', opacity: 0.35 }} />
                         <div className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-y-1/2 -translate-x-1/2"
-                          style={{ left: `${r.pct}%`, background: '#fff', border: `2px solid ${GREEN}`, boxShadow: `0 0 4px rgba(34,197,94,0.5)` }} />
+                          style={{ left: `${r.pct}%`, background: '#fff', border: `2px solid ${GREEN}`, boxShadow: `0 0 4px rgba(var(--color-profit-rgb), 0.5)` }} />
                       </div>
                       <span className="text-[10px] tabular-nums shrink-0" style={{ color: GREEN }}>{fmtNum(r.hi, 0)}</span>
                     </>
@@ -1498,7 +1498,7 @@ function ConsensusTab({ data }: { data: StockData | null }) {
                     {h.fromGrade && <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{h.fromGrade} →</span>}
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                       style={{
-                        background: up ? 'rgba(34,197,94,0.12)' : dn ? 'rgba(239,68,68,0.12)' : 'var(--bg)',
+                        background: up ? 'rgba(var(--color-profit-rgb), 0.12)' : dn ? 'rgba(var(--color-loss-rgb), 0.12)' : 'var(--bg)',
                         color: up ? GREEN : dn ? RED : 'var(--text2)',
                       }}>
                       {h.toGrade || '—'}
@@ -1568,7 +1568,7 @@ function InsidersTab({ data }: { data: StockData | null }) {
                       <span className="text-[10px] font-bold w-16 shrink-0 tabular-nums" style={{ color: 'var(--text3)' }}>{fmtDate(t.startDate as Date | number)}</span>
                       <span className="flex-1 text-[11px] font-semibold truncate" style={{ color: 'var(--text)' }}>{t.filerName}</span>
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-                        style={{ background: buy ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', color: buy ? GREEN : RED }}>
+                        style={{ background: buy ? 'rgba(var(--color-profit-rgb), 0.12)' : 'rgba(var(--color-loss-rgb), 0.12)', color: buy ? GREEN : RED }}>
                         {buy ? 'Achat' : 'Vente'}
                       </span>
                       <span className="text-[11px] font-bold tabular-nums" style={{ color: 'var(--text2)' }}>{fmtBig(t.value, '$')}</span>
@@ -1638,14 +1638,14 @@ function AiTab({ verdict, loading, error, onRegenerate, hasData }: { verdict: Ve
 
   if (loading) return (
     <div className="rounded-xl p-8 text-center" style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
-      <div className="inline-block w-10 h-10 rounded-full border-4 border-t-transparent animate-spin mb-3" style={{ borderColor: 'rgba(34,197,94,0.3)', borderTopColor: GREEN }} />
+      <div className="inline-block w-10 h-10 rounded-full border-4 border-t-transparent animate-spin mb-3" style={{ borderColor: 'rgba(var(--color-profit-rgb), 0.3)', borderTopColor: GREEN }} />
       <div className="text-sm font-bold mb-1" style={{ color: 'var(--text)' }}>L&apos;IA analyse toutes les données…</div>
       <div className="text-xs" style={{ color: 'var(--text3)' }}>Lecture des fondamentaux, ratings, news</div>
     </div>
   )
 
   if (error) return (
-    <div className="rounded-xl p-5 text-center" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.3)' }}>
+    <div className="rounded-xl p-5 text-center" style={{ background: 'rgba(var(--color-loss-rgb), 0.05)', border: '1px solid rgba(var(--color-loss-rgb), 0.3)' }}>
       <div className="text-sm font-bold mb-2" style={{ color: RED }}>⚠ Erreur</div>
       <div className="text-xs mb-3" style={{ color: 'var(--text3)' }}>{error}</div>
       <button onClick={onRegenerate} className="px-3 py-2 rounded text-xs font-bold" style={{ background: GREEN, color: '#000', cursor: 'pointer' }}>Réessayer</button>

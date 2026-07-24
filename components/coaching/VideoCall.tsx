@@ -103,7 +103,7 @@ export default function VideoCall({ sessionId, onLeave }: VideoCallProps) {
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              background: 'rgba(34,197,94,0.85)',
+              background: 'rgba(var(--color-profit-rgb), 0.85)',
               color: '#000',
               padding: '8px 14px',
               borderRadius: 8,
@@ -122,7 +122,7 @@ export default function VideoCall({ sessionId, onLeave }: VideoCallProps) {
         <button
           onClick={onLeave}
           style={{
-            background: 'rgba(239,68,68,0.9)',
+            background: 'rgba(var(--color-loss-rgb), 0.9)',
             color: '#fff',
             border: 'none',
             padding: '8px 14px',
@@ -174,7 +174,7 @@ export default function VideoCall({ sessionId, onLeave }: VideoCallProps) {
               width: 28,
               height: 28,
               border: '3px solid rgba(255,255,255,0.15)',
-              borderTopColor: '#22c55e',
+              borderTopColor: 'var(--color-profit)',
               borderRadius: '50%',
               animation: 'spin 0.8s linear infinite',
               marginRight: 12,
@@ -192,7 +192,7 @@ export default function VideoCall({ sessionId, onLeave }: VideoCallProps) {
             left: '50%',
             transform: 'translate(-50%, -50%)',
             background: 'rgba(20,20,20,0.95)',
-            border: '1px solid rgba(239,68,68,0.4)',
+            border: '1px solid rgba(var(--color-loss-rgb), 0.4)',
             color: '#fca5a5',
             padding: 20,
             borderRadius: 12,
@@ -206,7 +206,7 @@ export default function VideoCall({ sessionId, onLeave }: VideoCallProps) {
           <button
             onClick={onLeave}
             style={{
-              background: '#22c55e',
+              background: 'var(--color-profit)',
               color: '#000',
               border: 'none',
               padding: '8px 16px',

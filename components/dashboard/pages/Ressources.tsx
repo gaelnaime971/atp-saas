@@ -68,9 +68,9 @@ export default function Ressources() {
   }
 
   function getIcon(type: Resource['type']) {
-    if (type === 'video') return { icon: '\u25B6', bg: 'rgba(34,197,94,0.1)', color: 'var(--green, #22c55e)' }
+    if (type === 'video') return { icon: '\u25B6', bg: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--green, var(--color-profit))' }
     if (type === 'pdf') return { icon: '\uD83D\uDCC4', bg: 'rgba(96,165,250,0.1)', color: '#60a5fa' }
-    return { icon: '\uD83D\uDD17', bg: 'rgba(245,158,11,0.1)', color: 'var(--amber, #f59e0b)' }
+    return { icon: '\uD83D\uDD17', bg: 'rgba(var(--color-warn-rgb), 0.1)', color: 'var(--amber, var(--color-warn))' }
   }
 
   function ResourceItem({ resource }: { resource: Resource }) {
@@ -84,7 +84,7 @@ export default function Ressources() {
           alignItems: 'center',
           gap: 14,
           padding: '12px 14px',
-          background: 'var(--bg2, #18181b)',
+          background: 'var(--bg2, var(--color-surface-2))',
           border: '1px solid var(--border, rgba(255,255,255,0.07))',
           borderRadius: 10,
           cursor: 'pointer',
@@ -93,11 +93,11 @@ export default function Ressources() {
         }}
         onMouseEnter={e => {
           e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
-          e.currentTarget.style.background = 'var(--bg3, #222225)'
+          e.currentTarget.style.background = 'var(--bg3, var(--color-surface-3))'
         }}
         onMouseLeave={e => {
           e.currentTarget.style.borderColor = 'var(--border, rgba(255,255,255,0.07))'
-          e.currentTarget.style.background = 'var(--bg2, #18181b)'
+          e.currentTarget.style.background = 'var(--bg2, var(--color-surface-2))'
         }}
       >
         <div style={{

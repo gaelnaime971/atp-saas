@@ -102,9 +102,9 @@ export default function TraderDashboard() {
               onClick={() => setSessionLive(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shrink-0 transition-all hover:scale-105"
               style={{
-                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                background: 'linear-gradient(135deg, var(--color-profit), #16a34a)',
                 color: '#000',
-                boxShadow: '0 0 20px rgba(34,197,94,0.3)',
+                boxShadow: '0 0 20px rgba(var(--color-profit-rgb), 0.3)',
                 letterSpacing: '0.08em',
               }}
             >

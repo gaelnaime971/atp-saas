@@ -46,7 +46,7 @@ function isExternalEmbed(url: string | null): { kind: 'youtube' | 'vimeo' | 'ifr
 
 function categoryColor(category: string | null): string {
   if (!category) return 'rgba(148,163,184,0.7)'
-  const palette = ['#22c55e', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6', '#34d399', '#fb7185', '#facc15']
+  const palette = ['var(--color-profit)', '#60a5fa', 'var(--color-warn)', '#a78bfa', '#f472b6', '#34d399', '#fb7185', '#facc15']
   let hash = 0
   for (let i = 0; i < category.length; i++) hash = (hash * 31 + category.charCodeAt(i)) >>> 0
   return palette[hash % palette.length]
@@ -330,8 +330,8 @@ export default function Formation() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Top stats bar */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.02) 100%)',
-        border: '1px solid rgba(34,197,94,0.2)',
+        background: 'linear-gradient(135deg, rgba(var(--color-profit-rgb), 0.08) 0%, rgba(var(--color-profit-rgb), 0.02) 100%)',
+        border: '1px solid rgba(var(--color-profit-rgb), 0.2)',
         borderRadius: 14,
         padding: 22,
       }}>
@@ -356,10 +356,10 @@ export default function Formation() {
           <div style={{
             width: `${stats.pct}%`,
             height: '100%',
-            background: 'linear-gradient(90deg, #16a34a 0%, #22c55e 50%, #4ade80 100%)',
+            background: 'linear-gradient(90deg, #16a34a 0%, var(--color-profit) 50%, #4ade80 100%)',
             borderRadius: 999,
             transition: 'width 0.4s ease',
-            boxShadow: '0 0 12px rgba(34,197,94,0.4)',
+            boxShadow: '0 0 12px rgba(var(--color-profit-rgb), 0.4)',
           }} />
         </div>
       </div>
@@ -559,7 +559,7 @@ function VideoCard({
       style={{
         cursor: 'pointer',
         background: 'var(--bg2)',
-        border: `1px solid ${hover ? 'rgba(34,197,94,0.45)' : 'var(--border)'}`,
+        border: `1px solid ${hover ? 'rgba(var(--color-profit-rgb), 0.45)' : 'var(--border)'}`,
         borderRadius: 12,
         overflow: 'hidden',
         transition: 'transform 0.18s, border-color 0.18s, box-shadow 0.18s',
@@ -788,7 +788,7 @@ function VideoModal({
               padding: '9px 16px',
               borderRadius: 8,
               border: `1px solid ${completed ? 'var(--green)' : 'var(--border)'}`,
-              background: completed ? 'rgba(34,197,94,0.12)' : 'var(--bg2)',
+              background: completed ? 'rgba(var(--color-profit-rgb), 0.12)' : 'var(--bg2)',
               color: completed ? 'var(--green)' : 'var(--text)',
               fontSize: 13,
               fontWeight: 700,

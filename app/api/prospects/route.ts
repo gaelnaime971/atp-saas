@@ -60,7 +60,7 @@ export async function POST(request: Request) {
             subject: `🔔 Nouveau prospect : ${prenom} ${nom}`,
             html: `
               <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#111;color:#fff;border-radius:12px;">
-                <h2 style="color:#22c55e;margin:0 0 16px;">Nouveau prospect ATP</h2>
+                <h2 style="color:var(--color-profit);margin:0 0 16px;">Nouveau prospect ATP</h2>
                 <table style="width:100%;border-collapse:collapse;">
                   <tr><td style="padding:8px 0;color:#888;width:120px;">Nom</td><td style="padding:8px 0;font-weight:bold;">${prenom} ${nom}</td></tr>
                   <tr><td style="padding:8px 0;color:#888;">Email</td><td style="padding:8px 0;">${email}</td></tr>

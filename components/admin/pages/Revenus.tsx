@@ -181,7 +181,7 @@ export default function Revenus() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-[#e8edf5]">Revenus</h1>
-          <p className="text-[#5a6a82] text-sm mt-1">Suivi des paiements de coaching</p>
+          <p className="text-[var(--color-neutral)] text-sm mt-1">Suivi des paiements de coaching</p>
         </div>
         <Button onClick={() => setShowForm(true)}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,19 +194,19 @@ export default function Revenus() {
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
         <Card className="border border-green-500/20">
-          <p className="text-xs text-[#5a6a82] mb-1">CA Total</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1">CA Total</p>
           <p className="text-2xl font-bold font-mono text-green-400">{total.toLocaleString('fr-FR')} &euro;</p>
         </Card>
         <Card>
-          <p className="text-xs text-[#5a6a82] mb-1">CA ce Mois</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1">CA ce Mois</p>
           <p className="text-2xl font-bold font-mono text-[#e8edf5]">{thisMonth.toLocaleString('fr-FR')} &euro;</p>
         </Card>
         <Card>
-          <p className="text-xs text-[#5a6a82] mb-1">Transactions</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1">Transactions</p>
           <p className="text-2xl font-bold font-mono text-[#e8edf5]">{revenues.length}</p>
         </Card>
         <Card>
-          <p className="text-xs text-[#5a6a82] mb-1">CA HT</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1">CA HT</p>
           <p className="text-2xl font-bold font-mono text-[#e8edf5]">{Math.round(totalHT).toLocaleString('fr-FR')} &euro;</p>
         </Card>
       </div>
@@ -217,22 +217,22 @@ export default function Revenus() {
           <h3 className="text-sm font-semibold text-[#e8edf5] mb-4">{editingId ? 'Modifier le paiement' : 'Enregistrer un paiement'}</h3>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-[#5a6a82] mb-1.5">Trader</label>
+              <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Trader</label>
               <select
                 value={form.trader_id}
                 onChange={e => setForm(f => ({ ...f, trader_id: e.target.value }))}
-                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               >
                 <option value="">S&eacute;lectionner un trader</option>
                 {traders.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#5a6a82] mb-1.5">Mode de paiement</label>
+              <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Mode de paiement</label>
               <select
                 value={form.payment_method}
                 onChange={e => setForm(f => ({ ...f, payment_method: e.target.value as PaymentMethod }))}
-                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               >
                 <option value="virement">Virement bancaire</option>
                 <option value="stripe_comptant">Stripe comptant</option>
@@ -243,7 +243,7 @@ export default function Revenus() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#5a6a82] mb-1.5">Montant (&euro;)</label>
+              <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Montant (&euro;)</label>
               <div className="flex gap-2">
                 <input
                   type="number"
@@ -252,7 +252,7 @@ export default function Revenus() {
                   step="0.01"
                   value={form.amount}
                   onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                  className="flex-1 bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+                  className="flex-1 bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[var(--color-neutral)]"
                   placeholder="ex: 497"
                 />
                 <button
@@ -268,7 +268,7 @@ export default function Revenus() {
                 </button>
               </div>
               {parsedAmount > 0 && (
-                <p className="text-xs text-[#5a6a82] mt-1.5">
+                <p className="text-xs text-[var(--color-neutral)] mt-1.5">
                   {form.is_ttc
                     ? `HT: ${computedHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} \u20ac \u00b7 TVA: ${computedTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} \u20ac`
                     : `TTC: ${computedTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} \u20ac \u00b7 TVA: ${computedTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} \u20ac`
@@ -277,22 +277,22 @@ export default function Revenus() {
               )}
             </div>
             <div>
-              <label className="block text-xs text-[#5a6a82] mb-1.5">Date de paiement</label>
+              <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Date de paiement</label>
               <input
                 type="date"
                 required
                 value={form.payment_date}
                 onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))}
-                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-[#5a6a82] mb-1.5">Description</label>
+              <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Description</label>
               <input
                 type="text"
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[var(--color-neutral)]"
                 placeholder="ex: Coaching 1:1 - Mars 2025"
               />
             </div>
@@ -308,21 +308,21 @@ export default function Revenus() {
       <Card>
         {revenues.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-[#5a6a82] text-sm">Aucun paiement enregistr&eacute;</p>
+            <p className="text-[var(--color-neutral)] text-sm">Aucun paiement enregistr&eacute;</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Trader</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Description</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Mode</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Date</th>
-                  <th className="text-center text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">HT/TTC</th>
-                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Montant</th>
-                  <th className="text-center text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Facture</th>
-                  <th className="text-center text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Actions</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trader</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Description</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Mode</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Date</th>
+                  <th className="text-center text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">HT/TTC</th>
+                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Montant</th>
+                  <th className="text-center text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Facture</th>
+                  <th className="text-center text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
@@ -333,7 +333,7 @@ export default function Revenus() {
                       <td className="py-3 text-sm font-medium text-[#e8edf5]">{r.trader_name}</td>
                       <td className="py-3 text-sm text-[#a0aec0]">{r.description ?? '\u2014'}</td>
                       <td className="py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${PAYMENT_METHOD_COLORS[method] ?? 'bg-[#222225] text-[#a0aec0] border-[rgba(255,255,255,0.07)]'}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${PAYMENT_METHOD_COLORS[method] ?? 'bg-[var(--color-surface-3)] text-[#a0aec0] border-[rgba(255,255,255,0.07)]'}`}>
                           {PAYMENT_METHOD_LABELS[method] ?? method}
                         </span>
                       </td>
@@ -376,7 +376,7 @@ export default function Revenus() {
                           <button
                             onClick={() => handleEdit(r)}
                             title="Modifier"
-                            className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[#18181b] text-[#a0aec0] hover:text-green-400 hover:border-green-500/30 transition-colors"
+                            className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[var(--color-surface-2)] text-[#a0aec0] hover:text-green-400 hover:border-green-500/30 transition-colors"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -385,7 +385,7 @@ export default function Revenus() {
                           <button
                             onClick={() => handleDelete(r.id)}
                             title="Supprimer"
-                            className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[#18181b] text-[#a0aec0] hover:text-red-400 hover:border-red-500/30 transition-colors"
+                            className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[var(--color-surface-2)] text-[#a0aec0] hover:text-red-400 hover:border-red-500/30 transition-colors"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a2 2 0 012-2h2a2 2 0 012 2v3" />

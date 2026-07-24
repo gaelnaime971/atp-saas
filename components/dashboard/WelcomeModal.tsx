@@ -88,8 +88,8 @@ export default function WelcomeModal({ userId, firstName, onClose }: WelcomeModa
               width: 56,
               height: 56,
               borderRadius: '50%',
-              background: 'rgba(34,197,94,0.1)',
-              border: '2px solid rgba(34,197,94,0.3)',
+              background: 'rgba(var(--color-profit-rgb), 0.1)',
+              border: '2px solid rgba(var(--color-profit-rgb), 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -143,7 +143,7 @@ export default function WelcomeModal({ userId, firstName, onClose }: WelcomeModa
                     width: 36,
                     height: 36,
                     borderRadius: 8,
-                    background: 'rgba(34,197,94,0.08)',
+                    background: 'rgba(var(--color-profit-rgb), 0.08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -192,7 +192,7 @@ export default function WelcomeModal({ userId, firstName, onClose }: WelcomeModa
             disabled={closing}
             style={{
               background: 'var(--green)',
-              color: '#09090b',
+              color: 'var(--color-surface-0)',
               border: 'none',
               borderRadius: 10,
               padding: '12px 32px',

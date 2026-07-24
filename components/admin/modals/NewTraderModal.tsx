@@ -231,11 +231,11 @@ export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalPro
           )}
 
           {success && !emailSent && generatedCode && (
-            <div className="rounded-lg border p-4" style={{ background: 'var(--bg3)', borderColor: 'rgba(34,197,94,0.25)' }}>
+            <div className="rounded-lg border p-4" style={{ background: 'var(--bg3)', borderColor: 'rgba(var(--color-profit-rgb), 0.25)' }}>
               <p className="text-xs font-medium mb-3" style={{ color: 'var(--text2)' }}>
                 Email non envoyé (domaine non vérifié). Partagez ce code manuellement :
               </p>
-              <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg" style={{ background: 'var(--bg)', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg" style={{ background: 'var(--bg)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}>
                 <span className="text-2xl font-bold font-mono tracking-[0.3em] text-green-400">{generatedCode}</span>
                 <button
                   type="button"
@@ -266,8 +266,8 @@ export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalPro
               disabled={loading || success}
               className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all"
               style={{
-                background: success ? 'rgba(34,197,94,0.5)' : 'var(--green)',
-                color: '#09090b',
+                background: success ? 'rgba(var(--color-profit-rgb), 0.5)' : 'var(--green)',
+                color: 'var(--color-surface-0)',
                 opacity: loading ? 0.7 : 1,
               }}
             >

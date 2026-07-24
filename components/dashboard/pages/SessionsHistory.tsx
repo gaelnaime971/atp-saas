@@ -198,7 +198,7 @@ export default function SessionsHistory() {
         style={{
           background: 'var(--bg3)',
           border: '1px solid var(--border)',
-          borderLeft: '4px solid #22c55e',
+          borderLeft: '4px solid var(--color-profit)',
           borderRadius: '10px',
           padding: '14px 18px',
           marginBottom: '20px',
@@ -215,7 +215,7 @@ export default function SessionsHistory() {
         <div style={{
           position: 'fixed', top: 24, right: 24, zIndex: 9999,
           padding: '12px 20px', borderRadius: '10px',
-          background: toast.startsWith('Erreur') ? 'rgba(239,68,68,0.9)' : 'rgba(34,197,94,0.9)',
+          background: toast.startsWith('Erreur') ? 'rgba(var(--color-loss-rgb), 0.9)' : 'rgba(var(--color-profit-rgb), 0.9)',
           color: '#fff', fontSize: '13px', fontWeight: 500,
           backdropFilter: 'blur(8px)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
         }}>
@@ -234,13 +234,13 @@ export default function SessionsHistory() {
         <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="text-xs" style={{ color: 'var(--text3)' }}>P&L Total</p>
-            <p className="text-sm font-bold font-mono" style={{ color: totalPnl >= 0 ? '#22c55e' : '#ef4444' }}>
+            <p className="text-sm font-bold font-mono" style={{ color: totalPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
               {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)} $
             </p>
           </div>
           <div className="text-right">
             <p className="text-xs" style={{ color: 'var(--text3)' }}>Win Rate</p>
-            <p className="text-sm font-bold font-mono" style={{ color: winRate >= 50 ? '#22c55e' : '#ef4444' }}>
+            <p className="text-sm font-bold font-mono" style={{ color: winRate >= 50 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
               {winRate}%
             </p>
           </div>
@@ -327,10 +327,10 @@ export default function SessionsHistory() {
                     <td className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--text2)' }}>
                       {s.trades_count}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono font-semibold" style={{ color: pnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                    <td className="px-4 py-3 text-xs font-mono font-semibold" style={{ color: pnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                       {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)} $
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono" style={{ color: rVal != null ? (rVal >= 0 ? '#22c55e' : '#ef4444') : 'var(--text3)' }}>
+                    <td className="px-4 py-3 text-xs font-mono" style={{ color: rVal != null ? (rVal >= 0 ? 'var(--color-profit)' : 'var(--color-loss)') : 'var(--text3)' }}>
                       {rVal != null ? `${rVal >= 0 ? '+' : ''}${Number(rVal).toFixed(1)}R` : '—'}
                     </td>
                     <td className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--text2)' }}>
@@ -339,8 +339,8 @@ export default function SessionsHistory() {
                     <td className="px-4 py-3">
                       {planScore != null ? (
                         <span className="text-xs px-1.5 py-0.5 rounded" style={{
-                          background: planScore >= 8 ? 'rgba(34,197,94,0.15)' : planScore >= 5 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.15)',
-                          color: planScore >= 8 ? '#22c55e' : planScore >= 5 ? '#f59e0b' : '#ef4444',
+                          background: planScore >= 8 ? 'rgba(var(--color-profit-rgb), 0.15)' : planScore >= 5 ? 'rgba(var(--color-warn-rgb), 0.12)' : 'rgba(var(--color-loss-rgb), 0.15)',
+                          color: planScore >= 8 ? 'var(--color-profit)' : planScore >= 5 ? 'var(--color-warn)' : 'var(--color-loss)',
                         }}>
                           {planScore}/10
                         </span>
@@ -363,11 +363,11 @@ export default function SessionsHistory() {
                         <button
                           onClick={() => handleDelete(s.id)}
                           disabled={deleting === s.id}
-                          className="p-1.5 rounded-lg transition-all hover:bg-[rgba(239,68,68,0.1)]"
+                          className="p-1.5 rounded-lg transition-all hover:bg-[rgba(var(--color-loss-rgb), 0.1)]"
                           title="Supprimer"
                           style={{ opacity: deleting === s.id ? 0.5 : 1 }}
                         >
-                          <svg className="w-3.5 h-3.5" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5" style={{ color: 'var(--color-loss)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                           </svg>
                         </button>
@@ -437,7 +437,7 @@ export default function SessionsHistory() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {accounts.map(acc => {
                       const selected = editAccountIds.includes(acc.id)
-                      const typeColor = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
+                      const typeColor = acc.account_type === 'funded' ? 'var(--color-profit)' : acc.account_type === 'challenge' ? '#60a5fa' : 'var(--color-warn)'
                       return (
                         <button
                           key={acc.id}
@@ -489,7 +489,7 @@ export default function SessionsHistory() {
                   <input
                     type="range" min={0} max={10} value={editPlanScore}
                     onChange={e => setEditPlanScore(Number(e.target.value))}
-                    style={{ width: '100%', accentColor: editPlanScore >= 8 ? '#22c55e' : editPlanScore >= 5 ? '#f59e0b' : '#ef4444', marginTop: 4 }}
+                    style={{ width: '100%', accentColor: editPlanScore >= 8 ? 'var(--color-profit)' : editPlanScore >= 5 ? 'var(--color-warn)' : 'var(--color-loss)', marginTop: 4 }}
                   />
                 </div>
               </div>
@@ -504,8 +504,8 @@ export default function SessionsHistory() {
                       onClick={() => setEditMood(m)}
                       className="flex-1 py-2 rounded-lg text-lg transition-all"
                       style={{
-                        border: editMood === m ? '2px solid #22c55e' : '1px solid var(--border)',
-                        background: editMood === m ? 'rgba(34,197,94,0.1)' : 'var(--bg3)',
+                        border: editMood === m ? '2px solid var(--color-profit)' : '1px solid var(--border)',
+                        background: editMood === m ? 'rgba(var(--color-profit-rgb), 0.1)' : 'var(--bg3)',
                         transform: editMood === m ? 'scale(1.05)' : 'scale(1)',
                       }}
                     >
@@ -551,7 +551,7 @@ export default function SessionsHistory() {
                       onClick={() => setEditGlobalRating(star)}
                       style={{
                         fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', padding: 2,
-                        color: star <= editGlobalRating ? '#f59e0b' : '#374151',
+                        color: star <= editGlobalRating ? 'var(--color-warn)' : '#374151',
                       }}
                     >
                       ★
@@ -574,7 +574,7 @@ export default function SessionsHistory() {
                 onClick={handleSave}
                 disabled={saving}
                 className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-                style={{ background: 'var(--green)', color: '#09090b' }}
+                style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
               >
                 {saving ? 'Enregistrement...' : 'Sauvegarder'}
               </button>

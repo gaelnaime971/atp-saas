@@ -129,7 +129,7 @@ export default function Compte() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '8px 12px',
-    background: 'var(--bg2, #18181b)',
+    background: 'var(--bg2, var(--color-surface-2))',
     border: '1px solid var(--border, rgba(255,255,255,0.07))',
     borderRadius: 8,
     color: 'var(--text)',
@@ -263,7 +263,7 @@ export default function Compte() {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  background: notif.value ? 'var(--green, #22c55e)' : 'var(--bg3, #222225)',
+                  background: notif.value ? 'var(--green, var(--color-profit))' : 'var(--bg3, var(--color-surface-3))',
                   borderRadius: 22,
                   transition: 'background 0.2s',
                 }}>
@@ -318,7 +318,7 @@ export default function Compte() {
                     href={whopLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ padding: '0 14px', borderRadius: 8, background: 'var(--green)', color: '#09090b', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+                    style={{ padding: '0 14px', borderRadius: 8, background: 'var(--green)', color: 'var(--color-surface-0)', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', textDecoration: 'none' }}
                   >
                     Ouvrir →
                   </a>
@@ -365,7 +365,7 @@ export default function Compte() {
 
         {/* Zone danger */}
         <Card>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--red, #ef4444)', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 12, borderBottom: '1px solid var(--border, rgba(255,255,255,0.07))' }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--red, var(--color-loss))', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 12, borderBottom: '1px solid var(--border, rgba(255,255,255,0.07))' }}>
             Zone danger
           </h2>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.6 }}>

@@ -263,7 +263,7 @@ export default function Overview() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-[#e8edf5]">Vue Globale</h1>
-        <p className="text-[#5a6a82] text-sm mt-1">Aperçu de votre activité de coaching</p>
+        <p className="text-[var(--color-neutral)] text-sm mt-1">Aperçu de votre activité de coaching</p>
       </div>
 
       {/* KPI Cards */}
@@ -280,7 +280,7 @@ export default function Overview() {
             </div>
             <div>
               <p className={`text-2xl font-bold ${kpi.color} font-mono`}>{kpi.value}</p>
-              <p className="text-[#5a6a82] text-xs mt-1">{kpi.label}</p>
+              <p className="text-[var(--color-neutral)] text-xs mt-1">{kpi.label}</p>
             </div>
           </Card>
         ))}
@@ -298,8 +298,8 @@ export default function Overview() {
           </div>
           <div className="space-y-2">
             {alerts.map((alert, i) => {
-              const colors = alert.type === 'warning' ? { bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.15)', color: '#f59e0b', icon: '⚠️' }
-                : alert.type === 'success' ? { bg: 'rgba(34,197,94,0.06)', border: 'rgba(34,197,94,0.15)', color: '#22c55e', icon: '✅' }
+              const colors = alert.type === 'warning' ? { bg: 'rgba(var(--color-warn-rgb), 0.06)', border: 'rgba(var(--color-warn-rgb), 0.15)', color: 'var(--color-warn)', icon: '⚠️' }
+                : alert.type === 'success' ? { bg: 'rgba(var(--color-profit-rgb), 0.06)', border: 'rgba(var(--color-profit-rgb), 0.15)', color: 'var(--color-profit)', icon: '✅' }
                 : { bg: 'rgba(96,165,250,0.06)', border: 'rgba(96,165,250,0.15)', color: '#60a5fa', icon: '💬' }
               return (
                 <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: colors.bg, border: `1px solid ${colors.border}` }}>
@@ -325,7 +325,7 @@ export default function Overview() {
           </div>
           <div className="space-y-2">
             {topProspects.map(p => {
-              const scoreColor = (p.score || 0) >= 75 ? '#22c55e' : (p.score || 0) >= 50 ? '#f59e0b' : '#6b7280'
+              const scoreColor = (p.score || 0) >= 75 ? 'var(--color-profit)' : (p.score || 0) >= 50 ? 'var(--color-warn)' : '#6b7280'
               return (
                 <div key={p.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-[rgba(255,255,255,0.03)]" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
                   <div className="flex items-center justify-center w-9 h-9 rounded-lg" style={{ background: `${scoreColor}15`, border: `1px solid ${scoreColor}33` }}>
@@ -336,9 +336,9 @@ export default function Overview() {
                     <p className="text-xs" style={{ color: 'var(--text3)' }}>{p.objectif || '—'} · {p.source}</p>
                   </div>
                   <span className="text-[10px] px-2 py-0.5 rounded uppercase font-semibold" style={{
-                    background: p.status === 'nouveau' ? 'rgba(59,130,246,0.1)' : 'rgba(245,158,11,0.1)',
-                    color: p.status === 'nouveau' ? '#3b82f6' : '#f59e0b',
-                    border: `1px solid ${p.status === 'nouveau' ? 'rgba(59,130,246,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                    background: p.status === 'nouveau' ? 'rgba(59,130,246,0.1)' : 'rgba(var(--color-warn-rgb), 0.1)',
+                    color: p.status === 'nouveau' ? '#3b82f6' : 'var(--color-warn)',
+                    border: `1px solid ${p.status === 'nouveau' ? 'rgba(59,130,246,0.3)' : 'rgba(var(--color-warn-rgb), 0.3)'}`,
                   }}>
                     {p.status === 'nouveau' ? 'Nouveau' : 'Contacté'}
                   </span>
@@ -353,24 +353,24 @@ export default function Overview() {
       <Card>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-sm font-semibold text-[#e8edf5]">Sessions Récentes</h2>
-          <span className="text-xs text-[#5a6a82]">{recentSessions.length} sessions</span>
+          <span className="text-xs text-[var(--color-neutral)]">{recentSessions.length} sessions</span>
         </div>
 
         {recentSessions.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-[#5a6a82] text-sm">Aucune session enregistrée</p>
-            <p className="text-[#5a6a82] text-xs mt-1">Les sessions apparaîtront ici une fois que les traders auront commencé à logger</p>
+            <p className="text-[var(--color-neutral)] text-sm">Aucune session enregistrée</p>
+            <p className="text-[var(--color-neutral)] text-xs mt-1">Les sessions apparaîtront ici une fois que les traders auront commencé à logger</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Trader</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Date</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Instrument</th>
-                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">PnL</th>
-                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Résultat</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trader</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Date</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Instrument</th>
+                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">PnL</th>
+                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Résultat</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
@@ -381,7 +381,7 @@ export default function Overview() {
                       {new Date(session.session_date).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="py-3 text-sm text-[#a0aec0]">
-                      <span className="px-2 py-0.5 bg-[#18181b] rounded text-xs font-mono">
+                      <span className="px-2 py-0.5 bg-[var(--color-surface-2)] rounded text-xs font-mono">
                         {session.instrument}
                       </span>
                     </td>
@@ -394,7 +394,7 @@ export default function Overview() {
                           ? 'bg-green-500/10 text-green-400'
                           : session.result === 'loss'
                           ? 'bg-red-500/10 text-red-400'
-                          : 'bg-[#222225] text-[#a0aec0]'
+                          : 'bg-[var(--color-surface-3)] text-[#a0aec0]'
                       }`}>
                         {session.result === 'win' ? 'Win' : session.result === 'loss' ? 'Loss' : 'Breakeven'}
                       </span>

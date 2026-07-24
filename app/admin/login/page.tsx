@@ -96,8 +96,8 @@ export default function AdminLoginPage() {
               disabled={loading}
               className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
               style={{
-                background: loading ? 'rgba(34,197,94,0.5)' : 'var(--green)',
-                color: '#09090b',
+                background: loading ? 'rgba(var(--color-profit-rgb), 0.5)' : 'var(--green)',
+                color: 'var(--color-surface-0)',
                 cursor: loading ? 'not-allowed' : 'pointer',
               }}
             >

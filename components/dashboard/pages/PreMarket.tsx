@@ -6,10 +6,10 @@ import Card from '@/components/ui/Card'
 /* ─── Constants ─── */
 
 const BIAS_OPTIONS = [
-  { id: 'haussier', label: 'Haussier', color: '#22c55e', icon: '📈' },
-  { id: 'baissier', label: 'Baissier', color: '#ef4444', icon: '📉' },
-  { id: 'neutre', label: 'Neutre', color: '#f59e0b', icon: '↔️' },
-  { id: 'none', label: 'Pas de biais', color: '#5a6a82', icon: '❓' },
+  { id: 'haussier', label: 'Haussier', color: 'var(--color-profit)', icon: '📈' },
+  { id: 'baissier', label: 'Baissier', color: 'var(--color-loss)', icon: '📉' },
+  { id: 'neutre', label: 'Neutre', color: 'var(--color-warn)', icon: '↔️' },
+  { id: 'none', label: 'Pas de biais', color: 'var(--color-neutral)', icon: '❓' },
 ]
 
 interface SectionDef {
@@ -86,8 +86,8 @@ const KEYFRAMES = `
   100% { transform: scale(1); opacity: 1; }
 }
 @keyframes badgePulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.15); }
-  50% { box-shadow: 0 0 35px rgba(34,197,94,0.35); }
+  0%, 100% { box-shadow: 0 0 20px rgba(var(--color-profit-rgb), 0.15); }
+  50% { box-shadow: 0 0 35px rgba(var(--color-profit-rgb), 0.35); }
 }
 @keyframes progressGlow {
   0%, 100% { filter: brightness(1); }
@@ -103,25 +103,25 @@ function CheckItem({ label, checked, onToggle }: { label: string; checked: boole
       onClick={onToggle}
       style={{
         display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10,
-        border: checked ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.06)',
-        background: checked ? 'rgba(34,197,94,0.07)' : 'rgba(255,255,255,0.02)',
+        border: checked ? '1px solid rgba(var(--color-profit-rgb), 0.3)' : '1px solid rgba(255,255,255,0.06)',
+        background: checked ? 'rgba(var(--color-profit-rgb), 0.07)' : 'rgba(255,255,255,0.02)',
         cursor: 'pointer', transition: 'all 0.25s ease', userSelect: 'none',
       }}
     >
       <div style={{
         width: 22, height: 22, borderRadius: 6,
-        border: checked ? '2px solid #22c55e' : '2px solid rgba(255,255,255,0.15)',
-        background: checked ? '#22c55e' : 'transparent',
+        border: checked ? '2px solid var(--color-profit)' : '2px solid rgba(255,255,255,0.15)',
+        background: checked ? 'var(--color-profit)' : 'transparent',
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         transition: 'all 0.2s ease', animation: checked ? 'checkPop 0.3s ease' : 'none',
       }}>
         {checked && (
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#111113" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="var(--color-surface-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </div>
-      <span style={{ fontSize: 13, fontWeight: 500, color: checked ? '#22c55e' : '#c8d0dc', textDecoration: checked ? 'line-through' : 'none', transition: 'all 0.2s ease' }}>
+      <span style={{ fontSize: 13, fontWeight: 500, color: checked ? 'var(--color-profit)' : '#c8d0dc', textDecoration: checked ? 'line-through' : 'none', transition: 'all 0.2s ease' }}>
         {label}
       </span>
     </div>
@@ -132,13 +132,13 @@ function SectionCard({ section, done, total, children }: { section: SectionDef; 
   const complete = done === total
   return (
     <Card style={{
-      border: complete ? '1px solid rgba(34,197,94,0.25)' : undefined,
-      background: complete ? 'rgba(34,197,94,0.03)' : undefined,
+      border: complete ? '1px solid rgba(var(--color-profit-rgb), 0.25)' : undefined,
+      background: complete ? 'rgba(var(--color-profit-rgb), 0.03)' : undefined,
       transition: 'all 0.4s ease',
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 12,
-        borderBottom: `1px solid ${complete ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.06)'}`,
+        borderBottom: `1px solid ${complete ? 'rgba(var(--color-profit-rgb), 0.2)' : 'rgba(255,255,255,0.06)'}`,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 20 }}>{section.icon}</span>
@@ -146,8 +146,8 @@ function SectionCard({ section, done, total, children }: { section: SectionDef; 
         </div>
         <span style={{
           fontSize: 12, fontWeight: 700, fontFamily: 'monospace', padding: '4px 10px', borderRadius: 8,
-          background: complete ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
-          color: complete ? '#22c55e' : '#8892a4', transition: 'all 0.3s ease',
+          background: complete ? 'rgba(var(--color-profit-rgb), 0.15)' : 'rgba(255,255,255,0.05)',
+          color: complete ? 'var(--color-profit)' : '#8892a4', transition: 'all 0.3s ease',
         }}>
           {done}/{total} ✓
         </span>
@@ -246,9 +246,9 @@ export default function PreMarket() {
                 fontWeight: 800,
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
-                background: 'rgba(34,197,94,0.1)',
-                color: '#22c55e',
-                border: '1px solid rgba(34,197,94,0.3)',
+                background: 'rgba(var(--color-profit-rgb), 0.1)',
+                color: 'var(--color-profit)',
+                border: '1px solid rgba(var(--color-profit-rgb), 0.3)',
                 animation: 'badgePulse 2s ease-in-out infinite',
               }}>
                 🟢 Prêt à trader
@@ -261,9 +261,9 @@ export default function PreMarket() {
                 borderRadius: 10,
                 fontSize: 12,
                 fontWeight: 600,
-                background: 'rgba(239,68,68,0.08)',
-                color: '#ef4444',
-                border: '1px solid rgba(239,68,68,0.2)',
+                background: 'rgba(var(--color-loss-rgb), 0.08)',
+                color: 'var(--color-loss)',
+                border: '1px solid rgba(var(--color-loss-rgb), 0.2)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
@@ -277,8 +277,8 @@ export default function PreMarket() {
         <div style={{
           padding: 18,
           borderRadius: 14,
-          border: isReady ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.07)',
-          background: isReady ? 'rgba(34,197,94,0.04)' : 'rgba(255,255,255,0.02)',
+          border: isReady ? '1px solid rgba(var(--color-profit-rgb), 0.3)' : '1px solid rgba(255,255,255,0.07)',
+          background: isReady ? 'rgba(var(--color-profit-rgb), 0.04)' : 'rgba(255,255,255,0.02)',
           transition: 'all 0.4s ease',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -287,7 +287,7 @@ export default function PreMarket() {
               fontSize: 15,
               fontWeight: 800,
               fontFamily: 'monospace',
-              color: isReady ? '#22c55e' : progress >= 50 ? '#f59e0b' : '#8892a4',
+              color: isReady ? 'var(--color-profit)' : progress >= 50 ? 'var(--color-warn)' : '#8892a4',
             }}>
               {progress}%
             </span>
@@ -303,9 +303,9 @@ export default function PreMarket() {
               height: '100%',
               borderRadius: 6,
               background: isReady
-                ? 'linear-gradient(90deg, #22c55e, #16a34a)'
+                ? 'linear-gradient(90deg, var(--color-profit), #16a34a)'
                 : progress >= 50
-                  ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                  ? 'linear-gradient(90deg, var(--color-warn), #fbbf24)'
                   : 'linear-gradient(90deg, #6b7688, #8892a4)',
               transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1), background 0.4s ease',
               animation: isReady ? 'progressGlow 2s ease-in-out infinite' : 'none',
@@ -337,7 +337,7 @@ export default function PreMarket() {
                       fontSize: 18,
                       fontWeight: 800,
                       fontFamily: 'monospace',
-                      color: data.confidence >= 7 ? '#22c55e' : data.confidence >= 4 ? '#f59e0b' : '#ef4444',
+                      color: data.confidence >= 7 ? 'var(--color-profit)' : data.confidence >= 4 ? 'var(--color-warn)' : 'var(--color-loss)',
                     }}>
                       {data.confidence}/10
                     </span>
@@ -355,7 +355,7 @@ export default function PreMarket() {
                           cursor: 'pointer',
                           transition: 'all 0.2s',
                           background: i < data.confidence
-                            ? data.confidence >= 7 ? '#22c55e' : data.confidence >= 4 ? '#f59e0b' : '#ef4444'
+                            ? data.confidence >= 7 ? 'var(--color-profit)' : data.confidence >= 4 ? 'var(--color-warn)' : 'var(--color-loss)'
                             : 'rgba(255,255,255,0.06)',
                         }}
                       />
@@ -366,7 +366,7 @@ export default function PreMarket() {
                     onChange={e => setData(d => ({ ...d, confidence: Number(e.target.value) }))}
                     style={{
                       width: '100%',
-                      accentColor: data.confidence >= 7 ? '#22c55e' : data.confidence >= 4 ? '#f59e0b' : '#ef4444',
+                      accentColor: data.confidence >= 7 ? 'var(--color-profit)' : data.confidence >= 4 ? 'var(--color-warn)' : 'var(--color-loss)',
                     }}
                   />
                 </div>
@@ -396,23 +396,23 @@ export default function PreMarket() {
                 {/* Key levels */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#22c55e', display: 'block', marginBottom: 5 }}>Support</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-profit)', display: 'block', marginBottom: 5 }}>Support</label>
                     <input
                       type="number"
                       value={data.support}
                       onChange={e => setData(d => ({ ...d, support: e.target.value }))}
                       placeholder="5420"
-                      style={{ ...inputStyle, textAlign: 'center', borderColor: data.support ? 'rgba(34,197,94,0.3)' : undefined }}
+                      style={{ ...inputStyle, textAlign: 'center', borderColor: data.support ? 'rgba(var(--color-profit-rgb), 0.3)' : undefined }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#ef4444', display: 'block', marginBottom: 5 }}>Résistance</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-loss)', display: 'block', marginBottom: 5 }}>Résistance</label>
                     <input
                       type="number"
                       value={data.resistance}
                       onChange={e => setData(d => ({ ...d, resistance: e.target.value }))}
                       placeholder="5480"
-                      style={{ ...inputStyle, textAlign: 'center', borderColor: data.resistance ? 'rgba(239,68,68,0.3)' : undefined }}
+                      style={{ ...inputStyle, textAlign: 'center', borderColor: data.resistance ? 'rgba(var(--color-loss-rgb), 0.3)' : undefined }}
                     />
                   </div>
                 </div>

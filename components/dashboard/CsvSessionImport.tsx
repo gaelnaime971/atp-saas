@@ -402,14 +402,14 @@ export default function CsvSessionImport({ existingDates, onClose, onImported }:
                   <div className="flex items-center gap-1.5 flex-1">
                     <div style={{
                       width: 22, height: 22, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: active ? '#22c55e' : done ? 'rgba(34,197,94,0.2)' : 'var(--bg2)',
-                      color: active ? '#000' : done ? '#22c55e' : 'var(--text3)',
-                      border: `1px solid ${active || done ? '#22c55e' : 'var(--border)'}`,
+                      background: active ? 'var(--color-profit)' : done ? 'rgba(var(--color-profit-rgb), 0.2)' : 'var(--bg2)',
+                      color: active ? '#000' : done ? 'var(--color-profit)' : 'var(--text3)',
+                      border: `1px solid ${active || done ? 'var(--color-profit)' : 'var(--border)'}`,
                       fontSize: 10, fontWeight: 700,
                     }}>{done ? '✓' : i + 1}</div>
                     <span style={{ fontSize: 11, color: active ? 'var(--text)' : 'var(--text3)', fontWeight: active ? 600 : 500 }}>{label}</span>
                   </div>
-                  {i < arr.length - 1 && <div style={{ flex: 1, height: 1, background: done ? '#22c55e' : 'var(--border)' }} />}
+                  {i < arr.length - 1 && <div style={{ flex: 1, height: 1, background: done ? 'var(--color-profit)' : 'var(--border)' }} />}
                 </div>
               )
             })}
@@ -447,7 +447,7 @@ export default function CsvSessionImport({ existingDates, onClose, onImported }:
             </div>
           )}
           {importError && step !== 'upload' && (
-            <div style={{ marginTop: 12, padding: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, fontSize: 11, color: '#fca5a5' }}>
+            <div style={{ marginTop: 12, padding: 10, background: 'rgba(var(--color-loss-rgb), 0.1)', border: '1px solid rgba(var(--color-loss-rgb), 0.3)', borderRadius: 8, fontSize: 11, color: '#fca5a5' }}>
               {importError}
             </div>
           )}
@@ -529,8 +529,8 @@ function UploadStep({ onFile, error }: { onFile: (f: File) => void; error: strin
           if (f) onFile(f)
         }}
         style={{
-          border: `2px dashed ${dragOver ? '#22c55e' : 'var(--border)'}`,
-          background: dragOver ? 'rgba(34,197,94,0.05)' : 'var(--bg3)',
+          border: `2px dashed ${dragOver ? 'var(--color-profit)' : 'var(--border)'}`,
+          background: dragOver ? 'rgba(var(--color-profit-rgb), 0.05)' : 'var(--bg3)',
           borderRadius: 12, padding: 40, textAlign: 'center',
           transition: 'all 0.15s ease',
         }}
@@ -547,7 +547,7 @@ function UploadStep({ onFile, error }: { onFile: (f: File) => void; error: strin
         <strong style={{ color: 'var(--text)' }}>Formats acceptés :</strong> CSV trade-par-trade exporté depuis ton broker (Tradovate, NinjaTrader, Topstep, TradingView, MT4/MT5, IBKR, etc.). Les trades seront regroupés par date pour former des sessions.
       </div>
       {error && (
-        <div style={{ padding: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, fontSize: 11, color: '#fca5a5' }}>
+        <div style={{ padding: 10, background: 'rgba(var(--color-loss-rgb), 0.1)', border: '1px solid rgba(var(--color-loss-rgb), 0.3)', borderRadius: 8, fontSize: 11, color: '#fca5a5' }}>
           {error}
         </div>
       )}
@@ -590,7 +590,7 @@ function MappingStep({
       </div>
 
       {aggregation && (
-        <div style={{ padding: 12, background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8 }}>
+        <div style={{ padding: 12, background: 'rgba(var(--color-profit-rgb), 0.05)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)', borderRadius: 8 }}>
           <div style={{ fontSize: 11, color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}>
             ✓ {aggregation.aggregated.length} session{aggregation.aggregated.length > 1 ? 's' : ''} détectée{aggregation.aggregated.length > 1 ? 's' : ''}
           </div>
@@ -618,13 +618,13 @@ function MapField({
   return (
     <div>
       <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>
-        {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
+        {label} {required && <span style={{ color: 'var(--color-loss)' }}>*</span>}
       </label>
       <select
         value={value == null ? '' : value}
         onChange={e => onChange(e.target.value === '' ? null : Number(e.target.value))}
         className="w-full px-3 py-2 rounded-lg text-xs outline-none"
-        style={{ background: 'var(--bg3)', border: `1px solid ${value == null && required ? 'rgba(239,68,68,0.5)' : 'var(--border)'}`, color: 'var(--text)' }}
+        style={{ background: 'var(--bg3)', border: `1px solid ${value == null && required ? 'rgba(var(--color-loss-rgb), 0.5)' : 'var(--border)'}`, color: 'var(--text)' }}
       >
         {(allowNone || !required) && <option value="">— Ne pas mapper —</option>}
         {options}
@@ -664,8 +664,8 @@ function PreviewStep({
       <div className="grid grid-cols-4 gap-2">
         <PreviewKpi label="Sessions" value={String(selectedDates.size)} />
         <PreviewKpi label="Trades" value={String(totalTrades)} />
-        <PreviewKpi label="P&L cumulé" value={`${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}`} color={totalPnl >= 0 ? '#22c55e' : '#ef4444'} />
-        <PreviewKpi label="Doublons détectés" value={String([...dupDates].filter(d => selectedDates.has(d)).length)} color={dupDates.size > 0 ? '#f59e0b' : 'var(--text2)'} />
+        <PreviewKpi label="P&L cumulé" value={`${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}`} color={totalPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)'} />
+        <PreviewKpi label="Doublons détectés" value={String([...dupDates].filter(d => selectedDates.has(d)).length)} color={dupDates.size > 0 ? 'var(--color-warn)' : 'var(--text2)'} />
       </div>
 
       {skipped > 0 && (
@@ -680,7 +680,7 @@ function PreviewStep({
             {selectedDates.size === aggregated.length ? 'Tout décocher' : 'Tout cocher'} ({aggregated.length})
           </button>
           <div style={{ fontSize: 10, color: 'var(--text3)' }}>
-            <span style={{ color: '#f59e0b' }}>●</span> Doublon avec session existante
+            <span style={{ color: 'var(--color-warn)' }}>●</span> Doublon avec session existante
           </div>
         </div>
         <div style={{ maxHeight: 320, overflowY: 'auto' }}>
@@ -702,18 +702,18 @@ function PreviewStep({
                 return (
                   <tr key={a.session_date} style={{ borderBottom: '1px solid var(--border)', opacity: isSel ? 1 : 0.4 }}>
                     <td style={{ padding: '6px 10px' }}>
-                      <input type="checkbox" checked={isSel} onChange={() => toggle(a.session_date)} style={{ accentColor: '#22c55e', cursor: 'pointer' }} />
+                      <input type="checkbox" checked={isSel} onChange={() => toggle(a.session_date)} style={{ accentColor: 'var(--color-profit)', cursor: 'pointer' }} />
                     </td>
                     <td style={{ padding: '6px 10px', color: 'var(--text)', fontFamily: 'monospace' }}>
-                      {isDup && <span style={{ color: '#f59e0b', marginRight: 4 }}>●</span>}
+                      {isDup && <span style={{ color: 'var(--color-warn)', marginRight: 4 }}>●</span>}
                       {new Date(a.session_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
                     </td>
                     <td style={{ padding: '6px 10px', color: 'var(--text2)', fontFamily: 'monospace' }}>{a.trades_count}</td>
-                    <td style={{ padding: '6px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, color: a.pnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                    <td style={{ padding: '6px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600, color: a.pnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                       {a.pnl >= 0 ? '+' : ''}{a.pnl.toFixed(2)}
                     </td>
                     <td style={{ padding: '6px 10px', color: 'var(--text3)', fontFamily: 'monospace', fontSize: 10 }}>
-                      <span style={{ color: '#22c55e' }}>{a.wins}</span>/<span style={{ color: '#ef4444' }}>{a.losses}</span>{a.breakevens > 0 ? <>/<span style={{ color: 'var(--text3)' }}>{a.breakevens}</span></> : null}
+                      <span style={{ color: 'var(--color-profit)' }}>{a.wins}</span>/<span style={{ color: 'var(--color-loss)' }}>{a.losses}</span>{a.breakevens > 0 ? <>/<span style={{ color: 'var(--text3)' }}>{a.breakevens}</span></> : null}
                     </td>
                     <td style={{ padding: '6px 10px', color: 'var(--text2)' }}>{a.instrument || '—'}</td>
                   </tr>
@@ -755,8 +755,8 @@ function DedupStep({
   ]
   return (
     <div className="space-y-3">
-      <div style={{ padding: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, fontSize: 11, color: 'var(--text2)' }}>
-        ⚠ <strong style={{ color: '#f59e0b' }}>{dupCount} session{dupCount > 1 ? 's' : ''}</strong> existe{dupCount > 1 ? 'nt' : ''} déjà pour ces dates. Choisis comment les gérer :
+      <div style={{ padding: 12, background: 'rgba(var(--color-warn-rgb), 0.08)', border: '1px solid rgba(var(--color-warn-rgb), 0.3)', borderRadius: 8, fontSize: 11, color: 'var(--text2)' }}>
+        ⚠ <strong style={{ color: 'var(--color-warn)' }}>{dupCount} session{dupCount > 1 ? 's' : ''}</strong> existe{dupCount > 1 ? 'nt' : ''} déjà pour ces dates. Choisis comment les gérer :
       </div>
       <div className="space-y-2">
         {options.map(o => {
@@ -764,13 +764,13 @@ function DedupStep({
           return (
             <label key={o.id} className="flex items-start gap-3 cursor-pointer" style={{
               padding: 12, borderRadius: 8,
-              background: active ? 'rgba(34,197,94,0.05)' : 'var(--bg3)',
-              border: `1px solid ${active ? '#22c55e' : 'var(--border)'}`,
+              background: active ? 'rgba(var(--color-profit-rgb), 0.05)' : 'var(--bg3)',
+              border: `1px solid ${active ? 'var(--color-profit)' : 'var(--border)'}`,
               transition: 'all 0.15s ease',
             }}>
-              <input type="radio" name="dup" checked={active} onChange={() => setStrategy(o.id)} className="mt-0.5" style={{ accentColor: '#22c55e', cursor: 'pointer' }} />
+              <input type="radio" name="dup" checked={active} onChange={() => setStrategy(o.id)} className="mt-0.5" style={{ accentColor: 'var(--color-profit)', cursor: 'pointer' }} />
               <div className="flex-1">
-                <div style={{ fontSize: 12, fontWeight: 700, color: active ? '#22c55e' : 'var(--text)' }}>{o.icon} {o.title}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: active ? 'var(--color-profit)' : 'var(--text)' }}>{o.icon} {o.title}</div>
                 <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2, lineHeight: 1.5 }}>{o.desc}</div>
               </div>
             </label>

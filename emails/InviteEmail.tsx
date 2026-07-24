@@ -45,11 +45,11 @@ export default function InviteEmail({ full_name, code, plan_type, inviteUrl, app
               Vous avez été invité(e) à rejoindre la plateforme <strong>ATP Coaching</strong>.
             </Text>
             <Text style={text}>
-              Votre plan : <strong style={{ color: '#22c55e' }}>{plan_type}</strong>
+              Votre plan : <strong style={{ color: 'var(--color-profit)' }}>{plan_type}</strong>
             </Text>
             <Text style={text}>
               Utilisez le code ci-dessous pour activer votre compte sur{' '}
-              <a href={inviteUrl} style={{ color: '#22c55e', textDecoration: 'underline' }}>{inviteUrl.replace(/^https?:\/\//, '')}</a>
+              <a href={inviteUrl} style={{ color: 'var(--color-profit)', textDecoration: 'underline' }}>{inviteUrl.replace(/^https?:\/\//, '')}</a>
             </Text>
 
             {/* Code block */}
@@ -94,7 +94,7 @@ const header = {
 }
 
 const logo = {
-  color: '#22c55e',
+  color: 'var(--color-profit)',
   fontSize: '28px',
   fontWeight: '700',
   margin: '0',
@@ -131,7 +131,7 @@ const text = {
 
 const codeContainer = {
   backgroundColor: '#0f1117',
-  border: '1px solid rgba(34,197,94,0.25)',
+  border: '1px solid rgba(var(--color-profit-rgb), 0.25)',
   borderRadius: '12px',
   padding: '24px',
   textAlign: 'center' as const,
@@ -139,7 +139,7 @@ const codeContainer = {
 }
 
 const codeLabel = {
-  color: '#5a6a82',
+  color: 'var(--color-neutral)',
   fontSize: '10px',
   fontWeight: '600',
   letterSpacing: '3px',
@@ -147,7 +147,7 @@ const codeLabel = {
 }
 
 const codeText = {
-  color: '#22c55e',
+  color: 'var(--color-profit)',
   fontSize: '48px',
   fontWeight: '700',
   fontFamily: "'DM Mono', 'Courier New', monospace",
@@ -156,7 +156,7 @@ const codeText = {
 }
 
 const codeHint = {
-  color: '#5a6a82',
+  color: 'var(--color-neutral)',
   fontSize: '11px',
   margin: '0',
 }
@@ -167,7 +167,7 @@ const hr = {
 }
 
 const footer = {
-  color: '#5a6a82',
+  color: 'var(--color-neutral)',
   fontSize: '12px',
   lineHeight: '18px',
   margin: '0 0 6px',

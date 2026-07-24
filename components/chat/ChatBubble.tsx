@@ -22,7 +22,7 @@ export default function ChatBubble({ unreadCount, onClick }: ChatBubbleProps) {
         justifyContent: 'center',
         cursor: 'pointer',
         zIndex: 800,
-        boxShadow: '0 4px 20px rgba(34,197,94,0.35)',
+        boxShadow: '0 4px 20px rgba(var(--color-profit-rgb), 0.35)',
         border: 'none',
         transition: 'transform 0.2s',
       }}
@@ -32,7 +32,7 @@ export default function ChatBubble({ unreadCount, onClick }: ChatBubbleProps) {
       <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
         <path
           d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-          stroke="#09090b"
+          stroke="var(--color-surface-0)"
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -46,7 +46,7 @@ export default function ChatBubble({ unreadCount, onClick }: ChatBubbleProps) {
             right: -2,
             minWidth: 18,
             height: 18,
-            background: '#ef4444',
+            background: 'var(--color-loss)',
             borderRadius: 9,
             fontSize: 10,
             fontFamily: "'DM Mono', monospace",

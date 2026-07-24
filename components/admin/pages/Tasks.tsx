@@ -19,8 +19,8 @@ interface AdminTask {
 
 const COLUMNS: { id: TaskStatus; label: string; color: string; bgActive: string }[] = [
   { id: 'todo', label: 'À faire', color: '#60a5fa', bgActive: 'rgba(96,165,250,0.08)' },
-  { id: 'in_progress', label: 'En cours', color: '#f59e0b', bgActive: 'rgba(245,158,11,0.08)' },
-  { id: 'done', label: 'Terminée', color: '#22c55e', bgActive: 'rgba(34,197,94,0.08)' },
+  { id: 'in_progress', label: 'En cours', color: 'var(--color-warn)', bgActive: 'rgba(var(--color-warn-rgb), 0.08)' },
+  { id: 'done', label: 'Terminée', color: 'var(--color-profit)', bgActive: 'rgba(var(--color-profit-rgb), 0.08)' },
 ]
 
 export default function Tasks() {
@@ -149,12 +149,12 @@ export default function Tasks() {
   }
 
   function dueDateColor(dateStr: string | null): string {
-    if (!dateStr) return '#5a6a82'
+    if (!dateStr) return 'var(--color-neutral)'
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const due = new Date(dateStr); due.setHours(0, 0, 0, 0)
-    if (due < today) return '#ef4444'
-    if (due.getTime() === today.getTime()) return '#f59e0b'
-    return '#5a6a82'
+    if (due < today) return 'var(--color-loss)'
+    if (due.getTime() === today.getTime()) return 'var(--color-warn)'
+    return 'var(--color-neutral)'
   }
 
   if (loading) {
@@ -171,7 +171,7 @@ export default function Tasks() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-[#e8edf5]">Tâches</h1>
-          <p className="text-[#5a6a82] text-sm mt-1">
+          <p className="text-[var(--color-neutral)] text-sm mt-1">
             {tasks.filter(t => t.status !== 'done').length} en cours · {tasks.filter(t => t.status === 'done').length} terminée{tasks.filter(t => t.status === 'done').length !== 1 ? 's' : ''}
           </p>
         </div>
@@ -189,42 +189,42 @@ export default function Tasks() {
           <h3 className="text-sm font-semibold text-[#e8edf5] mb-4">{editingTaskId ? 'Modifier la tâche' : 'Ajouter une tâche'}</h3>
           <form onSubmit={handleAdd} className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-xs text-[#5a6a82] mb-1.5">Titre</label>
+              <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Titre</label>
               <input
                 type="text"
                 required
                 value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[var(--color-neutral)]"
                 placeholder="ex: Préparer le bilan mensuel"
               />
             </div>
             <div>
-              <label className="block text-xs text-[#5a6a82] mb-1.5">Trader (optionnel)</label>
+              <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Trader (optionnel)</label>
               <select
                 value={form.trader_id}
                 onChange={e => setForm(f => ({ ...f, trader_id: e.target.value }))}
-                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               >
                 <option value="">Aucun trader</option>
                 {traders.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#5a6a82] mb-1.5">Date limite (optionnel)</label>
+              <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Date limite (optionnel)</label>
               <input
                 type="date"
                 value={form.due_date}
                 onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
-                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               />
             </div>
             <div>
-              <label className="block text-xs text-[#5a6a82] mb-1.5">Colonne</label>
+              <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Colonne</label>
               <select
                 value={form.status}
                 onChange={e => setForm(f => ({ ...f, status: e.target.value as TaskStatus }))}
-                className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
               >
                 {COLUMNS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
@@ -323,16 +323,16 @@ export default function Tasks() {
                           className="p-1 rounded transition-all hover:bg-[rgba(255,255,255,0.05)]"
                           title="Modifier"
                         >
-                          <svg className="w-3 h-3" style={{ color: '#5a6a82' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3" style={{ color: 'var(--color-neutral)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                           </svg>
                         </button>
                         <button
                           onClick={() => deleteTask(task.id)}
-                          className="p-1 rounded transition-all hover:bg-[rgba(239,68,68,0.1)]"
+                          className="p-1 rounded transition-all hover:bg-[rgba(var(--color-loss-rgb), 0.1)]"
                           title="Supprimer"
                         >
-                          <svg className="w-3 h-3" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3" style={{ color: 'var(--color-loss)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>

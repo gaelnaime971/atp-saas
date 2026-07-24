@@ -37,7 +37,7 @@ function Tooltip({ text }: { text: string }) {
       </span>
       <span
         className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs leading-relaxed opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-50 w-56"
-        style={{ background: '#18181b', color: 'var(--text)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
+        style={{ background: 'var(--color-surface-2)', color: 'var(--text)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
       >
         {text}
       </span>
@@ -46,9 +46,9 @@ function Tooltip({ text }: { text: string }) {
 }
 
 function getPlanTag(value: number): { label: string; color: string } {
-  if (value < 5) return { label: 'Hors plan', color: '#ef4444' }
-  if (value < 8) return { label: 'Partiel', color: '#f59e0b' }
-  return { label: 'Dans le plan', color: '#22c55e' }
+  if (value < 5) return { label: 'Hors plan', color: 'var(--color-loss)' }
+  if (value < 8) return { label: 'Partiel', color: 'var(--color-warn)' }
+  return { label: 'Dans le plan', color: 'var(--color-profit)' }
 }
 
 function todayISO() {
@@ -145,7 +145,7 @@ export default function Session() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '10px 14px',
-    background: 'var(--bg3, #18181b)',
+    background: 'var(--bg3, var(--color-surface-2))',
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: '8px',
     color: '#e8edf5',
@@ -170,7 +170,7 @@ export default function Session() {
         style={{
           background: 'var(--bg3)',
           border: '1px solid var(--border)',
-          borderLeft: '4px solid #22c55e',
+          borderLeft: '4px solid var(--color-profit)',
           borderRadius: '10px',
           padding: '14px 18px',
           marginBottom: '20px',
@@ -191,7 +191,7 @@ export default function Session() {
           zIndex: 9999,
           padding: '14px 24px',
           borderRadius: '10px',
-          background: toast.startsWith('Erreur') ? 'rgba(239,68,68,0.9)' : 'rgba(34,197,94,0.9)',
+          background: toast.startsWith('Erreur') ? 'rgba(var(--color-loss-rgb), 0.9)' : 'rgba(var(--color-profit-rgb), 0.9)',
           color: '#fff',
           fontSize: '14px',
           fontWeight: 500,
@@ -210,10 +210,10 @@ export default function Session() {
         marginBottom: 18,
       }}>
         {[
-          { lbl: 'P&L', val: pnl !== 0 ? `${pnl > 0 ? '+' : ''}${pnl.toLocaleString('fr-FR')} $` : '—', color: pnl > 0 ? '#22c55e' : pnl < 0 ? '#ef4444' : '#a0aec0' },
+          { lbl: 'P&L', val: pnl !== 0 ? `${pnl > 0 ? '+' : ''}${pnl.toLocaleString('fr-FR')} $` : '—', color: pnl > 0 ? 'var(--color-profit)' : pnl < 0 ? 'var(--color-loss)' : '#a0aec0' },
           { lbl: 'Trades', val: tradesCount || '—', color: '#e8edf5' },
-          { lbl: 'R total', val: rValue !== 0 ? `${rValue > 0 ? '+' : ''}${rValue.toFixed(1)}R` : '—', color: rValue >= 0 ? '#22c55e' : '#ef4444' },
-          { lbl: 'Win Rate', val: winRate > 0 ? `${winRate}%` : '—', color: winRate >= 50 ? '#22c55e' : winRate > 0 ? '#f59e0b' : '#a0aec0' },
+          { lbl: 'R total', val: rValue !== 0 ? `${rValue > 0 ? '+' : ''}${rValue.toFixed(1)}R` : '—', color: rValue >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' },
+          { lbl: 'Win Rate', val: winRate > 0 ? `${winRate}%` : '—', color: winRate >= 50 ? 'var(--color-profit)' : winRate > 0 ? 'var(--color-warn)' : '#a0aec0' },
           { lbl: 'Plan', val: `${planScore}/10`, color: planTag.color },
         ].map(kpi => (
           <div
@@ -260,7 +260,7 @@ export default function Session() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {accounts.map(acc => {
                   const selected = selectedAccountIds.includes(acc.id)
-                  const typeColor = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
+                  const typeColor = acc.account_type === 'funded' ? 'var(--color-profit)' : acc.account_type === 'challenge' ? '#60a5fa' : 'var(--color-warn)'
                   return (
                     <button
                       key={acc.id}
@@ -324,8 +324,8 @@ export default function Session() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
             {/* P&L */}
             <div style={{
-              background: pnl > 0 ? 'rgba(34,197,94,0.08)' : pnl < 0 ? 'rgba(239,68,68,0.08)' : 'var(--bg3)',
-              border: `1px solid ${pnl > 0 ? 'rgba(34,197,94,0.25)' : pnl < 0 ? 'rgba(239,68,68,0.25)' : 'var(--border)'}`,
+              background: pnl > 0 ? 'rgba(var(--color-profit-rgb), 0.08)' : pnl < 0 ? 'rgba(var(--color-loss-rgb), 0.08)' : 'var(--bg3)',
+              border: `1px solid ${pnl > 0 ? 'rgba(var(--color-profit-rgb), 0.25)' : pnl < 0 ? 'rgba(var(--color-loss-rgb), 0.25)' : 'var(--border)'}`,
               borderRadius: 10, padding: '10px 12px',
             }}>
               <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 6 }}>P&L ($)</div>
@@ -337,7 +337,7 @@ export default function Session() {
                 placeholder="0"
                 style={{
                   width: '100%', background: 'transparent', border: 'none',
-                  color: pnl > 0 ? '#22c55e' : pnl < 0 ? '#ef4444' : '#e8edf5',
+                  color: pnl > 0 ? 'var(--color-profit)' : pnl < 0 ? 'var(--color-loss)' : '#e8edf5',
                   fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none',
                 }}
               />
@@ -345,8 +345,8 @@ export default function Session() {
 
             {/* R */}
             <div style={{
-              background: rValue > 0 ? 'rgba(34,197,94,0.08)' : rValue < 0 ? 'rgba(239,68,68,0.08)' : 'var(--bg3)',
-              border: `1px solid ${rValue > 0 ? 'rgba(34,197,94,0.25)' : rValue < 0 ? 'rgba(239,68,68,0.25)' : 'var(--border)'}`,
+              background: rValue > 0 ? 'rgba(var(--color-profit-rgb), 0.08)' : rValue < 0 ? 'rgba(var(--color-loss-rgb), 0.08)' : 'var(--bg3)',
+              border: `1px solid ${rValue > 0 ? 'rgba(var(--color-profit-rgb), 0.25)' : rValue < 0 ? 'rgba(var(--color-loss-rgb), 0.25)' : 'var(--border)'}`,
               borderRadius: 10, padding: '10px 12px',
             }}>
               <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 6 }}>R obtenu</div>
@@ -359,7 +359,7 @@ export default function Session() {
                 placeholder="0"
                 style={{
                   width: '100%', background: 'transparent', border: 'none',
-                  color: rValue > 0 ? '#22c55e' : rValue < 0 ? '#ef4444' : '#e8edf5',
+                  color: rValue > 0 ? 'var(--color-profit)' : rValue < 0 ? 'var(--color-loss)' : '#e8edf5',
                   fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none',
                 }}
               />
@@ -400,8 +400,8 @@ export default function Session() {
                   onClick={() => setMood(m)}
                   style={{
                     flex: 1, padding: '8px 0', borderRadius: 10,
-                    border: mood === m ? '2px solid #22c55e' : '1.5px solid transparent',
-                    background: mood === m ? 'rgba(34,197,94,0.1)' : 'var(--bg3)',
+                    border: mood === m ? '2px solid var(--color-profit)' : '1.5px solid transparent',
+                    background: mood === m ? 'rgba(var(--color-profit-rgb), 0.1)' : 'var(--bg3)',
                     fontSize: 22, cursor: 'pointer', transition: 'all 0.15s',
                   }}
                 >
@@ -431,7 +431,7 @@ export default function Session() {
                     onClick={() => setGlobalRating(star)}
                     style={{
                       fontSize: 22, background: 'none', border: 'none', cursor: 'pointer',
-                      color: star <= globalRating ? '#f59e0b' : '#374151',
+                      color: star <= globalRating ? 'var(--color-warn)' : '#374151',
                       transition: 'all 0.15s',
                       padding: 0, lineHeight: 1,
                     }}
@@ -505,7 +505,7 @@ function NotesTabs({
             >
               <span>{t.icon}</span>
               {t.label}
-              {hasContent && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', marginLeft: 2 }} />}
+              {hasContent && <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--color-profit)', marginLeft: 2 }} />}
             </button>
           )
         })}

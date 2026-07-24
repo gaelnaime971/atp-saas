@@ -9,15 +9,15 @@ import type { TraderAccount, Payout } from '@/lib/types'
 const PROP_FIRMS = ['FTMO', 'TopStep', 'Apex', 'E8', 'My Forex Funds', 'Capital Personnel', 'Autre'] as const
 const ACCOUNT_TYPES: { id: TraderAccount['account_type']; label: string; color: string }[] = [
   { id: 'challenge', label: 'Challenge', color: '#60a5fa' },
-  { id: 'funded', label: 'Financé', color: '#22c55e' },
-  { id: 'personal', label: 'Personnel', color: '#f59e0b' },
+  { id: 'funded', label: 'Financé', color: 'var(--color-profit)' },
+  { id: 'personal', label: 'Personnel', color: 'var(--color-warn)' },
 ]
 
 const ACCOUNT_STATUSES: { id: string; label: string; color: string; bg: string }[] = [
-  { id: 'active', label: 'Actif', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+  { id: 'active', label: 'Actif', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.1)' },
   { id: 'challenge_en_cours', label: 'Challenge en cours', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' },
   { id: 'funded', label: 'Funded', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
-  { id: 'crame', label: 'Cramé', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+  { id: 'crame', label: 'Cramé', color: 'var(--color-loss)', bg: 'rgba(var(--color-loss-rgb), 0.1)' },
   { id: 'ferme', label: 'Fermé', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
 ]
 
@@ -171,7 +171,7 @@ export default function PropFirm() {
   const totalCapital = accounts.reduce((s, a) => s + Number(a.capital), 0)
   const totalPayouts = payouts.reduce((s, p) => s + Number(p.amount), 0)
   const typeLabel = (t: string) => ACCOUNT_TYPES.find(at => at.id === t)?.label ?? t
-  const typeColor = (t: string) => ACCOUNT_TYPES.find(at => at.id === t)?.color ?? '#5a6a82'
+  const typeColor = (t: string) => ACCOUNT_TYPES.find(at => at.id === t)?.color ?? 'var(--color-neutral)'
 
   // ─── VALIDATION ───
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -189,7 +189,7 @@ export default function PropFirm() {
 
   const inputStyle = (field?: string): React.CSSProperties => ({
     width: '100%', padding: '8px 12px', background: 'var(--bg3)',
-    border: `1px solid ${field && errors[field] ? '#ef4444' : 'var(--border)'}`, borderRadius: 8, color: 'var(--text)', fontSize: 13, outline: 'none',
+    border: `1px solid ${field && errors[field] ? 'var(--color-loss)' : 'var(--border)'}`, borderRadius: 8, color: 'var(--text)', fontSize: 13, outline: 'none',
   })
 
   if (loading) {
@@ -214,7 +214,7 @@ export default function PropFirm() {
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: '#09090b' }}
+            style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -232,14 +232,14 @@ export default function PropFirm() {
           </h3>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs mb-1" style={{ color: errors.label ? '#ef4444' : 'var(--text3)' }}>
+              <label className="block text-xs mb-1" style={{ color: errors.label ? 'var(--color-loss)' : 'var(--text3)' }}>
                 Nom du compte <span className="text-[10px] font-normal" style={{ color: 'var(--text3)' }}>(texte, majuscules acceptées)</span>
               </label>
               <input
                 type="text" value={formLabel} onChange={e => { setFormLabel(e.target.value); setErrors(prev => { const n = { ...prev }; delete n.label; return n }) }}
                 placeholder="ex: FTMO 50K #1" style={inputStyle('label')}
               />
-              {errors.label && <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{errors.label}</p>}
+              {errors.label && <p className="text-[10px] mt-1" style={{ color: 'var(--color-loss)' }}>{errors.label}</p>}
             </div>
             <div>
               <label className="block text-xs mb-1" style={{ color: 'var(--text3)' }}>Prop Firm</label>
@@ -248,7 +248,7 @@ export default function PropFirm() {
               </select>
             </div>
             <div>
-              <label className="block text-xs mb-1" style={{ color: errors.capital ? '#ef4444' : 'var(--text3)' }}>
+              <label className="block text-xs mb-1" style={{ color: errors.capital ? 'var(--color-loss)' : 'var(--text3)' }}>
                 Capital du compte ($) <span className="text-[10px] font-normal" style={{ color: 'var(--text3)' }}>(chiffre, point pour décimales)</span>
               </label>
               <input
@@ -256,10 +256,10 @@ export default function PropFirm() {
                 onChange={e => { setFormCapital(e.target.value); setErrors(prev => { const n = { ...prev }; delete n.capital; return n }) }}
                 placeholder="50000" style={inputStyle('capital')}
               />
-              {errors.capital && <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{errors.capital}</p>}
+              {errors.capital && <p className="text-[10px] mt-1" style={{ color: 'var(--color-loss)' }}>{errors.capital}</p>}
             </div>
             <div>
-              <label className="block text-xs mb-1" style={{ color: errors.balance ? '#ef4444' : 'var(--text3)' }}>
+              <label className="block text-xs mb-1" style={{ color: errors.balance ? 'var(--color-loss)' : 'var(--text3)' }}>
                 Balance actuelle ($) <span className="text-[10px] font-normal" style={{ color: 'var(--text3)' }}>(chiffre, point pour décimales)</span>
               </label>
               <input
@@ -267,7 +267,7 @@ export default function PropFirm() {
                 onChange={e => { setFormInitialBalance(e.target.value); setErrors(prev => { const n = { ...prev }; delete n.balance; return n }) }}
                 placeholder="52340.50" style={inputStyle('balance')}
               />
-              {errors.balance && <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{errors.balance}</p>}
+              {errors.balance && <p className="text-[10px] mt-1" style={{ color: 'var(--color-loss)' }}>{errors.balance}</p>}
             </div>
           </div>
           <div className="mb-4">
@@ -293,7 +293,7 @@ export default function PropFirm() {
             <button
               onClick={handleSave} disabled={saving || !formCapital}
               className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-              style={{ background: 'var(--green)', color: '#09090b' }}
+              style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
             >
               {saving ? 'Enregistrement...' : editingId ? 'Mettre à jour' : 'Ajouter'}
             </button>
@@ -327,8 +327,8 @@ export default function PropFirm() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                   </svg>
                 </button>
-                <button onClick={() => deleteAccount(acc.id)} className="p-1.5 rounded-lg hover:bg-[rgba(239,68,68,0.1)]" title="Supprimer">
-                  <svg className="w-3.5 h-3.5" style={{ color: '#ef4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onClick={() => deleteAccount(acc.id)} className="p-1.5 rounded-lg hover:bg-[rgba(var(--color-loss-rgb), 0.1)]" title="Supprimer">
+                  <svg className="w-3.5 h-3.5" style={{ color: 'var(--color-loss)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -395,21 +395,21 @@ export default function PropFirm() {
                       </div>
                       <div>
                         <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Balance</p>
-                        <p className="text-sm font-bold font-mono" style={{ color: balance >= Number(acc.initial_balance) ? '#22c55e' : '#ef4444' }}>
+                        <p className="text-sm font-bold font-mono" style={{ color: balance >= Number(acc.initial_balance) ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                           {balance.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} $
                         </p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-lg p-2" style={{ background: pnl >= 0 ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)', border: `1px solid ${pnl >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
+                      <div className="rounded-lg p-2" style={{ background: pnl >= 0 ? 'rgba(var(--color-profit-rgb), 0.06)' : 'rgba(var(--color-loss-rgb), 0.06)', border: `1px solid ${pnl >= 0 ? 'rgba(var(--color-profit-rgb), 0.15)' : 'rgba(var(--color-loss-rgb), 0.15)'}` }}>
                         <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>P&L</p>
-                        <p className="text-sm font-bold font-mono" style={{ color: pnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                        <p className="text-sm font-bold font-mono" style={{ color: pnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                           {pnl >= 0 ? '+' : ''}{pnl.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} $
                         </p>
                       </div>
-                      <div className="rounded-lg p-2" style={{ background: perfPct >= 0 ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)', border: `1px solid ${perfPct >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
+                      <div className="rounded-lg p-2" style={{ background: perfPct >= 0 ? 'rgba(var(--color-profit-rgb), 0.06)' : 'rgba(var(--color-loss-rgb), 0.06)', border: `1px solid ${perfPct >= 0 ? 'rgba(var(--color-profit-rgb), 0.15)' : 'rgba(var(--color-loss-rgb), 0.15)'}` }}>
                         <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Perf</p>
-                        <p className="text-sm font-bold font-mono" style={{ color: perfPct >= 0 ? '#22c55e' : '#ef4444' }}>
+                        <p className="text-sm font-bold font-mono" style={{ color: perfPct >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                           {perfPct >= 0 ? '+' : ''}{perfPct.toFixed(2)}%
                         </p>
                       </div>
@@ -428,7 +428,7 @@ export default function PropFirm() {
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Payouts</h2>
             {totalPayouts > 0 && (
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full font-mono" style={{ background: 'rgba(34,197,94,0.1)', color: 'var(--green)', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full font-mono" style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--green)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}>
                 Total: {totalPayouts.toLocaleString('fr-FR')} $
               </span>
             )}
@@ -436,7 +436,7 @@ export default function PropFirm() {
           <button
             onClick={() => { setShowPayoutForm(!showPayoutForm); if (accounts.length > 0) setPayoutAccountId(accounts[0].id) }}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: '#09090b' }}
+            style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -446,7 +446,7 @@ export default function PropFirm() {
         </div>
 
         {showPayoutForm && (
-          <div className="rounded-xl p-4 mb-5 border" style={{ background: 'var(--bg3)', borderColor: 'rgba(34,197,94,0.15)' }}>
+          <div className="rounded-xl p-4 mb-5 border" style={{ background: 'var(--bg3)', borderColor: 'rgba(var(--color-profit-rgb), 0.15)' }}>
             <div className="grid grid-cols-4 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>Montant ($)</label>

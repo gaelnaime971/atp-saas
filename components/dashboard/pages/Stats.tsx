@@ -172,16 +172,16 @@ export default function Stats() {
                   onClick={() => toggleAccount('all')}
                   className="px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
                   style={{
-                    background: selectedAccounts.has('all') ? 'rgba(34,197,94,0.1)' : 'var(--bg2)',
-                    color: selectedAccounts.has('all') ? '#22c55e' : 'var(--text3)',
-                    border: `1px solid ${selectedAccounts.has('all') ? 'rgba(34,197,94,0.2)' : 'var(--border)'}`,
+                    background: selectedAccounts.has('all') ? 'rgba(var(--color-profit-rgb), 0.1)' : 'var(--bg2)',
+                    color: selectedAccounts.has('all') ? 'var(--color-profit)' : 'var(--text3)',
+                    border: `1px solid ${selectedAccounts.has('all') ? 'rgba(var(--color-profit-rgb), 0.2)' : 'var(--border)'}`,
                   }}
                 >
                   Tous
                 </button>
                 {accounts.map(acc => {
                   const active = selectedAccounts.has(acc.id)
-                  const color = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
+                  const color = acc.account_type === 'funded' ? 'var(--color-profit)' : acc.account_type === 'challenge' ? '#60a5fa' : 'var(--color-warn)'
                   return (
                     <button
                       key={acc.id}
@@ -298,13 +298,13 @@ export default function Stats() {
                         labels,
                         datasets: [{
                           data: cumulative,
-                          borderColor: 'rgba(34,197,94,1)',
-                          backgroundColor: 'rgba(34,197,94,0.1)',
+                          borderColor: 'rgba(var(--color-profit-rgb), 1)',
+                          backgroundColor: 'rgba(var(--color-profit-rgb), 0.1)',
                           fill: true,
                           tension: 0.3,
                           pointRadius: 4,
-                          pointBackgroundColor: cumulative.map(v => v < 0 ? 'rgba(239,68,68,1)' : 'rgba(34,197,94,1)'),
-                          pointBorderColor: cumulative.map(v => v < 0 ? 'rgba(239,68,68,1)' : 'rgba(34,197,94,1)'),
+                          pointBackgroundColor: cumulative.map(v => v < 0 ? 'rgba(var(--color-loss-rgb), 1)' : 'rgba(var(--color-profit-rgb), 1)'),
+                          pointBorderColor: cumulative.map(v => v < 0 ? 'rgba(var(--color-loss-rgb), 1)' : 'rgba(var(--color-profit-rgb), 1)'),
                         }],
                       }}
                       options={{
@@ -333,13 +333,13 @@ export default function Stats() {
                   const bucketLabels = ['<-2R', '-2/-1', '-1/0', '0/1', '1/2', '2/3', '>3R']
                   const buckets = [0, 0, 0, 0, 0, 0, 0]
                   const bucketColors = [
-                    'rgba(239,68,68,0.8)',
-                    'rgba(239,68,68,0.5)',
-                    'rgba(245,158,11,0.5)',
-                    'rgba(245,158,11,0.6)',
-                    'rgba(34,197,94,0.5)',
-                    'rgba(34,197,94,0.7)',
-                    'rgba(34,197,94,0.9)',
+                    'rgba(var(--color-loss-rgb), 0.8)',
+                    'rgba(var(--color-loss-rgb), 0.5)',
+                    'rgba(var(--color-warn-rgb), 0.5)',
+                    'rgba(var(--color-warn-rgb), 0.6)',
+                    'rgba(var(--color-profit-rgb), 0.5)',
+                    'rgba(var(--color-profit-rgb), 0.7)',
+                    'rgba(var(--color-profit-rgb), 0.9)',
                   ]
                   sessions.forEach(s => {
                     const meta = (() => { try { return s.setup ? JSON.parse(s.setup) : null } catch { return null } })()
@@ -452,7 +452,7 @@ export default function Stats() {
                             {planScore != null ? (
                               <span style={{
                                 display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 500,
-                                background: planScore >= 8 ? 'rgba(34,197,94,0.15)' : planScore >= 5 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.15)',
+                                background: planScore >= 8 ? 'rgba(var(--color-profit-rgb), 0.15)' : planScore >= 5 ? 'rgba(var(--color-warn-rgb), 0.12)' : 'rgba(var(--color-loss-rgb), 0.15)',
                                 color: planColor,
                               }}>
                                 {planScore}/10

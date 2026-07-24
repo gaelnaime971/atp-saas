@@ -32,10 +32,10 @@ function formatRelative(dateStr: string | null): string {
 
 function dateColor(dateStr: string | null): string {
   const days = daysSince(dateStr)
-  if (days === null) return '#ef4444'
-  if (days < 3) return '#22c55e'
-  if (days <= 7) return '#f59e0b'
-  return '#ef4444'
+  if (days === null) return 'var(--color-loss)'
+  if (days < 3) return 'var(--color-profit)'
+  if (days <= 7) return 'var(--color-warn)'
+  return 'var(--color-loss)'
 }
 
 function computeScore(trader: { last_session: string | null; last_journal: string | null; last_coaching: string | null; last_payment: string | null }): number {
@@ -54,11 +54,11 @@ function computeScore(trader: { last_session: string | null; last_journal: strin
 }
 
 function computeStatus(daysSinceSession: number | null): { label: string; color: string } {
-  if (daysSinceSession === null) return { label: 'Décroché', color: '#ef4444' }
-  if (daysSinceSession <= 2) return { label: 'Très actif', color: '#22c55e' }
+  if (daysSinceSession === null) return { label: 'Décroché', color: 'var(--color-loss)' }
+  if (daysSinceSession <= 2) return { label: 'Très actif', color: 'var(--color-profit)' }
   if (daysSinceSession <= 5) return { label: 'Actif', color: '#3b82f6' }
-  if (daysSinceSession <= 10) return { label: 'Inactif', color: '#f59e0b' }
-  return { label: 'Décroché', color: '#ef4444' }
+  if (daysSinceSession <= 10) return { label: 'Inactif', color: 'var(--color-warn)' }
+  return { label: 'Décroché', color: 'var(--color-loss)' }
 }
 
 export default function CRM() {
@@ -154,7 +154,7 @@ export default function CRM() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-semibold text-[#e8edf5]">Vue CRM</h1>
-        <p className="text-[#5a6a82] text-sm mt-1">
+        <p className="text-[var(--color-neutral)] text-sm mt-1">
           Suivi d&apos;activit&eacute; de vos traders &middot; {traders.length} trader{traders.length !== 1 ? 's' : ''}
         </p>
       </div>
@@ -164,8 +164,8 @@ export default function CRM() {
         <div
           className="rounded-xl border px-5 py-4"
           style={{
-            background: 'rgba(245,158,11,0.06)',
-            borderColor: 'rgba(245,158,11,0.2)',
+            background: 'rgba(var(--color-warn-rgb), 0.06)',
+            borderColor: 'rgba(var(--color-warn-rgb), 0.2)',
           }}
         >
           <div className="flex items-center gap-2 mb-2">
@@ -181,7 +181,7 @@ export default function CRM() {
               <span
                 key={t.id}
                 className="px-2 py-0.5 rounded text-xs font-medium"
-                style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}
+                style={{ background: 'rgba(var(--color-warn-rgb), 0.12)', color: 'var(--color-warn)' }}
               >
                 {t.full_name ?? t.email ?? 'Trader'}
               </span>
@@ -195,7 +195,7 @@ export default function CRM() {
         <Card>
           <div className="text-center py-16">
             <p className="text-[#a0aec0] font-medium">Aucun trader</p>
-            <p className="text-[#5a6a82] text-sm mt-1">Invitez des traders pour voir leur activité ici</p>
+            <p className="text-[var(--color-neutral)] text-sm mt-1">Invitez des traders pour voir leur activité ici</p>
           </div>
         </Card>
       ) : (
@@ -223,9 +223,9 @@ export default function CRM() {
                     <span className="text-sm font-medium text-[#e8edf5]">
                       {trader.full_name ?? 'Sans nom'}
                     </span>
-                    <span className="text-xs text-[#5a6a82]">{trader.email}</span>
+                    <span className="text-xs text-[var(--color-neutral)]">{trader.email}</span>
                     {trader.plan_type && (
-                      <span className="px-2 py-0.5 bg-[#18181b] rounded text-xs text-[#a0aec0] font-medium">
+                      <span className="px-2 py-0.5 bg-[var(--color-surface-2)] rounded text-xs text-[#a0aec0] font-medium">
                         {trader.plan_type}
                       </span>
                     )}
@@ -259,12 +259,12 @@ export default function CRM() {
                         className="rounded-lg px-3 py-2"
                         style={{ background: 'rgba(255,255,255,0.02)' }}
                       >
-                        <p className="text-[10px] text-[#5a6a82] uppercase tracking-wider mb-1">{item.label}</p>
+                        <p className="text-[10px] text-[var(--color-neutral)] uppercase tracking-wider mb-1">{item.label}</p>
                         <p className="text-xs font-medium font-mono" style={{ color: dateColor(item.date) }}>
                           {formatRelative(item.date)}
                         </p>
                         {item.date && (
-                          <p className="text-[10px] text-[#5a6a82] mt-0.5">
+                          <p className="text-[10px] text-[var(--color-neutral)] mt-0.5">
                             {new Date(item.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                           </p>
                         )}
@@ -274,7 +274,7 @@ export default function CRM() {
 
                   {/* Activity score bar */}
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-[#5a6a82] uppercase tracking-wider shrink-0 w-20">
+                    <span className="text-[10px] text-[var(--color-neutral)] uppercase tracking-wider shrink-0 w-20">
                       Activité
                     </span>
                     <div
@@ -286,12 +286,12 @@ export default function CRM() {
                         style={{
                           width: `${trader.activity_score}%`,
                           background: trader.activity_score >= 70
-                            ? '#22c55e'
+                            ? 'var(--color-profit)'
                             : trader.activity_score >= 40
                             ? '#3b82f6'
                             : trader.activity_score >= 20
-                            ? '#f59e0b'
-                            : '#ef4444',
+                            ? 'var(--color-warn)'
+                            : 'var(--color-loss)',
                         }}
                       />
                     </div>
@@ -299,12 +299,12 @@ export default function CRM() {
                       className="text-xs font-mono font-medium shrink-0 w-10 text-right"
                       style={{
                         color: trader.activity_score >= 70
-                          ? '#22c55e'
+                          ? 'var(--color-profit)'
                           : trader.activity_score >= 40
                           ? '#3b82f6'
                           : trader.activity_score >= 20
-                          ? '#f59e0b'
-                          : '#ef4444',
+                          ? 'var(--color-warn)'
+                          : 'var(--color-loss)',
                       }}
                     >
                       {trader.activity_score}%

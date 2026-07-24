@@ -80,7 +80,7 @@ export default function AdminTopbarStats() {
     {
       label: 'CA Mois',
       value: `${stats.caMonth.toLocaleString('fr-FR')}€`,
-      color: '#22c55e',
+      color: 'var(--color-profit)',
     },
     {
       label: 'Traders',
@@ -90,22 +90,22 @@ export default function AdminTopbarStats() {
     {
       label: "Auj.",
       value: `${stats.sessionsToday} sess.`,
-      color: stats.sessionsToday > 0 ? '#22c55e' : '#5a6a82',
+      color: stats.sessionsToday > 0 ? 'var(--color-profit)' : 'var(--color-neutral)',
     },
     {
       label: 'P&L Global',
       value: `${stats.totalPnl >= 0 ? '+' : ''}${stats.totalPnl.toFixed(0)}$`,
-      color: stats.totalPnl >= 0 ? '#22c55e' : '#ef4444',
+      color: stats.totalPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)',
     },
     {
       label: 'Moy/Trader',
       value: `${stats.avgPnlPerTrader >= 0 ? '+' : ''}${stats.avgPnlPerTrader.toFixed(0)}$`,
-      color: stats.avgPnlPerTrader >= 0 ? '#22c55e' : '#ef4444',
+      color: stats.avgPnlPerTrader >= 0 ? 'var(--color-profit)' : 'var(--color-loss)',
     },
     {
       label: 'Win Rate',
       value: `${stats.winRate}%`,
-      color: stats.winRate >= 50 ? '#22c55e' : '#ef4444',
+      color: stats.winRate >= 50 ? 'var(--color-profit)' : 'var(--color-loss)',
     },
     {
       label: 'Coaching',
@@ -127,7 +127,7 @@ export default function AdminTopbarStats() {
             className="flex flex-col items-center px-2.5 py-1 rounded-md"
             style={{ minWidth: 56 }}
           >
-            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#5a6a82' }}>
+            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: 'var(--color-neutral)' }}>
               {item.label}
             </span>
             <span className="text-xs font-bold font-mono leading-tight" style={{ color: item.color }}>
@@ -142,18 +142,18 @@ export default function AdminTopbarStats() {
       {stats.unreadMessages > 0 && (
         <>
           <div className="w-px h-5 shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
-          <div className="flex flex-col items-center px-2.5 py-1 rounded-md" style={{ background: 'rgba(239,68,68,0.08)' }}>
-            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#ef4444' }}>Messages</span>
-            <span className="text-xs font-bold font-mono leading-tight" style={{ color: '#ef4444' }}>{stats.unreadMessages}</span>
+          <div className="flex flex-col items-center px-2.5 py-1 rounded-md" style={{ background: 'rgba(var(--color-loss-rgb), 0.08)' }}>
+            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: 'var(--color-loss)' }}>Messages</span>
+            <span className="text-xs font-bold font-mono leading-tight" style={{ color: 'var(--color-loss)' }}>{stats.unreadMessages}</span>
           </div>
         </>
       )}
       {stats.pendingInvites > 0 && (
         <>
           <div className="w-px h-5 shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
-          <div className="flex flex-col items-center px-2.5 py-1 rounded-md" style={{ background: 'rgba(245,158,11,0.08)' }}>
-            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#f59e0b' }}>Invitations</span>
-            <span className="text-xs font-bold font-mono leading-tight" style={{ color: '#f59e0b' }}>{stats.pendingInvites}</span>
+          <div className="flex flex-col items-center px-2.5 py-1 rounded-md" style={{ background: 'rgba(var(--color-warn-rgb), 0.08)' }}>
+            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: 'var(--color-warn)' }}>Invitations</span>
+            <span className="text-xs font-bold font-mono leading-tight" style={{ color: 'var(--color-warn)' }}>{stats.pendingInvites}</span>
           </div>
         </>
       )}

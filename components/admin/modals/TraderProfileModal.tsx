@@ -186,7 +186,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
           <div className="flex items-center gap-4">
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-              style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}
+              style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}
             >
               {trader.full_name?.charAt(0).toUpperCase() ?? 'T'}
             </div>
@@ -226,9 +226,9 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
               onClick={() => setTab(t.id)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
               style={{
-                background: tab === t.id ? 'rgba(34,197,94,0.1)' : 'transparent',
-                color: tab === t.id ? '#22c55e' : 'var(--text3)',
-                border: tab === t.id ? '1px solid rgba(34,197,94,0.2)' : '1px solid transparent',
+                background: tab === t.id ? 'rgba(var(--color-profit-rgb), 0.1)' : 'transparent',
+                color: tab === t.id ? 'var(--color-profit)' : 'var(--text3)',
+                border: tab === t.id ? '1px solid rgba(var(--color-profit-rgb), 0.2)' : '1px solid transparent',
               }}
             >
               {t.label}
@@ -250,9 +250,9 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                   {/* KPI Grid */}
                   <div className="grid grid-cols-4 gap-3">
                     {[
-                      { label: 'P&L Total', value: `${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(0)} $`, color: totalPnl >= 0 ? '#22c55e' : '#ef4444' },
-                      { label: 'Win Rate', value: `${winRate}%`, color: winRate >= 50 ? '#22c55e' : '#ef4444' },
-                      { label: 'Profit Factor', value: profitFactor > 0 ? profitFactor.toFixed(2) : '—', color: profitFactor >= 1.5 ? '#22c55e' : profitFactor >= 1 ? '#f59e0b' : '#ef4444' },
+                      { label: 'P&L Total', value: `${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(0)} $`, color: totalPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' },
+                      { label: 'Win Rate', value: `${winRate}%`, color: winRate >= 50 ? 'var(--color-profit)' : 'var(--color-loss)' },
+                      { label: 'Profit Factor', value: profitFactor > 0 ? profitFactor.toFixed(2) : '—', color: profitFactor >= 1.5 ? 'var(--color-profit)' : profitFactor >= 1 ? 'var(--color-warn)' : 'var(--color-loss)' },
                       { label: 'Sessions', value: sessions.length.toString(), color: 'var(--text)' },
                     ].map(kpi => (
                       <div key={kpi.label} className="rounded-lg p-3 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
@@ -264,10 +264,10 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
 
                   <div className="grid grid-cols-4 gap-3">
                     {[
-                      { label: 'Meilleure session', value: `+${bestSession.toFixed(0)} $`, color: '#22c55e' },
-                      { label: 'Pire session', value: `${worstSession.toFixed(0)} $`, color: '#ef4444' },
-                      { label: 'R moyen', value: avgRValue != null ? `${avgRValue >= 0 ? '+' : ''}${avgRValue.toFixed(1)}R` : '—', color: (avgRValue ?? 0) >= 0 ? '#22c55e' : '#ef4444' },
-                      { label: 'Plan ATP moy.', value: avgPlanScore != null ? `${avgPlanScore.toFixed(1)}/10` : '—', color: (avgPlanScore ?? 0) >= 8 ? '#22c55e' : (avgPlanScore ?? 0) >= 5 ? '#f59e0b' : '#ef4444' },
+                      { label: 'Meilleure session', value: `+${bestSession.toFixed(0)} $`, color: 'var(--color-profit)' },
+                      { label: 'Pire session', value: `${worstSession.toFixed(0)} $`, color: 'var(--color-loss)' },
+                      { label: 'R moyen', value: avgRValue != null ? `${avgRValue >= 0 ? '+' : ''}${avgRValue.toFixed(1)}R` : '—', color: (avgRValue ?? 0) >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' },
+                      { label: 'Plan ATP moy.', value: avgPlanScore != null ? `${avgPlanScore.toFixed(1)}/10` : '—', color: (avgPlanScore ?? 0) >= 8 ? 'var(--color-profit)' : (avgPlanScore ?? 0) >= 5 ? 'var(--color-warn)' : 'var(--color-loss)' },
                     ].map(kpi => (
                       <div key={kpi.label} className="rounded-lg p-3 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
                         <p className="text-xs mb-1" style={{ color: 'var(--text3)' }}>{kpi.label}</p>
@@ -284,14 +284,14 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                         {sessions.length > 0 && (
                           <div className="h-full rounded-full" style={{
                             width: `${winRate}%`,
-                            background: 'linear-gradient(90deg, #22c55e, #16a34a)',
+                            background: 'linear-gradient(90deg, var(--color-profit), #16a34a)',
                           }} />
                         )}
                       </div>
                       <div className="flex gap-4 text-xs font-mono shrink-0">
-                        <span style={{ color: '#22c55e' }}>{wins}W</span>
-                        <span style={{ color: '#ef4444' }}>{losses}L</span>
-                        <span style={{ color: '#f59e0b' }}>{sessions.length - wins - losses}BE</span>
+                        <span style={{ color: 'var(--color-profit)' }}>{wins}W</span>
+                        <span style={{ color: 'var(--color-loss)' }}>{losses}L</span>
+                        <span style={{ color: 'var(--color-warn)' }}>{sessions.length - wins - losses}BE</span>
                       </div>
                     </div>
                   </div>
@@ -305,10 +305,10 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                           <div key={obj.id}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>{obj.title}</span>
-                              <span className="text-xs font-mono" style={{ color: obj.progress >= 100 ? '#22c55e' : 'var(--text3)' }}>{obj.progress}%</span>
+                              <span className="text-xs font-mono" style={{ color: obj.progress >= 100 ? 'var(--color-profit)' : 'var(--text3)' }}>{obj.progress}%</span>
                             </div>
                             <div className="h-1.5 rounded-full" style={{ background: 'var(--bg)' }}>
-                              <div className="h-full rounded-full" style={{ width: `${Math.min(obj.progress, 100)}%`, background: obj.progress >= 100 ? '#22c55e' : '#f59e0b' }} />
+                              <div className="h-full rounded-full" style={{ width: `${Math.min(obj.progress, 100)}%`, background: obj.progress >= 100 ? 'var(--color-profit)' : 'var(--color-warn)' }} />
                             </div>
                           </div>
                         ))}
@@ -332,16 +332,16 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                                 {new Date(s.session_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
                               </span>
                               <span className="text-xs font-mono w-8 shrink-0" style={{ color: 'var(--text2)' }}>{s.instrument ?? '—'}</span>
-                              <span className="text-xs font-mono font-semibold w-20 shrink-0" style={{ color: pnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                              <span className="text-xs font-mono font-semibold w-20 shrink-0" style={{ color: pnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                                 {pnl >= 0 ? '+' : ''}{pnl.toFixed(0)} $
                               </span>
-                              <span className="text-xs font-mono w-10 shrink-0" style={{ color: (meta?.r_value ?? 0) >= 0 ? '#22c55e' : '#ef4444' }}>
+                              <span className="text-xs font-mono w-10 shrink-0" style={{ color: (meta?.r_value ?? 0) >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                                 {meta?.r_value != null ? `${meta.r_value >= 0 ? '+' : ''}${meta.r_value}R` : '—'}
                               </span>
                               {meta?.plan_score != null && (
                                 <span className="text-xs px-1.5 py-0.5 rounded" style={{
-                                  background: meta.plan_score >= 8 ? 'rgba(34,197,94,0.15)' : meta.plan_score >= 5 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.15)',
-                                  color: meta.plan_score >= 8 ? '#22c55e' : meta.plan_score >= 5 ? '#f59e0b' : '#ef4444',
+                                  background: meta.plan_score >= 8 ? 'rgba(var(--color-profit-rgb), 0.15)' : meta.plan_score >= 5 ? 'rgba(var(--color-warn-rgb), 0.12)' : 'rgba(var(--color-loss-rgb), 0.15)',
+                                  color: meta.plan_score >= 8 ? 'var(--color-profit)' : meta.plan_score >= 5 ? 'var(--color-warn)' : 'var(--color-loss)',
                                 }}>
                                   {meta.plan_score}/10
                                 </span>
@@ -360,7 +360,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                     <div className="rounded-lg p-4 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-xs font-medium" style={{ color: 'var(--text3)' }}>Payouts</p>
-                        <span className="text-xs font-bold font-mono" style={{ color: '#22c55e' }}>
+                        <span className="text-xs font-bold font-mono" style={{ color: 'var(--color-profit)' }}>
                           Total: +{totalPayouts.toLocaleString('fr-FR')} $
                         </span>
                       </div>
@@ -370,7 +370,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                             <span className="text-xs font-mono w-16 shrink-0" style={{ color: 'var(--text3)' }}>
                               {new Date(p.payout_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
                             </span>
-                            <span className="text-xs font-mono font-bold" style={{ color: '#22c55e' }}>
+                            <span className="text-xs font-mono font-bold" style={{ color: 'var(--color-profit)' }}>
                               +{Number(p.amount).toLocaleString('fr-FR')} $
                             </span>
                             {p.propfirm_name && (
@@ -415,7 +415,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                     </div>
                     <div className="rounded-lg p-3 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
                       <p className="text-xs mb-1" style={{ color: 'var(--text3)' }}>Balance totale</p>
-                      <p className="text-lg font-bold font-mono" style={{ color: accounts.reduce((s, a) => s + Number(a.initial_balance), 0) >= accounts.reduce((s, a) => s + Number(a.capital), 0) ? '#22c55e' : '#ef4444' }}>
+                      <p className="text-lg font-bold font-mono" style={{ color: accounts.reduce((s, a) => s + Number(a.initial_balance), 0) >= accounts.reduce((s, a) => s + Number(a.capital), 0) ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                         {accounts.reduce((s, a) => s + Number(a.initial_balance), 0).toLocaleString('fr-FR')} $
                       </p>
                     </div>
@@ -428,7 +428,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                       {accounts.map(acc => {
                         const pnl = Number(acc.initial_balance) - Number(acc.capital)
                         const pnlPct = Number(acc.capital) > 0 ? (pnl / Number(acc.capital)) * 100 : 0
-                        const typeColor = acc.account_type === 'funded' ? '#22c55e' : acc.account_type === 'challenge' ? '#60a5fa' : '#f59e0b'
+                        const typeColor = acc.account_type === 'funded' ? 'var(--color-profit)' : acc.account_type === 'challenge' ? '#60a5fa' : 'var(--color-warn)'
                         const typeLabel = acc.account_type === 'funded' ? 'Financé' : acc.account_type === 'challenge' ? 'Challenge' : 'Personnel'
                         return (
                           <div key={acc.id} className="rounded-lg p-4 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)', borderLeft: `3px solid ${typeColor}` }}>
@@ -454,19 +454,19 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                               </div>
                               <div>
                                 <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Balance</p>
-                                <p className="text-sm font-bold font-mono" style={{ color: Number(acc.initial_balance) >= Number(acc.capital) ? '#22c55e' : '#ef4444' }}>
+                                <p className="text-sm font-bold font-mono" style={{ color: Number(acc.initial_balance) >= Number(acc.capital) ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                                   {Number(acc.initial_balance).toLocaleString('fr-FR')} $
                                 </p>
                               </div>
                               <div>
                                 <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>P&L</p>
-                                <p className="text-sm font-bold font-mono" style={{ color: pnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                                <p className="text-sm font-bold font-mono" style={{ color: pnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                                   {pnl >= 0 ? '+' : ''}{pnl.toLocaleString('fr-FR')} $
                                 </p>
                               </div>
                               <div>
                                 <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text3)' }}>Perf %</p>
-                                <p className="text-sm font-bold font-mono" style={{ color: pnlPct >= 0 ? '#22c55e' : '#ef4444' }}>
+                                <p className="text-sm font-bold font-mono" style={{ color: pnlPct >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                                   {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(1)}%
                                 </p>
                               </div>
@@ -505,10 +505,10 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                               </td>
                               <td className="py-2 pr-3" style={{ color: 'var(--text2)' }}>{s.instrument ?? '—'}</td>
                               <td className="py-2 pr-3 font-mono" style={{ color: 'var(--text2)' }}>{s.trades_count}</td>
-                              <td className="py-2 pr-3 font-mono font-semibold" style={{ color: pnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                              <td className="py-2 pr-3 font-mono font-semibold" style={{ color: pnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                                 {pnl >= 0 ? '+' : ''}{pnl.toFixed(0)} $
                               </td>
-                              <td className="py-2 pr-3 font-mono" style={{ color: rVal >= 0 ? '#22c55e' : '#ef4444' }}>
+                              <td className="py-2 pr-3 font-mono" style={{ color: rVal >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                                 {rVal >= 0 ? '+' : ''}{Number(rVal).toFixed(1)}R
                               </td>
                               <td className="py-2 pr-3 font-mono" style={{ color: 'var(--text2)' }}>
@@ -517,8 +517,8 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                               <td className="py-2 pr-3">
                                 {meta?.plan_score != null ? (
                                   <span className="px-1.5 py-0.5 rounded" style={{
-                                    background: meta.plan_score >= 8 ? 'rgba(34,197,94,0.15)' : meta.plan_score >= 5 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.15)',
-                                    color: meta.plan_score >= 8 ? '#22c55e' : meta.plan_score >= 5 ? '#f59e0b' : '#ef4444',
+                                    background: meta.plan_score >= 8 ? 'rgba(var(--color-profit-rgb), 0.15)' : meta.plan_score >= 5 ? 'rgba(var(--color-warn-rgb), 0.12)' : 'rgba(var(--color-loss-rgb), 0.15)',
+                                    color: meta.plan_score >= 8 ? 'var(--color-profit)' : meta.plan_score >= 5 ? 'var(--color-warn)' : 'var(--color-loss)',
                                   }}>
                                     {meta.plan_score}/10
                                   </span>
@@ -547,7 +547,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                       const category = catMatch ? catMatch[1] : 'Autre'
                       const text = catMatch ? catMatch[2] : content
                       const catColors: Record<string, string> = {
-                        Technique: '#22c55e', Psychologie: '#f59e0b', Macro: '#60a5fa', Risk: '#ef4444', Autre: '#a0aec0',
+                        Technique: 'var(--color-profit)', Psychologie: 'var(--color-warn)', Macro: '#60a5fa', Risk: 'var(--color-loss)', Autre: '#a0aec0',
                       }
                       return (
                         <div key={j.id} className="rounded-lg p-3 border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)', borderLeft: `3px solid ${catColors[category] ?? '#a0aec0'}` }}>
@@ -579,10 +579,10 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                           <div key={obj.id}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>{obj.title}</span>
-                              <span className="text-xs font-mono" style={{ color: obj.progress >= 100 ? '#22c55e' : 'var(--text3)' }}>{obj.progress}%</span>
+                              <span className="text-xs font-mono" style={{ color: obj.progress >= 100 ? 'var(--color-profit)' : 'var(--text3)' }}>{obj.progress}%</span>
                             </div>
                             <div className="h-1.5 rounded-full" style={{ background: 'var(--bg)' }}>
-                              <div className="h-full rounded-full" style={{ width: `${Math.min(obj.progress, 100)}%`, background: obj.progress >= 100 ? '#22c55e' : '#f59e0b' }} />
+                              <div className="h-full rounded-full" style={{ width: `${Math.min(obj.progress, 100)}%`, background: obj.progress >= 100 ? 'var(--color-profit)' : 'var(--color-warn)' }} />
                             </div>
                           </div>
                         ))}
@@ -597,7 +597,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                   ) : (
                     <div className="space-y-2">
                       {coaching.map(c => {
-                        const statusColor = c.status === 'completed' ? '#22c55e' : c.status === 'cancelled' ? '#ef4444' : '#60a5fa'
+                        const statusColor = c.status === 'completed' ? 'var(--color-profit)' : c.status === 'cancelled' ? 'var(--color-loss)' : '#60a5fa'
                         return (
                           <div key={c.id} className="flex items-center gap-4 p-3 rounded-lg border" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
                             <div className="w-1 self-stretch rounded-full" style={{ background: statusColor }} />
@@ -611,7 +611,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                                 </span>
                                 <span className="text-xs" style={{ color: 'var(--text3)' }}>{c.duration_minutes} min</span>
                                 <span className="text-xs px-1.5 py-0.5 rounded" style={{
-                                  background: c.status === 'completed' ? 'rgba(34,197,94,0.1)' : c.status === 'cancelled' ? 'rgba(239,68,68,0.1)' : 'rgba(96,165,250,0.1)',
+                                  background: c.status === 'completed' ? 'rgba(var(--color-profit-rgb), 0.1)' : c.status === 'cancelled' ? 'rgba(var(--color-loss-rgb), 0.1)' : 'rgba(96,165,250,0.1)',
                                   color: statusColor,
                                 }}>
                                   {c.status === 'completed' ? 'Terminé' : c.status === 'cancelled' ? 'Annulé' : 'Planifié'}
@@ -683,12 +683,12 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                         onClick={saveAdminData}
                         disabled={savingObs}
                         className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
-                        style={{ background: 'var(--green)', color: '#09090b' }}
+                        style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
                       >
                         {savingObs ? 'Sauvegarde...' : 'Sauvegarder observations + Whop'}
                       </button>
                       {obsSaved && (
-                        <span className="text-xs font-medium" style={{ color: '#22c55e' }}>Sauvegardé ✓</span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--color-profit)' }}>Sauvegardé ✓</span>
                       )}
                     </div>
                   </div>
@@ -713,12 +713,12 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                         onClick={savePrivateNote}
                         disabled={savingNote}
                         className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
-                        style={{ background: 'var(--green)', color: '#09090b' }}
+                        style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
                       >
                         {savingNote ? 'Sauvegarde...' : 'Sauvegarder'}
                       </button>
                       {noteSaved && (
-                        <span className="text-xs font-medium" style={{ color: '#22c55e' }}>Sauvegardé</span>
+                        <span className="text-xs font-medium" style={{ color: 'var(--color-profit)' }}>Sauvegardé</span>
                       )}
                     </div>
                   </div>
@@ -729,9 +729,9 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
               {tab === 'contrat' && (
                 <div className="space-y-4">
                   {contractInfo.signed_at && contractInfo.signed_name ? (
-                    <div className="rounded-lg p-6 border text-center" style={{ background: 'rgba(34,197,94,0.06)', borderColor: 'rgba(34,197,94,0.2)' }}>
+                    <div className="rounded-lg p-6 border text-center" style={{ background: 'rgba(var(--color-profit-rgb), 0.06)', borderColor: 'rgba(var(--color-profit-rgb), 0.2)' }}>
                       <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-                      <p className="text-sm font-bold" style={{ color: '#22c55e', marginBottom: 4 }}>Contrat signé</p>
+                      <p className="text-sm font-bold" style={{ color: 'var(--color-profit)', marginBottom: 4 }}>Contrat signé</p>
                       <p className="text-sm" style={{ color: 'var(--text)' }}>{contractInfo.signed_name}</p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text3)', fontFamily: "'DM Mono', monospace" }}>
                         {new Date(contractInfo.signed_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -739,7 +739,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                       <button
                         onClick={() => downloadContractPdf(contractInfo.signed_name!, contractInfo.signed_at!.split('T')[0])}
                         className="mt-4 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-                        style={{ background: 'var(--green)', color: '#09090b' }}
+                        style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
                       >
                         Télécharger le PDF du contrat
                       </button>

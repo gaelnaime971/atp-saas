@@ -103,7 +103,7 @@ export default function Broadcast() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-semibold text-[#e8edf5]">Broadcast</h1>
-        <p className="text-[#5a6a82] text-sm mt-1">Envoyer un message à tous vos traders</p>
+        <p className="text-[var(--color-neutral)] text-sm mt-1">Envoyer un message à tous vos traders</p>
       </div>
 
       {/* Result banner */}
@@ -125,23 +125,23 @@ export default function Broadcast() {
         <div className="space-y-5">
           {/* Subject */}
           <div>
-            <label className="block text-xs text-[#5a6a82] mb-1.5">Sujet</label>
+            <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Sujet</label>
             <input
               type="text"
               value={subject}
               onChange={e => setSubject(e.target.value)}
-              className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+              className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[var(--color-neutral)]"
               placeholder="ex: Nouveau contenu disponible"
             />
           </div>
 
           {/* Message */}
           <div>
-            <label className="block text-xs text-[#5a6a82] mb-1.5">Message</label>
+            <label className="block text-xs text-[var(--color-neutral)] mb-1.5">Message</label>
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}
-              className="w-full bg-[#18181b] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[#5a6a82]"
+              className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[var(--color-neutral)]"
               style={{ minHeight: '200px' }}
               placeholder="Rédigez votre message ici..."
             />
@@ -149,7 +149,7 @@ export default function Broadcast() {
 
           {/* Recipient selector */}
           <div>
-            <label className="block text-xs text-[#5a6a82] mb-2">Destinataires</label>
+            <label className="block text-xs text-[var(--color-neutral)] mb-2">Destinataires</label>
             <div className="flex flex-col gap-2">
               {([
                 { value: 'all', label: 'Tous les traders' },
@@ -181,7 +181,7 @@ export default function Broadcast() {
                       className="w-4 h-4 accent-green-500 rounded"
                     />
                     <span className="text-sm text-[#a0aec0]">{t.full_name}</span>
-                    {t.email && <span className="text-xs text-[#5a6a82]">({t.email})</span>}
+                    {t.email && <span className="text-xs text-[var(--color-neutral)]">({t.email})</span>}
                   </label>
                 ))}
               </div>
@@ -207,7 +207,7 @@ export default function Broadcast() {
               </svg>
               Envoyer
             </Button>
-            <span className="text-xs text-[#5a6a82] ml-auto">{recipientLabel()}</span>
+            <span className="text-xs text-[var(--color-neutral)] ml-auto">{recipientLabel()}</span>
           </div>
         </div>
       </Card>
@@ -215,9 +215,9 @@ export default function Broadcast() {
       {/* Preview */}
       {showPreview && (subject.trim() || message.trim()) && (
         <Card className="border border-blue-500/20">
-          <h3 className="text-xs text-[#5a6a82] uppercase tracking-wider mb-3">Aperçu email</h3>
-          <div className="bg-[#111113] rounded-lg p-5 border border-[rgba(255,255,255,0.05)]">
-            <p className="text-xs text-[#5a6a82] mb-1">Sujet:</p>
+          <h3 className="text-xs text-[var(--color-neutral)] uppercase tracking-wider mb-3">Aperçu email</h3>
+          <div className="bg-[var(--color-surface-1)] rounded-lg p-5 border border-[rgba(255,255,255,0.05)]">
+            <p className="text-xs text-[var(--color-neutral)] mb-1">Sujet:</p>
             <p className="text-sm font-medium text-[#e8edf5] mb-4">{subject || '(pas de sujet)'}</p>
             <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
               <p className="text-sm text-[#a0aec0] whitespace-pre-wrap">{message || '(pas de message)'}</p>
@@ -247,10 +247,10 @@ export default function Broadcast() {
       <Card>
         <h2 className="text-sm font-semibold text-[#e8edf5] mb-4">Derniers envois</h2>
         <div className="text-center py-8">
-          <svg className="w-10 h-10 mx-auto mb-3 text-[#5a6a82]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-10 h-10 mx-auto mb-3 text-[var(--color-neutral)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-[#5a6a82] text-sm">Historique bientôt disponible</p>
+          <p className="text-[var(--color-neutral)] text-sm">Historique bientôt disponible</p>
         </div>
       </Card>
     </div>

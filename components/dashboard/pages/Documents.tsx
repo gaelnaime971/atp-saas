@@ -6,7 +6,7 @@ import type { Resource } from '@/lib/types'
 
 function categoryColor(category: string | null): string {
   if (!category) return 'rgba(148,163,184,0.7)'
-  const palette = ['#22c55e', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6', '#34d399', '#fb7185', '#facc15']
+  const palette = ['var(--color-profit)', '#60a5fa', 'var(--color-warn)', '#a78bfa', '#f472b6', '#34d399', '#fb7185', '#facc15']
   let hash = 0
   for (let i = 0; i < category.length; i++) hash = (hash * 31 + category.charCodeAt(i)) >>> 0
   return palette[hash % palette.length]
@@ -336,7 +336,7 @@ function DocumentCard({
               padding: '8px 10px',
               borderRadius: 8,
               border: '1px solid var(--green)',
-              background: 'rgba(34,197,94,0.12)',
+              background: 'rgba(var(--color-profit-rgb), 0.12)',
               color: 'var(--green)',
               fontSize: 12,
               fontWeight: 700,

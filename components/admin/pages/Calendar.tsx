@@ -81,7 +81,7 @@ export default function Calendar() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-[#e8edf5]">Calendrier</h1>
-        <p className="text-[#5a6a82] text-sm mt-1">Sessions de coaching planifiées</p>
+        <p className="text-[var(--color-neutral)] text-sm mt-1">Sessions de coaching planifiées</p>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -112,7 +112,7 @@ export default function Calendar() {
             {/* Day names */}
             <div className="grid grid-cols-7 mb-2">
               {dayNames.map(d => (
-                <div key={d} className="text-center text-xs font-medium text-[#5a6a82] py-2">{d}</div>
+                <div key={d} className="text-center text-xs font-medium text-[var(--color-neutral)] py-2">{d}</div>
               ))}
             </div>
 
@@ -148,7 +148,7 @@ export default function Calendar() {
                         </div>
                       ))}
                       {daySessions.length > 2 && (
-                        <p className="text-xs text-[#5a6a82]">+{daySessions.length - 2}</p>
+                        <p className="text-xs text-[var(--color-neutral)]">+{daySessions.length - 2}</p>
                       )}
                     </div>
                   </div>
@@ -163,11 +163,11 @@ export default function Calendar() {
           <Card>
             <h3 className="text-sm font-semibold text-[#e8edf5] mb-4">Prochaines sessions</h3>
             {upcomingSessions.length === 0 ? (
-              <p className="text-[#5a6a82] text-sm">Aucune session planifiée</p>
+              <p className="text-[var(--color-neutral)] text-sm">Aucune session planifiée</p>
             ) : (
               <div className="space-y-3">
                 {upcomingSessions.map(s => (
-                  <div key={s.id} className="p-3 bg-[#18181b] rounded-lg border border-[rgba(255,255,255,0.05)]">
+                  <div key={s.id} className="p-3 bg-[var(--color-surface-2)] rounded-lg border border-[rgba(255,255,255,0.05)]">
                     <div className="flex items-start justify-between mb-1">
                       <p className="text-sm font-medium text-[#e8edf5]">{s.trader_name}</p>
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
@@ -178,12 +178,12 @@ export default function Calendar() {
                         {s.status === 'planned' ? 'Planifié' : s.status === 'completed' ? 'Terminé' : 'Annulé'}
                       </span>
                     </div>
-                    <p className="text-xs text-[#5a6a82]">
+                    <p className="text-xs text-[var(--color-neutral)]">
                       {new Date(s.scheduled_at).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                       {' · '}
                       {new Date(s.scheduled_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </p>
-                    <p className="text-xs text-[#5a6a82] mt-0.5">{s.duration_minutes} min</p>
+                    <p className="text-xs text-[var(--color-neutral)] mt-0.5">{s.duration_minutes} min</p>
                   </div>
                 ))}
               </div>

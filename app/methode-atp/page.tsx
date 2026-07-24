@@ -35,7 +35,7 @@ export default function MethodeATP() {
     }, 600)
   }
 
-  const G = '#22c55e'
+  const G = 'var(--color-profit)'
 
   return (
     <>
@@ -43,13 +43,13 @@ export default function MethodeATP() {
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#050505;color:#fff;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh;}
-body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:600px;background:radial-gradient(ellipse,rgba(34,197,94,0.07) 0%,transparent 70%);pointer-events:none;z-index:0;}
+body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:600px;background:radial-gradient(ellipse,rgba(var(--color-profit-rgb), 0.07) 0%,transparent 70%);pointer-events:none;z-index:0;}
 .wrap{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:60px 24px 80px;}
 nav{display:flex;align-items:center;justify-content:center;padding:20px 0 48px;}
 .nav-logo{display:flex;align-items:center;gap:8px;}
 .nav-logo img{height:24px;}
 .nav-logo span{font-size:14px;font-weight:700;letter-spacing:0.03em;color:#fff;}
-.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:100px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);font-size:12px;font-weight:500;color:${G};margin-bottom:28px;}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:100px;background:rgba(var(--color-profit-rgb), 0.08);border:1px solid rgba(var(--color-profit-rgb), 0.15);font-size:12px;font-weight:500;color:${G};margin-bottom:28px;}
 .pill-dot{width:6px;height:6px;border-radius:50%;background:${G};box-shadow:0 0 8px ${G};animation:blink 2s infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
 h1{font-size:clamp(32px,5vw,48px);font-weight:800;line-height:1.08;letter-spacing:-0.03em;margin-bottom:18px;}
@@ -61,26 +61,26 @@ h1 span{color:${G};}
 .wyg-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#ccc;line-height:1.55;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
 .wyg-item:last-child{border-bottom:none;}
 .wyg-ck{color:${G};flex-shrink:0;margin-top:1px;}
-.form-wrap{background:#0a0a0a;border:1px solid rgba(34,197,94,0.15);border-radius:16px;padding:28px;position:relative;overflow:hidden;}
-.form-wrap::before{content:'';position:absolute;top:-80px;right:-80px;width:240px;height:240px;background:radial-gradient(circle,rgba(34,197,94,0.12),transparent 70%);pointer-events:none;}
+.form-wrap{background:#0a0a0a;border:1px solid rgba(var(--color-profit-rgb), 0.15);border-radius:16px;padding:28px;position:relative;overflow:hidden;}
+.form-wrap::before{content:'';position:absolute;top:-80px;right:-80px;width:240px;height:240px;background:radial-gradient(circle,rgba(var(--color-profit-rgb), 0.12),transparent 70%);pointer-events:none;}
 .form-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;}
 .form-sub{font-size:12px;color:#555;margin-bottom:22px;line-height:1.6;}
 .field{margin-bottom:14px;}
 .field label{display:block;font-size:11px;font-weight:600;color:#555;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:7px;}
 .field input,.field select{width:100%;background:#0e0e0e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:13px 16px;font-size:14px;color:#fff;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;-webkit-appearance:none;}
 .field input::placeholder{color:#444;}
-.field input:focus,.field select:focus{border-color:rgba(34,197,94,0.4);}
+.field input:focus,.field select:focus{border-color:rgba(var(--color-profit-rgb), 0.4);}
 .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;cursor:pointer;color:#777;}
 .field select option{background:#0e0e0e;color:#fff;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .btn-submit{width:100%;padding:16px;background:${G};color:#050505;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.25s;margin-top:6px;letter-spacing:0.01em;}
-.btn-submit:hover{box-shadow:0 4px 24px rgba(34,197,94,0.4);transform:translateY(-1px);}
+.btn-submit:hover{box-shadow:0 4px 24px rgba(var(--color-profit-rgb), 0.4);transform:translateY(-1px);}
 .btn-submit:active{transform:translateY(0);}
 .btn-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
 .form-footer{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;font-size:11px;color:#444;}
 .proof{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px;font-size:12px;color:#555;}
 .proof-avatars{display:flex;}
-.proof-av{width:26px;height:26px;border-radius:50%;background:rgba(34,197,94,0.12);border:2px solid #050505;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${G};}
+.proof-av{width:26px;height:26px;border-radius:50%;background:rgba(var(--color-profit-rgb), 0.12);border:2px solid #050505;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${G};}
 .proof-av:first-child{margin-left:0;}
 .already{text-align:center;font-size:12px;color:#444;margin-top:20px;}
 .already a{color:${G};text-decoration:none;font-weight:500;}
@@ -90,7 +90,7 @@ h1 span{color:${G};}
 .success h2{font-size:24px;font-weight:800;margin-bottom:10px;}
 .success p{font-size:14px;color:#777;line-height:1.7;margin-bottom:24px;}
 .success .btn-link{max-width:280px;margin:0 auto;display:block;text-decoration:none;text-align:center;background:${G};color:#050505;padding:14px;border-radius:10px;font-weight:700;font-size:14px;transition:all 0.25s;}
-.success .btn-link:hover{box-shadow:0 4px 24px rgba(34,197,94,0.4);transform:translateY(-1px);}
+.success .btn-link:hover{box-shadow:0 4px 24px rgba(var(--color-profit-rgb), 0.4);transform:translateY(-1px);}
 @media(max-width:480px){.wrap{padding:40px 16px 60px;}.field-row{grid-template-columns:1fr;}h1{font-size:28px;}}
       `}</style>
 

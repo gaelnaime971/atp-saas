@@ -191,9 +191,9 @@ export default function AdminChatWidget() {
                       borderRadius: 6,
                       cursor: 'pointer',
                       border: isSelected
-                        ? '1px solid rgba(34,197,94,0.25)'
+                        ? '1px solid rgba(var(--color-profit-rgb), 0.25)'
                         : '1px solid transparent',
-                      background: isSelected ? 'rgba(34,197,94,0.1)' : 'transparent',
+                      background: isSelected ? 'rgba(var(--color-profit-rgb), 0.1)' : 'transparent',
                       textAlign: 'left',
                       display: 'flex',
                       flexDirection: 'column',

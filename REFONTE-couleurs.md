@@ -1,14 +1,14 @@
-# Codemod couleurs — rapport (dry-run)
+# Codemod couleurs — rapport (APPLIQUÉ)
 
-Généré par `node scripts/codemod-colors.mjs`.
+Généré par `node scripts/codemod-colors.mjs --apply`.
 
 ## Résumé
 
-- Fichiers scannés : **135**
-- Fichiers avec au moins un match mappable : **76**
-- Occurrences hex mappables : **1048**
-- Occurrences rgba() mappables : **547**
-- Formes de couleurs NON mappées (rencontrées mais sans correspondance) : **128**
+- Fichiers scannés : **131**
+- Fichiers avec au moins un match mappable : **70**
+- Occurrences hex mappables : **755**
+- Occurrences rgba() mappables : **405**
+- Formes de couleurs NON mappées (rencontrées mais sans correspondance) : **121**
 
 ## Fichiers exclus
 
@@ -42,42 +42,6 @@ Généré par `node scripts/codemod-colors.mjs`.
 - `rgba(201,165,116, α)` → `rgba(var(--color-accent-rgb), α)`
 
 ## Détail par fichier
-
-### `components/admin/pages/Pipeline.tsx`
-
-- Hex à remplacer : 62
-- rgba à remplacer : 82
-
-Exemples :
-```
-#f59e0b → var(--color-warn)
-#22c55e → var(--color-profit)
-#ef4444 → var(--color-loss)
-```
-
-### `components/dashboard/pages/AnalyseIA.tsx`
-
-- Hex à remplacer : 106
-- rgba à remplacer : 33
-
-Exemples :
-```
-#ef4444 → var(--color-loss)
-#f59e0b → var(--color-warn)
-#ef4444 → var(--color-loss)
-```
-
-### `components/admin/pages/RecapTradeLive.tsx`
-
-- Hex à remplacer : 105
-- rgba à remplacer : 17
-
-Exemples :
-```
-#18181b → var(--color-surface-2)
-#18181b → var(--color-surface-2)
-#22c55e → var(--color-profit)
-```
 
 ### `components/dashboard/pages/AnalyseGraphique.tsx`
 
@@ -245,18 +209,6 @@ Exemples :
 #22c55e → var(--color-profit)
 #22c55e → var(--color-profit)
 #f59e0b → var(--color-warn)
-```
-
-### `components/dashboard/pages/RecapTradeLive.tsx`
-
-- Hex à remplacer : 17
-- rgba à remplacer : 10
-
-Exemples :
-```
-#22c55e → var(--color-profit)
-#ef4444 → var(--color-loss)
-#22c55e → var(--color-profit)
 ```
 
 ### `components/admin/pages/CRM.tsx`
@@ -852,17 +804,6 @@ rgba(34,197,94,0.3) → rgba(var(--color-profit-rgb), 0.3)
 rgba(34,197,94,0.1) → rgba(var(--color-profit-rgb), 0.1)
 ```
 
-### `components/ui/Card.tsx`
-
-- Hex à remplacer : 2
-- rgba à remplacer : 0
-
-Exemples :
-```
-#111113 → var(--color-surface-1)
-#18181b → var(--color-surface-2)
-```
-
 ### `emails/BroadcastEmail.tsx`
 
 - Hex à remplacer : 2
@@ -872,16 +813,6 @@ Exemples :
 ```
 #22c55e → var(--color-profit)
 #5a6a82 → var(--color-neutral)
-```
-
-### `app/admin/dashboard/page.tsx`
-
-- Hex à remplacer : 1
-- rgba à remplacer : 0
-
-Exemples :
-```
-#09090b → var(--color-surface-0)
 ```
 
 ### `app/api/invoices/generate/route.ts`
@@ -942,76 +873,71 @@ ou reste en hex (couleur "one-shot" acceptée).
 
 | Couleur | Occurrences |
 |---|---|
-| `rgba(255,255,255,…)` | 210 |
-| `#e8edf5` | 102 |
+| `rgba(255,255,255,…)` | 190 |
+| `#e8edf5` | 90 |
 | `rgba(0,255,136,…)` | 76 |
-| `rgba(0,0,0,…)` | 59 |
-| `#a0aec0` | 59 |
-| `#3b82f6` | 32 |
-| `#60a5fa` | 31 |
-| `#6b7280` | 28 |
+| `#a0aec0` | 54 |
+| `rgba(0,0,0,…)` | 52 |
+| `#60a5fa` | 29 |
 | `rgba(255,51,85,…)` | 28 |
-| `#0a0a0a` | 22 |
-| `#a855f7` | 22 |
-| `rgba(168,85,247,…)` | 19 |
-| `rgba(96,165,250,…)` | 18 |
-| `#16a34a` | 17 |
+| `#6b7280` | 20 |
+| `#3b82f6` | 17 |
+| `#0a0a0a` | 15 |
+| `rgba(96,165,250,…)` | 15 |
 | `#888888` | 14 |
-| `#9ca3af` | 13 |
 | `rgba(255,170,0,…)` | 12 |
+| `#16a34a` | 11 |
 | `rgba(201,168,107,…)` | 11 |
+| `#a855f7` | 11 |
 | `rgba(74,222,128,…)` | 11 |
 | `#4a5568` | 11 |
-| `rgba(107,114,128,…)` | 10 |
 | `#1f2937` | 9 |
 | `#666666` | 9 |
 | `#a78bfa` | 9 |
-| `rgba(59,130,246,…)` | 9 |
 | `#555555` | 8 |
 | `#8892a4` | 8 |
 | `#00ff88` | 8 |
 | `#cccccc` | 7 |
 | `#444444` | 7 |
+| `#9ca3af` | 7 |
 | `#fca5a5` | 7 |
-| `#e1306c` | 7 |
-| `#ec4899` | 7 |
-| `#84cc16` | 7 |
-| `#dc2626` | 7 |
+| `rgba(168,85,247,…)` | 7 |
 | `#050505` | 6 |
-| `#aaaaaa` | 6 |
+| `#e1306c` | 6 |
+| `rgba(107,114,128,…)` | 6 |
 | `#161b27` | 6 |
-| `#25d366` | 5 |
 | `#777777` | 5 |
 | `#e5e7eb` | 5 |
+| `#aaaaaa` | 5 |
+| `#ec4899` | 5 |
 | `#111111` | 4 |
 | `#0e0e0e` | 4 |
 | `#dddddd` | 4 |
-| `rgba(225,48,108,…)` | 4 |
-| `#06b6d4` | 4 |
-| `#b91c1c` | 4 |
+| `rgba(59,130,246,…)` | 4 |
 | `#fbbf24` | 4 |
 | `#4ade80` | 4 |
 | `#6b7688` | 4 |
 | `#0f1117` | 4 |
+| `#25d366` | 3 |
 | `#5865f2` | 3 |
-| `#8b5cf6` | 3 |
+| `rgba(225,48,108,…)` | 3 |
 | `#f87171` | 3 |
 | `#facc15` | 3 |
 | `#34d399` | 3 |
 | `#ff3355` | 3 |
 | `#ffaa00` | 3 |
 | `#050905` | 3 |
+| `#b91c1c` | 3 |
 | `#bbbbbb` | 2 |
 | `#94a3b8` | 2 |
 | `rgba(184,112,112,…)` | 2 |
 | `#5b1414` | 2 |
 | `#4b5563` | 2 |
 | `rgba(88,101,242,…)` | 2 |
-| `rgba(6,182,212,…)` | 2 |
-| `rgba(139,92,246,…)` | 2 |
-| `rgba(236,72,153,…)` | 2 |
-| `rgba(170,170,170,…)` | 2 |
-| `rgba(37,211,102,…)` | 2 |
+| `#06b6d4` | 2 |
+| `#8b5cf6` | 2 |
+| `#84cc16` | 2 |
+| `#dc2626` | 2 |
 | `rgba(251,191,36,…)` | 2 |
 | `#f472b6` | 2 |
 | `#fb7185` | 2 |
@@ -1047,15 +973,13 @@ ou reste en hex (couleur "one-shot" acceptée).
 | `#e5e5e5` | 1 |
 | `#2a2a2a` | 1 |
 | `#8be5a0` | 1 |
-| `#635bff` | 1 |
-| `#d1d5db` | 1 |
-| `rgba(99,91,255,…)` | 1 |
 | `#999999` | 1 |
+| `rgba(6,182,212,…)` | 1 |
+| `rgba(139,92,246,…)` | 1 |
+| `rgba(236,72,153,…)` | 1 |
+| `rgba(170,170,170,…)` | 1 |
 | `rgba(20,20,20,…)` | 1 |
 | `rgba(248,113,113,…)` | 1 |
-| `#15803d` | 1 |
-| `#166534` | 1 |
-| `#991b1b` | 1 |
 | `rgba(167,139,250,…)` | 1 |
 | `#fb923c` | 1 |
 | `#0a0a0c` | 1 |

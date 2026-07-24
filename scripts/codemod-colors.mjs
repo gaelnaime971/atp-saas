@@ -70,7 +70,13 @@ const SKIP_DIRS = new Set([
 const SKIP_PATH_INCLUDES = [
   'app/(lab)/',              // shadcn lab isolated
   'components/shadcn/',      // shadcn primitives isolated
-  'components/admin/pages/TradingPerso.tsx',  // asks first (2919 lignes, 401 inline styles)
+  // Ces 4 fichiers seront réécrits à l'étape 2 (primitives partagées).
+  // Les traiter maintenant nous ferait relire deux fois le même diff.
+  'components/admin/pages/TradingPerso.tsx',
+  'components/admin/pages/Pipeline.tsx',
+  'components/admin/pages/RecapTradeLive.tsx',
+  'components/dashboard/pages/AnalyseIA.tsx',
+  'components/dashboard/pages/RecapTradeLive.tsx',
 ]
 const ONLY_EXT = new Set(['.tsx', '.ts', '.jsx', '.js'])
 

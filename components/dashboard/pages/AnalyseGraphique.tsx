@@ -138,14 +138,14 @@ const DEFAULT_TF_PER_SLOT: Record<SlotKey, string> = {
 const SLOT_LABELS: Record<SlotKey, { label: string; sub: string; color: string }> = {
   HTF: { label: 'HTF', sub: 'Bias macro', color: '#a855f7' },
   MTF: { label: 'MTF', sub: 'Structure', color: '#3b82f6' },
-  LTF: { label: 'LTF', sub: 'Zone d\'entrée', color: '#22c55e' },
-  Exec: { label: 'EXEC', sub: 'Trigger', color: '#f59e0b' },
+  LTF: { label: 'LTF', sub: 'Zone d\'entrée', color: 'var(--color-profit)' },
+  Exec: { label: 'EXEC', sub: 'Trigger', color: 'var(--color-warn)' },
 }
 
 const BIAS_OPTIONS: { id: Bias; label: string; color: string }[] = [
-  { id: 'bullish', label: '▲ Bull', color: '#22c55e' },
-  { id: 'range', label: '→ Range', color: '#f59e0b' },
-  { id: 'bearish', label: '▼ Bear', color: '#ef4444' },
+  { id: 'bullish', label: '▲ Bull', color: 'var(--color-profit)' },
+  { id: 'range', label: '→ Range', color: 'var(--color-warn)' },
+  { id: 'bearish', label: '▼ Bear', color: 'var(--color-loss)' },
 ]
 
 const SMC_ANNOTATION_LABELS: Array<{ key: keyof SMCAnnotations; label: string }> = [
@@ -177,25 +177,25 @@ async function fileToDataUrl(file: File): Promise<string> {
 }
 
 function biasColor(b: Bias) {
-  if (b === 'bullish') return '#22c55e'
-  if (b === 'bearish') return '#ef4444'
-  if (b === 'range') return '#f59e0b'
+  if (b === 'bullish') return 'var(--color-profit)'
+  if (b === 'bearish') return 'var(--color-loss)'
+  if (b === 'range') return 'var(--color-warn)'
   return 'var(--text3)'
 }
 
 function impactColor(impact: string) {
   const i = (impact || '').toLowerCase()
-  if (i === 'high') return '#ef4444'
-  if (i === 'medium' || i === 'med') return '#f59e0b'
+  if (i === 'high') return 'var(--color-loss)'
+  if (i === 'medium' || i === 'med') return 'var(--color-warn)'
   if (i === 'holiday') return '#a855f7'
   return '#6b7280'
 }
 
 function verdictStyle(v?: Synthesis['verdict']) {
   switch (v) {
-    case 'ACHETER': return { color: '#22c55e', bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.45)' }
-    case 'VENDRE': return { color: '#ef4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.45)' }
-    case 'ATTENDRE': return { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.45)' }
+    case 'ACHETER': return { color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.12)', border: 'rgba(var(--color-profit-rgb), 0.45)' }
+    case 'VENDRE': return { color: 'var(--color-loss)', bg: 'rgba(var(--color-loss-rgb), 0.12)', border: 'rgba(var(--color-loss-rgb), 0.45)' }
+    case 'ATTENDRE': return { color: 'var(--color-warn)', bg: 'rgba(var(--color-warn-rgb), 0.12)', border: 'rgba(var(--color-warn-rgb), 0.45)' }
     case 'SKIP': return { color: '#6b7280', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.45)' }
     default: return { color: 'var(--text3)', bg: 'var(--bg3)', border: 'var(--border)' }
   }
@@ -398,7 +398,7 @@ export default function AnalyseGraphique() {
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         .ag-cta-btn{position:relative;overflow:hidden;transition:all .2s}
-        .ag-cta-btn:hover{transform:translateY(-1px);box-shadow:0 0 22px rgba(34,197,94,0.5)}
+        .ag-cta-btn:hover{transform:translateY(-1px);box-shadow:0 0 22px rgba(var(--color-profit-rgb), 0.5)}
       `}</style>
 
       {/* ── 1. Header + Symbol picker ── */}
@@ -419,10 +419,10 @@ export default function AnalyseGraphique() {
             style={{
               padding: '12px 22px', borderRadius: 10, fontSize: 13, fontWeight: 700,
               cursor: !canRun || technical.loading ? 'not-allowed' : 'pointer',
-              background: !canRun || technical.loading ? 'var(--bg2)' : 'linear-gradient(135deg, #22c55e, #16a34a)',
-              color: !canRun || technical.loading ? 'var(--text3)' : '#09090b',
+              background: !canRun || technical.loading ? 'var(--bg2)' : 'linear-gradient(135deg, var(--color-profit), #16a34a)',
+              color: !canRun || technical.loading ? 'var(--text3)' : 'var(--color-surface-0)',
               border: 'none', whiteSpace: 'nowrap',
-              boxShadow: !canRun || technical.loading ? 'none' : '0 0 14px rgba(34,197,94,0.35)',
+              boxShadow: !canRun || technical.loading ? 'none' : '0 0 14px rgba(var(--color-profit-rgb), 0.35)',
             }}>
             {technical.loading ? '⏳ Analyse en cours…' : '▶ LANCER L\'ANALYSE COMPLÈTE'}
           </button>
@@ -448,9 +448,9 @@ export default function AnalyseGraphique() {
                 style={{
                   padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'monospace',
-                  background: symbol === p.sym ? 'rgba(34,197,94,0.15)' : 'var(--bg3)',
-                  color: symbol === p.sym ? '#22c55e' : 'var(--text2)',
-                  border: `1px solid ${symbol === p.sym ? 'rgba(34,197,94,0.35)' : 'var(--border)'}`,
+                  background: symbol === p.sym ? 'rgba(var(--color-profit-rgb), 0.15)' : 'var(--bg3)',
+                  color: symbol === p.sym ? 'var(--color-profit)' : 'var(--text2)',
+                  border: `1px solid ${symbol === p.sym ? 'rgba(var(--color-profit-rgb), 0.35)' : 'var(--border)'}`,
                 }}>
                 {p.sym}
               </button>
@@ -475,7 +475,7 @@ export default function AnalyseGraphique() {
                 <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'monospace', lineHeight: 1 }}>
                   {fmt(priceInfo.price, 2)}
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 700, marginTop: 4, color: (priceInfo.change ?? 0) >= 0 ? '#22c55e' : '#ef4444' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, marginTop: 4, color: (priceInfo.change ?? 0) >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
                   {(priceInfo.change ?? 0) >= 0 ? '▲' : '▼'} {fmt(Math.abs(priceInfo.change ?? 0), 2)} ({fmtPct(priceInfo.changePct)})
                 </div>
               </div>
@@ -486,7 +486,7 @@ export default function AnalyseGraphique() {
               )}
               {priceInfo.week52High != null && priceInfo.week52Low != null && (
                 <div style={{ fontSize: 10, color: 'var(--text3)' }}>
-                  52w: <strong style={{ color: '#ef4444' }}>{fmt(priceInfo.week52Low)}</strong> – <strong style={{ color: '#22c55e' }}>{fmt(priceInfo.week52High)}</strong>
+                  52w: <strong style={{ color: 'var(--color-loss)' }}>{fmt(priceInfo.week52Low)}</strong> – <strong style={{ color: 'var(--color-profit)' }}>{fmt(priceInfo.week52High)}</strong>
                 </div>
               )}
             </div>
@@ -517,7 +517,7 @@ export default function AnalyseGraphique() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 10 }}>
             <PillarCard
-              icon="⚡" title="Technique SMC" color="#22c55e"
+              icon="⚡" title="Technique SMC" color="var(--color-profit)"
               state={technical}
               renderData={d => <TechnicalView data={d} />}
               minHeight={220}
@@ -535,7 +535,7 @@ export default function AnalyseGraphique() {
               minHeight={220}
             />
             <PillarCard
-              icon="🎭" title="Sentiment" color="#f59e0b"
+              icon="🎭" title="Sentiment" color="var(--color-warn)"
               state={sentiment}
               renderData={d => <SentimentView data={d} />}
               minHeight={220}
@@ -678,7 +678,7 @@ function SlotCard({
                 type="checkbox"
                 checked={!!slot.annotations[key]}
                 onChange={e => onAnnotate({ [key]: e.target.checked })}
-                style={{ accentColor: '#22c55e' }}
+                style={{ accentColor: 'var(--color-profit)' }}
               />
               {label}
             </label>
@@ -721,7 +721,7 @@ function PillarCard<T>({
       {state.loading && !state.data ? (
         <div style={{ fontSize: 11, color: 'var(--text3)', padding: '20px 0', textAlign: 'center' }}>Analyse en cours…</div>
       ) : state.error ? (
-        <div style={{ fontSize: 11, color: '#ef4444', padding: '10px 0' }}>⚠ {state.error}</div>
+        <div style={{ fontSize: 11, color: 'var(--color-loss)', padding: '10px 0' }}>⚠ {state.error}</div>
       ) : state.data ? (
         renderData(state.data)
       ) : null}
@@ -742,7 +742,7 @@ function TechnicalView({ data }: { data: TechnicalResult }) {
             {biasEntries.map(([tf, b]) => {
               const isBull = (b || '').includes('BULL')
               const isBear = (b || '').includes('BEAR')
-              const col = isBull ? '#22c55e' : isBear ? '#ef4444' : '#f59e0b'
+              const col = isBull ? 'var(--color-profit)' : isBear ? 'var(--color-loss)' : 'var(--color-warn)'
               return (
                 <div key={tf} style={{
                   padding: '4px 8px', borderRadius: 5, fontSize: 10, fontWeight: 700,
@@ -758,11 +758,11 @@ function TechnicalView({ data }: { data: TechnicalResult }) {
 
       {data.confluence_multi_tf?.reasoning && (
         <div style={{
-          padding: '8px 10px', background: data.confluence_multi_tf.aligned ? 'rgba(34,197,94,0.06)' : 'rgba(245,158,11,0.06)',
-          border: `1px solid ${data.confluence_multi_tf.aligned ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)'}`,
+          padding: '8px 10px', background: data.confluence_multi_tf.aligned ? 'rgba(var(--color-profit-rgb), 0.06)' : 'rgba(var(--color-warn-rgb), 0.06)',
+          border: `1px solid ${data.confluence_multi_tf.aligned ? 'rgba(var(--color-profit-rgb), 0.2)' : 'rgba(var(--color-warn-rgb), 0.2)'}`,
           borderRadius: 6, fontSize: 11, color: 'var(--text2)', lineHeight: 1.5,
         }}>
-          <strong style={{ color: data.confluence_multi_tf.aligned ? '#22c55e' : '#f59e0b' }}>
+          <strong style={{ color: data.confluence_multi_tf.aligned ? 'var(--color-profit)' : 'var(--color-warn)' }}>
             {data.confluence_multi_tf.aligned ? '✓ Confluence' : '⚠ Mixte'}
           </strong> {data.confluence_multi_tf.reasoning}
         </div>
@@ -773,7 +773,7 @@ function TechnicalView({ data }: { data: TechnicalResult }) {
           <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Zones identifiées</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {data.zones.slice(0, 8).map((z, i) => {
-              const col = z.direction === 'bullish' ? '#22c55e' : z.direction === 'bearish' ? '#ef4444' : 'var(--text2)'
+              const col = z.direction === 'bullish' ? 'var(--color-profit)' : z.direction === 'bearish' ? 'var(--color-loss)' : 'var(--text2)'
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, padding: '4px 8px', background: 'var(--bg3)', borderRadius: 5 }}>
                   <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 5px', borderRadius: 3, background: `${col}20`, color: col }}>{z.type} {z.tf}</span>
@@ -792,21 +792,21 @@ function TechnicalView({ data }: { data: TechnicalResult }) {
           <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Liquidité</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 10.5 }}>
             {(data.liquidity.targets_long || []).map((t, i) => (
-              <div key={`tl-${i}`} style={{ color: '#22c55e' }}>→ Long target <strong style={{ fontFamily: 'monospace' }}>{t.price}</strong> <span style={{ color: 'var(--text3)' }}>{t.reasoning}</span></div>
+              <div key={`tl-${i}`} style={{ color: 'var(--color-profit)' }}>→ Long target <strong style={{ fontFamily: 'monospace' }}>{t.price}</strong> <span style={{ color: 'var(--text3)' }}>{t.reasoning}</span></div>
             ))}
             {(data.liquidity.targets_short || []).map((t, i) => (
-              <div key={`ts-${i}`} style={{ color: '#ef4444' }}>← Short target <strong style={{ fontFamily: 'monospace' }}>{t.price}</strong> <span style={{ color: 'var(--text3)' }}>{t.reasoning}</span></div>
+              <div key={`ts-${i}`} style={{ color: 'var(--color-loss)' }}>← Short target <strong style={{ fontFamily: 'monospace' }}>{t.price}</strong> <span style={{ color: 'var(--text3)' }}>{t.reasoning}</span></div>
             ))}
             {(data.liquidity.risk_levels || []).map((t, i) => (
-              <div key={`rl-${i}`} style={{ color: '#f59e0b' }}>⚠ Risk <strong style={{ fontFamily: 'monospace' }}>{t.price}</strong> <span style={{ color: 'var(--text3)' }}>{t.reasoning}</span></div>
+              <div key={`rl-${i}`} style={{ color: 'var(--color-warn)' }}>⚠ Risk <strong style={{ fontFamily: 'monospace' }}>{t.price}</strong> <span style={{ color: 'var(--text3)' }}>{t.reasoning}</span></div>
             ))}
           </div>
         </div>
       )}
 
       {data.best_entry_zone?.price && (
-        <div style={{ padding: '8px 10px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 6 }}>
-          <div style={{ fontSize: 9, color: '#22c55e', fontWeight: 700, textTransform: 'uppercase' }}>🎯 Zone d&apos;entrée optimale</div>
+        <div style={{ padding: '8px 10px', background: 'rgba(var(--color-profit-rgb), 0.06)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)', borderRadius: 6 }}>
+          <div style={{ fontSize: 9, color: 'var(--color-profit)', fontWeight: 700, textTransform: 'uppercase' }}>🎯 Zone d&apos;entrée optimale</div>
           <div style={{ fontSize: 11, color: 'var(--text)', marginTop: 3, fontFamily: 'monospace' }}>
             {data.best_entry_zone.direction?.toUpperCase()} @ {data.best_entry_zone.price} ({data.best_entry_zone.tf})
           </div>
@@ -840,8 +840,8 @@ function NewsView({ data }: { data: NewsResult }) {
       {data.implication && (
         <div style={{
           padding: '8px 10px',
-          background: data.next_high_impact ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)',
-          border: `1px solid ${data.next_high_impact ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)'}`,
+          background: data.next_high_impact ? 'rgba(var(--color-loss-rgb), 0.06)' : 'rgba(var(--color-profit-rgb), 0.06)',
+          border: `1px solid ${data.next_high_impact ? 'rgba(var(--color-loss-rgb), 0.2)' : 'rgba(var(--color-profit-rgb), 0.2)'}`,
           borderRadius: 6, fontSize: 11, color: 'var(--text2)', lineHeight: 1.5,
         }}>
           {data.implication}
@@ -872,7 +872,7 @@ function NewsView({ data }: { data: NewsResult }) {
                 <div style={{ fontSize: 9, color: 'var(--text3)', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
                   {dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}
                 </div>
-                <div style={{ fontSize: 9, color: soon ? '#f59e0b' : 'var(--text3)', fontWeight: 700, minWidth: 50, textAlign: 'right' }}>{dateLabel}</div>
+                <div style={{ fontSize: 9, color: soon ? 'var(--color-warn)' : 'var(--text3)', fontWeight: 700, minWidth: 50, textAlign: 'right' }}>{dateLabel}</div>
               </div>
             )
           })}
@@ -891,9 +891,9 @@ function MacroView({ data }: { data: MacroResult }) {
     { label: 'NQ', d: data.nq },
   ]
   const regimeMeta: Record<'risk_on' | 'risk_off' | 'neutral', { label: string; color: string; bg: string }> = {
-    risk_on: { label: 'RISK ON', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
-    risk_off: { label: 'RISK OFF', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-    neutral: { label: 'NEUTRAL', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    risk_on: { label: 'RISK ON', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.12)' },
+    risk_off: { label: 'RISK OFF', color: 'var(--color-loss)', bg: 'rgba(var(--color-loss-rgb), 0.12)' },
+    neutral: { label: 'NEUTRAL', color: 'var(--color-warn)', bg: 'rgba(var(--color-warn-rgb), 0.12)' },
   }
   const regime = data.risk_regime ? regimeMeta[data.risk_regime] : null
 
@@ -917,7 +917,7 @@ function MacroView({ data }: { data: MacroResult }) {
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: 'monospace', marginTop: 2 }}>
               {d ? (valFormatter ? valFormatter(d.price) : fmt(d.price)) : '—'}
             </div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: !d ? 'var(--text3)' : d.changePct >= 0 ? '#22c55e' : '#ef4444', marginTop: 2 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: !d ? 'var(--text3)' : d.changePct >= 0 ? 'var(--color-profit)' : 'var(--color-loss)', marginTop: 2 }}>
               {d ? `${d.changePct >= 0 ? '▲' : '▼'} ${fmtPct(d.changePct)}` : '—'}
             </div>
           </div>
@@ -929,7 +929,7 @@ function MacroView({ data }: { data: MacroResult }) {
 
 function SentimentView({ data }: { data: SentimentResult }) {
   const score = data.primary?.score ?? null
-  const col = score == null ? 'var(--text3)' : score >= 75 ? '#22c55e' : score >= 55 ? '#84cc16' : score >= 45 ? '#f59e0b' : score >= 25 ? '#ef4444' : '#dc2626'
+  const col = score == null ? 'var(--text3)' : score >= 75 ? 'var(--color-profit)' : score >= 55 ? '#84cc16' : score >= 45 ? 'var(--color-warn)' : score >= 25 ? 'var(--color-loss)' : '#dc2626'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
       {score != null && (
@@ -940,7 +940,7 @@ function SentimentView({ data }: { data: SentimentResult }) {
           <div style={{ fontSize: 36, fontWeight: 800, color: col, lineHeight: 1, marginTop: 4, fontFamily: 'monospace' }}>{score}</div>
           <div style={{ fontSize: 11, fontWeight: 700, color: col, marginTop: 4 }}>{data.primary?.label}</div>
           {/* Mini gauge bar */}
-          <div style={{ marginTop: 8, position: 'relative', height: 6, borderRadius: 3, background: 'linear-gradient(90deg, #dc2626, #ef4444, #f59e0b, #84cc16, #22c55e)' }}>
+          <div style={{ marginTop: 8, position: 'relative', height: 6, borderRadius: 3, background: 'linear-gradient(90deg, #dc2626, var(--color-loss), var(--color-warn), #84cc16, var(--color-profit))' }}>
             <div style={{
               position: 'absolute', top: -3, left: `${score}%`, transform: 'translateX(-50%)',
               width: 2, height: 12, background: '#fff', borderRadius: 1, boxShadow: '0 0 4px rgba(0,0,0,0.5)',
@@ -972,9 +972,9 @@ function SentimentView({ data }: { data: SentimentResult }) {
 
 function CorrelationsView({ data }: { data: CorrelationsResult }) {
   const alignMeta: Record<string, { label: string; color: string }> = {
-    aligned: { label: 'ALIGNÉ', color: '#22c55e' },
-    mixed: { label: 'MIXTE', color: '#f59e0b' },
-    divergent: { label: 'DIVERGENT', color: '#ef4444' },
+    aligned: { label: 'ALIGNÉ', color: 'var(--color-profit)' },
+    mixed: { label: 'MIXTE', color: 'var(--color-warn)' },
+    divergent: { label: 'DIVERGENT', color: 'var(--color-loss)' },
     unknown: { label: 'INCONNU', color: '#6b7280' },
   }
   const meta = alignMeta[data.alignment || 'unknown'] || alignMeta.unknown
@@ -998,7 +998,7 @@ function CorrelationsView({ data }: { data: CorrelationsResult }) {
               <span style={{ fontSize: 9, color: a.type === 'inverse' ? '#ec4899' : 'var(--text3)', fontWeight: 700 }}>{a.type === 'inverse' ? '↺' : '↔'}</span>
               <span style={{ flex: 1, color: 'var(--text2)' }}>{a.name} <span style={{ color: 'var(--text3)', fontSize: 9 }}>({a.ticker})</span></span>
               <span style={{ fontSize: 10, color: 'var(--text3)' }}>{a.pattern}</span>
-              <span style={{ fontSize: 10, color: a.changePct >= 0 ? '#22c55e' : '#ef4444', fontWeight: 700, fontFamily: 'monospace' }}>{fmtPct(a.changePct)}</span>
+              <span style={{ fontSize: 10, color: a.changePct >= 0 ? 'var(--color-profit)' : 'var(--color-loss)', fontWeight: 700, fontFamily: 'monospace' }}>{fmtPct(a.changePct)}</span>
             </div>
           ))}
         </div>
@@ -1010,7 +1010,7 @@ function CorrelationsView({ data }: { data: CorrelationsResult }) {
           {(data.divergences || []).map((d, i) => {
             const bull = d.type.includes('bullish')
             const bear = d.type.includes('bearish')
-            const col = bull ? '#22c55e' : bear ? '#ef4444' : '#f59e0b'
+            const col = bull ? 'var(--color-profit)' : bear ? 'var(--color-loss)' : 'var(--color-warn)'
             return (
               <div key={i} style={{ padding: '6px 8px', background: `${col}10`, border: `1px solid ${col}30`, borderRadius: 5, fontSize: 10.5, color: 'var(--text2)', marginBottom: 4 }}>
                 <strong style={{ color: col }}>{bull ? '▲ Bull SMT' : bear ? '▼ Bear SMT' : '⚠ Break'}</strong> {d.reasoning}
@@ -1031,13 +1031,13 @@ function SynthesisView({ state, onPrefill, hasTradePlan }: { state: PillarState<
   if (state.loading) {
     return (
       <Card style={{ padding: 24, textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', width: 24, height: 24, border: '3px solid var(--bg3)', borderTopColor: '#22c55e', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 8 }} />
+        <div style={{ display: 'inline-block', width: 24, height: 24, border: '3px solid var(--bg3)', borderTopColor: 'var(--color-profit)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 8 }} />
         <div style={{ fontSize: 12, color: 'var(--text2)' }}>L&apos;IA synthétise les 5 piliers…</div>
       </Card>
     )
   }
   if (state.error) {
-    return <Card style={{ padding: 14, border: '1px solid rgba(239,68,68,0.3)' }}><div style={{ fontSize: 12, color: '#ef4444' }}>⚠ {state.error}</div></Card>
+    return <Card style={{ padding: 14, border: '1px solid rgba(var(--color-loss-rgb), 0.3)' }}><div style={{ fontSize: 12, color: 'var(--color-loss)' }}>⚠ {state.error}</div></Card>
   }
   if (!state.data) return null
   const v = state.data
@@ -1061,8 +1061,8 @@ function SynthesisView({ state, onPrefill, hasTradePlan }: { state: PillarState<
             <button onClick={onPrefill}
               style={{
                 padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#09090b', border: 'none',
-                boxShadow: '0 0 12px rgba(34,197,94,0.3)',
+                background: 'linear-gradient(135deg, var(--color-profit), #16a34a)', color: 'var(--color-surface-0)', border: 'none',
+                boxShadow: '0 0 12px rgba(var(--color-profit-rgb), 0.3)',
               }}>
               📝 Pré-remplir une saisie de session
             </button>
@@ -1077,7 +1077,7 @@ function SynthesisView({ state, onPrefill, hasTradePlan }: { state: PillarState<
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ fontSize: 14 }}>📋</span>
             <h3 style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Plan de trade</h3>
-            <span style={{ fontSize: 11, fontWeight: 700, color: v.trade_plan.direction === 'LONG' ? '#22c55e' : '#ef4444', padding: '2px 8px', borderRadius: 5, background: v.trade_plan.direction === 'LONG' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)' }}>{v.trade_plan.direction}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: v.trade_plan.direction === 'LONG' ? 'var(--color-profit)' : 'var(--color-loss)', padding: '2px 8px', borderRadius: 5, background: v.trade_plan.direction === 'LONG' ? 'rgba(var(--color-profit-rgb), 0.12)' : 'rgba(var(--color-loss-rgb), 0.12)' }}>{v.trade_plan.direction}</span>
             {v.trade_plan.probability_pct != null && (
               <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 'auto' }}>Probabilité : <strong style={{ color: 'var(--text2)' }}>{v.trade_plan.probability_pct}%</strong></span>
             )}
@@ -1085,8 +1085,8 @@ function SynthesisView({ state, onPrefill, hasTradePlan }: { state: PillarState<
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, fontSize: 11 }}>
             {v.trade_plan.entry_zone && (
-              <div style={{ padding: '8px 10px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 6 }}>
-                <div style={{ fontSize: 9, color: '#22c55e', fontWeight: 700, textTransform: 'uppercase' }}>Entry</div>
+              <div style={{ padding: '8px 10px', background: 'rgba(var(--color-profit-rgb), 0.06)', border: '1px solid rgba(var(--color-profit-rgb), 0.25)', borderRadius: 6 }}>
+                <div style={{ fontSize: 9, color: 'var(--color-profit)', fontWeight: 700, textTransform: 'uppercase' }}>Entry</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', fontFamily: 'monospace', marginTop: 2 }}>
                   {v.trade_plan.entry_zone.low}{v.trade_plan.entry_zone.high && v.trade_plan.entry_zone.low !== v.trade_plan.entry_zone.high ? ` – ${v.trade_plan.entry_zone.high}` : ''}
                 </div>
@@ -1094,14 +1094,14 @@ function SynthesisView({ state, onPrefill, hasTradePlan }: { state: PillarState<
               </div>
             )}
             {v.trade_plan.sl != null && (
-              <div style={{ padding: '8px 10px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 6 }}>
-                <div style={{ fontSize: 9, color: '#ef4444', fontWeight: 700, textTransform: 'uppercase' }}>Stop Loss</div>
+              <div style={{ padding: '8px 10px', background: 'rgba(var(--color-loss-rgb), 0.06)', border: '1px solid rgba(var(--color-loss-rgb), 0.25)', borderRadius: 6 }}>
+                <div style={{ fontSize: 9, color: 'var(--color-loss)', fontWeight: 700, textTransform: 'uppercase' }}>Stop Loss</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', fontFamily: 'monospace', marginTop: 2 }}>{v.trade_plan.sl}</div>
               </div>
             )}
             {(v.trade_plan.tps || []).map((tp, i) => (
-              <div key={i} style={{ padding: '8px 10px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 6 }}>
-                <div style={{ fontSize: 9, color: '#22c55e', fontWeight: 700, textTransform: 'uppercase' }}>TP {i + 1}{tp.rr ? ` · R:R ${tp.rr}` : ''}</div>
+              <div key={i} style={{ padding: '8px 10px', background: 'rgba(var(--color-profit-rgb), 0.06)', border: '1px solid rgba(var(--color-profit-rgb), 0.25)', borderRadius: 6 }}>
+                <div style={{ fontSize: 9, color: 'var(--color-profit)', fontWeight: 700, textTransform: 'uppercase' }}>TP {i + 1}{tp.rr ? ` · R:R ${tp.rr}` : ''}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', fontFamily: 'monospace', marginTop: 2 }}>{tp.price}</div>
                 {tp.reasoning && <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{tp.reasoning}</div>}
               </div>
@@ -1113,8 +1113,8 @@ function SynthesisView({ state, onPrefill, hasTradePlan }: { state: PillarState<
       {/* Risks + catalysts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
         {v.risques && v.risques.length > 0 && (
-          <Card style={{ padding: 12, borderLeft: '3px solid #ef4444' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>⚠ Risques</div>
+          <Card style={{ padding: 12, borderLeft: '3px solid var(--color-loss)' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-loss)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>⚠ Risques</div>
             <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11.5, color: 'var(--text2)', lineHeight: 1.5 }}>
               {v.risques.map((r, i) => <li key={i}>{r}</li>)}
             </ul>
@@ -1138,7 +1138,7 @@ function SynthesisView({ state, onPrefill, hasTradePlan }: { state: PillarState<
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {v.pre_entry_checklist.map((c, i) => (
                 <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11.5, color: 'var(--text2)' }}>
-                  <input type="checkbox" style={{ accentColor: '#22c55e' }} />
+                  <input type="checkbox" style={{ accentColor: 'var(--color-profit)' }} />
                   {c}
                 </label>
               ))}
@@ -1150,13 +1150,13 @@ function SynthesisView({ state, onPrefill, hasTradePlan }: { state: PillarState<
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>📊 Niveaux clés</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11.5 }}>
               {v.key_levels_summary.support_majeur && (
-                <div style={{ color: 'var(--text2)' }}>Support : <strong style={{ color: '#22c55e', fontFamily: 'monospace' }}>{v.key_levels_summary.support_majeur}</strong></div>
+                <div style={{ color: 'var(--text2)' }}>Support : <strong style={{ color: 'var(--color-profit)', fontFamily: 'monospace' }}>{v.key_levels_summary.support_majeur}</strong></div>
               )}
               {v.key_levels_summary.resistance_majeure && (
-                <div style={{ color: 'var(--text2)' }}>Résistance : <strong style={{ color: '#ef4444', fontFamily: 'monospace' }}>{v.key_levels_summary.resistance_majeure}</strong></div>
+                <div style={{ color: 'var(--text2)' }}>Résistance : <strong style={{ color: 'var(--color-loss)', fontFamily: 'monospace' }}>{v.key_levels_summary.resistance_majeure}</strong></div>
               )}
               {v.key_levels_summary.invalidation && (
-                <div style={{ color: 'var(--text2)' }}>Invalidation : <strong style={{ color: '#f59e0b', fontFamily: 'monospace' }}>{v.key_levels_summary.invalidation}</strong></div>
+                <div style={{ color: 'var(--text2)' }}>Invalidation : <strong style={{ color: 'var(--color-warn)', fontFamily: 'monospace' }}>{v.key_levels_summary.invalidation}</strong></div>
               )}
             </div>
           </Card>

@@ -70,42 +70,42 @@ export default function TopbarStats() {
     {
       label: "P&L Jour",
       value: stats.todayPnl != null ? `${stats.todayPnl >= 0 ? '+' : ''}${stats.todayPnl.toFixed(0)}$` : '—',
-      color: stats.todayPnl != null ? (stats.todayPnl >= 0 ? '#22c55e' : '#ef4444') : '#5a6a82',
+      color: stats.todayPnl != null ? (stats.todayPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)') : 'var(--color-neutral)',
     },
     {
       label: 'P&L Mois',
       value: `${stats.monthPnl >= 0 ? '+' : ''}${stats.monthPnl.toFixed(0)}$`,
-      color: stats.monthPnl >= 0 ? '#22c55e' : '#ef4444',
+      color: stats.monthPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)',
     },
     {
       label: 'P&L Total',
       value: `${stats.totalPnl >= 0 ? '+' : ''}${stats.totalPnl.toFixed(0)}$`,
-      color: stats.totalPnl >= 0 ? '#22c55e' : '#ef4444',
+      color: stats.totalPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)',
     },
     {
       label: 'Win Rate',
       value: `${stats.winRate}%`,
-      color: stats.winRate >= 50 ? '#22c55e' : '#ef4444',
+      color: stats.winRate >= 50 ? 'var(--color-profit)' : 'var(--color-loss)',
     },
     {
       label: 'Profit Factor',
       value: stats.profitFactor > 0 ? stats.profitFactor.toFixed(2) : '—',
-      color: stats.profitFactor >= 1.5 ? '#22c55e' : stats.profitFactor >= 1 ? '#f59e0b' : '#ef4444',
+      color: stats.profitFactor >= 1.5 ? 'var(--color-profit)' : stats.profitFactor >= 1 ? 'var(--color-warn)' : 'var(--color-loss)',
     },
     {
       label: 'Streak',
       value: `${stats.streak.count}${stats.streak.type === 'win' ? 'W' : 'L'}`,
-      color: stats.streak.type === 'win' ? '#22c55e' : '#ef4444',
+      color: stats.streak.type === 'win' ? 'var(--color-profit)' : 'var(--color-loss)',
     },
     {
       label: 'Moy/Session',
       value: `${stats.avgPnl >= 0 ? '+' : ''}${stats.avgPnl.toFixed(0)}$`,
-      color: stats.avgPnl >= 0 ? '#22c55e' : '#ef4444',
+      color: stats.avgPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)',
     },
     {
       label: 'Best Day',
       value: `+${stats.bestDay.toFixed(0)}$`,
-      color: '#22c55e',
+      color: 'var(--color-profit)',
     },
     {
       label: 'Sessions',
@@ -122,7 +122,7 @@ export default function TopbarStats() {
             className="flex flex-col items-center px-2.5 py-1 rounded-md"
             style={{ minWidth: 56 }}
           >
-            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: '#5a6a82' }}>
+            <span className="text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5" style={{ color: 'var(--color-neutral)' }}>
               {item.label}
             </span>
             <span className="text-xs font-bold font-mono leading-tight" style={{ color: item.color }}>

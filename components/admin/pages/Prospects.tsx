@@ -94,10 +94,10 @@ function computeScore(p: Prospect, cfg?: { exp: Record<string, number>; obj: Rec
 }
 
 function scoreLabel(s: number): { label: string; emoji: string; color: string; bg: string } {
-  if (s >= 75) return { label: 'CHAUD', emoji: '🔥', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' }
-  if (s >= 50) return { label: 'TIÈDE', emoji: '📞', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' }
+  if (s >= 75) return { label: 'CHAUD', emoji: '🔥', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.12)' }
+  if (s >= 50) return { label: 'TIÈDE', emoji: '📞', color: 'var(--color-warn)', bg: 'rgba(var(--color-warn-rgb), 0.12)' }
   if (s >= 25) return { label: 'FROID', emoji: '❄️', color: '#6b7280', bg: 'rgba(107,114,128,0.12)' }
-  return { label: 'NON QUAL.', emoji: '⏸️', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' }
+  return { label: 'NON QUAL.', emoji: '⏸️', color: 'var(--color-loss)', bg: 'rgba(var(--color-loss-rgb), 0.12)' }
 }
 
 function scoreRecommendation(s: number): string {
@@ -109,10 +109,10 @@ function scoreRecommendation(s: number): string {
 
 const STATUS_OPTIONS = [
   { value: 'nouveau', label: 'Nouveau', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
-  { value: 'contacte', label: 'Contacté', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-  { value: 'call_booke', label: 'Call booké', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+  { value: 'contacte', label: 'Contacté', color: 'var(--color-warn)', bg: 'rgba(var(--color-warn-rgb), 0.1)' },
+  { value: 'call_booke', label: 'Call booké', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.1)' },
   { value: 'close', label: 'Closé', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
-  { value: 'disqualifie', label: 'Disqualifié', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+  { value: 'disqualifie', label: 'Disqualifié', color: 'var(--color-loss)', bg: 'rgba(var(--color-loss-rgb), 0.1)' },
 ]
 
 const ACTION_OPTIONS = [
@@ -149,17 +149,17 @@ const EXP_LABELS: Record<string, string> = {
 }
 
 const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  'methode-atp': { label: 'Méthode ATP', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
-  'landing-capture': { label: 'Méthode ATP', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+  'methode-atp': { label: 'Méthode ATP', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.1)' },
+  'landing-capture': { label: 'Méthode ATP', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.1)' },
   'trading-night': { label: 'Trading Night', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
-  'preinscription-event': { label: 'Pré-inscr. Event', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+  'preinscription-event': { label: 'Pré-inscr. Event', color: 'var(--color-warn)', bg: 'rgba(var(--color-warn-rgb), 0.1)' },
   'video-methode': { label: 'Vidéo Méthode', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
   'whop-1000': { label: 'Whop <1000€', color: '#06b6d4', bg: 'rgba(6,182,212,0.1)' },
   'whop-1000-2000': { label: 'Whop 1K-2K€', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
   'whop-2000': { label: 'Whop +2000€', color: '#ec4899', bg: 'rgba(236,72,153,0.1)' },
   'organique-instagram': { label: 'Instagram', color: '#e1306c', bg: 'rgba(225,48,108,0.1)' },
   'organique-x': { label: 'X/Twitter', color: '#aaa', bg: 'rgba(170,170,170,0.1)' },
-  'reference-client': { label: 'Référence', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+  'reference-client': { label: 'Référence', color: 'var(--color-warn)', bg: 'rgba(var(--color-warn-rgb), 0.1)' },
   'manual': { label: 'Manuel', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
   'csv-import': { label: 'Import CSV', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
 }
@@ -732,9 +732,9 @@ export default function Prospects() {
           onClick={() => { setSortByScore(!sortByScore); setPage(0) }}
           className="text-xs px-3 py-2 rounded-lg transition-all"
           style={{
-            background: sortByScore ? 'rgba(34,197,94,0.1)' : 'var(--bg2)',
-            border: `1px solid ${sortByScore ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`,
-            color: sortByScore ? '#22c55e' : 'var(--text3)',
+            background: sortByScore ? 'rgba(var(--color-profit-rgb), 0.1)' : 'var(--bg2)',
+            border: `1px solid ${sortByScore ? 'rgba(var(--color-profit-rgb), 0.3)' : 'var(--border)'}`,
+            color: sortByScore ? 'var(--color-profit)' : 'var(--text3)',
             cursor: 'pointer', fontWeight: 600,
           }}
         >
@@ -753,9 +753,9 @@ export default function Prospects() {
           onClick={() => { setShowPriorities(!showPriorities); setFilterQual('all'); setPage(0) }}
           className="text-xs px-3 py-2 rounded-lg transition-all"
           style={{
-            background: showPriorities ? 'rgba(239,68,68,0.1)' : 'var(--bg2)',
-            border: `1px solid ${showPriorities ? 'rgba(239,68,68,0.3)' : 'var(--border)'}`,
-            color: showPriorities ? '#ef4444' : 'var(--text3)',
+            background: showPriorities ? 'rgba(var(--color-loss-rgb), 0.1)' : 'var(--bg2)',
+            border: `1px solid ${showPriorities ? 'rgba(var(--color-loss-rgb), 0.3)' : 'var(--border)'}`,
+            color: showPriorities ? 'var(--color-loss)' : 'var(--text3)',
             cursor: 'pointer', fontWeight: 600,
           }}
         >
@@ -791,7 +791,7 @@ export default function Prospects() {
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: '#09090b' }}
+            style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             Nouveau prospect
@@ -815,7 +815,7 @@ export default function Prospects() {
             <div className="grid grid-cols-2 gap-5">
               {/* Expérience */}
               <div className="rounded-xl p-4" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-                <div className="text-[10px] uppercase tracking-wider mb-3 font-bold" style={{ color: '#22c55e' }}>Expérience (max 30)</div>
+                <div className="text-[10px] uppercase tracking-wider mb-3 font-bold" style={{ color: 'var(--color-profit)' }}>Expérience (max 30)</div>
                 {Object.entries(EXP_SCORE_LABELS).map(([key, label]) => (
                   <div key={key} className="flex items-center justify-between mb-2">
                     <span className="text-xs" style={{ color: 'var(--text2)' }}>{label}</span>
@@ -872,7 +872,7 @@ export default function Prospects() {
 
               {/* Réactivité */}
               <div className="rounded-xl p-4" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-                <div className="text-[10px] uppercase tracking-wider mb-3 font-bold" style={{ color: '#f59e0b' }}>Réactivité (max 20)</div>
+                <div className="text-[10px] uppercase tracking-wider mb-3 font-bold" style={{ color: 'var(--color-warn)' }}>Réactivité (max 20)</div>
                 {Object.entries(REACT_SCORE_LABELS).map(([key, label]) => (
                   <div key={key} className="flex items-center justify-between mb-2">
                     <span className="text-xs" style={{ color: 'var(--text2)' }}>{label}</span>
@@ -899,7 +899,7 @@ export default function Prospects() {
               <button onClick={() => setShowScoring(false)} className="px-4 py-2.5 rounded-lg text-xs font-medium" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)', cursor: 'pointer' }}>
                 Annuler
               </button>
-              <button onClick={handleSaveScoring} className="px-6 py-2.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--green)', color: '#09090b', cursor: 'pointer' }}>
+              <button onClick={handleSaveScoring} className="px-6 py-2.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--green)', color: 'var(--color-surface-0)', cursor: 'pointer' }}>
                 Sauvegarder & recalculer
               </button>
             </div>
@@ -938,24 +938,24 @@ export default function Prospects() {
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--text3)' }}>Mode</div>
-                      <div className="text-sm" style={{ color: historyDetail.test_mode ? '#f59e0b' : 'var(--text)' }}>
+                      <div className="text-sm" style={{ color: historyDetail.test_mode ? 'var(--color-warn)' : 'var(--text)' }}>
                         {historyDetail.test_mode ? `🧪 Test (${historyDetail.test_email})` : historyDetail.recipient_mode === 'source' ? `Par source: ${historyDetail.sources?.join(', ')}` : 'Sélection manuelle'}
                       </div>
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--text3)' }}>Résultats</div>
                       <div className="flex gap-3 text-sm">
-                        <span style={{ color: '#22c55e' }}>✓ {historyDetail.sent} envoyés</span>
-                        {historyDetail.errors > 0 && <span style={{ color: '#ef4444' }}>✕ {historyDetail.errors} erreurs</span>}
+                        <span style={{ color: 'var(--color-profit)' }}>✓ {historyDetail.sent} envoyés</span>
+                        {historyDetail.errors > 0 && <span style={{ color: 'var(--color-loss)' }}>✕ {historyDetail.errors} erreurs</span>}
                       </div>
                     </div>
                   </div>
                 </div>
                 {/* Failed emails */}
                 {historyDetail.failed_emails && historyDetail.failed_emails.length > 0 && (
-                  <div className="rounded-lg p-4 mb-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  <div className="rounded-lg p-4 mb-4" style={{ background: 'rgba(var(--color-loss-rgb), 0.06)', border: '1px solid rgba(var(--color-loss-rgb), 0.2)' }}>
                     <div className="flex items-center justify-between mb-3">
-                      <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: '#ef4444' }}>
+                      <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--color-loss)' }}>
                         ⚠️ {historyDetail.failed_emails.length} échecs détaillés
                       </div>
                     </div>
@@ -971,7 +971,7 @@ export default function Prospects() {
                           {historyDetail.failed_emails.map((f, i) => (
                             <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
                               <td className="px-3 py-2 font-mono" style={{ color: 'var(--text2)' }}>{f.email}</td>
-                              <td className="px-3 py-2" style={{ color: '#ef4444', fontSize: 11 }}>{f.reason}</td>
+                              <td className="px-3 py-2" style={{ color: 'var(--color-loss)', fontSize: 11 }}>{f.reason}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1025,7 +1025,7 @@ export default function Prospects() {
                             </td>
                             <td className="px-4 py-3 font-medium" style={{ color: 'var(--text)', maxWidth: 280 }}>
                               <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {h.test_mode && <span style={{ color: '#f59e0b' }}>🧪 </span>}
+                                {h.test_mode && <span style={{ color: 'var(--color-warn)' }}>🧪 </span>}
                                 {h.subject}
                               </div>
                             </td>
@@ -1034,8 +1034,8 @@ export default function Prospects() {
                             </td>
                             <td className="px-4 py-3 font-mono" style={{ color: 'var(--text2)' }}>{h.recipient_count}</td>
                             <td className="px-4 py-3">
-                              <span style={{ color: '#22c55e' }}>{h.sent}</span>
-                              {h.errors > 0 && <span style={{ color: '#ef4444', marginLeft: 6 }}>+ {h.errors} ✕</span>}
+                              <span style={{ color: 'var(--color-profit)' }}>{h.sent}</span>
+                              {h.errors > 0 && <span style={{ color: 'var(--color-loss)', marginLeft: 6 }}>+ {h.errors} ✕</span>}
                             </td>
                             <td className="px-4 py-3">
                               <svg className="w-4 h-4" style={{ color: 'var(--text3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1073,18 +1073,18 @@ export default function Prospects() {
                   {emailResult.mode === 'test' ? 'Email de test envoyé' : 'Diffusion terminée'}
                 </div>
                 <div className="flex gap-4 justify-center mb-6">
-                  <div className="rounded-lg p-4" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', minWidth: 120 }}>
-                    <div className="text-2xl font-bold" style={{ color: '#22c55e' }}>{emailResult.sent}</div>
+                  <div className="rounded-lg p-4" style={{ background: 'rgba(var(--color-profit-rgb), 0.08)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)', minWidth: 120 }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--color-profit)' }}>{emailResult.sent}</div>
                     <div className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Envoyés</div>
                   </div>
                   {(emailResult.errors || 0) > 0 && (
-                    <div className="rounded-lg p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', minWidth: 120 }}>
-                      <div className="text-2xl font-bold" style={{ color: '#ef4444' }}>{emailResult.errors}</div>
+                    <div className="rounded-lg p-4" style={{ background: 'rgba(var(--color-loss-rgb), 0.08)', border: '1px solid rgba(var(--color-loss-rgb), 0.2)', minWidth: 120 }}>
+                      <div className="text-2xl font-bold" style={{ color: 'var(--color-loss)' }}>{emailResult.errors}</div>
                       <div className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Erreurs</div>
                     </div>
                   )}
                 </div>
-                <button onClick={resetEmail} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'var(--green)', color: '#09090b', cursor: 'pointer' }}>Fermer</button>
+                <button onClick={resetEmail} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'var(--green)', color: 'var(--color-surface-0)', cursor: 'pointer' }}>Fermer</button>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-5">
@@ -1134,14 +1134,14 @@ export default function Prospects() {
                       <button
                         onClick={() => setEmailRecipientMode('source')}
                         className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all"
-                        style={emailRecipientMode === 'source' ? { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' } : { background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text3)' }}
+                        style={emailRecipientMode === 'source' ? { background: 'rgba(var(--color-profit-rgb), 0.1)', border: '1px solid rgba(var(--color-profit-rgb), 0.3)', color: 'var(--color-profit)' } : { background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text3)' }}
                       >
                         🎯 Par source/groupe
                       </button>
                       <button
                         onClick={() => setEmailRecipientMode('manual')}
                         className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all"
-                        style={emailRecipientMode === 'manual' ? { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' } : { background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text3)' }}
+                        style={emailRecipientMode === 'manual' ? { background: 'rgba(var(--color-profit-rgb), 0.1)', border: '1px solid rgba(var(--color-profit-rgb), 0.3)', color: 'var(--color-profit)' } : { background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text3)' }}
                       >
                         👥 Sélection manuelle
                       </button>
@@ -1192,9 +1192,9 @@ export default function Prospects() {
                                     return next
                                   })}
                                   className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors"
-                                  style={{ background: sel ? 'rgba(34,197,94,0.08)' : 'transparent', borderBottom: '1px solid var(--border)' }}
+                                  style={{ background: sel ? 'rgba(var(--color-profit-rgb), 0.08)' : 'transparent', borderBottom: '1px solid var(--border)' }}
                                 >
-                                  <span style={{ color: sel ? '#22c55e' : 'var(--text3)', fontSize: 12 }}>{sel ? '☑' : '☐'}</span>
+                                  <span style={{ color: sel ? 'var(--color-profit)' : 'var(--text3)', fontSize: 12 }}>{sel ? '☑' : '☐'}</span>
                                   <span style={{ color: 'var(--text)' }}>{p.prenom} {p.nom}</span>
                                   <span style={{ color: 'var(--text3)' }}>· {p.email}</span>
                                 </button>
@@ -1212,13 +1212,13 @@ export default function Prospects() {
                     )}
 
                     <div className="mt-3 p-3 rounded-lg text-center" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-                      <span className="text-2xl font-bold" style={{ color: emailRecipientCount > 0 ? '#22c55e' : 'var(--text3)' }}>{emailRecipientCount}</span>
+                      <span className="text-2xl font-bold" style={{ color: emailRecipientCount > 0 ? 'var(--color-profit)' : 'var(--text3)' }}>{emailRecipientCount}</span>
                       <span className="text-xs ml-2" style={{ color: 'var(--text3)' }}>destinataire{emailRecipientCount > 1 ? 's' : ''}</span>
                     </div>
                   </div>
 
                   {/* Test mode */}
-                  <div className="rounded-lg p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  <div className="rounded-lg p-3" style={{ background: 'rgba(var(--color-warn-rgb), 0.06)', border: '1px solid rgba(var(--color-warn-rgb), 0.2)' }}>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
@@ -1226,7 +1226,7 @@ export default function Prospects() {
                         onChange={e => setEmailTestMode(e.target.checked)}
                         className="w-4 h-4"
                       />
-                      <span className="text-xs font-semibold" style={{ color: '#f59e0b' }}>🧪 Mode test (envoyer à une seule adresse)</span>
+                      <span className="text-xs font-semibold" style={{ color: 'var(--color-warn)' }}>🧪 Mode test (envoyer à une seule adresse)</span>
                     </label>
                     {emailTestMode && (
                       <input
@@ -1277,7 +1277,7 @@ export default function Prospects() {
                     onClick={handleSendEmail}
                     disabled={emailSending || !emailSubject.trim() || !emailHtml.trim() || (emailTestMode ? !emailTestAddress : emailRecipientCount === 0)}
                     className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-                    style={{ background: emailTestMode ? '#f59e0b' : 'var(--green)', color: '#09090b', cursor: emailSending ? 'default' : 'pointer' }}
+                    style={{ background: emailTestMode ? 'var(--color-warn)' : 'var(--green)', color: 'var(--color-surface-0)', cursor: emailSending ? 'default' : 'pointer' }}
                   >
                     {emailSending ? 'Envoi en cours...' : emailTestMode ? `🧪 Envoyer le test` : `📧 Envoyer à ${emailRecipientCount} contact${emailRecipientCount > 1 ? 's' : ''}`}
                   </button>
@@ -1301,7 +1301,7 @@ export default function Prospects() {
             {csvData.length === 0 && (
               <div>
                 <div
-                  onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#22c55e' }}
+                  onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--color-profit)' }}
                   onDragLeave={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
                   onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border)'; const f = e.dataTransfer.files[0]; if (f) handleCsvFile(f) }}
                   style={{
@@ -1384,13 +1384,13 @@ export default function Prospects() {
                     ].map(f => (
                       <div key={f.key}>
                         <div className="text-[10px] mb-1" style={{ color: f.req ? 'var(--text2)' : 'var(--text3)' }}>
-                          {f.label} {f.req && <span style={{ color: '#ef4444' }}>*</span>}
+                          {f.label} {f.req && <span style={{ color: 'var(--color-loss)' }}>*</span>}
                         </div>
                         <select
                           value={csvMapping[f.key]}
                           onChange={e => setCsvMapping(m => ({ ...m, [f.key]: e.target.value }))}
                           className="w-full rounded-lg px-2 py-1.5 text-xs outline-none"
-                          style={{ background: 'var(--bg3)', border: `1px solid ${csvMapping[f.key] ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`, color: csvMapping[f.key] ? 'var(--text)' : 'var(--text3)' }}
+                          style={{ background: 'var(--bg3)', border: `1px solid ${csvMapping[f.key] ? 'rgba(var(--color-profit-rgb), 0.3)' : 'var(--border)'}`, color: csvMapping[f.key] ? 'var(--text)' : 'var(--text3)' }}
                         >
                           <option value="">— Non mappé —</option>
                           {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
@@ -1399,7 +1399,7 @@ export default function Prospects() {
                           const idx = csvHeaders.indexOf(csvMapping.email)
                           const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
                           const valid = csvData.filter(r => idx >= 0 && re.test((r[idx] || '').trim())).length
-                          const color = valid === csvData.length ? '#22c55e' : valid > 0 ? '#f59e0b' : '#ef4444'
+                          const color = valid === csvData.length ? 'var(--color-profit)' : valid > 0 ? 'var(--color-warn)' : 'var(--color-loss)'
                           return (
                             <div className="text-[10px] mt-1" style={{ color }}>
                               {valid}/{csvData.length} emails valides {valid === 0 && '— change de colonne'}
@@ -1474,7 +1474,7 @@ export default function Prospects() {
                     onClick={handleImport}
                     disabled={importing || !csvMapping.email}
                     className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-                    style={{ background: 'var(--green)', color: '#09090b', cursor: importing ? 'default' : 'pointer' }}
+                    style={{ background: 'var(--green)', color: 'var(--color-surface-0)', cursor: importing ? 'default' : 'pointer' }}
                   >
                     {importing ? 'Import en cours...' : `Importer ${csvData.filter(r => { const idx = csvHeaders.indexOf(csvMapping.email); return idx >= 0 && r[idx] }).length} contacts`}
                   </button>
@@ -1488,20 +1488,20 @@ export default function Prospects() {
                 <div style={{ fontSize: 48, marginBottom: 16 }}>{importResult.imported > 0 ? '✅' : '⚠️'}</div>
                 <div className="text-lg font-bold mb-4" style={{ color: 'var(--text)' }}>Import terminé</div>
                 <div className="flex gap-4 justify-center mb-6">
-                  <div className="rounded-lg p-4" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', minWidth: 100 }}>
-                    <div className="text-2xl font-bold" style={{ color: '#22c55e' }}>{importResult.imported}</div>
+                  <div className="rounded-lg p-4" style={{ background: 'rgba(var(--color-profit-rgb), 0.08)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)', minWidth: 100 }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--color-profit)' }}>{importResult.imported}</div>
                     <div className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Importés</div>
                   </div>
-                  <div className="rounded-lg p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', minWidth: 100 }}>
-                    <div className="text-2xl font-bold" style={{ color: '#f59e0b' }}>{importResult.duplicates}</div>
+                  <div className="rounded-lg p-4" style={{ background: 'rgba(var(--color-warn-rgb), 0.08)', border: '1px solid rgba(var(--color-warn-rgb), 0.2)', minWidth: 100 }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--color-warn)' }}>{importResult.duplicates}</div>
                     <div className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Doublons</div>
                   </div>
-                  <div className="rounded-lg p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', minWidth: 100 }}>
-                    <div className="text-2xl font-bold" style={{ color: '#ef4444' }}>{importResult.errors}</div>
+                  <div className="rounded-lg p-4" style={{ background: 'rgba(var(--color-loss-rgb), 0.08)', border: '1px solid rgba(var(--color-loss-rgb), 0.2)', minWidth: 100 }}>
+                    <div className="text-2xl font-bold" style={{ color: 'var(--color-loss)' }}>{importResult.errors}</div>
                     <div className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Erreurs</div>
                   </div>
                 </div>
-                <button onClick={resetImport} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'var(--green)', color: '#09090b', cursor: 'pointer' }}>
+                <button onClick={resetImport} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'var(--green)', color: 'var(--color-surface-0)', cursor: 'pointer' }}>
                   Fermer
                 </button>
               </div>
@@ -1583,7 +1583,7 @@ export default function Prospects() {
               onClick={handleAddProspect}
               disabled={addLoading || !addForm.prenom || !addForm.nom || !addForm.email || !addForm.whatsapp || !addForm.experience || !addForm.objectif}
               className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-              style={{ background: 'var(--green)', color: '#09090b' }}
+              style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
             >
               {addLoading ? 'Ajout en cours...' : 'Ajouter le prospect'}
             </button>
@@ -1777,7 +1777,7 @@ export default function Prospects() {
                     onClick={() => updateField(selected.id, 'reactivity', r.value)}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={(selected.reactivity || 'none') === r.value
-                      ? { background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }
+                      ? { background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.3)' }
                       : { background: 'var(--bg3)', color: 'var(--text3)', border: '1px solid var(--border)' }
                     }
                   >
@@ -1832,7 +1832,7 @@ export default function Prospects() {
                     onClick={() => updateField(selected.id, 'action', a.value)}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={selected.action === a.value
-                      ? { background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }
+                      ? { background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.3)' }
                       : { background: 'var(--bg3)', color: 'var(--text3)', border: '1px solid var(--border)' }
                     }
                   >
@@ -1877,7 +1877,7 @@ export default function Prospects() {
               <button
                 onClick={() => deleteProspect(selected.id)}
                 className="py-2.5 px-4 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+                style={{ background: 'rgba(var(--color-loss-rgb), 0.1)', border: '1px solid rgba(var(--color-loss-rgb), 0.3)', color: 'var(--color-loss)' }}
               >
                 Supprimer
               </button>

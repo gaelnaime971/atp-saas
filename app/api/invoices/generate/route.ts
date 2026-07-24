@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
     y = 55
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(34, 197, 94) // #22c55e
+    doc.setTextColor(34, 197, 94) // var(--color-profit)
     doc.text('Facturé à :', clientX, y, { align: 'right' })
     doc.setTextColor(26, 26, 46)
     doc.setFont('helvetica', 'normal')

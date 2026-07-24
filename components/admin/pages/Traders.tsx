@@ -170,7 +170,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-[#e8edf5]">Traders</h1>
-          <p className="text-[#5a6a82] text-sm mt-1">
+          <p className="text-[var(--color-neutral)] text-sm mt-1">
             {active.length} actif{active.length !== 1 ? 's' : ''}
             {pending.length > 0 && <> · {pending.length} en attente</>}
           </p>
@@ -181,9 +181,9 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
             onClick={() => setBlurNames(b => !b)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border"
             style={{
-              background: blurNames ? 'rgba(34,197,94,0.1)' : 'var(--bg3)',
-              borderColor: blurNames ? 'rgba(34,197,94,0.2)' : 'var(--border)',
-              color: blurNames ? '#22c55e' : 'var(--text3)',
+              background: blurNames ? 'rgba(var(--color-profit-rgb), 0.1)' : 'var(--bg3)',
+              borderColor: blurNames ? 'rgba(var(--color-profit-rgb), 0.2)' : 'var(--border)',
+              color: blurNames ? 'var(--color-profit)' : 'var(--text3)',
             }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,9 +222,9 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
             onClick={() => setFilterMode(f.id)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={{
-              background: filterMode === f.id ? 'rgba(34,197,94,0.1)' : 'transparent',
-              color: filterMode === f.id ? '#22c55e' : 'var(--text3)',
-              border: filterMode === f.id ? '1px solid rgba(34,197,94,0.2)' : '1px solid transparent',
+              background: filterMode === f.id ? 'rgba(var(--color-profit-rgb), 0.1)' : 'transparent',
+              color: filterMode === f.id ? 'var(--color-profit)' : 'var(--text3)',
+              border: filterMode === f.id ? '1px solid rgba(var(--color-profit-rgb), 0.2)' : '1px solid transparent',
             }}
           >
             {f.label}
@@ -296,57 +296,57 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
       {/* Stats cards */}
       <div className="grid grid-cols-6 gap-4">
         <Card>
-          <p className="text-xs text-[#5a6a82] mb-1 uppercase tracking-wider">Traders actifs</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">Traders actifs</p>
           <p className="text-2xl font-bold font-mono text-[#e8edf5]">{active.length}</p>
-          <p className="text-xs text-[#5a6a82] mt-1">{pending.length} en attente</p>
+          <p className="text-xs text-[var(--color-neutral)] mt-1">{pending.length} en attente</p>
         </Card>
         <Card>
-          <p className="text-xs text-[#5a6a82] mb-1 uppercase tracking-wider">Capital cumulé</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">Capital cumulé</p>
           <p className="text-2xl font-bold font-mono text-[#e8edf5]">
             {totalCapital > 0 ? `${(totalCapital / 1000).toFixed(0)}K $` : '—'}
           </p>
-          <p className="text-xs text-[#5a6a82] mt-1">Sous gestion</p>
+          <p className="text-xs text-[var(--color-neutral)] mt-1">Sous gestion</p>
         </Card>
         <Card>
-          <p className="text-xs text-[#5a6a82] mb-1 uppercase tracking-wider">P&L global</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">P&L global</p>
           <p className={`text-2xl font-bold font-mono ${totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)} $
           </p>
-          <p className="text-xs text-[#5a6a82] mt-1">{totalSessions} session{totalSessions !== 1 ? 's' : ''}{filterMode !== 'all' ? ' (filtrées)' : ''}</p>
+          <p className="text-xs text-[var(--color-neutral)] mt-1">{totalSessions} session{totalSessions !== 1 ? 's' : ''}{filterMode !== 'all' ? ' (filtrées)' : ''}</p>
         </Card>
         <Card>
-          <p className="text-xs text-[#5a6a82] mb-1 uppercase tracking-wider">Win Rate moyen</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">Win Rate moyen</p>
           <p className={`text-2xl font-bold font-mono ${avgWinRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>
             {avgWinRate}%
           </p>
-          <p className="text-xs text-[#5a6a82] mt-1">Moyenne tous traders</p>
+          <p className="text-xs text-[var(--color-neutral)] mt-1">Moyenne tous traders</p>
         </Card>
         <Card>
-          <p className="text-xs text-[#5a6a82] mb-1 uppercase tracking-wider">Traders rentables</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">Traders rentables</p>
           <p className={`text-2xl font-bold font-mono ${profitableRate >= 50 ? 'text-green-400' : 'text-amber-400'}`}>
             {profitableRate}%
           </p>
-          <p className="text-xs text-[#5a6a82] mt-1">{profitableTraders} / {active.length} en profit</p>
+          <p className="text-xs text-[var(--color-neutral)] mt-1">{profitableTraders} / {active.length} en profit</p>
         </Card>
         <Card>
-          <p className="text-xs text-[#5a6a82] mb-1 uppercase tracking-wider">P&L moyen / trader</p>
+          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">P&L moyen / trader</p>
           <p className={`text-2xl font-bold font-mono ${active.length > 0 && totalPnl / active.length >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             {active.length > 0 ? `${totalPnl / active.length >= 0 ? '+' : ''}${(totalPnl / active.length).toFixed(0)} $` : '—'}
           </p>
-          <p className="text-xs text-[#5a6a82] mt-1">Moy. {active.length > 0 ? Math.round(totalSessions / active.length) : 0} sessions</p>
+          <p className="text-xs text-[var(--color-neutral)] mt-1">Moy. {active.length > 0 ? Math.round(totalSessions / active.length) : 0} sessions</p>
         </Card>
       </div>
 
       <Card>
         {traders.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 bg-[#18181b] rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-[#5a6a82]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 bg-[var(--color-surface-2)] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-[var(--color-neutral)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
             <p className="text-[#a0aec0] font-medium">Aucun trader</p>
-            <p className="text-[#5a6a82] text-sm mt-1">Invitez votre premier trader pour commencer</p>
+            <p className="text-[var(--color-neutral)] text-sm mt-1">Invitez votre premier trader pour commencer</p>
             <Button className="mt-4" onClick={() => setShowNewModal(true)}>
               Inviter un trader
             </Button>
@@ -356,14 +356,14 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3 pr-4">Trader</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3 pr-4">Statut</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3 pr-4">Plan</th>
-                  <th className="text-left text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3 pr-4">PropFirm</th>
-                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3 pr-4">Sessions</th>
-                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3 pr-4">Win Rate</th>
-                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3 pr-4">PnL Total</th>
-                  <th className="text-right text-xs font-medium text-[#5a6a82] uppercase tracking-wider pb-3">Actions</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Trader</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Statut</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Plan</th>
+                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">PropFirm</th>
+                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Sessions</th>
+                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Win Rate</th>
+                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">PnL Total</th>
+                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
@@ -390,7 +390,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
                             {trader.full_name ?? 'Unnamed'}
                           </p>
                           <p
-                            className="text-xs text-[#5a6a82] transition-all"
+                            className="text-xs text-[var(--color-neutral)] transition-all"
                             style={blurNames ? { filter: 'blur(6px)', userSelect: 'none' } : undefined}
                           >
                             {trader.email}
@@ -411,7 +411,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
                       </span>
                     </td>
                     <td className="py-4 pr-4">
-                      <span className="px-2 py-0.5 bg-[#18181b] rounded text-xs text-[#a0aec0] font-medium">
+                      <span className="px-2 py-0.5 bg-[var(--color-surface-2)] rounded text-xs text-[#a0aec0] font-medium">
                         {trader.plan_type ?? 'N/A'}
                       </span>
                     </td>
@@ -421,7 +421,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
                     </td>
                     <td className="py-4 pr-4 text-right">
                       {trader.status === 'pending' ? (
-                        <span className="text-sm text-[#5a6a82]">—</span>
+                        <span className="text-sm text-[var(--color-neutral)]">—</span>
                       ) : (
                         <span className={`text-sm font-mono font-medium ${(trader.win_rate ?? 0) >= 50 ? 'text-green-400' : 'text-red-400'}`}>
                           {trader.win_rate}%
@@ -429,7 +429,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
                       )}
                     </td>
                     <td className={`py-4 pr-4 text-sm font-mono font-medium text-right ${
-                      trader.status === 'pending' ? 'text-[#5a6a82]' :
+                      trader.status === 'pending' ? 'text-[var(--color-neutral)]' :
                       (trader.total_pnl ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
                     }`}>
                       {trader.status === 'pending' ? '—' : (
@@ -442,7 +442,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
                           Voir profil
                         </Button>
                       ) : (
-                        <span className="text-xs text-[#5a6a82] italic">Invitation envoyée</span>
+                        <span className="text-xs text-[var(--color-neutral)] italic">Invitation envoyée</span>
                       )}
                     </td>
                   </tr>

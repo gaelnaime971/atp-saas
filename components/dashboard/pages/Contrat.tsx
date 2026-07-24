@@ -173,7 +173,7 @@ export default function Contrat() {
   const checkboxStyle: React.CSSProperties = {
     width: 'auto',
     marginTop: 2,
-    accentColor: 'var(--green, #22c55e)',
+    accentColor: 'var(--green, var(--color-profit))',
   }
 
   const labelStyle: React.CSSProperties = {
@@ -203,9 +203,9 @@ export default function Contrat() {
             padding: '3px 10px',
             borderRadius: 4,
             fontWeight: 600,
-            background: signed ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-            color: signed ? 'var(--green, #22c55e)' : 'var(--red, #ef4444)',
-            border: `1px solid ${signed ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+            background: signed ? 'rgba(var(--color-profit-rgb), 0.15)' : 'rgba(var(--color-loss-rgb), 0.15)',
+            color: signed ? 'var(--green, var(--color-profit))' : 'var(--red, var(--color-loss))',
+            border: `1px solid ${signed ? 'rgba(var(--color-profit-rgb), 0.3)' : 'rgba(var(--color-loss-rgb), 0.3)'}`,
           }}>
             {signed ? 'Signe \u2713' : 'A signer'}
           </span>
@@ -244,7 +244,7 @@ export default function Contrat() {
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  background: 'var(--bg2, #18181b)',
+                  background: 'var(--bg2, var(--color-surface-2))',
                   border: '1px solid var(--border, rgba(255,255,255,0.07))',
                   borderRadius: 8,
                   color: 'var(--text)',
@@ -265,7 +265,7 @@ export default function Contrat() {
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  background: 'var(--bg2, #18181b)',
+                  background: 'var(--bg2, var(--color-surface-2))',
                   border: '1px solid var(--border, rgba(255,255,255,0.07))',
                   borderRadius: 8,
                   color: 'var(--text)',
@@ -288,14 +288,14 @@ export default function Contrat() {
         ) : (
           <>
             <div style={{
-              background: 'rgba(34,197,94,0.08)',
-              border: '1px solid rgba(34,197,94,0.25)',
+              background: 'rgba(var(--color-profit-rgb), 0.08)',
+              border: '1px solid rgba(var(--color-profit-rgb), 0.25)',
               borderRadius: 10,
               padding: 16,
               textAlign: 'center',
             }}>
               <div style={{ fontSize: 24, marginBottom: 8 }}>{'\u2713'}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green, #22c55e)', marginBottom: 6 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green, var(--color-profit))', marginBottom: 6 }}>
                 Contrat signe
               </div>
               <div style={{ fontSize: 12, color: 'var(--text2)' }}>{signedName}</div>
@@ -330,7 +330,7 @@ export default function Contrat() {
             <h4 style={{
               fontSize: 12,
               fontWeight: 700,
-              color: 'var(--green, #22c55e)',
+              color: 'var(--green, var(--color-profit))',
               marginBottom: 6,
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
@@ -381,7 +381,7 @@ export default function Contrat() {
                 const ttc = inv.is_ttc ? inv.amount : inv.amount * 1.2
                 return (
                   <tr key={inv.id} style={{ borderBottom: '1px solid var(--border, rgba(255,255,255,0.07))' }}>
-                    <td style={{ padding: '10px', color: 'var(--green, #22c55e)', fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: 12 }}>
+                    <td style={{ padding: '10px', color: 'var(--green, var(--color-profit))', fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: 12 }}>
                       F-{String(inv.invoice_number).padStart(4, '0')}
                     </td>
                     <td style={{ padding: '10px', color: 'var(--text2)', fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
@@ -407,9 +407,9 @@ export default function Contrat() {
                         <button
                           onClick={() => downloadInvoice(inv.invoice_url!)}
                           style={{
-                            background: 'rgba(34,197,94,0.1)',
-                            color: '#22c55e',
-                            border: '1px solid rgba(34,197,94,0.2)',
+                            background: 'rgba(var(--color-profit-rgb), 0.1)',
+                            color: 'var(--color-profit)',
+                            border: '1px solid rgba(var(--color-profit-rgb), 0.2)',
                             borderRadius: 6,
                             padding: '4px 10px',
                             fontSize: 11,

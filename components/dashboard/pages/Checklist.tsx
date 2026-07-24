@@ -99,9 +99,9 @@ export default function Checklist() {
       {/* Status bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <span style={{ fontSize: '14px', color: '#a0aec0' }}>
-          <span style={{ fontWeight: 700, color: '#22c55e', fontSize: '16px' }}>{checkedCount}</span> / {TOTAL_ITEMS} items complétés
+          <span style={{ fontWeight: 700, color: 'var(--color-profit)', fontSize: '16px' }}>{checkedCount}</span> / {TOTAL_ITEMS} items complétés
         </span>
-        <span style={{ fontSize: '14px', fontWeight: 600, color: checkedCount === TOTAL_ITEMS ? '#22c55e' : '#a0aec0' }}>
+        <span style={{ fontSize: '14px', fontWeight: 600, color: checkedCount === TOTAL_ITEMS ? 'var(--color-profit)' : '#a0aec0' }}>
           {Math.round(progress)}%
         </span>
       </div>
@@ -119,8 +119,8 @@ export default function Checklist() {
           width: `${progress}%`,
           height: '100%',
           background: checkedCount === TOTAL_ITEMS
-            ? 'linear-gradient(90deg, #22c55e, #16a34a)'
-            : 'linear-gradient(90deg, #22c55e, #4ade80)',
+            ? 'linear-gradient(90deg, var(--color-profit), #16a34a)'
+            : 'linear-gradient(90deg, var(--color-profit), #4ade80)',
           borderRadius: '4px',
           transition: 'width 0.3s ease',
         }} />
@@ -161,10 +161,10 @@ export default function Checklist() {
                       padding: '12px 14px',
                       borderRadius: '10px',
                       border: isChecked
-                        ? '1px solid rgba(34,197,94,0.3)'
+                        ? '1px solid rgba(var(--color-profit-rgb), 0.3)'
                         : '1px solid rgba(255,255,255,0.07)',
                       background: isChecked
-                        ? 'rgba(34,197,94,0.08)'
+                        ? 'rgba(var(--color-profit-rgb), 0.08)'
                         : 'rgba(255,255,255,0.02)',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
@@ -176,8 +176,8 @@ export default function Checklist() {
                       width: '22px',
                       height: '22px',
                       borderRadius: '6px',
-                      border: isChecked ? '2px solid #22c55e' : '2px solid rgba(255,255,255,0.15)',
-                      background: isChecked ? '#22c55e' : 'transparent',
+                      border: isChecked ? '2px solid var(--color-profit)' : '2px solid rgba(255,255,255,0.15)',
+                      background: isChecked ? 'var(--color-profit)' : 'transparent',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -186,7 +186,7 @@ export default function Checklist() {
                     }}>
                       {isChecked && (
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#111113" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="var(--color-surface-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       )}
                     </div>
@@ -196,7 +196,7 @@ export default function Checklist() {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: 500,
-                        color: isChecked ? '#22c55e' : '#e8edf5',
+                        color: isChecked ? 'var(--color-profit)' : '#e8edf5',
                         textDecoration: isChecked ? 'line-through' : 'none',
                         transition: 'all 0.2s',
                       }}>
