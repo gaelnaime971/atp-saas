@@ -53,7 +53,7 @@ et lequel bascule vers `--color-text-2` ou `--color-text-3`.
 
 - `Geist` et `Geist_Mono` chargées via `next/font/google` dans `app/layout.tsx`,
   exposées en variables `--font-geist-sans` et `--font-geist-mono`, **jamais
-  utilisées** dans le codebase (aucun `font-[family:var(--font-geist...)]`).
+  utilisées** dans le codebase (aucune référence à ces CSS vars).
 - `Outfit` et `DM Mono` chargées via `@import url()` Google CSS dans
   `globals.css`, **utilisées effectivement**.
 
