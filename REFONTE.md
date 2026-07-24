@@ -60,6 +60,25 @@ et lequel bascule vers `--color-text-2` ou `--color-text-3`.
 **Action prévue en commit 2** : supprimer Geist, migrer Outfit + DM Mono vers
 `next/font/google` (self-hosting, plus rapide, pas de FOUT).
 
+### Poids 800 et 900 non chargés mais réclamés par le code
+
+Le code utilise `font-extrabold` (Tailwind 800, **95 occurrences**) et `font-black`
+(900, 16 occ.) mais Outfit n'est chargé qu'en 300-700. Aujourd'hui le navigateur
+synthétise ces poids depuis 700. Après commit 2, comportement identique (mêmes
+poids chargés).
+
+**Décision reportée** : ajouter 800 et 900 aux poids chargés ferait rendre le
+texte concerné à son poids réel — c'est un léger changement visuel (texte
+légèrement plus gras / plus fin selon les cas). À valider consciemment.
+
+### Bug latent — `--font-sans: var(--font-sans)`
+
+`globals.css` L174 (avant commit 2) contenait une auto-référence circulaire.
+Résultat : la classe Tailwind `font-sans` (192 usages dans le code) tombait
+implicitement sur l'héritage du body (Outfit) via l'invalidation CSS. Corrigé
+en commit 2 pour pointer explicitement sur `var(--font-outfit)`. **Aucun
+changement visuel** (le body était déjà en Outfit).
+
 ---
 
 ## Étape 3 — Shadcn
