@@ -198,3 +198,32 @@ Pattern répété dans :
   forcera à choisir un token distinct pour chaque sémantique.
 
 API pressentie : `<Badge tone={KpiTone|StatusTone} size?={sm|md} />`.
+
+### `WizardModal` — modal multi-étapes avec stepper header + footer stateful
+
+Signalé en migrant Modal. La primitive `<Modal>` couvre le shell
+(scrim, focus trap, escape, close) mais applique un `padding` uniforme
+sur `children` qui casse le pattern wizard : stepper header à padding
+plus court + fond distinct + border separator, et footer dont les
+boutons dépendent de l'étape courante.
+
+Sites hors modèle :
+- **CsvSessionImport** (5 étapes upload → mapping → preview → dedup →
+  importing) — moteur du besoin.
+- **Formation video player** — layout media distinct (min 1200px, fond
+  surface-0). Pas exactement un wizard, mais même verdict "shell
+  standard ne convient pas".
+- Potentiellement des flows dans **SessionLive** (à confirmer à la
+  vague finale).
+
+**Décision** : ne PAS créer `WizardModal` maintenant. Un seul site
+justifierait uniquement une variante ad-hoc. Attendre la vague finale
+(SessionLive) : si un second site partage exactement le pattern
+stepper+body+footer stateful, extraire alors. Si Formation reste un
+media player isolé, elle ne rentrera pas ici — plutôt un slot
+`background?` ou une variante `VideoModal` séparée.
+
+API pressentie : `<WizardModal open onClose steps={Step[]} current
+onStep body footer />` où `body` et `footer` sont des fonctions
+`(step) => ReactNode` pour éviter au parent la gymnastique de
+switch/case sur le step courant.
