@@ -176,3 +176,25 @@ nom + une API à ce moment-là, avec le code réel sous les yeux.
 
 Candidats de nom pour plus tard : `<EntityCard>`, `<AccountPanel>`,
 `<KpiPanel>`. À trancher au contact du code.
+
+### `<Badge>` — statuts, plan ATP, type de session
+
+Pattern répété dans :
+- SessionsHistory : `<SmallBadge>` (type "Live"/"Paper") + badge plan
+  colored par tier (>=8 profit, >=5 warn, <5 loss)
+- **Statuts prop firm** dans les monoliths — badges "Active"/"Failed"/
+  "Passed" colorés
+- **Statuts prospect** dans Pipeline/Prospects — badges de progression
+  ("Nouveau", "Qualifié", "RDV", "Signé", "Perdu") avec 5-6 couleurs
+- Tags de sources, catégories, priorité
+
+**Décision** : ne PAS créer `<Badge>` dans la vague DataTable. La faire
+émerger à l'étape 5 (finitions) — elle absorbera d'un coup :
+- Les 3 sous-composants locaux (SmallBadge dans SessionsHistory,
+  Traders.tsx badges, etc.)
+- Le `--color-payout` (violet TradingPerso) qui attend encore
+- L'ambiguïté violet #a855f7 double-sémantique (payout vs. status
+  prospect) — le Badge admet un `tone` prop et la primitive nous
+  forcera à choisir un token distinct pour chaque sémantique.
+
+API pressentie : `<Badge tone={KpiTone|StatusTone} size?={sm|md} />`.

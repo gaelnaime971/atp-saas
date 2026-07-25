@@ -7,6 +7,8 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
+import DataTable, { type Column } from '@/components/ui/DataTable'
+import EmptyState from '@/components/ui/EmptyState'
 import { fmtEur, fmtNumber } from '@/lib/format'
 
 type PaymentMethod = 'virement' | 'stripe_comptant' | 'stripe_2x' | 'stripe_3x' | 'stripe_4x' | 'crypto'
@@ -296,103 +298,99 @@ export default function Revenus() {
         </Card>
       )}
 
-      {/* Revenue Table */}
-      <Card>
-        {revenues.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-[var(--color-neutral)] text-sm">Aucun paiement enregistr&eacute;</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trader</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Description</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Mode</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Date</th>
-                  <th className="text-center text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">HT/TTC</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Montant</th>
-                  <th className="text-center text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Facture</th>
-                  <th className="text-center text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
-                {revenues.map(r => {
-                  const method = (r.payment_method ?? 'virement') as PaymentMethod
-                  return (
-                    <tr key={r.id} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                      <td className="py-3 text-sm font-medium text-[#e8edf5]">{r.trader_name}</td>
-                      <td className="py-3 text-sm text-[#a0aec0]">{r.description ?? '\u2014'}</td>
-                      <td className="py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${PAYMENT_METHOD_COLORS[method] ?? 'bg-[var(--color-surface-3)] text-[#a0aec0] border-[rgba(255,255,255,0.07)]'}`}>
-                          {PAYMENT_METHOD_LABELS[method] ?? method}
-                        </span>
-                      </td>
-                      <td className="py-3 text-sm text-[#a0aec0]">
-                        {new Date(r.payment_date).toLocaleDateString('fr-FR')}
-                      </td>
-                      <td className="py-3 text-center">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          r.is_ttc
-                            ? 'bg-green-500/10 text-green-400'
-                            : 'bg-amber-500/10 text-amber-400'
-                        }`}>
-                          {r.is_ttc ? 'TTC' : 'HT'}
-                        </span>
-                      </td>
-                      <td className="py-3 text-sm font-mono font-semibold text-green-400 text-right">
-                        +{r.amount.toLocaleString('fr-FR')} &euro;
-                      </td>
-                      <td className="py-3 text-center">
-                        {r.invoice_number && r.invoice_url ? (
-                          <button
-                            onClick={() => handleDownloadInvoice(r.invoice_url!)}
-                            className="text-xs font-medium text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
-                          >
-                            {r.invoice_number}
-                          </button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            loading={generatingInvoice === r.id}
-                            onClick={() => handleGenerateInvoice(r.id)}
-                          >
-                            G&eacute;n&eacute;rer
-                          </Button>
-                        )}
-                      </td>
-                      <td className="py-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleEdit(r)}
-                            title="Modifier"
-                            className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[var(--color-surface-2)] text-[#a0aec0] hover:text-green-400 hover:border-green-500/30 transition-colors"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(r.id)}
-                            title="Supprimer"
-                            className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[var(--color-surface-2)] text-[#a0aec0] hover:text-red-400 hover:border-red-500/30 transition-colors"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a2 2 0 012-2h2a2 2 0 012 2v3" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {(() => {
+        type R = typeof revenues[number]
+        const cols: Column<R>[] = [
+          { id: 'trader', header: 'Trader', sortable: true, sortValue: r => r.trader_name ?? '',
+            accessor: r => <span style={{ color: 'var(--color-text-1)', fontWeight: 500 }}>{r.trader_name}</span> },
+          { id: 'description', header: 'Description',
+            accessor: r => r.description ?? '\u2014' },
+          { id: 'mode', header: 'Mode',
+            accessor: r => {
+              const method = (r.payment_method ?? 'virement') as PaymentMethod
+              return (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${PAYMENT_METHOD_COLORS[method] ?? 'bg-[var(--color-surface-3)] text-[#a0aec0] border-[rgba(255,255,255,0.07)]'}`}>
+                  {PAYMENT_METHOD_LABELS[method] ?? method}
+                </span>
+              )
+            } },
+          { id: 'date', header: 'Date', sortable: true, sortValue: r => r.payment_date,
+            accessor: r => (
+              <span style={{ fontFamily: 'var(--font-data)', color: 'var(--color-text-2)' }}>
+                {new Date(r.payment_date).toLocaleDateString('fr-FR')}
+              </span>
+            ) },
+          { id: 'htttc', header: 'HT/TTC', align: 'center',
+            accessor: r => (
+              <span
+                style={{
+                  padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontSize: 11, fontWeight: 500, fontFamily: 'var(--font-data)',
+                  background: r.is_ttc ? 'rgba(var(--color-profit-rgb), 0.10)' : 'rgba(var(--color-warn-rgb), 0.10)',
+                  color: r.is_ttc ? 'var(--color-profit)' : 'var(--color-warn)',
+                }}
+              >{r.is_ttc ? 'TTC' : 'HT'}</span>
+            ) },
+          { id: 'amount', header: 'Montant', numeric: true, sortable: true, sortValue: r => r.amount,
+            accessor: r => (
+              <span style={{ color: 'var(--color-profit)', fontWeight: 600 }}>
+                {fmtEur(r.amount, 0, { sign: true })}
+              </span>
+            ) },
+          { id: 'invoice', header: 'Facture', align: 'center',
+            accessor: r => (
+              r.invoice_number && r.invoice_url ? (
+                <button
+                  onClick={e => { e.stopPropagation(); handleDownloadInvoice(r.invoice_url!) }}
+                  className="text-xs font-medium underline underline-offset-2 transition-colors"
+                  style={{ color: 'var(--color-info, #60a5fa)' }}
+                >
+                  {r.invoice_number}
+                </button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  loading={generatingInvoice === r.id}
+                  onClick={e => { e.stopPropagation(); handleGenerateInvoice(r.id) }}
+                >
+                  G\u00e9n\u00e9rer
+                </Button>
+              )
+            ) },
+          { id: 'actions', header: '', align: 'center',
+            accessor: r => (
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={e => { e.stopPropagation(); handleEdit(r) }}
+                  title="Modifier"
+                  className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[var(--color-surface-2)] text-[#a0aec0] hover:text-green-400 hover:border-green-500/30 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); handleDelete(r.id) }}
+                  title="Supprimer"
+                  className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[var(--color-surface-2)] text-[#a0aec0] hover:text-red-400 hover:border-red-500/30 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a2 2 0 012-2h2a2 2 0 012 2v3" />
+                  </svg>
+                </button>
+              </div>
+            ) },
+        ]
+        return (
+          <DataTable
+            columns={cols}
+            rows={revenues}
+            rowKey={r => r.id}
+            defaultSort={{ columnId: 'date', dir: 'desc' }}
+            empty={<EmptyState title="Aucun paiement enregistr\u00e9" description={<>Clique &laquo; Nouveau Paiement &raquo; pour enregistrer ta premi\u00e8re transaction.</>} />}
+          />
+        )
+      })()}
     </div>
   )
 }

@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
-import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
+import DataTable, { type Column } from '@/components/ui/DataTable'
+import EmptyState from '@/components/ui/EmptyState'
+import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 
 interface SessionRow {
   id: string
@@ -94,76 +96,86 @@ export default function Results() {
         ))}
       </div>
 
-      <Card>
-        {filtered.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-[var(--color-neutral)] text-sm">Aucune session trouvée</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trader</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Date</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Inst.</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trades</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">PnL</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">R</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Win%</th>
-                  <th className="text-center text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Plan</th>
-                  <th className="text-center text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Humeur</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Type</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
-                {filtered.map((session) => {
-                  const meta = (() => { try { return session.setup ? JSON.parse(session.setup) : null } catch { return null } })()
-                  const rValue = meta?.r_value ?? session.pnl / 25
-                  const winPct = meta?.win_rate ?? (session.result === 'win' ? 100 : session.result === 'loss' ? 0 : 50)
-                  const planScore = meta?.plan_score
-                  const mood = meta?.mood ?? '—'
-                  const sessionType = meta?.session_type ?? (session.result === 'win' ? 'Win' : session.result === 'loss' ? 'Loss' : 'BE')
-                  return (
-                  <tr key={session.id} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                    <td className="py-3 text-sm font-medium text-[#e8edf5]">{session.trader_name}</td>
-                    <td className="py-3 text-sm text-[#a0aec0] font-mono">
-                      {new Date(session.session_date).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td className="py-3">
-                      <span className="px-2 py-0.5 bg-[var(--color-surface-2)] rounded text-xs font-mono text-[#a0aec0]">
-                        {session.instrument ?? 'N/A'}
-                      </span>
-                    </td>
-                    <td className="py-3 text-sm text-[#a0aec0] text-right font-mono">{session.trades_count}</td>
-                    <td className={`py-3 text-sm font-mono font-medium text-right ${session.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {session.pnl >= 0 ? '+' : ''}{session.pnl.toFixed(2)} $
-                    </td>
-                    <td className={`py-3 text-sm font-mono text-right ${rValue >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {rValue >= 0 ? '+' : ''}{Number(rValue).toFixed(1)}R
-                    </td>
-                    <td className="py-3 text-sm text-[#a0aec0] text-right font-mono">{winPct}%</td>
-                    <td className="py-3 text-center">
-                      {planScore != null ? (
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          planScore >= 8 ? 'bg-green-500/10 text-green-400' :
-                          planScore >= 5 ? 'bg-amber-500/10 text-amber-400' :
-                          'bg-red-500/10 text-red-400'
-                        }`}>
-                          {planScore}/10
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="py-3 text-center text-base">{mood}</td>
-                    <td className="py-3 text-right text-xs text-[var(--color-neutral)]">{sessionType}</td>
-                  </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {(() => {
+        type S = typeof filtered[number]
+        const getMeta = (s: S) => { try { return s.setup ? JSON.parse(s.setup) : null } catch { return null } }
+        const cols: Column<S>[] = [
+          { id: 'trader', header: 'Trader', sortable: true, sortValue: s => s.trader_name,
+            accessor: s => <span style={{ color: 'var(--color-text-1)', fontWeight: 500 }}>{s.trader_name}</span> },
+          { id: 'date', header: 'Date', sortable: true, sortValue: s => s.session_date,
+            accessor: s => (
+              <span style={{ fontFamily: 'var(--font-data)', color: 'var(--color-text-2)' }}>
+                {new Date(s.session_date).toLocaleDateString('fr-FR')}
+              </span>
+            ) },
+          { id: 'instrument', header: 'Inst.',
+            accessor: s => (
+              <span style={{ padding: '2px 8px', borderRadius: 'var(--radius-sm)', background: 'var(--color-surface-2)', fontSize: 11, fontFamily: 'var(--font-data)', color: 'var(--color-text-2)' }}>
+                {s.instrument ?? 'N/A'}
+              </span>
+            ) },
+          { id: 'trades', header: 'Trades', numeric: true, sortable: true, sortValue: s => s.trades_count,
+            accessor: s => s.trades_count },
+          { id: 'pnl', header: 'PnL', numeric: true, sortable: true, sortValue: s => Number(s.pnl),
+            accessor: s => {
+              const pnl = Number(s.pnl)
+              return <span style={{ color: TONE_COLOR_VAR[toneForPnl(pnl)], fontWeight: 500 }}>{fmtUsd(pnl, 2, { sign: true })}</span>
+            } },
+          { id: 'r', header: 'R', numeric: true, sortable: true, sortValue: s => Number(getMeta(s)?.r_value ?? s.pnl / 25),
+            accessor: s => {
+              const r = Number(getMeta(s)?.r_value ?? s.pnl / 25)
+              return <span style={{ color: TONE_COLOR_VAR[toneForPnl(r)] }}>{fmtNumber(r, 1, { sign: true })}R</span>
+            } },
+          { id: 'winrate', header: 'Win%', numeric: true,
+            accessor: s => {
+              const wp = Number(getMeta(s)?.win_rate ?? (s.result === 'win' ? 100 : s.result === 'loss' ? 0 : 50))
+              return <span style={{ color: TONE_COLOR_VAR[toneForRate(wp, 50)] }}>{fmtPct(wp, 0)}</span>
+            } },
+          { id: 'plan', header: 'Plan', align: 'center',
+            accessor: s => {
+              const p = getMeta(s)?.plan_score
+              if (p == null) return '—'
+              const tone = p >= 8 ? 'profit' : p >= 5 ? 'warn' : 'loss'
+              return (
+                <span
+                  style={{
+                    padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontSize: 11, fontWeight: 500, fontFamily: 'var(--font-data)',
+                    background: `rgba(var(--color-${tone === 'profit' ? 'profit' : tone === 'warn' ? 'warn' : 'loss'}-rgb), 0.10)`,
+                    color: TONE_COLOR_VAR[tone],
+                  }}
+                >{p}/10</span>
+              )
+            } },
+          { id: 'mood', header: 'Humeur', align: 'center',
+            accessor: s => <span className="text-base">{getMeta(s)?.mood ?? '—'}</span> },
+          { id: 'type', header: 'Type', align: 'right',
+            accessor: s => (
+              <span style={{ fontSize: 11, color: 'var(--color-neutral)' }}>
+                {getMeta(s)?.session_type ?? (s.result === 'win' ? 'Win' : s.result === 'loss' ? 'Loss' : 'BE')}
+              </span>
+            ) },
+        ]
+        const filterActive = filter !== 'all'
+        return (
+          <DataTable
+            columns={cols}
+            rows={filtered}
+            rowKey={s => s.id}
+            defaultSort={{ columnId: 'date', dir: 'desc' }}
+            empty={filterActive ? (
+              <EmptyState
+                title="Aucune session ne correspond à ce filtre"
+                description={<>Filtre actuel : <strong>{filter === 'win' ? 'Wins' : filter === 'loss' ? 'Losses' : 'Breakeven'}</strong>. Sélectionne « Tout » pour voir toutes les sessions.</>}
+              />
+            ) : (
+              <EmptyState
+                title="Aucune session enregistrée"
+                description="Les sessions de trading de tes traders apparaîtront ici dès qu'ils en auront saisi."
+              />
+            )}
+          />
+        )
+      })()}
     </div>
   )
 }

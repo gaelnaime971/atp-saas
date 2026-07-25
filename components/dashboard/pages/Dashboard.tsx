@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
-import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
+import DataTable, { type Column } from '@/components/ui/DataTable'
+import EmptyState from '@/components/ui/EmptyState'
+import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
 import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
@@ -431,109 +433,68 @@ export default function Dashboard() {
       </div>
 
       {/* Session history table */}
-      <Card>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>
+      <div>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text-1)', margin: '0 0 12px 0' }}>
           Historique des sessions
         </h2>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['Date', 'Inst.', 'Trades', 'P&L', 'R', 'Win%', 'Plan', 'Humeur', 'Type'].map(col => (
-                  <th
-                    key={col}
-                    style={{
-                      textAlign: 'left',
-                      padding: '8px 10px',
-                      color: 'var(--text3)',
-                      fontWeight: 500,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {recentSessions.length === 0 ? (
-                <tr>
-                  <td colSpan={9} style={{ padding: 20, textAlign: 'center', color: 'var(--text3)' }}>
-                    Aucune session enregistrée
-                  </td>
-                </tr>
-              ) : (
-                recentSessions.map(s => {
-                  const pnl = Number(s.pnl)
-                  const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--amber)'
-                  const meta = parseSetup(s.setup)
-                  const rValue = meta?.r_value
-                  const rColor = rValue != null ? (rValue >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--text2)'
-                  const winPct = meta?.win_rate != null ? `${meta.win_rate}%` : '—'
-                  const planScore = meta?.plan_score
-                  const planColor = planScore != null ? (planScore >= 8 ? 'var(--green)' : planScore >= 5 ? 'var(--amber)' : 'var(--red)') : 'var(--text3)'
-                  const mood = meta?.mood ?? '—'
-                  const sessionType = meta?.session_type ?? (s.result === 'win' ? 'Win' : s.result === 'loss' ? 'Loss' : 'BE')
-
-                  return (
-                    <tr
-                      key={s.id}
-                      style={{
-                        borderBottom: '1px solid var(--border)',
-                        transition: 'background 0.15s',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <td style={{ padding: '8px 10px', color: 'var(--text)', fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                        {formatDate(s.session_date)}
-                      </td>
-                      <td style={{ padding: '8px 10px', color: 'var(--text2)' }}>
-                        {s.instrument ?? '—'}
-                      </td>
-                      <td style={{ padding: '8px 10px', color: 'var(--text2)', fontFamily: "'DM Mono', monospace" }}>
-                        {s.trades_count}
-                      </td>
-                      <td style={{ padding: '8px 10px', color: pnlColor, fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>
-                        {formatPnl(pnl)}
-                      </td>
-                      <td style={{ padding: '8px 10px', color: rColor, fontFamily: "'DM Mono', monospace" }}>
-                        {rValue != null ? `${rValue >= 0 ? '+' : ''}${rValue}R` : '—'}
-                      </td>
-                      <td style={{ padding: '8px 10px', color: 'var(--text2)' }}>
-                        {winPct}
-                      </td>
-                      <td style={{ padding: '8px 10px' }}>
-                        {planScore != null ? (
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '2px 8px',
-                            borderRadius: 4,
-                            fontSize: 11,
-                            fontWeight: 500,
-                            background: planScore >= 8 ? 'rgba(var(--color-profit-rgb), 0.15)' : planScore >= 5 ? 'rgba(var(--color-warn-rgb), 0.12)' : 'rgba(var(--color-loss-rgb), 0.15)',
-                            color: planColor,
-                          }}>
-                            {planScore}/10
-                          </span>
-                        ) : '—'}
-                      </td>
-                      <td style={{ padding: '8px 10px', fontSize: 16 }}>
-                        {mood}
-                      </td>
-                      <td style={{ padding: '8px 10px', color: 'var(--text3)', fontSize: 12 }}>
-                        {sessionType}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+        {(() => {
+          type S = typeof recentSessions[number]
+          const cols: Column<S>[] = [
+            { id: 'date', header: 'Date', sortable: true, sortValue: s => s.session_date,
+              accessor: s => <span style={{ fontFamily: 'var(--font-data)', color: 'var(--color-text-1)' }}>{formatDate(s.session_date)}</span> },
+            { id: 'instrument', header: 'Inst.',
+              accessor: s => s.instrument ?? '—' },
+            { id: 'trades', header: 'Trades', numeric: true, sortable: true, sortValue: s => s.trades_count,
+              accessor: s => s.trades_count },
+            { id: 'pnl', header: 'P&L', numeric: true, sortable: true, sortValue: s => Number(s.pnl),
+              accessor: s => {
+                const pnl = Number(s.pnl)
+                return <span style={{ color: TONE_COLOR_VAR[toneForPnl(pnl)], fontWeight: 600 }}>{fmtUsd(pnl, 2, { sign: true })}</span>
+              } },
+            { id: 'r', header: 'R', numeric: true,
+              accessor: s => {
+                const rVal = parseSetup(s.setup)?.r_value
+                if (rVal == null) return <span style={{ color: 'var(--color-text-3)' }}>—</span>
+                return <span style={{ color: TONE_COLOR_VAR[toneForPnl(Number(rVal))] }}>{fmtNumber(Number(rVal), 1, { sign: true })}R</span>
+              } },
+            { id: 'winrate', header: 'Win%', numeric: true,
+              accessor: s => {
+                const wr = parseSetup(s.setup)?.win_rate
+                if (wr == null) return '—'
+                return <span style={{ color: TONE_COLOR_VAR[toneForRate(Number(wr), 50)] }}>{fmtPct(Number(wr), 0)}</span>
+              } },
+            { id: 'plan', header: 'Plan', align: 'center',
+              accessor: s => {
+                const p = parseSetup(s.setup)?.plan_score
+                if (p == null) return '—'
+                const tone = p >= 8 ? 'profit' : p >= 5 ? 'warn' : 'loss'
+                return (
+                  <span style={{
+                    padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontSize: 11, fontWeight: 500, fontFamily: 'var(--font-data)',
+                    background: `rgba(var(--color-${tone === 'profit' ? 'profit' : tone === 'warn' ? 'warn' : 'loss'}-rgb), 0.10)`,
+                    color: TONE_COLOR_VAR[tone],
+                  }}>{p}/10</span>
+                )
+              } },
+            { id: 'mood', header: 'Humeur', align: 'center',
+              accessor: s => <span className="text-base">{parseSetup(s.setup)?.mood ?? '—'}</span> },
+            { id: 'type', header: 'Type',
+              accessor: s => {
+                const t = parseSetup(s.setup)?.session_type ?? (s.result === 'win' ? 'Win' : s.result === 'loss' ? 'Loss' : 'BE')
+                return <span style={{ color: 'var(--color-text-3)', fontSize: 11 }}>{t}</span>
+              } },
+          ]
+          return (
+            <DataTable
+              columns={cols}
+              rows={recentSessions}
+              rowKey={s => s.id}
+              defaultSort={{ columnId: 'date', dir: 'desc' }}
+              empty={<EmptyState title="Aucune session enregistrée" description="Log ta première session pour la voir apparaître ici." />}
+            />
+          )
+        })()}
+      </div>
     </div>
   )
 }

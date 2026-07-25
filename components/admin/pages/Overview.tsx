@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
-import { fmtEur, fmtNumber, fmtPct } from '@/lib/format'
+import DataTable, { type Column } from '@/components/ui/DataTable'
+import EmptyState from '@/components/ui/EmptyState'
+import { fmtEur, fmtUsd, fmtNumber, fmtPct, toneForPnl, TONE_COLOR_VAR } from '@/lib/format'
 
 interface KPIData {
   monthlyRevenue: number
@@ -318,55 +320,63 @@ export default function Overview() {
           <span className="text-xs text-[var(--color-neutral)]">{recentSessions.length} sessions</span>
         </div>
 
-        {recentSessions.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-[var(--color-neutral)] text-sm">Aucune session enregistrée</p>
-            <p className="text-[var(--color-neutral)] text-xs mt-1">Les sessions apparaîtront ici une fois que les traders auront commencé à logger</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trader</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Date</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Instrument</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">PnL</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Résultat</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
-                {recentSessions.map((session) => (
-                  <tr key={session.id} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                    <td className="py-3 text-sm font-medium text-[#e8edf5]">{session.trader_name}</td>
-                    <td className="py-3 text-sm text-[#a0aec0]">
-                      {new Date(session.session_date).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td className="py-3 text-sm text-[#a0aec0]">
-                      <span className="px-2 py-0.5 bg-[var(--color-surface-2)] rounded text-xs font-mono">
-                        {session.instrument}
-                      </span>
-                    </td>
-                    <td className={`py-3 text-sm font-mono font-medium text-right ${session.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {session.pnl >= 0 ? '+' : ''}{session.pnl.toFixed(2)} $
-                    </td>
-                    <td className="py-3 text-right">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        session.result === 'win'
-                          ? 'bg-green-500/10 text-green-400'
-                          : session.result === 'loss'
-                          ? 'bg-red-500/10 text-red-400'
-                          : 'bg-[var(--color-surface-3)] text-[#a0aec0]'
-                      }`}>
-                        {session.result === 'win' ? 'Win' : session.result === 'loss' ? 'Loss' : 'Breakeven'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {(() => {
+          type S = typeof recentSessions[number]
+          const cols: Column<S>[] = [
+            { id: 'trader', header: 'Trader',
+              accessor: s => <span style={{ color: 'var(--color-text-1)', fontWeight: 500 }}>{s.trader_name}</span> },
+            { id: 'date', header: 'Date',
+              accessor: s => new Date(s.session_date).toLocaleDateString('fr-FR') },
+            { id: 'instrument', header: 'Instrument',
+              accessor: s => (
+                <span
+                  className="text-xs"
+                  style={{
+                    padding: '2px 8px', borderRadius: 'var(--radius-sm)',
+                    background: 'var(--color-surface-2)',
+                    fontFamily: 'var(--font-data)',
+                  }}
+                >{s.instrument}</span>
+              ) },
+            { id: 'pnl', header: 'PnL', numeric: true,
+              accessor: s => (
+                <span style={{ color: TONE_COLOR_VAR[toneForPnl(s.pnl)], fontWeight: 500 }}>
+                  {fmtUsd(s.pnl, 2, { sign: true })}
+                </span>
+              ) },
+            { id: 'result', header: 'Résultat', align: 'right',
+              accessor: s => {
+                const label = s.result === 'win' ? 'Win' : s.result === 'loss' ? 'Loss' : 'Breakeven'
+                const tone = s.result === 'win' ? 'profit' : s.result === 'loss' ? 'loss' : 'neutral'
+                const bg = tone === 'neutral'
+                  ? 'var(--color-surface-3)'
+                  : `rgba(var(--color-${tone === 'profit' ? 'profit' : 'loss'}-rgb), 0.10)`
+                return (
+                  <span
+                    style={{
+                      padding: '2px 8px', borderRadius: 'var(--radius-full)',
+                      fontSize: 11, fontWeight: 500,
+                      background: bg,
+                      color: TONE_COLOR_VAR[tone],
+                    }}
+                  >{label}</span>
+                )
+              } },
+          ]
+          return (
+            <DataTable
+              columns={cols}
+              rows={recentSessions}
+              rowKey={s => s.id}
+              empty={
+                <EmptyState
+                  title="Aucune session enregistrée"
+                  description="Les sessions apparaîtront ici dès que les traders auront commencé à logger."
+                />
+              }
+            />
+          )
+        })()}
       </Card>
     </div>
   )

@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
-import { fmtEur, fmtPct, fmtNumber, toneForRate } from '@/lib/format'
+import DataTable, { type Column } from '@/components/ui/DataTable'
+import EmptyState from '@/components/ui/EmptyState'
+import { fmtEur, fmtPct, fmtNumber, fmtUsd, toneForPnl, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 
 const MONTH_NAMES = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -262,76 +264,84 @@ export default function Reports() {
         {/* Trader performance */}
         <Card>
           <h2 className="text-sm font-semibold text-[#e8edf5] mb-4">Performance traders</h2>
-          {traderPerfs.length === 0 ? (
-            <p className="text-[var(--color-neutral)] text-sm py-8 text-center">Aucune session ce mois</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                    <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trader</th>
-                    <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Sessions</th>
-                    <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">P&L</th>
-                    <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Win%</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
-                  {traderPerfs.map((t, i) => (
-                    <tr key={t.id} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                      <td className="py-3 text-sm font-medium text-[#e8edf5] flex items-center gap-2">
-                        {i === 0 && (
-                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold" title="Top trader">
-                            1
-                          </span>
-                        )}
-                        {t.name}
-                      </td>
-                      <td className="py-3 text-sm text-[#a0aec0] text-right font-mono">{t.sessions}</td>
-                      <td className={`py-3 text-sm font-mono font-medium text-right ${t.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {t.pnl >= 0 ? '+' : ''}{t.pnl.toFixed(2)} $
-                      </td>
-                      <td className="py-3 text-sm font-mono text-right text-[#a0aec0]">{t.winRate}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {(() => {
+            type T = typeof traderPerfs[number]
+            const cols: Column<T>[] = [
+              { id: 'trader', header: 'Trader', sortable: true, sortValue: t => t.name,
+                accessor: (t) => {
+                  const rank = traderPerfs.indexOf(t)
+                  return (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 500, color: 'var(--color-text-1)' }}>
+                      {rank === 0 && (
+                        <span
+                          title="Top trader"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: 20, height: 20, borderRadius: '50%',
+                            background: 'rgba(var(--color-warn-rgb), 0.2)',
+                            color: 'var(--color-warn)',
+                            fontSize: 11, fontWeight: 700,
+                          }}
+                        >1</span>
+                      )}
+                      {t.name}
+                    </span>
+                  )
+                } },
+              { id: 'sessions', header: 'Sessions', numeric: true, sortable: true, sortValue: t => t.sessions,
+                accessor: t => t.sessions },
+              { id: 'pnl', header: 'P&L', numeric: true, sortable: true, sortValue: t => t.pnl,
+                accessor: t => (
+                  <span style={{ color: TONE_COLOR_VAR[toneForPnl(t.pnl)], fontWeight: 500 }}>
+                    {fmtUsd(t.pnl, 2, { sign: true })}
+                  </span>
+                ) },
+              { id: 'winrate', header: 'Win%', numeric: true, sortable: true, sortValue: t => t.winRate,
+                accessor: t => (
+                  <span style={{ color: TONE_COLOR_VAR[toneForRate(t.winRate, 50)] }}>
+                    {fmtPct(t.winRate, 0)}
+                  </span>
+                ) },
+            ]
+            return (
+              <DataTable
+                columns={cols}
+                rows={traderPerfs}
+                rowKey={t => t.id}
+                empty={<EmptyState title="Aucune session ce mois" description="Les performances des traders apparaîtront ici dès qu'ils auront enregistré des sessions ce mois-ci." />}
+              />
+            )
+          })()}
         </Card>
 
         {/* Detailed revenues */}
         <Card>
           <h2 className="text-sm font-semibold text-[#e8edf5] mb-4">Revenus détaillés</h2>
-          {revenueRows.length === 0 ? (
-            <p className="text-[var(--color-neutral)] text-sm py-8 text-center">Aucun revenu ce mois</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                    <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Date</th>
-                    <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Trader</th>
-                    <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Description</th>
-                    <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Montant</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
-                  {revenueRows.map((r, i) => (
-                    <tr key={i} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                      <td className="py-3 text-sm text-[#a0aec0]">
-                        {new Date(r.date).toLocaleDateString('fr-FR')}
-                      </td>
-                      <td className="py-3 text-sm font-medium text-[#e8edf5]">{r.trader}</td>
-                      <td className="py-3 text-sm text-[#a0aec0]">{r.description}</td>
-                      <td className="py-3 text-sm font-mono font-semibold text-green-400 text-right">
-                        +{r.amount.toLocaleString('fr-FR')} &euro;
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {(() => {
+            type R = typeof revenueRows[number]
+            const cols: Column<R>[] = [
+              { id: 'date', header: 'Date', sortable: true, sortValue: r => r.date,
+                accessor: r => new Date(r.date).toLocaleDateString('fr-FR') },
+              { id: 'trader', header: 'Trader',
+                accessor: r => <span style={{ color: 'var(--color-text-1)', fontWeight: 500 }}>{r.trader}</span> },
+              { id: 'description', header: 'Description',
+                accessor: r => r.description },
+              { id: 'amount', header: 'Montant', numeric: true, sortable: true, sortValue: r => r.amount,
+                accessor: r => (
+                  <span style={{ color: 'var(--color-profit)', fontWeight: 600 }}>
+                    {fmtEur(r.amount, 0, { sign: true })}
+                  </span>
+                ) },
+            ]
+            return (
+              <DataTable
+                columns={cols}
+                rows={revenueRows}
+                rowKey={r => `${r.date}-${r.trader}-${r.amount}-${r.description}`}
+                empty={<EmptyState title="Aucun revenu ce mois" description="Les paiements enregistrés ce mois-ci apparaîtront ici." />}
+              />
+            )
+          })()}
         </Card>
       </div>
 

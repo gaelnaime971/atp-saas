@@ -7,7 +7,9 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
-import { fmtUsd, fmtPct, fmtCompact, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
+import DataTable, { type Column } from '@/components/ui/DataTable'
+import EmptyState from '@/components/ui/EmptyState'
+import { fmtUsd, fmtPct, fmtCompact, fmtNumber, toneForPnl, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 import NewTraderModal from '@/components/admin/modals/NewTraderModal'
 import TraderProfileModal from '@/components/admin/modals/TraderProfileModal'
 
@@ -337,121 +339,92 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
         })()}
       </div>
 
-      <Card>
-        {traders.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 bg-[var(--color-surface-2)] rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-[var(--color-neutral)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <p className="text-[#a0aec0] font-medium">Aucun trader</p>
-            <p className="text-[var(--color-neutral)] text-sm mt-1">Invitez votre premier trader pour commencer</p>
-            <Button className="mt-4" onClick={() => setShowNewModal(true)}>
-              Inviter un trader
-            </Button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[rgba(255,255,255,0.05)]">
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Trader</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Statut</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Plan</th>
-                  <th className="text-left text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">PropFirm</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Sessions</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">Win Rate</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3 pr-4">PnL Total</th>
-                  <th className="text-right text-xs font-medium text-[var(--color-neutral)] uppercase tracking-wider pb-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
-                {traders.map((trader) => (
-                  <tr key={trader.id} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                    <td className="py-4 pr-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${
-                          trader.status === 'pending'
-                            ? 'bg-amber-500/10 border-amber-500/20'
-                            : 'bg-green-500/10 border-green-500/20'
-                        }`}>
-                          <span className={`text-xs font-bold ${
-                            trader.status === 'pending' ? 'text-amber-400' : 'text-green-400'
-                          }`}>
-                            {(trader.full_name || 'T')[0].toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <p
-                            className="text-sm font-medium text-[#e8edf5] transition-all"
-                            style={blurNames ? { filter: 'blur(6px)', userSelect: 'none' } : undefined}
-                          >
-                            {trader.full_name ?? 'Unnamed'}
-                          </p>
-                          <p
-                            className="text-xs text-[var(--color-neutral)] transition-all"
-                            style={blurNames ? { filter: 'blur(6px)', userSelect: 'none' } : undefined}
-                          >
-                            {trader.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 pr-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        trader.status === 'pending'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-green-500/10 text-green-400 border border-green-500/20'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          trader.status === 'pending' ? 'bg-amber-400' : 'bg-green-400'
-                        }`} />
-                        {trader.status === 'pending' ? 'En attente' : 'Actif'}
-                      </span>
-                    </td>
-                    <td className="py-4 pr-4">
-                      <span className="px-2 py-0.5 bg-[var(--color-surface-2)] rounded text-xs text-[#a0aec0] font-medium">
-                        {trader.plan_type ?? 'N/A'}
-                      </span>
-                    </td>
-                    <td className="py-4 pr-4 text-sm text-[#a0aec0]">{trader.propfirm_name ?? '—'}</td>
-                    <td className="py-4 pr-4 text-sm text-[#a0aec0] text-right font-mono">
-                      {trader.status === 'pending' ? '—' : trader.session_count}
-                    </td>
-                    <td className="py-4 pr-4 text-right">
-                      {trader.status === 'pending' ? (
-                        <span className="text-sm text-[var(--color-neutral)]">—</span>
-                      ) : (
-                        <span className={`text-sm font-mono font-medium ${(trader.win_rate ?? 0) >= 50 ? 'text-green-400' : 'text-red-400'}`}>
-                          {trader.win_rate}%
-                        </span>
-                      )}
-                    </td>
-                    <td className={`py-4 pr-4 text-sm font-mono font-medium text-right ${
-                      trader.status === 'pending' ? 'text-[var(--color-neutral)]' :
-                      (trader.total_pnl ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                    }`}>
-                      {trader.status === 'pending' ? '—' : (
-                        <>{(trader.total_pnl ?? 0) >= 0 ? '+' : ''}{(trader.total_pnl ?? 0).toFixed(2)} $</>
-                      )}
-                    </td>
-                    <td className="py-4 text-right">
-                      {trader.status === 'active' ? (
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedTrader(trader)}>
-                          Voir profil
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-[var(--color-neutral)] italic">Invitation envoyée</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {(() => {
+        type T = typeof traders[number]
+        const cols: Column<T>[] = [
+          { id: 'trader', header: 'Trader', sortable: true, sortValue: t => t.full_name ?? '',
+            accessor: t => (
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${
+                  t.status === 'pending'
+                    ? 'bg-amber-500/10 border-amber-500/20'
+                    : 'bg-green-500/10 border-green-500/20'
+                }`}>
+                  <span className={`text-xs font-bold ${t.status === 'pending' ? 'text-amber-400' : 'text-green-400'}`}>
+                    {(t.full_name || 'T')[0].toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p
+                    className="text-sm font-medium transition-all"
+                    style={{ color: 'var(--color-text-1)', ...(blurNames ? { filter: 'blur(6px)', userSelect: 'none' } : {}) }}
+                  >
+                    {t.full_name ?? 'Unnamed'}
+                  </p>
+                  <p
+                    className="text-xs transition-all"
+                    style={{ color: 'var(--color-neutral)', ...(blurNames ? { filter: 'blur(6px)', userSelect: 'none' } : {}) }}
+                  >
+                    {t.email}
+                  </p>
+                </div>
+              </div>
+            ) },
+          { id: 'status', header: 'Statut',
+            accessor: t => (
+              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                t.status === 'pending'
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  : 'bg-green-500/10 text-green-400 border border-green-500/20'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${t.status === 'pending' ? 'bg-amber-400' : 'bg-green-400'}`} />
+                {t.status === 'pending' ? 'En attente' : 'Actif'}
+              </span>
+            ) },
+          { id: 'plan', header: 'Plan',
+            accessor: t => (
+              <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-2)' }}>
+                {t.plan_type ?? 'N/A'}
+              </span>
+            ) },
+          { id: 'propfirm', header: 'PropFirm',
+            accessor: t => t.propfirm_name ?? '—' },
+          { id: 'sessions', header: 'Sessions', numeric: true, sortable: true, sortValue: t => t.session_count ?? 0,
+            accessor: t => t.status === 'pending' ? '—' : t.session_count },
+          { id: 'winrate', header: 'Win Rate', numeric: true, sortable: true, sortValue: t => t.win_rate ?? 0,
+            accessor: t => t.status === 'pending' ? <span style={{ color: 'var(--color-neutral)' }}>—</span> : (
+              <span style={{ color: TONE_COLOR_VAR[toneForRate(t.win_rate ?? 0, 50)] }}>{fmtPct(t.win_rate ?? 0, 0)}</span>
+            ) },
+          { id: 'pnl', header: 'PnL Total', numeric: true, sortable: true, sortValue: t => t.total_pnl ?? 0,
+            accessor: t => t.status === 'pending' ? <span style={{ color: 'var(--color-neutral)' }}>—</span> : (
+              <span style={{ color: TONE_COLOR_VAR[toneForPnl(t.total_pnl ?? 0)], fontWeight: 500 }}>
+                {fmtUsd(t.total_pnl ?? 0, 2, { sign: true })}
+              </span>
+            ) },
+          { id: 'actions', header: '', align: 'right',
+            accessor: t => t.status === 'active' ? (
+              <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); setSelectedTrader(t) }}>
+                Voir profil
+              </Button>
+            ) : (
+              <span className="text-xs italic" style={{ color: 'var(--color-neutral)' }}>Invitation envoyée</span>
+            ) },
+        ]
+        return (
+          <DataTable
+            columns={cols}
+            rows={traders}
+            rowKey={t => t.id}
+            empty={
+              <EmptyState
+                title="Aucun trader"
+                description="Invite ton premier trader pour commencer."
+                action={<Button onClick={() => setShowNewModal(true)}>Inviter un trader</Button>}
+              />
+            }
+          />
+        )
+      })()}
 
       {showNewModal && (
         <NewTraderModal
