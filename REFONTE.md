@@ -146,3 +146,33 @@ Win Rate) qui n'ont leur place ni dans `title/subtitle` ni dans `actions`.
 **Décision** : attendre `<KpiCard variant="compact">`. Une fois disponible,
 SessionsHistory migre avec les mini-KPI dans le slot `actions` existant. Pas
 de nouveau slot `metrics` (motif qui se répéterait rarement → sur-abstraction).
+
+**Résolu** : SessionsHistory a bien été migrée à la vague KpiCard généralisation
+(commit `feat(ui): KpiCard generalized...`).
+
+---
+
+## Primitive candidate à évaluer à la vague monolithes
+
+### `EntityCard` — carte d'entité à sous-KPI imbriqués
+
+Pattern répété dans plusieurs pages complexes :
+- **PropFirm** trader : chaque compte de trading affiche un panneau avec 5
+  sous-KPI en grille (Capital / Début coaching / Balance / P&L / Perf%)
+- **TradingPerso** admin : structure similaire, chaque compte propfirm a son
+  panneau avec grille de sous-KPI (challenge target, drawdown, streak, etc.)
+- **Traders** admin (potentiellement) : chaque ligne de trader pourrait
+  bénéficier du même traitement en vue "cards" alternative à la table
+
+Le pattern est : **un wrapper par entité (compte, trader, propfirm) qui
+contient un header + une grille de mini-KPI + optionnellement une liste
+d'items / actions**. Ni une KpiCard seule, ni une DataTable — un panneau
+avec structure interne.
+
+**Décision** : ne PAS créer cette primitive dans la vague DataTable/EmptyState.
+La faire émerger naturellement lors de la migration des monolithes
+(TradingPerso en particulier) où le pattern est le plus dense. Choisir un
+nom + une API à ce moment-là, avec le code réel sous les yeux.
+
+Candidats de nom pour plus tard : `<EntityCard>`, `<AccountPanel>`,
+`<KpiPanel>`. À trancher au contact du code.

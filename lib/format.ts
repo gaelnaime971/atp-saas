@@ -131,6 +131,22 @@ export function fmtDateShort(iso: string | null | undefined): string {
 
 export type PnlTone = 'profit' | 'loss' | 'neutral'
 export type RateTone = 'profit' | 'warn' | 'neutral'
+export type Tone = 'profit' | 'loss' | 'warn' | 'neutral'
+
+/**
+ * CSS variable name for each semantic tone. Utilisé partout où l'on colore
+ * une valeur en dehors d'une KpiCard (cellules de DataTable, tags de statut).
+ * Garantit qu'un composant qui affiche un P&L rouge lit la même couleur que
+ * la KpiCard équivalente.
+ *
+ *   color: TONE_COLOR_VAR[toneForPnl(pnl)]
+ */
+export const TONE_COLOR_VAR: Record<Tone, string> = {
+  profit:  'var(--color-profit)',
+  loss:    'var(--color-loss)',
+  warn:    'var(--color-warn)',
+  neutral: 'var(--color-text-1)',
+}
 
 /**
  * toneForPnl(42)   → 'profit'
