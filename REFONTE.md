@@ -108,3 +108,41 @@ La scale reste celle héritée de shadcn : base 0.625rem, multiples 0.6/0.8/1/1.
 Toucher 411 usages pour gagner 2px sur `rounded-lg` ne vaut pas le risque.
 Les valeurs sont **hardcodées** dans le `@theme` ATP de globals.css et ne
 dépendent plus de shadcn.
+
+---
+
+## Pages sans PageHeader — traitement à l'étape 5
+
+Ces 7 pages n'ont pas été migrées sur `<PageHeader>` à l'étape 2 (elles n'ont
+aucun titre top-level actuel — ajouter un titre serait injecter du contenu
+nouveau, hors périmètre "aucun changement volontaire").
+
+### Recevront un PageHeader à l'étape 5 (uniformisation)
+
+Pages de premier niveau qui devraient en toute logique avoir un titre — ajout
+sans risque :
+
+- **PropFirm** trader
+- **Coaching** trader
+- **Coaching** admin
+- **Prospects** admin
+- **ContentManager** admin
+
+### Ne recevront PAS de PageHeader
+
+- **StockAnalysis** trader — la page est un placeholder / empty state tant
+  qu'aucun ticker n'est cherché. Un titre cosmétique sur une coquille vide
+  n'apporte rien. Restera sans header tant que la page reste ce qu'elle est.
+- **AnalyseGraphique** trader — son "titre" (`🎯 Analyse multi-piliers`)
+  vit à l'intérieur d'une `<Card>` qui contient AUSSI le picker de symbol
+  et le CTA "Lancer l'analyse". C'est un titre de **section fonctionnelle**,
+  pas de page. Restera dans sa Card, hors du système PageHeader.
+
+### Cas particulier — SessionsHistory
+
+Non migrée à l'étape 2 : son header droit porte deux mini-KPI (P&L Total,
+Win Rate) qui n'ont leur place ni dans `title/subtitle` ni dans `actions`.
+
+**Décision** : attendre `<KpiCard variant="compact">`. Une fois disponible,
+SessionsHistory migre avec les mini-KPI dans le slot `actions` existant. Pas
+de nouveau slot `metrics` (motif qui se répéterait rarement → sur-abstraction).

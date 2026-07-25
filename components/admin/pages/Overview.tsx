@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
+import KpiCard from '@/components/ui/KpiCard'
+import { fmtEur, fmtNumber, fmtPct } from '@/lib/format'
 
 interface KPIData {
   monthlyRevenue: number
@@ -153,47 +155,11 @@ export default function Overview() {
     fetchData()
   }, [])
 
-  const kpiCards = [
-    {
-      label: 'CA Mensuel',
-      value: `${kpis.monthlyRevenue.toLocaleString('fr-FR')} €`,
-      icon: '💰',
-      color: 'text-green-400',
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500/20',
-      change: '+12%',
-      changeUp: true,
-    },
-    {
-      label: 'Traders Actifs',
-      value: kpis.activeTraders.toString(),
-      icon: '👥',
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/20',
-      change: '+2',
-      changeUp: true,
-    },
-    {
-      label: 'Sessions ce mois',
-      value: kpis.monthSessions.toString(),
-      icon: '📊',
-      color: 'text-purple-400',
-      bgColor: 'bg-purple-500/10',
-      borderColor: 'border-purple-500/20',
-      change: '+8%',
-      changeUp: true,
-    },
-    {
-      label: 'Taux de Réussite',
-      value: `${kpis.winRate}%`,
-      icon: '🎯',
-      color: 'text-amber-400',
-      bgColor: 'bg-amber-500/10',
-      borderColor: 'border-amber-500/20',
-      change: kpis.winRate >= 50 ? '+' : '-',
-      changeUp: kpis.winRate >= 50,
-    },
+  const kpiCards: { label: string; value: string; delta: string; deltaTone: 'profit' | 'loss'; icon: string }[] = [
+    { label: 'CA Mensuel',       value: fmtEur(kpis.monthlyRevenue),      delta: '+12 %', deltaTone: 'profit', icon: '💰' },
+    { label: 'Traders Actifs',   value: fmtNumber(kpis.activeTraders),    delta: '+2',    deltaTone: 'profit', icon: '👥' },
+    { label: 'Sessions ce mois', value: fmtNumber(kpis.monthSessions),    delta: '+8 %',  deltaTone: 'profit', icon: '📊' },
+    { label: 'Taux de Réussite', value: fmtPct(kpis.winRate, 0),          delta: kpis.winRate >= 50 ? '+' : '-', deltaTone: kpis.winRate >= 50 ? 'profit' : 'loss', icon: '🎯' },
   ]
 
   if (loading) {
@@ -270,21 +236,15 @@ export default function Overview() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
-        {kpiCards.map((kpi) => (
-          <Card key={kpi.label} className={`border ${kpi.borderColor}`}>
-            <div className="flex items-start justify-between mb-4">
-              <div className={`w-10 h-10 ${kpi.bgColor} rounded-lg flex items-center justify-center text-lg`}>
-                {kpi.icon}
-              </div>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${kpi.changeUp ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                {kpi.change}
-              </span>
-            </div>
-            <div>
-              <p className={`text-2xl font-bold ${kpi.color} font-mono`}>{kpi.value}</p>
-              <p className="text-[var(--color-neutral)] text-xs mt-1">{kpi.label}</p>
-            </div>
-          </Card>
+        {kpiCards.map(kpi => (
+          <KpiCard
+            key={kpi.label}
+            label={kpi.label}
+            value={kpi.value}
+            delta={kpi.delta}
+            deltaTone={kpi.deltaTone}
+            action={<span aria-hidden style={{ fontSize: 18 }}>{kpi.icon}</span>}
+          />
         ))}
       </div>
 

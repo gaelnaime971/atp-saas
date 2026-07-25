@@ -6,6 +6,8 @@ import type { TradingSession } from '@/lib/types'
 import type { TraderAccount } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
+import KpiCard, { type KpiTone } from '@/components/ui/KpiCard'
+import { fmtUsd, fmtPct, fmtNumber, toneForPnl } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
@@ -26,10 +28,6 @@ function getDaysForPeriod(period: Period): number {
 function formatPnl(value: number): string {
   const sign = value >= 0 ? '+' : ''
   return `${sign}${value.toFixed(2)} €`
-}
-
-function formatPercent(value: number): string {
-  return `${value.toFixed(1)}%`
 }
 
 export default function Stats() {
@@ -206,43 +204,41 @@ export default function Stats() {
       ) : (
         <>
           {/* 4 KPI cards */}
-          <div
-            className="grid gap-4"
-            style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 16 }}
-          >
-            <Card>
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text3)', marginBottom: 8 }}>
-                P&L Total
-              </p>
-              <p className="text-2xl font-bold font-mono" style={{ color: pnlColor(metrics.totalPnl) }}>
-                {formatPnl(metrics.totalPnl)}
-              </p>
-            </Card>
-            <Card>
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text3)', marginBottom: 8 }}>
-                Win Rate
-              </p>
-              <p className="text-2xl font-bold font-mono" style={{ color: metrics.winRate >= 50 ? pnlColor(1) : pnlColor(-1) }}>
-                {formatPercent(metrics.winRate)}
-              </p>
-            </Card>
-            <Card>
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text3)', marginBottom: 8 }}>
-                Profit Factor
-              </p>
-              <p className="text-2xl font-bold font-mono" style={{ color: metrics.profitFactor >= 1 ? pnlColor(1) : pnlColor(-1) }}>
-                {metrics.profitFactor.toFixed(2)}
-              </p>
-            </Card>
-            <Card>
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text3)', marginBottom: 8 }}>
-                R moyen
-              </p>
-              <p className="text-2xl font-bold font-mono" style={{ color: pnlColor(metrics.avgR) }}>
-                {metrics.avgR >= 0 ? '+' : ''}{metrics.avgR.toFixed(2)}R
-              </p>
-            </Card>
-          </div>
+          {(() => {
+            // Rate-style indicators (win rate, profit factor) : neutral if zero,
+            // profit if above target, warn if below. NEVER 'loss' — loss means
+            // "you actually lost money" (règle étape 1).
+            const rateTone = (v: number, target: number): KpiTone =>
+              v === 0 ? 'neutral' : v >= target ? 'profit' : 'warn'
+            const pnlSign = { sign: true } as const
+            return (
+              <div
+                className="grid gap-4"
+                style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 16 }}
+              >
+                <KpiCard
+                  label="P&L Total"
+                  value={fmtUsd(metrics.totalPnl, 2, pnlSign)}
+                  tone={toneForPnl(metrics.totalPnl)}
+                />
+                <KpiCard
+                  label="Win Rate"
+                  value={fmtPct(metrics.winRate, 0)}
+                  tone={rateTone(metrics.winRate, 50)}
+                />
+                <KpiCard
+                  label="Profit Factor"
+                  value={fmtNumber(metrics.profitFactor, 2)}
+                  tone={rateTone(metrics.profitFactor, 1)}
+                />
+                <KpiCard
+                  label="R moyen"
+                  value={`${fmtNumber(metrics.avgR, 2, pnlSign)}R`}
+                  tone={toneForPnl(metrics.avgR)}
+                />
+              </div>
+            )
+          })()}
 
           {/* 3 metric cards */}
           <div
