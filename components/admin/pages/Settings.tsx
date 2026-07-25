@@ -6,6 +6,7 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import AvatarUpload from '@/components/ui/AvatarUpload'
 import PageHeader from '@/components/ui/PageHeader'
+import Modal from '@/components/ui/Modal'
 
 interface TraderInfo {
   id: string
@@ -437,24 +438,14 @@ export default function Settings() {
       )}
 
       {/* EDIT MODAL */}
-      {editingTrader && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.7)' }}
-          onClick={e => e.target === e.currentTarget && setEditingTrader(null)}
-        >
-          <div className="w-full max-w-md rounded-xl border" style={{ background: 'var(--color-surface-1)', borderColor: 'rgba(255,255,255,0.07)' }}>
-            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-              <h2 className="text-sm font-semibold text-[#e8edf5]">
-                Modifier — {editingTrader.full_name}
-              </h2>
-              <button onClick={() => setEditingTrader(null)} className="text-[var(--color-neutral)] hover:text-[#e8edf5]">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
+      <Modal
+        open={!!editingTrader}
+        onClose={() => setEditingTrader(null)}
+        title={editingTrader ? `Modifier — ${editingTrader.full_name}` : ''}
+        dismissible={!saving}
+      >
+        {editingTrader && (
+          <div className="space-y-4">
               <div>
                 <label style={labelStyle}>Plan</label>
                 <select
@@ -530,10 +521,9 @@ export default function Settings() {
                 <Button variant="secondary" onClick={() => setEditingTrader(null)}>Annuler</Button>
                 <Button onClick={saveEdit} loading={saving}>Enregistrer</Button>
               </div>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   )
 }

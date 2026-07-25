@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
 import { downloadContractPdf } from '@/lib/generateContractPdf'
+import Modal from '@/components/ui/Modal'
 
 interface TraderProfileModalProps {
   trader: Profile | null
@@ -172,51 +173,37 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
   ]
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.7)' }}
-      onClick={e => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="w-full max-w-4xl rounded-xl border flex flex-col"
-        style={{ background: 'var(--bg2)', borderColor: 'var(--border)', maxHeight: '90vh' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-4">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-              style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}
-            >
-              {trader.full_name?.charAt(0).toUpperCase() ?? 'T'}
-            </div>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{trader.full_name ?? 'Trader'}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs" style={{ color: 'var(--text3)' }}>{trader.email}</span>
-                {trader.plan_type && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-                    {trader.plan_type}
-                  </span>
-                )}
-                {trader.propfirm_name && (
-                  <span className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--bg3)', color: 'var(--text3)' }}>
-                    {trader.propfirm_name}
-                  </span>
-                )}
-              </div>
+    <Modal
+      open
+      onClose={onClose}
+      size="xl"
+      title={
+        <div className="flex items-center gap-4">
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
+            style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}
+          >
+            {trader.full_name?.charAt(0).toUpperCase() ?? 'T'}
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-1)' }}>{trader.full_name ?? 'Trader'}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs" style={{ color: 'var(--color-text-3)' }}>{trader.email}</span>
+              {trader.plan_type && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                  {trader.plan_type}
+                </span>
+              )}
+              {trader.propfirm_name && (
+                <span className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-3)' }}>
+                  {trader.propfirm_name}
+                </span>
+              )}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5"
-            style={{ color: 'var(--text3)' }}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
+      }
+    >
 
         {/* Tabs */}
         <div className="flex gap-1 px-6 pt-3 pb-0 shrink-0">
@@ -237,13 +224,12 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
         </div>
 
         {/* Body */}
-        <div className="px-6 py-4 overflow-y-auto flex-1">
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <>
               {/* OVERVIEW TAB */}
               {tab === 'overview' && (
                 <div className="space-y-4">
@@ -753,10 +739,8 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                   )}
                 </div>
               )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          </>
+        )}
+    </Modal>
   )
 }

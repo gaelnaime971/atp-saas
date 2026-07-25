@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
+import Modal from '@/components/ui/Modal'
 
 const INSTRUMENTS = ['ES', 'NQ', 'DAX', 'YM', 'MYM', 'MNQ', 'GC', 'MGC']
 
@@ -221,40 +222,39 @@ export default function SavedSetups() {
       )}
 
       {/* Detail modal */}
-      {viewSetup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={e => e.target === e.currentTarget && setViewSetup(null)}>
-          <div className="w-full max-w-2xl rounded-xl border overflow-hidden" style={{ background: 'var(--bg2)', borderColor: 'var(--border)', maxHeight: '90vh' }}>
-            {viewSetup.image_url && (
-              <img src={viewSetup.image_url} alt={viewSetup.title} style={{ width: '100%', maxHeight: 350, objectFit: 'contain', background: '#000' }} />
-            )}
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>{viewSetup.title}</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    {viewSetup.instrument && <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: 'var(--bg3)', color: 'var(--text3)' }}>{viewSetup.instrument}</span>}
-                    <span className="text-xs font-mono" style={{ color: 'var(--text3)' }}>{new Date(viewSetup.created_at).toLocaleDateString('fr-FR')}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => deleteSetup(viewSetup.id)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: 'rgba(var(--color-loss-rgb), 0.1)', color: 'var(--color-loss)', border: '1px solid rgba(var(--color-loss-rgb), 0.2)' }}>Supprimer</button>
-                  <button onClick={() => setViewSetup(null)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: 'var(--bg3)', color: 'var(--text3)', border: '1px solid var(--border)' }}>Fermer</button>
-                </div>
-              </div>
-              {viewSetup.description && (
-                <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--text2)' }}>{viewSetup.description}</p>
-              )}
-              {viewSetup.tags.length > 0 && (
-                <div className="flex gap-2 flex-wrap">
-                  {viewSetup.tags.map(tag => (
-                    <span key={tag} className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}>{tag}</span>
-                  ))}
-                </div>
-              )}
-            </div>
+      <Modal
+        open={!!viewSetup}
+        onClose={() => setViewSetup(null)}
+        size="lg"
+        title={viewSetup?.title}
+        description={viewSetup && (
+          <div className="flex items-center gap-2 mt-1">
+            {viewSetup.instrument && <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-3)' }}>{viewSetup.instrument}</span>}
+            <span className="text-xs font-mono" style={{ color: 'var(--color-text-3)' }}>{new Date(viewSetup.created_at).toLocaleDateString('fr-FR')}</span>
           </div>
-        </div>
-      )}
+        )}
+        footer={viewSetup && (
+          <button onClick={() => deleteSetup(viewSetup.id)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: 'rgba(var(--color-loss-rgb), 0.1)', color: 'var(--color-loss)', border: '1px solid rgba(var(--color-loss-rgb), 0.2)' }}>Supprimer</button>
+        )}
+      >
+        {viewSetup && (
+          <>
+            {viewSetup.image_url && (
+              <img src={viewSetup.image_url} alt={viewSetup.title} style={{ width: '100%', maxHeight: 350, objectFit: 'contain', background: '#000', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }} />
+            )}
+            {viewSetup.description && (
+              <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-text-2)' }}>{viewSetup.description}</p>
+            )}
+            {viewSetup.tags.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                {viewSetup.tags.map(tag => (
+                  <span key={tag} className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.2)' }}>{tag}</span>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

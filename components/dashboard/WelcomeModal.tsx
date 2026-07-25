@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import Modal from '@/components/ui/Modal'
 
 interface WelcomeModalProps {
   userId: string
@@ -48,33 +49,13 @@ export default function WelcomeModal({ userId, firstName, onClose }: WelcomeModa
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1000,
-        background: 'rgba(0,0,0,0.7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-        backdropFilter: 'blur(4px)',
-      }}
+    <Modal
+      open
+      onClose={handleClose}
+      size="md"
+      dismissible={!closing}
+      showCloseButton={false}
     >
-      <div
-        style={{
-          background: 'var(--bg2)',
-          border: '1px solid var(--border)',
-          borderRadius: 16,
-          maxWidth: 520,
-          width: '100%',
-          maxHeight: '85vh',
-          overflowY: 'auto',
-          animation: 'fadeInUp 0.3s ease-out',
-        }}
-      >
-        <style>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-
         {/* Header */}
         <div
           style={{
@@ -215,7 +196,6 @@ export default function WelcomeModal({ userId, firstName, onClose }: WelcomeModa
             Ce message ne s&apos;affichera qu&apos;une seule fois
           </p>
         </div>
-      </div>
-    </div>
+    </Modal>
   )
 }

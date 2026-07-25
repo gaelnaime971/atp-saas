@@ -8,6 +8,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
 import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
+import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 
@@ -515,32 +516,15 @@ export default function SessionsHistory() {
       })()}
 
       {/* Edit Modal */}
-      {editingSession && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.7)' }}
-          onClick={e => e.target === e.currentTarget && setEditingSession(null)}
-        >
-          <div
-            className="w-full max-w-2xl rounded-xl border flex flex-col"
-            style={{ background: 'var(--bg2)', borderColor: 'var(--border)', maxHeight: '90vh' }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                Modifier la session du {new Date(editingSession.session_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </h3>
-              <button
-                onClick={() => setEditingSession(null)}
-                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5"
-                style={{ color: 'var(--text3)' }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
+      <Modal
+        open={!!editingSession}
+        onClose={() => setEditingSession(null)}
+        title={editingSession ? `Modifier la session du ${new Date(editingSession.session_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}
+        size="lg"
+        dismissible={!saving}
+      >
+        {editingSession && (
+          <>
             {/* Body */}
             <div className="px-5 py-4 overflow-y-auto flex-1 space-y-4">
               {/* Row 1: Date + Type + Instrument */}
@@ -712,9 +696,9 @@ export default function SessionsHistory() {
                 {saving ? 'Enregistrement...' : 'Sauvegarder'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

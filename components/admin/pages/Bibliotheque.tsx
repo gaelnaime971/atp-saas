@@ -6,6 +6,7 @@ import { Resource } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
+import BaseModal from '@/components/ui/Modal'
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -1203,6 +1204,9 @@ function IconBtn({
   )
 }
 
+// Adapter local — délègue à la primitive Modal (focus trap, scroll lock,
+// return-focus, Escape gérés par elle). Préserve l'API `<Modal onClose>` déjà
+// utilisée par le formulaire Add/Edit de la Bibliothèque.
 function Modal({
   children,
   onClose,
@@ -1210,28 +1214,9 @@ function Modal({
   children: React.ReactNode
   onClose: () => void
 }) {
-  // close on Escape
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
-      onClick={onClose}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        className="rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6"
-        style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}
-      >
-        {children}
-      </div>
-    </div>
+    <BaseModal open onClose={onClose} size="lg" showCloseButton={false}>
+      {children}
+    </BaseModal>
   )
 }

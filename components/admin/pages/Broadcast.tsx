@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
+import Modal from '@/components/ui/Modal'
 
 type RecipientMode = 'all' | 'active' | 'manual'
 
@@ -228,21 +229,19 @@ export default function Broadcast() {
       )}
 
       {/* Confirmation dialog */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <Card className="max-w-md w-full border border-[rgba(255,255,255,0.1)]">
-            <h3 className="text-sm font-semibold text-[#e8edf5] mb-2">Confirmer l&apos;envoi</h3>
-            <p className="text-sm text-[#a0aec0] mb-4">
-              Vous êtes sur le point d&apos;envoyer cet email à {recipientLabel().toLowerCase()}.
-              Cette action est irréversible.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <Button variant="secondary" onClick={() => setShowConfirm(false)}>Annuler</Button>
-              <Button onClick={handleSend} loading={sending}>Confirmer l&apos;envoi</Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      <Modal
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        title="Confirmer l'envoi"
+        description={<>Tu es sur le point d&apos;envoyer cet email à {recipientLabel().toLowerCase()}. Cette action est irréversible.</>}
+        dismissible={!sending}
+        footer={<>
+          <Button variant="secondary" onClick={() => setShowConfirm(false)} disabled={sending}>Annuler</Button>
+          <Button onClick={handleSend} loading={sending}>Confirmer l&apos;envoi</Button>
+        </>}
+      >
+        {null}
+      </Modal>
 
       {/* History placeholder */}
       <Card>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Modal from '@/components/ui/Modal'
 
 interface NewTraderModalProps {
   onClose: () => void
@@ -77,34 +78,15 @@ export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalPro
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.7)' }}
-      onClick={e => e.target === e.currentTarget && onClose()}
+    <Modal
+      open
+      onClose={onClose}
+      title="Nouveau Trader"
+      description="Une invitation sera envoyée par email"
+      dismissible={!loading}
     >
-      <div
-        className="w-full max-w-md rounded-xl border"
-        style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
-          <div>
-            <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Nouveau Trader</h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>Une invitation sera envoyée par email</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5"
-            style={{ color: 'var(--text3)' }}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
         {/* Body */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>Prénom</label>
@@ -275,7 +257,6 @@ export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalPro
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   )
 }
