@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
+import KpiCard from '@/components/ui/KpiCard'
+import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
 import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
@@ -305,45 +307,25 @@ export default function Dashboard() {
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-        <Card>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
-            P&L Total
-          </div>
-          <div style={{
-            fontSize: 28,
-            fontWeight: 700,
-            color: totalPnl >= 0 ? 'var(--green)' : 'var(--red)',
-          }}>
-            {totalPnl >= 0 ? '+' : ''}{(totalPnl).toFixed(2)}$
-          </div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
-            Win Rate
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>
-            {winRate}%
-          </div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
-            Profit Factor
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: profitFactor >= 1 ? 'var(--green)' : 'var(--red)' }}>
-            {profitFactor.toFixed(2)}
-          </div>
-        </Card>
-
-        <Card>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
-            Sessions
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>
-            {filtered.length}
-          </div>
-        </Card>
+        <KpiCard
+          label="P&L Total"
+          value={fmtUsd(totalPnl, 2, { sign: true })}
+          tone={toneForPnl(totalPnl)}
+        />
+        <KpiCard
+          label="Win Rate"
+          value={fmtPct(winRate, 0)}
+          tone={toneForRate(winRate, 50)}
+        />
+        <KpiCard
+          label="Profit Factor"
+          value={fmtNumber(profitFactor, 2)}
+          tone={toneForRate(profitFactor, 1)}
+        />
+        <KpiCard
+          label="Sessions"
+          value={fmtNumber(filtered.length)}
+        />
       </div>
 
       {/* Heatmap */}

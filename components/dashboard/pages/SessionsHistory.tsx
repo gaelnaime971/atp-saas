@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { TraderAccount } from '@/lib/types'
 import CsvSessionImport from '@/components/dashboard/CsvSessionImport'
+import PageHeader from '@/components/ui/PageHeader'
+import KpiCard from '@/components/ui/KpiCard'
+import { fmtUsd, fmtPct, toneForPnl, toneForRate } from '@/lib/format'
 
 interface SessionRow {
   id: string
@@ -223,39 +226,37 @@ export default function SessionsHistory() {
         </div>
       )}
 
-      {/* Header stats */}
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-        <div>
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Sessions de trading</h2>
-          <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>
-            {sessions.length} session{sessions.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-xs" style={{ color: 'var(--text3)' }}>P&L Total</p>
-            <p className="text-sm font-bold font-mono" style={{ color: totalPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
-              {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)} $
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs" style={{ color: 'var(--text3)' }}>Win Rate</p>
-            <p className="text-sm font-bold font-mono" style={{ color: winRate >= 50 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
-              {winRate}%
-            </p>
-          </div>
-          <button
-            onClick={() => setShowCsvImport(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: '#000' }}
-            title="Importer un historique de trades depuis un CSV broker"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-            </svg>
-            Importer CSV
-          </button>
-        </div>
+      <div className="mb-5">
+        <PageHeader
+          size="sm"
+          title="Sessions de trading"
+          subtitle={`${sessions.length} session${sessions.length !== 1 ? 's' : ''}`}
+          actions={<>
+            <KpiCard
+              variant="compact"
+              label="P&L Total"
+              value={fmtUsd(totalPnl, 2, { sign: true })}
+              tone={toneForPnl(totalPnl)}
+            />
+            <KpiCard
+              variant="compact"
+              label="Win Rate"
+              value={fmtPct(winRate, 0)}
+              tone={toneForRate(winRate, 50)}
+            />
+            <button
+              onClick={() => setShowCsvImport(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90"
+              style={{ background: 'var(--green)', color: '#000' }}
+              title="Importer un historique de trades depuis un CSV broker"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              Importer CSV
+            </button>
+          </>}
+        />
       </div>
 
       {/* CSV Import Modal */}

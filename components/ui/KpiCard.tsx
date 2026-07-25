@@ -54,6 +54,12 @@ export interface KpiCardProps {
   loading?: boolean
   /** Slot optionnel en haut à droite (menu ⋮, icône, badge…). */
   action?: ReactNode
+  /**
+   * Texte descriptif discret sous la value (contexte, période, source).
+   * Ex: "Toutes sessions", "septembre 2026", "Moy. 3 mois".
+   * Distinct de `delta`+`deltaLabel` qui affichent un badge de variation.
+   */
+  hint?: ReactNode
   /** Classe additionnelle sur le wrapper. */
   className?: string
 }
@@ -98,6 +104,7 @@ export default function KpiCard({
   sparkline,
   loading = false,
   action,
+  hint,
   className = '',
 }: KpiCardProps) {
   const valueColor = TONE_COLOR[tone]
@@ -135,6 +142,18 @@ export default function KpiCard({
             </span>
           )}
         </div>
+        {hint && !loading && (
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-label)',
+              color: 'var(--color-text-3)',
+              marginTop: 2,
+            }}
+          >
+            {hint}
+          </div>
+        )}
       </div>
     )
   }
@@ -194,7 +213,21 @@ export default function KpiCard({
         )}
       </div>
 
-      {/* Row 3: delta (optional) */}
+      {/* Row 3: hint (optional descriptive text under value) */}
+      {hint && !loading && (
+        <div
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--text-label)',
+            color: 'var(--color-text-3)',
+            marginTop: -2,
+          }}
+        >
+          {hint}
+        </div>
+      )}
+
+      {/* Row 4: delta (optional) */}
       {delta && !loading && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span

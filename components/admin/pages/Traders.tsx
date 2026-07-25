@@ -6,6 +6,8 @@ import { Profile } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
+import KpiCard from '@/components/ui/KpiCard'
+import { fmtUsd, fmtPct, fmtCompact, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
 import NewTraderModal from '@/components/admin/modals/NewTraderModal'
 import TraderProfileModal from '@/components/admin/modals/TraderProfileModal'
 
@@ -294,46 +296,45 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
 
       {/* Stats cards */}
       <div className="grid grid-cols-6 gap-4">
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">Traders actifs</p>
-          <p className="text-2xl font-bold font-mono text-[#e8edf5]">{active.length}</p>
-          <p className="text-xs text-[var(--color-neutral)] mt-1">{pending.length} en attente</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">Capital cumulé</p>
-          <p className="text-2xl font-bold font-mono text-[#e8edf5]">
-            {totalCapital > 0 ? `${(totalCapital / 1000).toFixed(0)}K $` : '—'}
-          </p>
-          <p className="text-xs text-[var(--color-neutral)] mt-1">Sous gestion</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">P&L global</p>
-          <p className={`text-2xl font-bold font-mono ${totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(0)} $
-          </p>
-          <p className="text-xs text-[var(--color-neutral)] mt-1">{totalSessions} session{totalSessions !== 1 ? 's' : ''}{filterMode !== 'all' ? ' (filtrées)' : ''}</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">Win Rate moyen</p>
-          <p className={`text-2xl font-bold font-mono ${avgWinRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>
-            {avgWinRate}%
-          </p>
-          <p className="text-xs text-[var(--color-neutral)] mt-1">Moyenne tous traders</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">Traders rentables</p>
-          <p className={`text-2xl font-bold font-mono ${profitableRate >= 50 ? 'text-green-400' : 'text-amber-400'}`}>
-            {profitableRate}%
-          </p>
-          <p className="text-xs text-[var(--color-neutral)] mt-1">{profitableTraders} / {active.length} en profit</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1 uppercase tracking-wider">P&L moyen / trader</p>
-          <p className={`text-2xl font-bold font-mono ${active.length > 0 && totalPnl / active.length >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {active.length > 0 ? `${totalPnl / active.length >= 0 ? '+' : ''}${(totalPnl / active.length).toFixed(0)} $` : '—'}
-          </p>
-          <p className="text-xs text-[var(--color-neutral)] mt-1">Moy. {active.length > 0 ? Math.round(totalSessions / active.length) : 0} sessions</p>
-        </Card>
+        <KpiCard
+          label="Traders actifs"
+          value={fmtNumber(active.length)}
+          hint={`${pending.length} en attente`}
+        />
+        <KpiCard
+          label="Capital cumulé"
+          value={totalCapital > 0 ? fmtCompact(totalCapital, '$') : '—'}
+          hint="Sous gestion"
+        />
+        <KpiCard
+          label="P&L global"
+          value={fmtUsd(totalPnl, 0, { sign: true })}
+          tone={toneForPnl(totalPnl)}
+          hint={`${totalSessions} session${totalSessions !== 1 ? 's' : ''}${filterMode !== 'all' ? ' (filtrées)' : ''}`}
+        />
+        <KpiCard
+          label="Win Rate moyen"
+          value={fmtPct(avgWinRate, 0)}
+          tone={toneForRate(avgWinRate, 50)}
+          hint="Moyenne tous traders"
+        />
+        <KpiCard
+          label="Traders rentables"
+          value={fmtPct(profitableRate, 0)}
+          tone={toneForRate(profitableRate, 50)}
+          hint={`${profitableTraders} / ${active.length} en profit`}
+        />
+        {(() => {
+          const avgPerTrader = active.length > 0 ? totalPnl / active.length : null
+          return (
+            <KpiCard
+              label="P&L moyen / trader"
+              value={avgPerTrader != null ? fmtUsd(avgPerTrader, 0, { sign: true }) : '—'}
+              tone={toneForPnl(avgPerTrader)}
+              hint={`Moy. ${active.length > 0 ? Math.round(totalSessions / active.length) : 0} sessions`}
+            />
+          )
+        })()}
       </div>
 
       <Card>

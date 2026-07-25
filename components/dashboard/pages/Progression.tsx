@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
+import KpiCard from '@/components/ui/KpiCard'
+import { fmtEur, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
 import type { TradingSession } from '@/lib/types'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip, Legend } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
@@ -204,36 +206,30 @@ export default function Progression() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* 4 KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-        <Card>
-          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>P&L cumule</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: kpis.totalPnl >= 0 ? 'var(--green)' : 'var(--red)' }}>
-            {formatPnl(kpis.totalPnl)}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>Toutes sessions</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Progression WR</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--green)' }}>
-            {kpis.winRate}%
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>Win Rate actuel</div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Meilleur mois</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: kpis.bestMonth && kpis.bestMonth[1] >= 0 ? 'var(--green)' : 'var(--red)' }}>
-            {kpis.bestMonth ? formatPnl(kpis.bestMonth[1]) : '—'}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-            {kpis.bestMonth ? kpis.bestMonth[0] : '—'}
-          </div>
-        </Card>
-        <Card>
-          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Constance plan ATP</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--green)' }}>
-            {kpis.constance.toFixed(1)}/10
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>Moy. 3 mois</div>
-        </Card>
+        <KpiCard
+          label="P&L cumulé"
+          value={fmtEur(kpis.totalPnl, 2, { sign: true })}
+          tone={toneForPnl(kpis.totalPnl)}
+          hint="Toutes sessions"
+        />
+        <KpiCard
+          label="Progression WR"
+          value={fmtPct(kpis.winRate, 0)}
+          tone={toneForRate(kpis.winRate, 50)}
+          hint="Win Rate actuel"
+        />
+        <KpiCard
+          label="Meilleur mois"
+          value={kpis.bestMonth ? fmtEur(kpis.bestMonth[1], 2, { sign: true }) : '—'}
+          tone={kpis.bestMonth ? toneForPnl(kpis.bestMonth[1]) : 'neutral'}
+          hint={kpis.bestMonth ? kpis.bestMonth[0] : '—'}
+        />
+        <KpiCard
+          label="Constance plan ATP"
+          value={`${fmtNumber(kpis.constance, 1)}/10`}
+          tone={toneForRate(kpis.constance, 7)}
+          hint="Moy. 3 mois"
+        />
       </div>
 
       {/* Charts row 1 - grid-2 */}

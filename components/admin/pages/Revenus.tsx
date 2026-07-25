@@ -6,6 +6,8 @@ import { Revenue } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
+import KpiCard from '@/components/ui/KpiCard'
+import { fmtEur, fmtNumber } from '@/lib/format'
 
 type PaymentMethod = 'virement' | 'stripe_comptant' | 'stripe_2x' | 'stripe_3x' | 'stripe_4x' | 'crypto'
 
@@ -195,22 +197,10 @@ export default function Revenus() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="border border-green-500/20">
-          <p className="text-xs text-[var(--color-neutral)] mb-1">CA Total</p>
-          <p className="text-2xl font-bold font-mono text-green-400">{total.toLocaleString('fr-FR')} &euro;</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1">CA ce Mois</p>
-          <p className="text-2xl font-bold font-mono text-[#e8edf5]">{thisMonth.toLocaleString('fr-FR')} &euro;</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1">Transactions</p>
-          <p className="text-2xl font-bold font-mono text-[#e8edf5]">{revenues.length}</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1">CA HT</p>
-          <p className="text-2xl font-bold font-mono text-[#e8edf5]">{Math.round(totalHT).toLocaleString('fr-FR')} &euro;</p>
-        </Card>
+        <KpiCard label="CA Total"     value={fmtEur(total)} />
+        <KpiCard label="CA ce Mois"   value={fmtEur(thisMonth)} />
+        <KpiCard label="Transactions" value={fmtNumber(revenues.length)} />
+        <KpiCard label="CA HT"        value={fmtEur(Math.round(totalHT))} />
       </div>
 
       {/* Add Payment Form */}

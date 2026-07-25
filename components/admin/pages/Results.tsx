@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
+import KpiCard from '@/components/ui/KpiCard'
+import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
 
 interface SessionRow {
   id: string
@@ -70,22 +72,9 @@ export default function Results() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1">PnL Total</p>
-          <p className={`text-xl font-bold font-mono ${totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {totalPnL >= 0 ? '+' : ''}{totalPnL.toFixed(2)} $
-          </p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1">Sessions</p>
-          <p className="text-xl font-bold font-mono text-[#e8edf5]">{filtered.length}</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-[var(--color-neutral)] mb-1">Win Rate</p>
-          <p className={`text-xl font-bold font-mono ${winRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>
-            {winRate}%
-          </p>
-        </Card>
+        <KpiCard label="PnL Total" value={fmtUsd(totalPnL, 2, { sign: true })} tone={toneForPnl(totalPnL)} />
+        <KpiCard label="Sessions"  value={fmtNumber(filtered.length)} />
+        <KpiCard label="Win Rate"  value={fmtPct(winRate, 0)} tone={toneForRate(winRate, 50)} />
       </div>
 
       {/* Filter */}

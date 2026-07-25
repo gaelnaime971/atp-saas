@@ -130,6 +130,7 @@ export function fmtDateShort(iso: string | null | undefined): string {
 // ═══════════════════════════════════════════════════════════════
 
 export type PnlTone = 'profit' | 'loss' | 'neutral'
+export type RateTone = 'profit' | 'warn' | 'neutral'
 
 /**
  * toneForPnl(42)   → 'profit'
@@ -142,4 +143,27 @@ export function toneForPnl(n: number | null | undefined): PnlTone {
   if (n > 0) return 'profit'
   if (n < 0) return 'loss'
   return 'neutral'
+}
+
+/**
+ * Tone pour un ratio/indicateur de qualité (winRate, profit factor, sharpe...).
+ * NE renvoie JAMAIS `loss` : un WR de 30% n'est pas une perte financière,
+ * c'est une sous-performance → `warn` (ambre).
+ *
+ * toneForRate(65, 50)   → 'profit'    (au-dessus du seuil)
+ * toneForRate(30, 50)   → 'warn'      (sous le seuil)
+ * toneForRate(0, 50)    → 'neutral'   ← zéro ou absence
+ * toneForRate(1.2, 1)   → 'profit'    (PF > 1)
+ * toneForRate(0.8, 1)   → 'warn'      (PF < 1)
+ * toneForRate(null, 1)  → 'neutral'
+ *
+ * Le seuil de "qualité" pour chaque indicateur est fixé à un seul endroit
+ * par l'appelant. Convention : winRate=50, profitFactor=1, sharpe=1.
+ */
+export function toneForRate(
+  n: number | null | undefined,
+  target: number,
+): RateTone {
+  if (n == null || Number.isNaN(n) || n === 0) return 'neutral'
+  return n >= target ? 'profit' : 'warn'
 }
