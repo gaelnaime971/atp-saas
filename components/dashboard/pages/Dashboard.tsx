@@ -13,6 +13,8 @@ import { chartTokens, verticalGradient, barGradientByValue } from '@/lib/chart-t
 import CalendarPnl from '@/components/dashboard/CalendarPnl'
 import InsightIAPerf from '@/components/dashboard/InsightIAPerf'
 import InsightIAMarket from '@/components/dashboard/InsightIAMarket'
+import AtpScoreCard from '@/components/dashboard/AtpScoreCard'
+import PropFirmSummary from '@/components/dashboard/PropFirmSummary'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
 import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
@@ -307,8 +309,23 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
         />
       </div>
 
-      {/* Calendrier P&L mensuel (remplace la Heatmap) */}
-      <CalendarPnl sessions={filtered} totalCapital={totalCapital} />
+      {/* Rangée « cœur » : Calendrier (2/3) + stack ATP Score / Prop Firm (1/3).
+          Grille 2fr/1fr inspirée des dashboards traders premium — la donnée
+          visuelle massive (calendar) à gauche, deux cartes info-dense
+          empilées à droite (score qualitatif au-dessus, snapshot capital
+          en dessous). Le sous-stack 2fr/1fr donne au radar la respiration
+          nécessaire, la carte Prop Firm restant compacte. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'stretch' }}>
+        <CalendarPnl sessions={filtered} totalCapital={totalCapital} />
+        <div style={{ display: 'grid', gridTemplateRows: '2fr 1fr', gap: 16, minWidth: 0, minHeight: 0 }}>
+          <AtpScoreCard sessions={filtered} />
+          <PropFirmSummary
+            accounts={selectedAccounts.has('all') ? accounts : accounts.filter(a => selectedAccounts.has(a.id))}
+            totalCapital={totalCapital}
+            totalPnl={totalPnl}
+          />
+        </div>
+      </div>
 
       {/* Charts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
