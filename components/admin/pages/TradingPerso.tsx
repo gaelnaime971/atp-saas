@@ -7,6 +7,7 @@ import {
   Line, ReferenceLine, ResponsiveContainer, Tooltip as RTooltip,
   XAxis, YAxis, PieChart, Pie, Legend,
 } from 'recharts'
+import EntityCard, { BalanceHero, PerfCells } from '@/components/ui/EntityCard'
 
 // ── Types ─────────────────────────────────────────────
 
@@ -1311,7 +1312,6 @@ function AccountCard({
   const phase = PHASE_LABELS[account.phase]
   const status = STATUS_LABELS[account.status]
   const totalPnl = Number(account.current_balance) - Number(account.starting_balance)
-  const totalPct = account.starting_balance > 0 ? (totalPnl / Number(account.starting_balance)) * 100 : 0
   const targetPct = account.profit_target_pct ?? null
   const targetAmount = account.profit_target_amount ?? (targetPct != null ? Number(account.account_size) * (targetPct / 100) : null)
   const progressPct = targetAmount && targetAmount > 0 ? Math.max(0, Math.min(100, (totalPnl / targetAmount) * 100)) : null
@@ -1321,22 +1321,17 @@ function AccountCard({
   const ddColor = ddPct == null ? 'var(--text3)' : ddPct > 75 ? '#ef4444' : ddPct > 50 ? '#f59e0b' : '#22c55e'
 
   return (
-    <div style={{
-      background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 14, padding: 18,
-      borderTop: `4px solid ${phase.color}`, boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-      opacity: account.status === 'failed' ? 0.75 : 1,
-    }}>
-      {/* Header — larger */}
-      <div className="flex items-start justify-between gap-2 mb-4">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.01em', lineHeight: 1.15 }}>{account.label}</div>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <span>{account.propfirm}</span>
-            <span style={{ color: 'var(--border)' }}>·</span>
-            <span style={{ fontFamily: 'monospace' }}>{fmtEurRaw(account.account_size)}</span>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5 items-end shrink-0">
+    <EntityCard
+      title={account.label}
+      subtitle={
+        <>
+          <span>{account.propfirm}</span>
+          <span style={{ color: 'var(--color-border-subtle)' }}>·</span>
+          <span style={{ fontFamily: 'var(--font-data)' }}>{fmtEurRaw(account.account_size)}</span>
+        </>
+      }
+      topRight={
+        <>
           <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: phase.bg, color: phase.color, letterSpacing: '0.04em' }}>
             {phase.label}
           </span>
@@ -1344,44 +1339,16 @@ function AccountCard({
             <span style={{ width: 6, height: 6, borderRadius: 3, background: status.color, display: 'inline-block' }} />
             {status.label}
           </span>
-        </div>
-      </div>
-
-      {/* ═══ BIG BALANCE HERO ═══ */}
-      <div style={{
-        padding: '16px 18px',
-        background: totalPnl >= 0
-          ? 'linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(34,197,94,0.02) 100%)'
-          : 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)',
-        border: `1px solid ${totalPnl >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
-        borderRadius: 12, marginBottom: 12,
-      }}>
-        <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-          Solde actuel
-        </div>
-        <div style={{
-          fontSize: 32, fontWeight: 800, color: 'var(--text)',
-          fontFamily: 'monospace', lineHeight: 1.05, marginTop: 6, letterSpacing: '-0.03em',
-        }}>
-          {fmtEurRaw(account.current_balance)}
-        </div>
-        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>
-            depuis {fmtEurRaw(account.starting_balance)}
-          </span>
-          <span style={{
-            padding: '3px 8px', borderRadius: 5,
-            background: totalPnl >= 0 ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)',
-            color: totalPnl >= 0 ? '#22c55e' : '#ef4444',
-            fontWeight: 700, fontFamily: 'monospace', fontSize: 12,
-            display: 'inline-flex', alignItems: 'center', gap: 3,
-          }}>
-            {totalPnl >= 0 ? '▲' : '▼'} {totalPnl >= 0 ? '+' : ''}{fmtEurRaw(Math.abs(totalPnl))}
-            <span style={{ opacity: 0.75 }}>({totalPct >= 0 ? '+' : ''}{totalPct.toFixed(2)}%)</span>
-          </span>
-        </div>
-      </div>
-
+        </>
+      }
+      accentColor={phase.color}
+      dimmed={account.status === 'failed'}
+      hero={<BalanceHero currentBalance={Number(account.current_balance)} startingBalance={Number(account.starting_balance)} />}
+      weekPnl={weekPnl}
+      todayPnl={todayPnl}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    >
       {/* Progress to target */}
       {progressPct != null && (
         <div style={{ marginBottom: 10 }}>
@@ -1407,29 +1374,7 @@ function AccountCard({
           </div>
         </div>
       )}
-
-      {/* Perf — bigger */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>P&L semaine</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: weekPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(weekPnl)}</div>
-        </div>
-        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aujourd&apos;hui</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: todayPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(todayPnl)}</div>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-2">
-        <button onClick={onEdit} className="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80" style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-          ✎ Éditer
-        </button>
-        <button onClick={onDelete} className="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80" style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer' }}>
-          ✕
-        </button>
-      </div>
-    </div>
+    </EntityCard>
   )
 }
 
@@ -2412,7 +2357,6 @@ function ChallengeCard({
 }) {
   const phase = PHASE_LABELS[account.phase]
   const profit = Number(account.current_balance) - Number(account.starting_balance)
-  const profitPct = account.starting_balance > 0 ? (profit / Number(account.starting_balance)) * 100 : 0
   const targetAmount = account.profit_target_amount ?? (account.profit_target_pct != null ? Number(account.account_size) * (Number(account.profit_target_pct) / 100) : 0)
   const remaining = Math.max(0, targetAmount - profit)
   const progressPct = targetAmount > 0 ? (profit / targetAmount) * 100 : 0
@@ -2438,78 +2382,37 @@ function ChallengeCard({
   const ringColor = progressPct >= 100 ? '#22c55e' : progressPct >= 60 ? '#22c55e' : progressPct >= 30 ? '#3b82f6' : progressPct >= 0 ? '#f59e0b' : '#ef4444'
 
   const validated = progressPct >= 100 && minDaysMet
-  const balanceColor = profit >= 0 ? '#22c55e' : '#ef4444'
 
   return (
-    <div style={{
-      background: validated ? 'linear-gradient(135deg, var(--bg2) 0%, rgba(34,197,94,0.10) 100%)' : 'var(--bg2)',
-      border: `1px solid ${validated ? 'rgba(34,197,94,0.4)' : 'var(--border)'}`,
-      borderTop: `4px solid ${validated ? '#22c55e' : phase.color}`,
-      borderRadius: 14, padding: 18,
-      position: 'relative', overflow: 'hidden',
-      boxShadow: validated ? '0 4px 20px rgba(34,197,94,0.08)' : '0 2px 8px rgba(0,0,0,0.15)',
-    }}>
-      {validated && (
-        <div style={{
-          position: 'absolute', top: 10, right: 10,
-          fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6,
-          background: '#22c55e', color: '#000', letterSpacing: '0.08em',
-          boxShadow: '0 2px 8px rgba(34,197,94,0.3)',
-        }}>
-          ✓ VALIDÉ
-        </div>
-      )}
-
-      {/* Header — larger */}
-      <div className="mb-4">
-        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.01em', lineHeight: 1.15 }}>{account.label}</div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+    <EntityCard
+      title={account.label}
+      subtitle={
+        <>
           <span>{account.propfirm}</span>
-          <span style={{ color: 'var(--border)' }}>·</span>
-          <span style={{ fontFamily: 'monospace' }}>{fmtEurRaw(account.account_size)}</span>
+          <span style={{ color: 'var(--color-border-subtle)' }}>·</span>
+          <span style={{ fontFamily: 'var(--font-data)' }}>{fmtEurRaw(account.account_size)}</span>
           <span style={{
             padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 10,
             background: phase.bg, color: phase.color, letterSpacing: '0.04em',
           }}>{phase.label}</span>
-        </div>
-      </div>
-
-      {/* ═══ BIG BALANCE HERO ═══ */}
-      <div style={{
-        padding: '16px 18px',
-        background: profit >= 0
-          ? 'linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(34,197,94,0.02) 100%)'
-          : 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)',
-        border: `1px solid ${profit >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
-        borderRadius: 12, marginBottom: 14,
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-          Solde actuel
-        </div>
-        <div style={{
-          fontSize: 32, fontWeight: 800, color: 'var(--text)',
-          fontFamily: 'monospace', lineHeight: 1.05, marginTop: 6, letterSpacing: '-0.03em',
+        </>
+      }
+      accentColor={phase.color}
+      variant={validated ? 'success' : 'default'}
+      cornerBadge={validated && (
+        <span style={{
+          fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6,
+          background: 'var(--color-profit)', color: '#000', letterSpacing: '0.08em',
+          boxShadow: '0 2px 8px rgba(var(--color-profit-rgb), 0.3)',
         }}>
-          {fmtEurRaw(account.current_balance)}
-        </div>
-        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>
-            depuis {fmtEurRaw(account.starting_balance)}
-          </span>
-          <span style={{
-            padding: '3px 8px', borderRadius: 5,
-            background: profit >= 0 ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)',
-            color: balanceColor,
-            fontWeight: 700, fontFamily: 'monospace', fontSize: 12,
-            display: 'inline-flex', alignItems: 'center', gap: 3,
-          }}>
-            {profit >= 0 ? '▲' : '▼'} {profit >= 0 ? '+' : ''}{fmtEurRaw(Math.abs(profit))}
-            <span style={{ opacity: 0.75 }}>({profit >= 0 ? '+' : ''}{profitPct.toFixed(2)}%)</span>
-          </span>
-        </div>
-      </div>
-
+          ✓ VALIDÉ
+        </span>
+      )}
+      hero={<BalanceHero currentBalance={Number(account.current_balance)} startingBalance={Number(account.starting_balance)} />}
+      perfCells={<PerfCells weekPnl={weekPnl} todayPnl={todayPnl} weekLabel="Semaine" />}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    >
       {/* Ring + validation target */}
       <div className="flex items-center gap-4 mb-4">
         <div style={{ position: 'relative', width: RING, height: RING, flexShrink: 0 }}>
@@ -2580,30 +2483,7 @@ function ChallengeCard({
         </div>
       )}
 
-      {/* Perf — bigger */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Semaine</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: weekPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(weekPnl)}</div>
-        </div>
-        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aujourd&apos;hui</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: todayPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(todayPnl)}</div>
-        </div>
-      </div>
-
-      {/* Actions — bigger buttons */}
-      <div className="flex gap-2">
-        <button onClick={onEdit} className="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80"
-          style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-          ✎ Éditer
-        </button>
-        <button onClick={onDelete} className="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80"
-          style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer' }}>
-          ✕
-        </button>
-      </div>
-    </div>
+    </EntityCard>
   )
 }
 
@@ -2716,7 +2596,6 @@ function FundedCard({
   onDelete: () => void
 }) {
   const profit = Number(account.current_balance) - Number(account.starting_balance)
-  const profitPct = account.starting_balance > 0 ? (profit / Number(account.starting_balance)) * 100 : 0
   const totalPayouts = payouts.reduce((s, p) => s + Number(p.amount_eur), 0)
   const lastPayout = payouts[0] || null
 
@@ -2750,77 +2629,38 @@ function FundedCard({
 
   const payoutShare = account.payout_split_pct ?? 80
   const yourShareIfPayout = (profitSinceLastPayout * payoutShare) / 100
-  const balanceColor = profit >= 0 ? '#22c55e' : '#ef4444'
 
   return (
-    <div style={{
-      background: eligible ? 'linear-gradient(135deg, var(--bg2) 0%, rgba(168,85,247,0.12) 100%)' : 'var(--bg2)',
-      border: `1px solid ${eligible ? 'rgba(168,85,247,0.45)' : 'var(--border)'}`,
-      borderTop: '4px solid #a855f7',
-      borderRadius: 14, padding: 18,
-      position: 'relative', overflow: 'hidden',
-      boxShadow: eligible ? '0 4px 20px rgba(168,85,247,0.10)' : '0 2px 8px rgba(0,0,0,0.15)',
-    }}>
-      {eligible && (
-        <div style={{
-          position: 'absolute', top: 10, right: 10,
-          fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6,
-          background: '#a855f7', color: '#000', letterSpacing: '0.08em',
-          boxShadow: '0 2px 8px rgba(168,85,247,0.35)',
-        }}>
-          💰 PAYOUT ELIGIBLE
-        </div>
-      )}
-
-      {/* Header — larger */}
-      <div className="mb-4">
-        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.01em', lineHeight: 1.15 }}>{account.label}</div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+    <EntityCard
+      title={account.label}
+      subtitle={
+        <>
           <span>{account.propfirm}</span>
-          <span style={{ color: 'var(--border)' }}>·</span>
-          <span style={{ fontFamily: 'monospace' }}>{fmtEurRaw(account.account_size)}</span>
+          <span style={{ color: 'var(--color-border-subtle)' }}>·</span>
+          <span style={{ fontFamily: 'var(--font-data)' }}>{fmtEurRaw(account.account_size)}</span>
           <span style={{
             padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 10,
-            background: 'rgba(168,85,247,0.18)', color: '#a855f7', letterSpacing: '0.04em',
+            background: 'rgba(var(--color-payout-rgb), 0.18)', color: 'var(--color-payout)',
+            letterSpacing: '0.04em',
           }}>FINANCÉ</span>
-        </div>
-      </div>
-
-      {/* ═══ BIG BALANCE HERO ═══ */}
-      <div style={{
-        padding: '16px 18px',
-        background: profit >= 0
-          ? 'linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(34,197,94,0.02) 100%)'
-          : 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)',
-        border: `1px solid ${profit >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
-        borderRadius: 12, marginBottom: 14,
-      }}>
-        <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-          Solde actuel
-        </div>
-        <div style={{
-          fontSize: 32, fontWeight: 800, color: 'var(--text)',
-          fontFamily: 'monospace', lineHeight: 1.05, marginTop: 6, letterSpacing: '-0.03em',
+        </>
+      }
+      accentColor="var(--color-payout)"
+      variant={eligible ? 'highlight' : 'default'}
+      cornerBadge={eligible && (
+        <span style={{
+          fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6,
+          background: 'var(--color-payout)', color: '#000', letterSpacing: '0.08em',
+          boxShadow: '0 2px 8px rgba(var(--color-payout-rgb), 0.35)',
         }}>
-          {fmtEurRaw(account.current_balance)}
-        </div>
-        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>
-            depuis {fmtEurRaw(account.starting_balance)}
-          </span>
-          <span style={{
-            padding: '3px 8px', borderRadius: 5,
-            background: profit >= 0 ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)',
-            color: balanceColor,
-            fontWeight: 700, fontFamily: 'monospace', fontSize: 12,
-            display: 'inline-flex', alignItems: 'center', gap: 3,
-          }}>
-            {profit >= 0 ? '▲' : '▼'} {profit >= 0 ? '+' : ''}{fmtEurRaw(Math.abs(profit))}
-            <span style={{ opacity: 0.75 }}>({profit >= 0 ? '+' : ''}{profitPct.toFixed(2)}%)</span>
-          </span>
-        </div>
-      </div>
-
+          💰 PAYOUT ELIGIBLE
+        </span>
+      )}
+      hero={<BalanceHero currentBalance={Number(account.current_balance)} startingBalance={Number(account.starting_balance)} />}
+      perfCells={<PerfCells weekPnl={weekPnl} todayPnl={todayPnl} weekLabel="Semaine" />}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    >
       {/* Payout profit box — depuis dernier payout */}
       <div style={{
         padding: '14px 16px',
@@ -2891,29 +2731,6 @@ function FundedCard({
         </div>
       </div>
 
-      {/* Perf — bigger */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Semaine</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: weekPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(weekPnl)}</div>
-        </div>
-        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
-          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aujourd&apos;hui</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: todayPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(todayPnl)}</div>
-        </div>
-      </div>
-
-      {/* Actions — bigger */}
-      <div className="flex gap-2">
-        <button onClick={onEdit} className="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80"
-          style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-          ✎ Éditer
-        </button>
-        <button onClick={onDelete} className="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80"
-          style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer' }}>
-          ✕
-        </button>
-      </div>
-    </div>
+    </EntityCard>
   )
 }
