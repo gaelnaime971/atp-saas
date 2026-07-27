@@ -353,7 +353,7 @@ export default function Contrat() {
       </h2>
       {loadingInvoices ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
-          <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : invoices.length === 0 ? (
         <p style={{ fontSize: 13, color: 'var(--text3)', textAlign: 'center', padding: 24 }}>

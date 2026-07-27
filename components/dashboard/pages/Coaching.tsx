@@ -284,7 +284,7 @@ export default function Coaching() {
             width: 28,
             height: 28,
             border: '3px solid rgba(255,255,255,0.1)',
-            borderTopColor: 'var(--green)',
+            borderTopColor: 'var(--color-accent)',
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
           }}

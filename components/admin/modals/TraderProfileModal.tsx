@@ -226,7 +226,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
         {/* Body */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
