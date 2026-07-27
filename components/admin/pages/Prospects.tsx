@@ -1107,7 +1107,7 @@ export default function Prospects() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--text3)' }}>Contenu HTML</label>
-                      <label className="text-[11px] cursor-pointer hover:underline" style={{ color: 'var(--green)' }}>
+                      <label className="text-[11px] cursor-pointer hover:underline" style={{ color: 'var(--color-accent)' }}>
                         📁 Uploader un fichier .html
                         <input type="file" accept=".html,.htm,text/html" className="hidden" style={{ display: 'none' }}
                           onChange={e => { const f = e.target.files?.[0]; if (f) handleHtmlUpload(f) }}

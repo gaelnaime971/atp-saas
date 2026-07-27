@@ -531,7 +531,7 @@ export default function AdminCoaching() {
                       type="checkbox"
                       checked={row.is_active}
                       onChange={(e) => updateAvail(row.day_of_week, { is_active: e.target.checked })}
-                      style={{ accentColor: 'var(--green)' }}
+                      style={{ accentColor: 'var(--color-accent)' }}
                     />
                   </label>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>

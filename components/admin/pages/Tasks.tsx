@@ -184,7 +184,7 @@ export default function Tasks() {
 
       {/* Add task form */}
       {showForm && (
-        <Card className="border border-green-500/20">
+        <Card className="border border-[color:rgba(var(--color-accent-rgb),0.20)]">
           <h3 className="text-sm font-semibold text-[#e8edf5] mb-4">{editingTaskId ? 'Modifier la tâche' : 'Ajouter une tâche'}</h3>
           <form onSubmit={handleAdd} className="grid grid-cols-2 gap-4">
             <div className="col-span-2">

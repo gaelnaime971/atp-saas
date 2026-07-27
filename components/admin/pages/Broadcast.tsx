@@ -164,7 +164,7 @@ export default function Broadcast() {
                     name="recipientMode"
                     checked={recipientMode === opt.value}
                     onChange={() => setRecipientMode(opt.value)}
-                    className="w-4 h-4 accent-green-500"
+                    className="w-4 h-4 accent-[var(--color-accent)]"
                   />
                   <span className="text-sm text-[#e8edf5]">{opt.label}</span>
                 </label>
@@ -180,7 +180,7 @@ export default function Broadcast() {
                       type="checkbox"
                       checked={selectedTraders.includes(t.id)}
                       onChange={() => toggleTrader(t.id)}
-                      className="w-4 h-4 accent-green-500 rounded"
+                      className="w-4 h-4 accent-[var(--color-accent)] rounded"
                     />
                     <span className="text-sm text-[#a0aec0]">{t.full_name}</span>
                     {t.email && <span className="text-xs text-[var(--color-neutral)]">({t.email})</span>}

@@ -208,7 +208,7 @@ export default function Revenus() {
 
       {/* Add Payment Form */}
       {showForm && (
-        <Card className="border border-green-500/20">
+        <Card className="border border-[color:rgba(var(--color-accent-rgb),0.20)]">
           <h3 className="text-sm font-semibold text-[#e8edf5] mb-4">{editingId ? 'Modifier le paiement' : 'Enregistrer un paiement'}</h3>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
             <div>
