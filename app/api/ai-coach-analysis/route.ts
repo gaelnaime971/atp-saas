@@ -68,6 +68,7 @@ DONNÉES DU TRADER (${stats.period_from} → ${stats.period_to}, ${stats.session
 ${JSON.stringify(context, null, 2)}
 
 INSTRUCTIONS:
+- DEVISE: tous les montants du trader sont en DOLLARS AMÉRICAINS (USD). Cite les chiffres avec le symbole "$" UNIQUEMENT, JAMAIS "€" ni "EUR". Exemples: "PnL de +2 400 $", "drawdown de -850 $", "objectif 500 $/jour". Aucune mention d'euros nulle part.
 - Base TOUTES tes observations sur les chiffres ci-dessus. Cite des chiffres précis (ex: "Tu fais 65% WR sur YM mais seulement 38% sur NQ").
 - Identifie les VRAIS patterns (ex: revenge trading, plan score qui chute le vendredi, pertes plus grosses que gains, drawdown rapide après une série de gains, etc.)
 - Sois nuancé: un faible win rate avec un fort R:R peut être OK.
