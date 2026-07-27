@@ -11,6 +11,7 @@ import { fmtUsd, fmtEur, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/li
 import Button from '@/components/ui/Button'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
+import { chartTokens, verticalGradient } from '@/lib/chart-tokens'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip)
 
@@ -267,19 +268,27 @@ export default function Stats() {
                   const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
                   const cumulative: number[] = []
                   sorted.reduce((acc, s) => { const v = acc + s.pnl; cumulative.push(v); return v }, 0)
+                  const t = chartTokens()
+                  const lastIdx = cumulative.length - 1
                   return (
                     <Line
                       data={{
                         labels,
                         datasets: [{
                           data: cumulative,
-                          borderColor: 'rgba(var(--color-profit-rgb), 1)',
-                          backgroundColor: 'rgba(var(--color-profit-rgb), 0.1)',
+                          borderColor: t.profit,
+                          borderWidth: 2.5,
+                          backgroundColor: (ctx) => {
+                            const { chart } = ctx
+                            if (!chart.chartArea) return undefined
+                            return verticalGradient(chart.ctx, chart.chartArea, t.profitRgb, [[0, 0.25], [1, 0]])
+                          },
                           fill: true,
                           tension: 0.3,
-                          pointRadius: 4,
-                          pointBackgroundColor: cumulative.map(v => v < 0 ? 'rgba(var(--color-loss-rgb), 1)' : 'rgba(var(--color-profit-rgb), 1)'),
-                          pointBorderColor: cumulative.map(v => v < 0 ? 'rgba(var(--color-loss-rgb), 1)' : 'rgba(var(--color-profit-rgb), 1)'),
+                          pointRadius: cumulative.map((_, i) => i === lastIdx ? 4 : 0),
+                          pointBackgroundColor: cumulative.map(v => v < 0 ? t.loss : t.profit),
+                          pointBorderColor: cumulative.map(v => v < 0 ? t.loss : t.profit),
+                          pointHoverRadius: 5,
                         }],
                       }}
                       options={{
@@ -290,8 +299,8 @@ export default function Stats() {
                           tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} €` } },
                         },
                         scales: {
-                          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4a5568', font: { family: "'DM Mono', monospace" } } },
-                          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4a5568', font: { family: "'DM Mono', monospace" } } },
+                          x: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },
+                          y: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },
                         },
                       }}
                     />
@@ -307,14 +316,18 @@ export default function Stats() {
                 {(() => {
                   const bucketLabels = ['<-2R', '-2/-1', '-1/0', '0/1', '1/2', '2/3', '>3R']
                   const buckets = [0, 0, 0, 0, 0, 0, 0]
+                  const t = chartTokens()
+                  // Couleurs par bucket-index (histogramme sémantique R : loss → warn → profit).
+                  // Pas de barGradientByValue ici : Y = count (toujours > 0), donc le signe ne
+                  // reflète pas la sémantique R. On garde l'array avec vars résolues via t.
                   const bucketColors = [
-                    'rgba(var(--color-loss-rgb), 0.8)',
-                    'rgba(var(--color-loss-rgb), 0.5)',
-                    'rgba(var(--color-warn-rgb), 0.5)',
-                    'rgba(var(--color-warn-rgb), 0.6)',
-                    'rgba(var(--color-profit-rgb), 0.5)',
-                    'rgba(var(--color-profit-rgb), 0.7)',
-                    'rgba(var(--color-profit-rgb), 0.9)',
+                    `rgba(${t.lossRgb}, 0.8)`,
+                    `rgba(${t.lossRgb}, 0.5)`,
+                    `rgba(${t.warnRgb}, 0.5)`,
+                    `rgba(${t.warnRgb}, 0.6)`,
+                    `rgba(${t.profitRgb}, 0.5)`,
+                    `rgba(${t.profitRgb}, 0.7)`,
+                    `rgba(${t.profitRgb}, 0.9)`,
                   ]
                   sessions.forEach(s => {
                     const meta = (() => { try { return s.setup ? JSON.parse(s.setup) : null } catch { return null } })()
@@ -334,7 +347,9 @@ export default function Stats() {
                         datasets: [{
                           data: buckets,
                           backgroundColor: bucketColors,
-                          borderRadius: 4,
+                          borderRadius: 6,
+                          borderSkipped: false,
+                          maxBarThickness: 32,
                         }],
                       }}
                       options={{
@@ -345,8 +360,8 @@ export default function Stats() {
                           tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} sessions` } },
                         },
                         scales: {
-                          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4a5568', font: { family: "'DM Mono', monospace" } } },
-                          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4a5568', font: { family: "'DM Mono', monospace" }, stepSize: 1 } },
+                          x: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },
+                          y: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData }, stepSize: 1 } },
                         },
                       }}
                     />

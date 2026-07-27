@@ -9,6 +9,7 @@ import { fmtEur, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format
 import type { TradingSession } from '@/lib/types'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip, Legend } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
+import { chartTokens, verticalGradient, barGradientByValue } from '@/lib/chart-tokens'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip, Legend)
 
@@ -167,10 +168,11 @@ export default function Progression() {
     return { labels, reversed, bestR, worstR, planScores, avgRValues }
   }, [monthlyData, sessions])
 
-  // Common chart options for dark theme
-  const darkGridColor = 'rgba(255,255,255,0.05)'
+  // Common chart options for dark theme.
+  // darkTickColor est une valeur STATIQUE (hex), donc pas affectée par le bug
+  // CSS-var-dans-canvas. On la garde telle quelle. Grille et famille de police
+  // passent par le helper chartTokens() plus bas dans le return.
   const darkTickColor = '#4a5568'
-  const chartFont = { size: 10 }
 
   // Points forts / a ameliorer (static tags based on data trend)
   const tags = useMemo(() => {
@@ -202,6 +204,12 @@ export default function Progression() {
       </div>
     )
   }
+
+  // Résolution des tokens sémantiques via getComputedStyle. Chart.js dessine
+  // sur <canvas> et ne parse PAS les CSS variables : ce helper renvoie les
+  // valeurs concrètes utilisables par les callbacks Chart.js.
+  const t = chartTokens()
+  const chartFont = { family: t.fontData, size: 10 }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -238,56 +246,83 @@ export default function Progression() {
         <Card>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>P&L mensuel</h2>
           <div style={{ height: 200 }}>
-            <Line
-              data={{
-                labels: chartData.labels,
-                datasets: [{
-                  data: chartData.reversed.map(m => m.pnl),
-                  borderColor: 'var(--color-profit)',
-                  backgroundColor: 'rgba(var(--color-profit-rgb), 0.1)',
-                  fill: true,
-                  tension: 0.3,
-                  pointBackgroundColor: chartData.reversed.map(m => m.pnl < 0 ? 'var(--color-loss)' : 'var(--color-profit)'),
-                  pointRadius: 4,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: true } },
-                scales: {
-                  x: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
-                  y: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
-                },
-              }}
-            />
+            {(() => {
+              const pnls = chartData.reversed.map(m => m.pnl)
+              const lastIdx = pnls.length - 1
+              return (
+                <Line
+                  data={{
+                    labels: chartData.labels,
+                    datasets: [{
+                      data: pnls,
+                      borderColor: t.profit,
+                      borderWidth: 2.5,
+                      backgroundColor: (ctx) => {
+                        const { chart } = ctx
+                        if (!chart.chartArea) return undefined
+                        return verticalGradient(chart.ctx, chart.chartArea, t.profitRgb, [[0, 0.25], [1, 0]])
+                      },
+                      fill: true,
+                      tension: 0.3,
+                      pointRadius: pnls.map((_, i) => i === lastIdx ? 4 : 0),
+                      pointBackgroundColor: pnls.map(v => v < 0 ? t.loss : t.profit),
+                      pointBorderColor: pnls.map(v => v < 0 ? t.loss : t.profit),
+                      pointHoverRadius: 5,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                    scales: {
+                      x: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                      y: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                    },
+                  }}
+                />
+              )
+            })()}
           </div>
         </Card>
         <Card>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>Win Rate mensuel</h2>
           <div style={{ height: 200 }}>
-            <Line
-              data={{
-                labels: chartData.labels,
-                datasets: [{
-                  data: chartData.reversed.map(m => m.winRate),
-                  borderColor: 'var(--color-warn)',
-                  backgroundColor: 'rgba(var(--color-warn-rgb), 0.1)',
-                  fill: true,
-                  tension: 0.3,
-                  pointRadius: 4,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: true } },
-                scales: {
-                  x: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
-                  y: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont }, min: 0, max: 100 },
-                },
-              }}
-            />
+            {(() => {
+              const wr = chartData.reversed.map(m => m.winRate)
+              const lastIdx = wr.length - 1
+              return (
+                <Line
+                  data={{
+                    labels: chartData.labels,
+                    datasets: [{
+                      data: wr,
+                      borderColor: t.warn,
+                      borderWidth: 2.5,
+                      backgroundColor: (ctx) => {
+                        const { chart } = ctx
+                        if (!chart.chartArea) return undefined
+                        return verticalGradient(chart.ctx, chart.chartArea, t.warnRgb, [[0, 0.25], [1, 0]])
+                      },
+                      fill: true,
+                      tension: 0.3,
+                      pointRadius: wr.map((_, i) => i === lastIdx ? 4 : 0),
+                      pointBackgroundColor: t.warn,
+                      pointBorderColor: t.warn,
+                      pointHoverRadius: 5,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                    scales: {
+                      x: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                      y: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont }, min: 0, max: 100 },
+                    },
+                  }}
+                />
+              )
+            })()}
           </div>
         </Card>
       </div>
@@ -302,8 +337,19 @@ export default function Progression() {
                 labels: chartData.labels,
                 datasets: [{
                   data: chartData.reversed.map(m => m.pf),
-                  backgroundColor: chartData.reversed.map(m => m.pf >= 1.5 ? 'var(--color-profit)' : m.pf >= 1 ? 'var(--color-warn)' : 'var(--color-loss)'),
-                  borderRadius: 4,
+                  // Sémantique par seuil (pas par signe) : barGradientByValue ne colle pas
+                  // ici (le PF est toujours >= 0). On garde le mapping par valeur mais avec
+                  // les tokens résolus via t. Gradient vertical par barre pour cohérence.
+                  backgroundColor: (ctx) => {
+                    const { chart, parsed } = ctx
+                    const v = parsed.y ?? 0
+                    const rgb = v >= 1.5 ? t.profitRgb : v >= 1 ? t.warnRgb : t.lossRgb
+                    if (!chart.chartArea) return `rgba(${rgb}, 0.7)`
+                    return verticalGradient(chart.ctx, chart.chartArea, rgb, [[0, 0.9], [1, 0.5]])
+                  },
+                  borderRadius: 6,
+                  borderSkipped: false,
+                  maxBarThickness: 32,
                 }],
               }}
               options={{
@@ -311,8 +357,8 @@ export default function Progression() {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false }, tooltip: { enabled: true } },
                 scales: {
-                  x: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
-                  y: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                  x: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                  y: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
                 },
               }}
             />
@@ -326,8 +372,13 @@ export default function Progression() {
                 labels: chartData.labels,
                 datasets: [{
                   data: chartData.planScores,
-                  backgroundColor: 'var(--color-profit)',
-                  borderRadius: 4,
+                  // Profit uniforme (les scores plan sont toujours >= 0). Gradient vertical
+                  // par barre — barGradientByValue résout à profit puisque toutes les
+                  // valeurs sont positives.
+                  backgroundColor: barGradientByValue(t),
+                  borderRadius: 6,
+                  borderSkipped: false,
+                  maxBarThickness: 32,
                 }],
               }}
               options={{
@@ -335,8 +386,8 @@ export default function Progression() {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false }, tooltip: { enabled: true } },
                 scales: {
-                  x: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
-                  y: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont }, min: 0, max: 100 },
+                  x: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                  y: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont }, min: 0, max: 100 },
                 },
               }}
             />
@@ -349,28 +400,46 @@ export default function Progression() {
         <Card>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>R moyen mensuel</h2>
           <div style={{ height: 200 }}>
-            <Line
-              data={{
-                labels: chartData.labels,
-                datasets: [{
-                  data: chartData.avgRValues,
-                  borderColor: '#60a5fa',
-                  backgroundColor: 'rgba(96,165,250,0.1)',
-                  fill: true,
-                  tension: 0.3,
-                  pointRadius: 4,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: true } },
-                scales: {
-                  x: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
-                  y: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
-                },
-              }}
-            />
+            {(() => {
+              // #60a5fa (bleu) : couleur data identitaire du R moyen. Pas de token
+              // sémantique dédié aujourd'hui — candidat à un futur --color-data-blue.
+              const RM_HEX = '#60a5fa'
+              const RM_RGB = '96, 165, 250'
+              const vals = chartData.avgRValues
+              const lastIdx = vals.length - 1
+              return (
+                <Line
+                  data={{
+                    labels: chartData.labels,
+                    datasets: [{
+                      data: vals,
+                      borderColor: RM_HEX,
+                      borderWidth: 2.5,
+                      backgroundColor: (ctx) => {
+                        const { chart } = ctx
+                        if (!chart.chartArea) return undefined
+                        return verticalGradient(chart.ctx, chart.chartArea, RM_RGB, [[0, 0.25], [1, 0]])
+                      },
+                      fill: true,
+                      tension: 0.3,
+                      pointRadius: vals.map((_, i) => i === lastIdx ? 4 : 0),
+                      pointBackgroundColor: RM_HEX,
+                      pointBorderColor: RM_HEX,
+                      pointHoverRadius: 5,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                    scales: {
+                      x: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                      y: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                    },
+                  }}
+                />
+              )
+            })()}
           </div>
         </Card>
         <Card>
@@ -381,6 +450,8 @@ export default function Progression() {
                 labels: chartData.labels,
                 datasets: [{
                   data: chartData.reversed.map(m => m.sessions),
+                  // #a78bfa (violet) : couleur data identitaire du volume de sessions.
+                  // Pas de token sémantique dédié — candidat à un futur --color-data-purple.
                   backgroundColor: '#a78bfa',
                   borderRadius: 4,
                 }],
@@ -390,8 +461,8 @@ export default function Progression() {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false }, tooltip: { enabled: true } },
                 scales: {
-                  x: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
-                  y: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                  x: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                  y: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
                 },
               }}
             />
@@ -407,14 +478,26 @@ export default function Progression() {
                   {
                     label: 'Meilleur R',
                     data: chartData.bestR,
-                    backgroundColor: 'var(--color-profit)',
-                    borderRadius: 4,
+                    backgroundColor: (ctx) => {
+                      const { chart } = ctx
+                      if (!chart.chartArea) return `rgba(${t.profitRgb}, 0.7)`
+                      return verticalGradient(chart.ctx, chart.chartArea, t.profitRgb, [[0, 0.9], [1, 0.5]])
+                    },
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 32,
                   },
                   {
                     label: 'Pire R',
                     data: chartData.worstR,
-                    backgroundColor: 'var(--color-loss)',
-                    borderRadius: 4,
+                    backgroundColor: (ctx) => {
+                      const { chart } = ctx
+                      if (!chart.chartArea) return `rgba(${t.lossRgb}, 0.7)`
+                      return verticalGradient(chart.ctx, chart.chartArea, t.lossRgb, [[0, 0.9], [1, 0.5]])
+                    },
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 32,
                   },
                 ],
               }}
@@ -426,8 +509,8 @@ export default function Progression() {
                   tooltip: { enabled: true },
                 },
                 scales: {
-                  x: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
-                  y: { grid: { color: darkGridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                  x: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
+                  y: { grid: { color: t.gridColor }, ticks: { color: darkTickColor, font: chartFont } },
                 },
               }}
             />
