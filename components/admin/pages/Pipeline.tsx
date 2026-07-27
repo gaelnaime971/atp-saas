@@ -3106,9 +3106,29 @@ function PaymentReminderEmailModal({
     : 'virement'
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'virement' | 'both'>(defaultMethod)
   const [stripeLink, setStripeLink] = useState('')
+
+  // RIB persisté en localStorage — saisi une fois, réutilisé sur toutes les relances
+  const RIB_STORAGE_KEY = 'atp.paymentReminder.rib.v1'
   const [titulaire, setTitulaire] = useState('OMEGA INVESTMENT')
   const [iban, setIban] = useState('')
   const [bic, setBic] = useState('')
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RIB_STORAGE_KEY)
+      if (!raw) return
+      const saved = JSON.parse(raw) as { titulaire?: string; iban?: string; bic?: string }
+      if (saved.titulaire) setTitulaire(saved.titulaire)
+      if (saved.iban) setIban(saved.iban)
+      if (saved.bic) setBic(saved.bic)
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => {
+    if (!iban.trim() && !bic.trim()) return
+    try { localStorage.setItem(RIB_STORAGE_KEY, JSON.stringify({ titulaire, iban, bic })) } catch { /* quota */ }
+  }, [titulaire, iban, bic])
+
   const [reference, setReference] = useState<string>(
     nextUnpaid?.reference || `ATP-${(prospect.prenom || '').toUpperCase().slice(0, 6) || 'CLIENT'}-E${nextUnpaid?.num ?? 1}`
   )
@@ -3342,7 +3362,13 @@ function PaymentReminderEmailModal({
 
             {showVirement && (
               <div className="space-y-2 rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.15)' }}>
-                <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--green)' }}>Coordonnées bancaires</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--green)' }}>Coordonnées bancaires (RIB société)</div>
+                  <div className="text-[9px] flex items-center gap-1" style={{ color: 'var(--text3)' }} title="Enregistré dans ton navigateur — plus besoin de retaper à chaque relance">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                    mémorisé
+                  </div>
+                </div>
                 <div>
                   <label className="text-[9px] uppercase tracking-wider font-bold mb-1 block" style={{ color: 'var(--text3)' }}>Titulaire</label>
                   <input type="text" value={titulaire} onChange={e => setTitulaire(e.target.value)}

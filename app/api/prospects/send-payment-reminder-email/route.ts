@@ -150,7 +150,11 @@ export async function POST(request: Request) {
       )
     }
 
-    const from = process.env.EMAIL_FROM || 'ATP coaching <noreply@alphatradingpro-coaching.fr>'
+    // Payment reminders are signed by Audrey — override the shared EMAIL_FROM display name.
+    // Keep the verified alphatradingpro-coaching.fr domain (required by Resend);
+    // route replies to Audrey's inbox via reply-to.
+    const from = 'Audrey — Alpha Trading Pro <noreply@alphatradingpro-coaching.fr>'
+    const replyTo = 'contact.alphatradingpro@gmail.com'
     const finalSubject = subject?.trim() || `Rappel échéance ${echeance_numero}/${echeance_total} — ATP ULTRA`
 
     const ssr = await createSsrClient()
@@ -164,6 +168,7 @@ export async function POST(request: Request) {
       const res = await resend.emails.send({
         from,
         to: toEmail,
+        replyTo,
         subject: test_mode ? `[TEST] ${finalSubject}` : finalSubject,
         html,
       })
