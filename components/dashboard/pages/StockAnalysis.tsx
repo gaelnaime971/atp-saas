@@ -1638,7 +1638,7 @@ function AiTab({ verdict, loading, error, onRegenerate, hasData }: { verdict: Ve
 
   if (loading) return (
     <div className="rounded-xl p-8 text-center" style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
-      <div className="inline-block w-10 h-10 rounded-full border-4 border-t-transparent animate-spin mb-3" style={{ borderColor: 'rgba(var(--color-profit-rgb), 0.3)', borderTopColor: GREEN }} />
+      <div className="inline-block w-10 h-10 rounded-full border-4 border-t-transparent animate-spin mb-3" style={{ borderColor: 'rgba(var(--color-accent-rgb), 0.3)', borderTopColor: 'var(--color-accent)' }} />
       <div className="text-sm font-bold mb-1" style={{ color: 'var(--text)' }}>L&apos;IA analyse toutes les données…</div>
       <div className="text-xs" style={{ color: 'var(--text3)' }}>Lecture des fondamentaux, ratings, news</div>
     </div>

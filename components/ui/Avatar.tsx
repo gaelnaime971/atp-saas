@@ -21,8 +21,8 @@ export default function Avatar({ url, name, size = 32 }: AvatarProps) {
         height: size,
         borderRadius: '50%',
         overflow: 'hidden',
-        border: '1px solid rgba(var(--color-profit-rgb), 0.25)',
-        background: url ? 'transparent' : 'rgba(var(--color-profit-rgb), 0.1)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        background: url ? 'transparent' : 'var(--color-surface-2)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -40,7 +40,7 @@ export default function Avatar({ url, name, size = 32 }: AvatarProps) {
           style={{
             fontSize: size * 0.35,
             fontWeight: 700,
-            color: 'var(--green)',
+            color: 'var(--color-text-2)',
             fontFamily: "'DM Mono', monospace",
           }}
         >

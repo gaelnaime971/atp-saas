@@ -65,7 +65,7 @@ export default function AdminLoginPage() {
                 placeholder="admin@atpcoaching.fr"
                 className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
                 style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                onFocus={e => e.target.style.borderColor = 'var(--green)'}
+                onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
               />
             </div>
@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
                 placeholder="••••••••"
                 className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
                 style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                onFocus={e => e.target.style.borderColor = 'var(--green)'}
+                onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
               />
             </div>

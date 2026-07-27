@@ -190,7 +190,10 @@ export default function SavedSetups() {
           {setups.map(s => (
             <div
               key={s.id}
+              role="button"
+              tabIndex={0}
               onClick={() => setViewSetup(s)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViewSetup(s) } }}
               className="rounded-xl border cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)] hover:border-[color:rgba(var(--color-accent-rgb),0.4)]"
               style={{ background: 'var(--bg2)', borderColor: 'var(--border)', overflow: 'hidden' }}
             >

@@ -1378,7 +1378,7 @@ export default function AnalyseIA() {
 
           {/* Loading indicator on the right */}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text3)' }}>
-            {loadingInstant && <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid var(--bg3)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
+            {loadingInstant && <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid var(--bg3)', borderTopColor: 'var(--color-accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
             {instantStats && (
               <span style={{ fontFamily: 'monospace' }}>
                 <strong style={{ color: 'var(--text)' }}>{instantStats.sessions_count}</strong> sessions
@@ -1687,7 +1687,7 @@ export default function AnalyseIA() {
       {loading && (
         <Card>
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ display: 'inline-block', width: 40, height: 40, border: '3px solid var(--bg3)', borderTopColor: 'var(--green)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ display: 'inline-block', width: 40, height: 40, border: '3px solid var(--bg3)', borderTopColor: 'var(--color-accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             <p style={{ fontSize: 14, color: 'var(--text2)', marginTop: 16, fontWeight: 500 }}>L&apos;IA analyse {periodLabel}...</p>
             <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>Quelques secondes — ne ferme pas la page</p>
           </div>

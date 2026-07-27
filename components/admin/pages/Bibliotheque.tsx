@@ -426,7 +426,7 @@ export default function Bibliotheque() {
       <div className="flex items-center justify-center h-64">
         <div
           className="w-6 h-6 rounded-full animate-spin"
-          style={{ border: '2px solid var(--green)', borderTopColor: 'transparent' }}
+          style={{ border: '2px solid var(--color-accent)', borderTopColor: 'transparent' }}
         />
       </div>
     )
@@ -451,7 +451,7 @@ export default function Bibliotheque() {
 
       {/* Stats card */}
       <div className="grid grid-cols-4 gap-3">
-        <StatTile label="Vidéos" value={stats.totalVideos.toString()} accent="var(--green)" />
+        <StatTile label="Vidéos" value={stats.totalVideos.toString()} accent="var(--color-neutral)" />
         <StatTile label="Durée totale" value={formatDuration(stats.totalDuration)} accent="#a855f7" />
         <StatTile label="Documents PDF" value={stats.totalPdfs.toString()} accent="#3b82f6" />
         <StatTile label="Catégories" value={stats.distinctCategories.toString()} accent="var(--color-warn)" />

@@ -74,8 +74,8 @@ export default function AvatarUpload({ userId, currentUrl, name, size = 80, onUp
           height: size,
           borderRadius: '50%',
           overflow: 'hidden',
-          border: '2px solid rgba(var(--color-profit-rgb), 0.3)',
-          background: displayUrl ? 'transparent' : 'rgba(var(--color-profit-rgb), 0.1)',
+          border: '2px solid rgba(255,255,255,0.07)',
+          background: displayUrl ? 'transparent' : 'var(--color-surface-2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -92,7 +92,7 @@ export default function AvatarUpload({ userId, currentUrl, name, size = 80, onUp
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         ) : (
-          <span style={{ fontSize: size * 0.3, fontWeight: 700, color: 'var(--green)', fontFamily: "'DM Mono', monospace" }}>
+          <span style={{ fontSize: size * 0.3, fontWeight: 700, color: 'var(--color-text-2)', fontFamily: "'DM Mono', monospace" }}>
             {initials}
           </span>
         )}

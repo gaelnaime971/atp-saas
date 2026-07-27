@@ -104,7 +104,7 @@ export default function Notes() {
             <select
               value={selectedTraderId ?? ''}
               onChange={e => setSelectedTraderId(e.target.value || null)}
-              className="w-full rounded-lg px-3 py-2 text-sm text-[#e8edf5] border transition-colors focus:outline-none focus:border-green-500/40"
+              className="w-full rounded-lg px-3 py-2 text-sm text-[#e8edf5] border transition-colors focus:outline-none focus:border-[color:rgba(var(--color-accent-rgb),0.4)]"
               style={{
                 background: 'var(--color-surface-2)',
                 borderColor: 'rgba(255,255,255,0.07)',
@@ -130,7 +130,7 @@ export default function Notes() {
                   onChange={e => setContent(e.target.value)}
                   placeholder="Écrire une note privée..."
                   rows={5}
-                  className="w-full rounded-lg px-3 py-2 text-sm text-[#e8edf5] border transition-colors focus:outline-none focus:border-green-500/40 resize-none mb-3"
+                  className="w-full rounded-lg px-3 py-2 text-sm text-[#e8edf5] border transition-colors focus:outline-none focus:border-[color:rgba(var(--color-accent-rgb),0.4)] resize-none mb-3"
                   style={{
                     background: 'var(--color-surface-2)',
                     borderColor: 'rgba(255,255,255,0.07)',
@@ -166,9 +166,9 @@ export default function Notes() {
               {/* Trader header */}
               <div className="flex items-center gap-3 px-1 mb-2">
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center border bg-green-500/10 border-green-500/20"
+                  className="w-8 h-8 rounded-full flex items-center justify-center border bg-[var(--color-surface-2)] border-[rgba(255,255,255,0.07)]"
                 >
-                  <span className="text-xs font-bold text-green-400">
+                  <span className="text-xs font-bold text-[var(--color-text-2)]">
                     {(selectedTrader?.full_name || 'T')[0].toUpperCase()}
                   </span>
                 </div>

@@ -349,9 +349,9 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${
                   t.status === 'pending'
                     ? 'bg-amber-500/10 border-amber-500/20'
-                    : 'bg-green-500/10 border-green-500/20'
+                    : 'bg-[var(--color-surface-2)] border-[rgba(255,255,255,0.07)]'
                 }`}>
-                  <span className={`text-xs font-bold ${t.status === 'pending' ? 'text-amber-400' : 'text-green-400'}`}>
+                  <span className={`text-xs font-bold ${t.status === 'pending' ? 'text-amber-400' : 'text-[var(--color-text-2)]'}`}>
                     {(t.full_name || 'T')[0].toUpperCase()}
                   </span>
                 </div>

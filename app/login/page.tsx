@@ -60,7 +60,7 @@ export default function LoginPage() {
                   border: '1px solid var(--border)',
                   color: 'var(--text)',
                 }}
-                onFocus={e => e.target.style.borderColor = 'var(--green)'}
+                onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
               />
             </div>
@@ -81,7 +81,7 @@ export default function LoginPage() {
                   border: '1px solid var(--border)',
                   color: 'var(--text)',
                 }}
-                onFocus={e => e.target.style.borderColor = 'var(--green)'}
+                onFocus={e => e.target.style.borderColor = 'var(--color-accent)'}
                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
               />
             </div>

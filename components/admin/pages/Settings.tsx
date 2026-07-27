@@ -262,8 +262,8 @@ export default function Settings() {
                   style={{ background: 'var(--color-surface-2)', borderColor: 'rgba(255,255,255,0.05)' }}
                 >
                   {/* Avatar */}
-                  <div className="w-9 h-9 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
-                    <span className="text-green-400 text-xs font-bold">{(t.full_name ?? 'T')[0].toUpperCase()}</span>
+                  <div className="w-9 h-9 rounded-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] flex items-center justify-center shrink-0">
+                    <span className="text-[var(--color-text-2)] text-xs font-bold">{(t.full_name ?? 'T')[0].toUpperCase()}</span>
                   </div>
 
                   {/* Info */}

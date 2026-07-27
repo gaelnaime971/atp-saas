@@ -216,7 +216,7 @@ export default function Revenus() {
               <select
                 value={form.trader_id}
                 onChange={e => setForm(f => ({ ...f, trader_id: e.target.value }))}
-                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-[color:rgba(var(--color-accent-rgb),0.5)]"
               >
                 <option value="">S&eacute;lectionner un trader</option>
                 {traders.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
@@ -227,7 +227,7 @@ export default function Revenus() {
               <select
                 value={form.payment_method}
                 onChange={e => setForm(f => ({ ...f, payment_method: e.target.value as PaymentMethod }))}
-                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-[color:rgba(var(--color-accent-rgb),0.5)]"
               >
                 <option value="virement">Virement bancaire</option>
                 <option value="stripe_comptant">Stripe comptant</option>
@@ -247,7 +247,7 @@ export default function Revenus() {
                   step="0.01"
                   value={form.amount}
                   onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                  className="flex-1 bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[var(--color-neutral)]"
+                  className="flex-1 bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-[color:rgba(var(--color-accent-rgb),0.5)] placeholder-[var(--color-neutral)]"
                   placeholder="ex: 497"
                 />
                 <button
@@ -278,7 +278,7 @@ export default function Revenus() {
                 required
                 value={form.payment_date}
                 onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))}
-                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-[color:rgba(var(--color-accent-rgb),0.5)]"
               />
             </div>
             <div className="col-span-2">
@@ -287,7 +287,7 @@ export default function Revenus() {
                 type="text"
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[var(--color-neutral)]"
+                className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-[color:rgba(var(--color-accent-rgb),0.5)] placeholder-[var(--color-neutral)]"
                 placeholder="ex: Coaching 1:1 - Mars 2025"
               />
             </div>
@@ -356,7 +356,7 @@ export default function Revenus() {
                 <button
                   onClick={e => { e.stopPropagation(); handleEdit(r) }}
                   title="Modifier"
-                  className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[var(--color-surface-2)] text-[#a0aec0] hover:text-green-400 hover:border-green-500/30 transition-colors"
+                  className="p-1.5 rounded-md border border-[rgba(255,255,255,0.07)] bg-[var(--color-surface-2)] text-[#a0aec0] hover:text-[var(--color-accent)] hover:border-[color:rgba(var(--color-accent-rgb),0.3)] transition-colors"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />

@@ -132,7 +132,7 @@ export default function Broadcast() {
               type="text"
               value={subject}
               onChange={e => setSubject(e.target.value)}
-              className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[var(--color-neutral)]"
+              className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-[color:rgba(var(--color-accent-rgb),0.5)] placeholder-[var(--color-neutral)]"
               placeholder="ex: Nouveau contenu disponible"
             />
           </div>
@@ -143,7 +143,7 @@ export default function Broadcast() {
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}
-              className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-green-500/50 placeholder-[var(--color-neutral)]"
+              className="w-full bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)] rounded-lg px-3 py-2 text-sm text-[#e8edf5] focus:outline-none focus:border-[color:rgba(var(--color-accent-rgb),0.5)] placeholder-[var(--color-neutral)]"
               style={{ minHeight: '200px' }}
               placeholder="Rédigez votre message ici..."
             />
