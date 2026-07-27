@@ -36,6 +36,16 @@ import type { TradingSession } from '@/lib/types'
 
 interface Props {
   sessions: TradingSession[]
+  /**
+   * Sous-titre de périmètre — ex "Profil global · tous comptes" ou
+   * "Profil global · 2 comptes". Affiché sous le titre pour éviter la
+   * contradiction apparente avec les cartes Insight IA (qui portent
+   * sur une fenêtre glissante). L'ATP Score, lui, calcule TOUJOURS
+   * sur toute l'historique disponible des `sessions` reçues — c'est
+   * un profil, pas un instantané. Voir REFONTE.md § "Périmètres
+   * explicites Dashboard".
+   */
+  scopeLabel: string
 }
 
 // Mapping tone → CSS var. TONE_COLOR_VAR de format.ts ne couvre pas
@@ -53,7 +63,7 @@ const TONE_RGB: Record<AtpTone, string> = {
   neutral: '148, 148, 148',
 }
 
-export default function AtpScoreCard({ sessions }: Props) {
+export default function AtpScoreCard({ sessions, scopeLabel }: Props) {
   const result = useMemo(() => atpScore(sessions), [sessions])
 
   // Data pour Recharts : chaque axe null → 0 sur le radar (visuellement
@@ -68,7 +78,7 @@ export default function AtpScoreCard({ sessions }: Props) {
 
   return (
     <Card style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <Header tooltipText={tooltipText} />
+      <Header tooltipText={tooltipText} scopeLabel={scopeLabel} />
 
       {result.score == null ? (
         <EmptyBody validCount={result.validCount} />
@@ -79,7 +89,7 @@ export default function AtpScoreCard({ sessions }: Props) {
   )
 }
 
-function Header({ tooltipText }: { tooltipText: string }) {
+function Header({ tooltipText, scopeLabel }: { tooltipText: string; scopeLabel: string }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -100,6 +110,12 @@ function Header({ tooltipText }: { tooltipText: string }) {
             marginTop: 2,
           }}>
             Ton profil trader
+          </div>
+          <div style={{
+            fontSize: 10, color: 'var(--color-text-3)',
+            marginTop: 2, fontVariantNumeric: 'tabular-nums',
+          }}>
+            {scopeLabel}
           </div>
         </div>
       </div>

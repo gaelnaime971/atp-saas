@@ -44,6 +44,15 @@ export interface AiHistoryEntry {
   stop_doing_top?: string
   top_instrument?: AiInstrumentInsight
   top_pattern?: string
+
+  // Périmètre de l'analyse — permet aux cartes Dashboard d'afficher
+  // "N derniers jours · tous comptes" en sous-titre et d'éviter les
+  // contradictions apparentes avec l'ATP Score (qui, lui, calcule sur
+  // toute l'historique). Ajouté après le paquet 1 ATP Score en réaction
+  // au bug de confiance "89 Excellent" vs "IA -1322 $ 7 jours".
+  period_label?: string   // ex "7 derniers jours", "60 derniers jours"
+  period_from?: string    // YYYY-MM-DD
+  period_to?: string      // YYYY-MM-DD
 }
 
 export const AI_HISTORY_KEY = 'atp_analyses_history'
@@ -83,4 +92,26 @@ export function latestFreshAnalysis(maxAgeDays: number = 3): AiHistoryEntry | nu
   const ageMs = Date.now() - new Date(latest.date).getTime()
   const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000
   return ageMs <= maxAgeMs ? latest : null
+}
+
+/**
+ * Sous-titre de périmètre pour les cartes Dashboard Insight IA.
+ *
+ * Renvoie "N derniers jours · tous comptes" quand la période est
+ * connue, ou juste "tous comptes" pour les vieilles entrées d'avant
+ * l'ajout de period_label (fallback gracieux, pas de "période inconnue"
+ * qui inquiéterait le user).
+ *
+ * Le suffixe "· tous comptes" est HARDCODÉ intentionnellement : l'API
+ * /api/ai-coach-analysis reçoit bien un `accountId` dans MetricsOptions
+ * mais ne l'applique JAMAIS à la query Supabase (bug documenté dans
+ * REFONTE.md § "Router accountId à l'API d'analyse IA"). Tant que ce
+ * bug n'est pas corrigé, l'analyse porte réellement sur tous les
+ * comptes du trader, quel que soit le filtre affiché dans le header
+ * Dashboard. Le sous-titre dit la vérité, pas la promesse.
+ */
+export function formatAnalysisScope(entry: AiHistoryEntry): string {
+  const period = entry.period_label
+  if (!period) return 'tous comptes'
+  return `${period} · tous comptes`
 }

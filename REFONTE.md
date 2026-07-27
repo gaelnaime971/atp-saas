@@ -477,6 +477,74 @@ Estimation : 1 commit migration SQL + 1 commit endpoint + 1 commit
 refactor AnalyseIA + 1 commit refactor cartes Dashboard = 4 commits
 séparés, chacun revertable.
 
+## Router `accountId` à l'API d'analyse IA — bug de périmètre
+
+**Découverte** en réagissant au bug de confiance "ATP Score 89
+Excellent" affiché juste au-dessus d'un Insight IA disant "PnL
+-1322 $ sur 7 jours" — même écran, deux verdicts contradictoires.
+
+Le diagnostic complet est dans le commit qui ajoute les sous-titres
+de périmètre ("Profil global · tous comptes" vs "N derniers jours ·
+tous comptes"). Un des trois décalages qui creusent l'écart est un
+**vrai bug** :
+
+**L'API `/api/ai-coach-analysis` reçoit un `accountId` dans
+`MetricsOptions` mais ne l'applique JAMAIS à la query Supabase.**
+
+Voir [route.ts:32-53](app/api/ai-coach-analysis/route.ts#L32-L53) :
+`opts.accountId` est initialisé depuis `body.accountId`, puis
+transmis à `computeStats(sessions, backtests, opts)` — mais la
+requête SQL en amont ne le filtre pas. Résultat : quel que soit
+le compte que le trader choisit dans le filtre header ou dans les
+options AnalyseIA, l'analyse porte sur **toutes** ses sessions.
+
+**Impact aujourd'hui** :
+- Un trader qui filtre "compte financé seul" dans le header
+  Dashboard voit une analyse IA qui inclut ses challenges.
+- Le sous-titre des cartes Insight IA dit "tous comptes" en dur
+  pour ne pas mentir — mais promet une correction.
+- Analyse par compte impossible sans passer par un hack (dupliquer
+  les sessions dans un compte dédié).
+
+**Chantier de correction** (peut se faire indépendamment du chantier
+persistance en base) :
+
+1. **`app/api/ai-coach-analysis/route.ts`** — appliquer le filtre :
+   ```ts
+   let query = supabase.from('trading_sessions')
+     .select('session_date,pnl,result,trades_count,instrument,setup,notes')
+     .eq('trader_id', user.id)
+     .gte('session_date', opts.from)
+     .lte('session_date', opts.to)
+   if (opts.accountId) {
+     // Les account_ids sont dans setup.account_ids (JSON), pas de FK
+     // directe. Deux options : (a) filtre côté client après fetch,
+     // (b) refactor DB pour extraire account_id en colonne native.
+     // (a) est plus rapide à shipper, (b) est plus propre pour la
+     // suite (permet aussi les indexes par compte).
+   }
+   ```
+   Même chose pour `/api/ai-coach-chat/route.ts` qui a le même bug.
+
+2. **`components/dashboard/pages/AnalyseIA.tsx`** — passer explicitement
+   `accountId` dans le body de la fetch (aujourd'hui non transmis
+   depuis l'UI d'AnalyseIA elle-même, séparément du bug API).
+
+3. **Dashboard cartes Insight IA** — chantier annexe : re-fetch
+   automatique quand le filtre de comptes du header change (aujourd'hui
+   les cartes lisent le dernier snapshot localStorage, elles ne
+   savent rien du filtre header). Nécessite soit un fetch API à
+   chaque changement (coûteux), soit une IA cachée par (accountId,
+   period) côté serveur.
+
+4. **`lib/ai-history.ts`** — quand `accountId` sera vraiment routé,
+   étendre `AiHistoryEntry` avec `scope_label` (ex "Compte Topstep
+   50k") et mettre à jour `formatAnalysisScope()` pour le lire au
+   lieu de retourner "tous comptes" en dur.
+
+Estimation : 1 commit fix API + 1 commit UI AnalyseIA + 1 commit
+cartes Dashboard re-fetch = 3 commits séparés.
+
 ## Règle devise — tout en $ côté trader/trading, € côté facturation
 
 Décision produit prise pendant l'enrichissement du Dashboard : le

@@ -89,6 +89,12 @@ interface HistoryEntry {
   stop_doing_top?: string
   top_instrument?: { instrument: string; verdict: string; conseil: string }
   top_pattern?: string
+  // Périmètre — pour le sous-titre "N derniers jours · tous comptes"
+  // des cartes Dashboard Insight IA. Optionnels : les vieilles entrées
+  // n'en ont pas et affichent un sous-titre dégradé.
+  period_label?: string
+  period_from?: string
+  period_to?: string
 }
 
 type TabId = 'overview' | 'forces' | 'patterns' | 'plan' | 'instruments' | 'objectifs' | 'metrics' | 'compare'
@@ -416,8 +422,13 @@ export default function AnalyseIA() {
       setGeneratedAt(now)
       setActiveTab('overview')
 
-      // Auto-save to history
+      // Auto-save to history. Peuple TOUS les champs enrichis (comme
+      // saveCurrent) — le sous-titre de périmètre des cartes Dashboard
+      // en dépend, et les cartes doivent marcher dès la première analyse
+      // sans forcer un click "Sauvegarder" manuel.
       if (parsed) {
+        const s = (data.stats as Stats) || null
+        const topInstrument = parsed.instruments_analysis[0]
         const entry: HistoryEntry = {
           date: now.toISOString(),
           scores: {
@@ -430,6 +441,15 @@ export default function AnalyseIA() {
           },
           verdict_general: parsed.verdict_general,
           trend: parsed.trend_global,
+          faiblesse_principale: parsed.faiblesses[0]?.titre,
+          stop_doing_top: parsed.stop_doing[0],
+          top_instrument: topInstrument
+            ? { instrument: topInstrument.instrument, verdict: topInstrument.verdict, conseil: topInstrument.conseil }
+            : undefined,
+          top_pattern: parsed.patterns_detectes[0]?.titre,
+          period_label: s?.period_label,
+          period_from: s?.period_from,
+          period_to: s?.period_to,
         }
         const next = [...loadHistory(), entry].slice(-5)
         saveHistory(next)
@@ -465,6 +485,12 @@ export default function AnalyseIA() {
         ? { instrument: topInstrument.instrument, verdict: topInstrument.verdict, conseil: topInstrument.conseil }
         : undefined,
       top_pattern: analysis.patterns_detectes[0]?.titre,
+      // Périmètre — le sous-titre des cartes Dashboard le lit pour dire
+      // "N derniers jours · tous comptes" et éviter la contradiction
+      // apparente avec l'ATP Score (profil global sur toute l'historique).
+      period_label: stats?.period_label,
+      period_from: stats?.period_from,
+      period_to: stats?.period_to,
     }
     const existing = loadHistory().filter(h => h.date !== entry.date)
     const next = [...existing, entry].slice(-5)

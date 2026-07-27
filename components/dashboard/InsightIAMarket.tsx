@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Card from '@/components/ui/Card'
-import { latestFreshAnalysis, type AiHistoryEntry } from '@/lib/ai-history'
+import { latestFreshAnalysis, formatAnalysisScope, type AiHistoryEntry } from '@/lib/ai-history'
 
 /**
  * Insight IA #2 — Marché & Setup.
@@ -32,7 +32,7 @@ export default function InsightIAMarket({ onGoToAnalysis }: Props) {
 
   return (
     <Card>
-      <Header />
+      <Header entry={entry ?? null} />
       {entry === undefined ? (
         <Skeleton />
       ) : entry === null ? (
@@ -44,7 +44,10 @@ export default function InsightIAMarket({ onGoToAnalysis }: Props) {
   )
 }
 
-function Header() {
+function Header({ entry }: { entry: AiHistoryEntry | null }) {
+  // Miroir d'InsightIAPerf : sous-titre de périmètre pour éviter la
+  // contradiction apparente avec l'ATP Score sur le même écran.
+  const scope = entry ? formatAnalysisScope(entry) : null
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
       <span style={{ fontSize: 18 }}>🎯</span>
@@ -62,6 +65,14 @@ function Header() {
         }}>
           Marché & Setup
         </div>
+        {scope && (
+          <div style={{
+            fontSize: 10, color: 'var(--color-text-3)',
+            marginTop: 2, fontVariantNumeric: 'tabular-nums',
+          }}>
+            {scope}
+          </div>
+        )}
       </div>
     </div>
   )

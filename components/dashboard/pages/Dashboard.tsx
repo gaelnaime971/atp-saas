@@ -116,12 +116,25 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
   const grossLoss = Math.abs(filtered.filter(s => Number(s.pnl) < 0).reduce((sum, s) => sum + Number(s.pnl), 0))
   const profitFactor = grossLoss > 0 ? Number((grossProfit / grossLoss).toFixed(2)) : grossProfit > 0 ? 99.99 : 0
 
-  // Somme des capitaux des comptes affichés — utilisé par CalendarPnl pour
-  // ses paliers d'intensité relatifs (0.25% / 0.75% / 2%).
-  const totalCapital = (selectedAccounts.has('all')
+  // Comptes actuellement dans le périmètre (respecte le filtre header).
+  const scopedAccounts = selectedAccounts.has('all')
     ? accounts
     : accounts.filter(a => selectedAccounts.has(a.id))
-  ).reduce((s, a) => s + (Number(a.initial_balance) || Number(a.capital) || 0), 0)
+
+  // Somme des capitaux des comptes affichés — utilisé par CalendarPnl pour
+  // ses paliers d'intensité relatifs (0.25% / 0.75% / 2%).
+  const totalCapital = scopedAccounts.reduce(
+    (s, a) => s + (Number(a.initial_balance) || Number(a.capital) || 0), 0,
+  )
+
+  // Sous-titre de périmètre pour l'ATP Score. Dit explicitement sur quoi
+  // le score est calculé pour éviter la contradiction apparente avec les
+  // Insight IA (qui, eux, portent sur une fenêtre glissante de N jours).
+  //   "Profil global · tous comptes"
+  //   "Profil global · 2 comptes"
+  const scopeLabel = selectedAccounts.has('all') || scopedAccounts.length === accounts.length
+    ? 'Profil global · tous comptes'
+    : `Profil global · ${scopedAccounts.length} compte${scopedAccounts.length > 1 ? 's' : ''}`
 
   // Last 8 sessions for table
   const recentSessions = filtered.slice(0, 8)
@@ -318,9 +331,9 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'stretch' }}>
         <CalendarPnl sessions={filtered} totalCapital={totalCapital} />
         <div style={{ display: 'grid', gridTemplateRows: '2fr 1fr', gap: 16, minWidth: 0, minHeight: 0 }}>
-          <AtpScoreCard sessions={filtered} />
+          <AtpScoreCard sessions={filtered} scopeLabel={scopeLabel} />
           <PropFirmSummary
-            accounts={selectedAccounts.has('all') ? accounts : accounts.filter(a => selectedAccounts.has(a.id))}
+            accounts={scopedAccounts}
             totalCapital={totalCapital}
             totalPnl={totalPnl}
           />

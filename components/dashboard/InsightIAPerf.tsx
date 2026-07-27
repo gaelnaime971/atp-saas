@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Card from '@/components/ui/Card'
-import { latestFreshAnalysis, type AiHistoryEntry } from '@/lib/ai-history'
+import { latestFreshAnalysis, formatAnalysisScope, type AiHistoryEntry } from '@/lib/ai-history'
 import { toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 
 /**
@@ -39,7 +39,7 @@ export default function InsightIAPerf({ onGoToAnalysis }: Props) {
 
   return (
     <Card>
-      <Header />
+      <Header entry={entry ?? null} />
       {entry === undefined ? (
         <Skeleton />
       ) : entry === null ? (
@@ -51,7 +51,10 @@ export default function InsightIAPerf({ onGoToAnalysis }: Props) {
   )
 }
 
-function Header() {
+function Header({ entry }: { entry: AiHistoryEntry | null }) {
+  // Sous-titre de périmètre — ne s'affiche que si une analyse est
+  // chargée, sinon le fallback "génère ton analyse" prend le relais.
+  const scope = entry ? formatAnalysisScope(entry) : null
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
       <span style={{ fontSize: 18 }}>🧠</span>
@@ -69,6 +72,14 @@ function Header() {
         }}>
           Performance & Discipline
         </div>
+        {scope && (
+          <div style={{
+            fontSize: 10, color: 'var(--color-text-3)',
+            marginTop: 2, fontVariantNumeric: 'tabular-nums',
+          }}>
+            {scope}
+          </div>
+        )}
       </div>
     </div>
   )
