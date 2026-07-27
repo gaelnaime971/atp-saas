@@ -227,3 +227,97 @@ API pressentie : `<WizardModal open onClose steps={Step[]} current
 onStep body footer />` où `body` et `footer` sont des fonctions
 `(step) => ReactNode` pour éviter au parent la gymnastique de
 switch/case sur le step courant.
+
+**Confirmé infirmée dans l'audit des 4 monolithes** (AnalyseIA,
+RecapTradeLive admin+trader, TradingPerso, Pipeline) : aucun wizard
+multi-étapes avec stepper. `BulkAccountsModal` = tableau plat.
+`AddToPipelineModal` = 2 tabs. `ProspectDetailModal` = formulaire long.
+Seul motivant reste `CsvSessionImport`. Un seul site → variante
+ad-hoc si nécessaire, pas de primitive.
+
+## Règle générale — tokens sémantiques par intention métier
+
+**Un token nomme une INTENTION, pas une couleur.** Deux notions métier
+distinctes obtiennent deux tokens même si leurs valeurs actuelles sont
+identiques. Le jour où on veut distinguer les deux à l'œil, on change
+UNE variable dans `globals.css`, pas 40 fichiers.
+
+Anti-pattern à éviter : `--color-tag-violet` unique partagé par payout
+et statut prospect closé sous prétexte que "les deux = revenu". Faux :
+un payout est de l'argent qui rentre, un statut closé est une étape de
+tunnel de vente. Deux notions, deux tokens.
+
+**Tokens déjà créés** (`app/globals.css`) :
+- `--color-payout` — argent qui rentre (TradingPerso, PropFirm)
+- `--color-status-closed` — statut prospect final "closé"
+
+### Tokens Pipeline à créer (au moment du refactor Pipeline)
+
+Pipeline utilise ~30 couleurs hardcodées `#xxxxxx` pour ses statuts,
+températures, programmes, sources, méthodes de paiement, outcomes.
+Chacun mérite son propre token sémantique. **Ne pas les créer à
+l'avance** — un token sans usage pollue `globals.css` ; les créer au
+moment du refactor Pipeline garantit qu'ils remplacent des sites réels.
+
+Inventaire depuis [Pipeline.tsx:59-137](components/admin/pages/Pipeline.tsx#L59) :
+
+**Statuts prospect (STATUS_COLUMNS)** :
+- `--color-status-nouveau` : `#3b82f6`
+- `--color-status-contacte` : `#f59e0b`
+- `--color-status-call-booke` : `#22c55e`
+- `--color-status-closed` : `#a855f7` *(déjà créé)*
+- `--color-status-disqualifie` : `#ef4444`
+
+**Température (TEMPERATURE_OPTIONS)** :
+- `--color-temp-chaud` : `#ef4444`
+- `--color-temp-tiede` : `#f59e0b`
+- `--color-temp-froid` : `#3b82f6`
+
+**Programme (PROGRAM_TYPES)** :
+- `--color-program-ultra` : `#22c55e`
+- `--color-program-coaching` : `#3b82f6`
+- `--color-program-seminaire` : `#a855f7`
+- `--color-program-autre` : `#6b7280`
+
+**Sources (SOURCE_LABELS)** — 12 sources, chacune sa teinte identitaire
+(Trading Night violet, Whop+2K rose, Instagram rose Instagram, X/Twitter
+gris, etc.). Un token par source.
+
+**Méthodes de paiement (PAYMENT_METHOD_OPTIONS)** :
+- `--color-pay-stripe` : `#635bff` (brand Stripe)
+- `--color-pay-virement` : `#22c55e`
+- `--color-pay-especes` : `#f59e0b`
+- `--color-pay-mixed` : `#a855f7`
+
+**Outcomes (OUTCOME_OPTIONS)** — mapping partiel : "pas répondu" gris,
+"rappel" amber, "intéressé"/"très intéressé" vert (2 alphas différentes),
+"objection" violet, "pas intéressé" rouge, "closé" vert.
+
+Total : ~25 tokens à créer lors du refactor Pipeline. C'est le prix de
+la règle métier — mais c'est aussi ce qui rendra Pipeline
+mécaniquement modifiable après.
+
+## `EmailComposerModal` — signalé par l'audit Pipeline
+
+Les 3 modals email de Pipeline (`ClosingEmailModal`, `WelcomeEmailModal`,
+`PaymentReminderEmailModal`) partagent une structure quasi-identique :
+recipient + form + preview. Motivant confirmé mais les 3 modals appellent
+des API différentes avec des payloads distincts, donc extraire une
+primitive nécessite un travail d'abstraction non trivial.
+
+**Décision** : ne pas créer maintenant. Documenter comme candidate.
+Attendre le refactor Pipeline pour évaluer si l'abstraction est
+justifiée ou si les 3 modals gagnent juste à hériter d'un même layout
+via `<Modal>` + composition manuelle.
+
+## `SegmentedControl` — signalé par l'audit RecapTradeLive admin
+
+Pattern de sélecteur segmenté période (jour / semaine / mois / custom)
+récurrent, actuellement implémenté inline en boutons stylés. Répété
+dans RecapTradeLive admin ([L513](components/admin/pages/RecapTradeLive.tsx#L513))
+et vraisemblablement ailleurs (Stats, Sessions, PropFirm — à confirmer
+en migrant).
+
+**Décision** : ne pas créer maintenant. Documenter comme candidate.
+Extraire quand on aura 3+ sites migrés qui l'utilisent — critère
+d'extraction cohérent avec la démarche primitive-par-preuve.

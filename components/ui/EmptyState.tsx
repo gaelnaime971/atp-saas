@@ -19,11 +19,18 @@ export interface EmptyStateProps {
   description: ReactNode
   /** Action optionnelle (Button). Étoffée à l'étape 5. */
   action?: ReactNode
+  /**
+   * Style de bordure. Défaut `solid` — la zone est normalement pleine,
+   * juste vide à l'instant t (typique des dashboards trading où l'absence
+   * de trades sur une période est un état normal). Passer `dashed` pour
+   * signaler qu'il manque une action utilisateur (ex: setup non configuré).
+   */
+  variant?: 'solid' | 'dashed'
   /** Classe additionnelle sur le wrapper. */
   className?: string
 }
 
-export default function EmptyState({ title, description, action, className = '' }: EmptyStateProps) {
+export default function EmptyState({ title, description, action, variant = 'solid', className = '' }: EmptyStateProps) {
   return (
     <div
       className={className}
@@ -31,7 +38,7 @@ export default function EmptyState({ title, description, action, className = '' 
         padding: '2.5rem 1.5rem',
         textAlign: 'center',
         background: 'var(--color-surface-1)',
-        border: '1px dashed var(--color-border-subtle)',
+        border: `1px ${variant} var(--color-border-subtle)`,
         borderRadius: 'var(--radius-lg)',
       }}
       role="status"

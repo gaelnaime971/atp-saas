@@ -34,6 +34,17 @@
   --color-accent:      #c9a574;
   --color-accent-soft: rgba(201, 165, 116, 0.14);
 
+  /* --- Tokens métier violet ---
+     Deux sémantiques distinctes qui partagent la même valeur aujourd'hui.
+     Un token nomme une INTENTION MÉTIER, pas une couleur. Le jour où l'une
+     doit se distinguer à l'œil, on change UNE variable, pas 40 fichiers.
+     Les autres violets Pipeline (Trading Night, Séminaire, Mixte, Objection)
+     obtiendront chacun leur propre token au moment du refactor Pipeline —
+     voir REFONTE.md § "Tokens Pipeline à créer".
+  */
+  --color-payout:        #a855f7;   /* argent qui rentre : payouts + comptes financés (TradingPerso, PropFirm) */
+  --color-status-closed: #a855f7;   /* statut prospect final "closé" (Pipeline STATUS_COLUMNS) */
+
   /* --- Compat tokens Tailwind ---
      Nécessaires pour que les classes historiques `bg-background`,
      `text-foreground`, `border-border` (utilisées par le @layer base

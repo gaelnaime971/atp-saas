@@ -1,8 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Card from '@/components/ui/Card'
+import PageHeader from '@/components/ui/PageHeader'
+import KpiCard from '@/components/ui/KpiCard'
+import DataTable, { type Column } from '@/components/ui/DataTable'
+import EmptyState from '@/components/ui/EmptyState'
+import { toneForPnl, toneForRate } from '@/lib/format'
 
 interface LiveTrade {
   id: string
@@ -35,6 +39,17 @@ function getStartDate(period: Period, customFrom: string): string | null {
   return null
 }
 
+// Signal : inline dir/result badges + segmented control période sont des patterns
+// répétés qui deviendront <Badge> et <SegmentedControl> quand ces primitives
+// seront extraites (voir REFONTE.md). Refactor pur ici : tokens sémantiques,
+// zéro changement visuel.
+
+const RESULT_BADGE: Record<LiveTrade['result'], { label: string; bg: string; color: string; border: string }> = {
+  win:       { label: 'Win',  bg: 'rgba(var(--color-profit-rgb), 0.10)', color: 'var(--color-profit)', border: 'rgba(var(--color-profit-rgb), 0.20)' },
+  loss:      { label: 'Loss', bg: 'rgba(var(--color-loss-rgb), 0.10)',   color: 'var(--color-loss)',   border: 'rgba(var(--color-loss-rgb), 0.20)'   },
+  breakeven: { label: 'BE',   bg: 'rgba(var(--color-warn-rgb), 0.10)',   color: 'var(--color-warn)',   border: 'rgba(var(--color-warn-rgb), 0.20)'   },
+}
+
 export default function RecapTradeLive() {
   const [trades, setTrades] = useState<LiveTrade[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,7 +59,7 @@ export default function RecapTradeLive() {
   const supabase = createClient()
 
   useEffect(() => {
-    async function fetch() {
+    async function fetchTrades() {
       setLoading(true)
       let query = supabase.from('live_trades').select('*').order('trade_date', { ascending: false }).order('created_at', { ascending: false })
       const start = getStartDate(period, customFrom)
@@ -54,140 +69,255 @@ export default function RecapTradeLive() {
       setTrades((data ?? []) as LiveTrade[])
       setLoading(false)
     }
-    fetch()
+    fetchTrades()
   }, [period, customFrom, customTo])
 
-  const wins = trades.filter(t => t.result === 'win')
-  const losses = trades.filter(t => t.result === 'loss')
-  const totalR = trades.reduce((s, t) => s + Number(t.r_result), 0)
-  const winRate = trades.length > 0 ? Math.round((wins.length / trades.length) * 100) : 0
-  const avgWinR = wins.length > 0 ? wins.reduce((s, t) => s + Number(t.r_result), 0) / wins.length : 0
-  const totalPoints = trades.reduce((s, t) => s + (Number(t.points) || 0), 0)
+  const { totalR, winRate, avgWinR, totalPoints } = useMemo(() => {
+    const wins = trades.filter(t => t.result === 'win')
+    const total = trades.reduce((s, t) => s + Number(t.r_result), 0)
+    const rate = trades.length > 0 ? Math.round((wins.length / trades.length) * 100) : 0
+    const avg = wins.length > 0 ? wins.reduce((s, t) => s + Number(t.r_result), 0) / wins.length : 0
+    const pts = trades.reduce((s, t) => s + (Number(t.points) || 0), 0)
+    return { totalR: total, winRate: rate, avgWinR: avg, totalPoints: pts }
+  }, [trades])
 
-  const kpis = [
-    { label: 'Total R', value: `${totalR >= 0 ? '+' : ''}${totalR.toFixed(2)}R`, color: totalR >= 0 ? '#22c55e' : '#ef4444' },
-    { label: 'Win Rate', value: `${winRate}%`, color: winRate >= 50 ? '#22c55e' : '#ef4444' },
-    { label: 'R moyen (wins)', value: `+${avgWinR.toFixed(2)}R`, color: '#22c55e' },
-    { label: 'Points cumulés', value: `${totalPoints >= 0 ? '+' : ''}${totalPoints.toFixed(1)} pts`, color: totalPoints >= 0 ? '#22c55e' : '#ef4444' },
-    { label: 'Total trades', value: String(trades.length), color: 'var(--text)' },
+  const columns: Column<LiveTrade>[] = [
+    {
+      id: 'date',
+      header: 'Date',
+      accessor: t => new Date(t.trade_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+      sortable: true,
+      sortValue: t => t.trade_date,
+      numeric: true,
+      align: 'left',
+    },
+    {
+      id: 'instrument',
+      header: 'Instrument',
+      accessor: t => <span style={{ fontFamily: 'var(--font-data)', fontWeight: 500, color: 'var(--color-text-1)' }}>{t.instrument}</span>,
+      sortable: true,
+      sortValue: t => t.instrument,
+    },
+    {
+      id: 'direction',
+      header: 'Direction',
+      accessor: t => {
+        const isLong = t.direction === 'long'
+        return (
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '2px 8px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 'var(--text-label)',
+              fontWeight: 500,
+              background: isLong ? 'rgba(var(--color-profit-rgb), 0.10)' : 'rgba(var(--color-loss-rgb), 0.10)',
+              color:      isLong ? 'var(--color-profit)'                : 'var(--color-loss)',
+            }}
+          >
+            {isLong ? 'Long' : 'Short'}
+          </span>
+        )
+      },
+    },
+    {
+      id: 'r',
+      header: 'R Résultat',
+      accessor: t => {
+        const v = Number(t.r_result)
+        return (
+          <span style={{ fontWeight: 600, color: v >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
+            {v >= 0 ? '+' : ''}{v.toFixed(2)}R
+          </span>
+        )
+      },
+      sortable: true,
+      sortValue: t => Number(t.r_result),
+      numeric: true,
+    },
+    {
+      id: 'points',
+      header: 'Points',
+      accessor: t => {
+        if (t.points == null) return '—'
+        const v = Number(t.points)
+        return (
+          <span style={{ color: v >= 0 ? 'var(--color-profit)' : 'var(--color-loss)' }}>
+            {v >= 0 ? '+' : ''}{v.toFixed(1)}
+          </span>
+        )
+      },
+      sortable: true,
+      sortValue: t => Number(t.points ?? 0),
+      numeric: true,
+    },
+    {
+      id: 'result',
+      header: 'Résultat',
+      accessor: t => {
+        const b = RESULT_BADGE[t.result]
+        return (
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '2px 8px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 'var(--text-label)',
+              fontWeight: 500,
+              background: b.bg,
+              color: b.color,
+              border: `1px solid ${b.border}`,
+            }}
+          >
+            {b.label}
+          </span>
+        )
+      },
+      sortable: true,
+      sortValue: t => t.result,
+    },
+    {
+      id: 'setup',
+      header: 'Setup',
+      accessor: t => t.setup_type ?? '—',
+    },
+    {
+      id: 'notes',
+      header: 'Notes',
+      accessor: t => (
+        <span
+          style={{
+            display: 'inline-block',
+            maxWidth: 200,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            color: 'var(--color-text-3)',
+          }}
+        >
+          {t.notes ?? '—'}
+        </span>
+      ),
+    },
   ]
 
-  const resultBadge = (r: string) => {
-    if (r === 'win') return { label: 'Win', bg: 'rgba(34,197,94,0.1)', color: '#22c55e', border: 'rgba(34,197,94,0.2)' }
-    if (r === 'loss') return { label: 'Loss', bg: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'rgba(239,68,68,0.2)' }
-    return { label: 'BE', bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: 'rgba(245,158,11,0.2)' }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
+  const periods: { id: Period; label: string }[] = [
+    { id: 'all', label: 'Tout' },
+    { id: 'week', label: 'Semaine' },
+    { id: 'month', label: 'Mois' },
+    { id: 'year', label: 'Année' },
+    { id: 'custom', label: 'Période' },
+  ]
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>Trades Live Partagés</h1>
-        <p className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Trades partagés par votre coach en temps réel</p>
-      </div>
+      <PageHeader
+        title="Trades Live Partagés"
+        subtitle="Trades partagés par votre coach en temps réel"
+        size="sm"
+      />
 
-      {/* Period filter */}
-      <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
-        <span className="text-xs font-medium mr-1" style={{ color: 'var(--text3)' }}>Période :</span>
-        {([
-          { id: 'all', label: 'Tout' },
-          { id: 'week', label: 'Semaine' },
-          { id: 'month', label: 'Mois' },
-          { id: 'year', label: 'Année' },
-          { id: 'custom', label: 'Période' },
-        ] as { id: Period; label: string }[]).map(f => (
-          <button
-            key={f.id}
-            onClick={() => setPeriod(f.id)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{
-              background: period === f.id ? 'rgba(34,197,94,0.1)' : 'transparent',
-              color: period === f.id ? '#22c55e' : 'var(--text3)',
-              border: period === f.id ? '1px solid rgba(34,197,94,0.2)' : '1px solid transparent',
-            }}
-          >
-            {f.label}
-          </button>
-        ))}
+      {/* Period filter — pattern SegmentedControl, à extraire quand 3+ sites migrés */}
+      <div
+        className="flex items-center gap-2 flex-wrap p-3"
+        style={{
+          background: 'var(--color-surface-1)',
+          border: '1px solid var(--color-border-subtle)',
+          borderRadius: 'var(--radius-xl)',
+        }}
+      >
+        <span
+          className="mr-1"
+          style={{
+            fontFamily: 'var(--font-data)',
+            fontSize: 'var(--text-label)',
+            fontWeight: 500,
+            letterSpacing: '0.10em',
+            textTransform: 'uppercase',
+            color: 'var(--color-text-3)',
+          }}
+        >
+          Période :
+        </span>
+        {periods.map(f => {
+          const active = period === f.id
+          return (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setPeriod(f.id)}
+              className="px-3 py-1.5 rounded-lg transition-all"
+              style={{
+                fontSize: 'var(--text-label)',
+                fontWeight: 500,
+                background: active ? 'rgba(var(--color-profit-rgb), 0.10)' : 'transparent',
+                color: active ? 'var(--color-profit)' : 'var(--color-text-3)',
+                border: `1px solid ${active ? 'rgba(var(--color-profit-rgb), 0.20)' : 'transparent'}`,
+              }}
+            >
+              {f.label}
+            </button>
+          )
+        })}
         {period === 'custom' && (
           <>
-            <div className="h-5 w-px mx-1" style={{ background: 'var(--border)' }} />
-            <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)', colorScheme: 'dark' }} />
-            <span className="text-xs" style={{ color: 'var(--text3)' }}>→</span>
-            <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="px-2 py-1.5 rounded-lg text-xs font-mono outline-none" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)', colorScheme: 'dark' }} />
+            <div className="h-5 w-px mx-1" style={{ background: 'var(--color-border-subtle)' }} />
+            <input
+              type="date"
+              value={customFrom}
+              onChange={e => setCustomFrom(e.target.value)}
+              className="px-2 py-1.5 rounded-lg outline-none"
+              style={{
+                fontFamily: 'var(--font-data)',
+                fontSize: 'var(--text-label)',
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border-subtle)',
+                color: 'var(--color-text-1)',
+                colorScheme: 'dark',
+              }}
+            />
+            <span style={{ fontSize: 'var(--text-label)', color: 'var(--color-text-3)' }}>→</span>
+            <input
+              type="date"
+              value={customTo}
+              onChange={e => setCustomTo(e.target.value)}
+              className="px-2 py-1.5 rounded-lg outline-none"
+              style={{
+                fontFamily: 'var(--font-data)',
+                fontSize: 'var(--text-label)',
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border-subtle)',
+                color: 'var(--color-text-1)',
+                colorScheme: 'dark',
+              }}
+            />
           </>
         )}
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-5 gap-4">
-        {kpis.map(k => (
-          <Card key={k.label}>
-            <p className="text-xs mb-1" style={{ color: 'var(--text3)' }}>{k.label}</p>
-            <p className="text-xl font-bold font-mono" style={{ color: k.color }}>{k.value}</p>
-          </Card>
-        ))}
+        <KpiCard label="Total R"          value={`${totalR >= 0 ? '+' : ''}${totalR.toFixed(2)}R`}         tone={toneForPnl(totalR)} loading={loading} />
+        <KpiCard label="Win Rate"         value={`${winRate}%`}                                           tone={toneForRate(winRate, 50)} loading={loading} />
+        <KpiCard label="R moyen (wins)"   value={`+${avgWinR.toFixed(2)}R`}                                tone={avgWinR > 0 ? 'profit' : 'neutral'} loading={loading} />
+        <KpiCard label="Points cumulés"   value={`${totalPoints >= 0 ? '+' : ''}${totalPoints.toFixed(1)} pts`} tone={toneForPnl(totalPoints)} loading={loading} />
+        <KpiCard label="Total trades"     value={String(trades.length)}                                    tone="neutral" loading={loading} />
       </div>
 
       {/* Trades table */}
-      <Card>
-        {trades.length === 0 ? (
-          <p className="text-center py-12 text-sm" style={{ color: 'var(--text3)' }}>Aucun trade partagé pour cette période</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['Date', 'Instrument', 'Direction', 'R Résultat', 'Points', 'Résultat', 'Setup', 'Notes'].map(h => (
-                    <th key={h} className="text-left font-medium uppercase tracking-wider pb-3 pr-3" style={{ color: 'var(--text3)' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {trades.map(t => {
-                  const badge = resultBadge(t.result)
-                  return (
-                    <tr key={t.id} style={{ borderBottom: '1px solid var(--border)' }} className="hover:bg-[rgba(255,255,255,0.02)]">
-                      <td className="py-2.5 pr-3 font-mono" style={{ color: 'var(--text2)' }}>
-                        {new Date(t.trade_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
-                      </td>
-                      <td className="py-2.5 pr-3 font-mono font-medium" style={{ color: 'var(--text)' }}>{t.instrument}</td>
-                      <td className="py-2.5 pr-3">
-                        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{
-                          background: t.direction === 'long' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                          color: t.direction === 'long' ? '#22c55e' : '#ef4444',
-                        }}>
-                          {t.direction === 'long' ? 'Long' : 'Short'}
-                        </span>
-                      </td>
-                      <td className="py-2.5 pr-3 font-mono font-semibold" style={{ color: Number(t.r_result) >= 0 ? '#22c55e' : '#ef4444' }}>
-                        {Number(t.r_result) >= 0 ? '+' : ''}{Number(t.r_result).toFixed(2)}R
-                      </td>
-                      <td className="py-2.5 pr-3 font-mono" style={{ color: (Number(t.points) || 0) >= 0 ? '#22c55e' : '#ef4444' }}>
-                        {t.points != null ? `${Number(t.points) >= 0 ? '+' : ''}${Number(t.points).toFixed(1)}` : '—'}
-                      </td>
-                      <td className="py-2.5 pr-3">
-                        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
-                          {badge.label}
-                        </span>
-                      </td>
-                      <td className="py-2.5 pr-3" style={{ color: 'var(--text2)' }}>{t.setup_type ?? '—'}</td>
-                      <td className="py-2.5 truncate max-w-[200px]" style={{ color: 'var(--text3)' }}>{t.notes ?? '—'}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      <DataTable
+        columns={columns}
+        rows={trades}
+        rowKey={t => t.id}
+        loading={loading}
+        defaultSort={{ columnId: 'date', dir: 'desc' }}
+        empty={
+          <EmptyState
+            title="Aucun trade partagé"
+            description="Aucun trade partagé pour cette période."
+          />
+        }
+      />
     </div>
   )
 }
