@@ -10,6 +10,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import Badge from '@/components/ui/Badge'
 import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForPlanScore, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 import { chartTokens, verticalGradient, barGradientByValue } from '@/lib/chart-tokens'
+import CalendarPnl from '@/components/dashboard/CalendarPnl'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
 import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
@@ -105,59 +106,19 @@ export default function Dashboard() {
   const grossLoss = Math.abs(filtered.filter(s => Number(s.pnl) < 0).reduce((sum, s) => sum + Number(s.pnl), 0))
   const profitFactor = grossLoss > 0 ? Number((grossProfit / grossLoss).toFixed(2)) : grossProfit > 0 ? 99.99 : 0
 
-  // Heatmap: sessions ordered by date ascending
-  const heatmapSessions = [...filtered].reverse()
+  // Somme des capitaux des comptes affichés — utilisé par CalendarPnl pour
+  // ses paliers d'intensité relatifs (0.25% / 0.75% / 2%).
+  const totalCapital = (selectedAccounts.has('all')
+    ? accounts
+    : accounts.filter(a => selectedAccounts.has(a.id))
+  ).reduce((s, a) => s + (Number(a.initial_balance) || Number(a.capital) || 0), 0)
 
   // Last 8 sessions for table
   const recentSessions = filtered.slice(0, 8)
 
-  function getCellStyle(session: TradingSession) {
-    const isToday = session.session_date === todayStr
-    const pnl = Number(session.pnl)
-
-    let bg: string, border: string, color: string
-    if (session.result === 'win' || (session.result === null && pnl > 0)) {
-      bg = 'rgba(var(--color-profit-rgb), 0.15)'
-      border = 'rgba(var(--color-profit-rgb), 0.3)'
-      color = 'var(--green)'
-    } else if (session.result === 'loss' || (session.result === null && pnl < 0)) {
-      bg = 'rgba(var(--color-loss-rgb), 0.15)'
-      border = 'rgba(var(--color-loss-rgb), 0.3)'
-      color = 'var(--red)'
-    } else {
-      bg = 'rgba(var(--color-warn-rgb), 0.12)'
-      border = 'rgba(var(--color-warn-rgb), 0.25)'
-      color = 'var(--amber)'
-    }
-
-    return {
-      width: 90,
-      minHeight: 90,
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: bg,
-      border: `1px solid ${border}`,
-      borderRadius: 8,
-      color,
-      fontSize: 16,
-      fontWeight: 700,
-      gap: 4,
-      cursor: 'default',
-      boxShadow: isToday ? `0 0 8px ${border}, 0 0 2px ${border}` : undefined,
-      outline: isToday ? `2px solid ${border}` : undefined,
-    }
-  }
-
   function formatDate(dateStr: string) {
     const d = new Date(dateStr + 'T00:00:00')
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
-  }
-
-  function formatPnl(pnl: number) {
-    const sign = pnl >= 0 ? '+' : ''
-    return `${sign}${pnl.toFixed(0)}$`
   }
 
   function parseSetup(setup: string | null | undefined) {
@@ -332,24 +293,8 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Heatmap */}
-      <Card>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>
-          Heatmap P&L
-        </h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {heatmapSessions.length === 0 ? (
-            <p style={{ color: 'var(--text3)', fontSize: 13 }}>Aucune session enregistrée</p>
-          ) : (
-            heatmapSessions.map(s => (
-              <div key={s.id} style={getCellStyle(s)} title={`${s.session_date} — P&L: ${(Number(s.pnl) ).toFixed(2)}$`}>
-                <span style={{ fontSize: 12, opacity: 0.7 }}>{formatDate(s.session_date)}</span>
-                <span>{formatPnl(Number(s.pnl) )}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
+      {/* Calendrier P&L mensuel (remplace la Heatmap) */}
+      <CalendarPnl sessions={filtered} totalCapital={totalCapital} />
 
       {/* Charts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
@@ -391,7 +336,7 @@ export default function Dashboard() {
                     maintainAspectRatio: false,
                     plugins: {
                       legend: { display: false },
-                      tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} €` } },
+                      tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} $` } },
                     },
                     scales: {
                       x: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },
@@ -431,7 +376,7 @@ export default function Dashboard() {
                     maintainAspectRatio: false,
                     plugins: {
                       legend: { display: false },
-                      tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} €` } },
+                      tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} $` } },
                     },
                     scales: {
                       x: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },

@@ -7,7 +7,7 @@ import type { TraderAccount } from '@/lib/types'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
-import { fmtUsd, fmtEur, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
+import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
@@ -28,7 +28,7 @@ function getDaysForPeriod(period: Period): number {
 
 function formatPnl(value: number): string {
   const sign = value >= 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)} €`
+  return `${sign}${value.toFixed(2)} $`
 }
 
 export default function Stats() {
@@ -238,17 +238,17 @@ export default function Stats() {
           >
             <KpiCard
               label="Max Drawdown"
-              value={metrics.maxDrawdown === 0 ? fmtEur(0) : `-${fmtNumber(metrics.maxDrawdown, 2)} €`}
+              value={metrics.maxDrawdown === 0 ? fmtUsd(0) : `-${fmtNumber(metrics.maxDrawdown, 2)} $`}
               tone={metrics.maxDrawdown > 0 ? 'loss' : 'neutral'}
             />
             <KpiCard
               label="Meilleure session"
-              value={fmtEur(metrics.bestSession, 2, { sign: true })}
+              value={fmtUsd(metrics.bestSession, 2, { sign: true })}
               tone={toneForPnl(metrics.bestSession)}
             />
             <KpiCard
               label="Pire session"
-              value={fmtEur(metrics.worstSession, 2, { sign: true })}
+              value={fmtUsd(metrics.worstSession, 2, { sign: true })}
               tone={toneForPnl(metrics.worstSession)}
             />
           </div>
@@ -296,7 +296,7 @@ export default function Stats() {
                         maintainAspectRatio: false,
                         plugins: {
                           legend: { display: false },
-                          tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} €` } },
+                          tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} $` } },
                         },
                         scales: {
                           x: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },

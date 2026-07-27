@@ -156,7 +156,7 @@ function fmt(v: number | null | undefined, suffix = ''): string {
 function fmtEur(v: number | null | undefined): string {
   if (v === null || v === undefined || !isFinite(Number(v))) return 'N/A'
   const sign = v >= 0 ? '+' : ''
-  return `${sign}${Number(v).toFixed(0)} €`
+  return `${sign}${Number(v).toFixed(0)} $`
 }
 
 function loadHistory(): HistoryEntry[] {
@@ -1045,7 +1045,7 @@ export default function AnalyseIA() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
           {[
             { lbl: 'Avg gagnant', val: fmtEur(stats.avg_winner_eur), color: '#22c55e' },
-            { lbl: 'Avg perdant', val: stats.avg_loser_eur !== null ? `-${stats.avg_loser_eur} €` : 'N/A', color: '#ef4444' },
+            { lbl: 'Avg perdant', val: stats.avg_loser_eur !== null ? `-${stats.avg_loser_eur} $` : 'N/A', color: '#ef4444' },
             { lbl: 'R:R ratio', val: stats.risk_reward !== null ? `${stats.risk_reward}` : 'N/A', color: stats.risk_reward !== null && stats.risk_reward >= 1 ? '#22c55e' : '#f59e0b' },
             { lbl: 'Sessions/sem', val: stats.avg_sessions_per_week !== null ? `${stats.avg_sessions_per_week}` : 'N/A', color: 'var(--text)' },
             { lbl: 'Trades 1-3', val: stats.trades_distribution.light_1_3, color: 'var(--text)' },
@@ -1432,13 +1432,13 @@ export default function AnalyseIA() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--text3)' }} tickFormatter={d => d.slice(5)} />
-                  <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={55} tickFormatter={v => `${v}€`} />
+                  <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={55} tickFormatter={v => `${v}$`} />
                   <RTooltip
                     contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
                     formatter={(v: unknown, name: unknown) => {
                       const n = typeof v === 'number' ? v : Number(v)
                       const lbl = name === 'cumulative' ? 'P&L cumulé' : name === 'drawdown' ? 'Drawdown' : 'P&L jour'
-                      return [`${n >= 0 ? '+' : ''}${Math.round(n)} €`, lbl]
+                      return [`${n >= 0 ? '+' : ''}${Math.round(n)} $`, lbl]
                     }}
                   />
                   <ReferenceLine y={0} stroke="var(--border)" />
@@ -1458,12 +1458,12 @@ export default function AnalyseIA() {
                   <BarChart data={instantStats.daily_pnl} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                     <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--text3)' }} tickFormatter={d => d.slice(5)} />
-                    <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={50} tickFormatter={v => `${v}€`} />
+                    <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={50} tickFormatter={v => `${v}$`} />
                     <RTooltip
                       contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
                       formatter={(v: unknown) => {
                         const n = typeof v === 'number' ? v : Number(v)
-                        return [`${n >= 0 ? '+' : ''}${Math.round(n)} €`, 'P&L']
+                        return [`${n >= 0 ? '+' : ''}${Math.round(n)} $`, 'P&L']
                       }}
                     />
                     <ReferenceLine y={0} stroke="var(--border)" />
@@ -1505,12 +1505,12 @@ export default function AnalyseIA() {
                     <BarChart data={instantStats.day_of_week} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                       <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--text3)' }} />
-                      <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={50} tickFormatter={v => `${v}€`} />
+                      <YAxis tick={{ fontSize: 9, fill: 'var(--text3)' }} width={50} tickFormatter={v => `${v}$`} />
                       <RTooltip
                         contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
                         formatter={(v: unknown, name: unknown) => {
                           const n = typeof v === 'number' ? v : Number(v)
-                          return [`${n >= 0 ? '+' : ''}${Math.round(n)} €`, name === 'avg_pnl' ? 'Moy/session' : 'Total']
+                          return [`${n >= 0 ? '+' : ''}${Math.round(n)} $`, name === 'avg_pnl' ? 'Moy/session' : 'Total']
                         }}
                       />
                       <ReferenceLine y={0} stroke="var(--border)" />
@@ -1568,7 +1568,7 @@ export default function AnalyseIA() {
                         contentStyle={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 11 }}
                         formatter={(_v: unknown, _name: unknown, item: unknown) => {
                           const o = (item as { payload?: { realPnl?: number; name?: string } }).payload
-                          return [`${(o?.realPnl ?? 0) >= 0 ? '+' : ''}${Math.round(o?.realPnl ?? 0)} €`, o?.name || '']
+                          return [`${(o?.realPnl ?? 0) >= 0 ? '+' : ''}${Math.round(o?.realPnl ?? 0)} $`, o?.name || '']
                         }}
                       />
                       <Legend wrapperStyle={{ fontSize: 10 }} />

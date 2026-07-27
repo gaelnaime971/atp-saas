@@ -429,3 +429,82 @@ n'a presque aucun site d'usage côté trader. Le hover accent (montée 2px
 fonctionnel qui change l'ergonomie. À évaluer plus tard, une décision
 produit par cas. Chaque évolution activerait automatiquement le hover
 accent une fois `interactive={true}` passé aux composants concernés.
+
+## Persister les analyses IA en base — chantier PRIORITAIRE
+
+**Découverte** en préparant l'enrichissement Dashboard trader : les
+analyses IA (endpoint `/api/ai-coach-analysis`) sont **stockées
+uniquement en localStorage** ([AnalyseIA.tsx:91](components/dashboard/pages/AnalyseIA.tsx#L91),
+clé `atp_analyses_history`). L'historique persistant local ne contient
+que 4 champs (`date, scores, verdict_general, trend`) — la structure
+`Analysis` complète (forces, faiblesses, patterns, alertes, actions,
+instruments_analysis, plan_jour_type, stop_doing, keep_doing) n'est
+même pas sauvegardée : elle vit uniquement dans l'état React et
+disparaît au rechargement.
+
+**Impact** : chaque appareil du trader a sa propre "vérité". Un
+trader qui consulte son dashboard sur mobile ne verra pas l'analyse
+lancée le matin sur desktop. Les 1200 membres à venir ne peuvent
+pas avoir des cartes IA qui n'existent que sur un seul appareil.
+
+**Chantier à faire APRÈS** l'enrichissement Dashboard (qui utilise
+la stratégie localStorage + fallback en attendant) :
+
+1. **Nouvelle table `ai_analyses`** :
+   - `id uuid pk`
+   - `trader_id uuid fk profiles`
+   - `generated_at timestamptz`
+   - `period_from date`, `period_to date`
+   - `analysis jsonb` (payload complet de la structure `Analysis`)
+   - `scores jsonb` (extrait pour requêtes rapides)
+   - Index `(trader_id, generated_at desc)`
+   - RLS policy : trader lit ses analyses, admin lit toutes.
+
+2. **Endpoint POST `/api/ai-coach-analysis`** : après génération OpenAI,
+   `upsert` dans `ai_analyses` en plus du retour vers le client.
+
+3. **Refactor AnalyseIA.tsx** :
+   - Sur mount, `select ai_analyses ... order desc limit 20` remplace
+     `loadHistory()` localStorage
+   - `saveToHistory()` devient un no-op (déjà persisté côté serveur)
+   - LocalStorage reste comme fallback lecture (compat rétro pour les
+     analyses déjà générées avant migration)
+
+4. **Refactor cartes Dashboard Insight IA #1 et #2** : lecture depuis
+   la table au lieu du localStorage, cross-device.
+
+Estimation : 1 commit migration SQL + 1 commit endpoint + 1 commit
+refactor AnalyseIA + 1 commit refactor cartes Dashboard = 4 commits
+séparés, chacun revertable.
+
+## Règle devise — tout en $ côté trader/trading, € côté facturation
+
+Décision produit prise pendant l'enrichissement du Dashboard : le
+user trade sur des comptes prop firm américains, tous ses P&L sont
+en USD. La base ne stocke pas d'unité (champ `pnl: number` brut),
+le symbole était collé au hasard (`$` sur TopbarStats, `€` sur
+Calendrier/Charts/AnalyseIA), causant un mélange visuel qui perd
+la confiance des membres.
+
+**Règle appliquée** :
+- Tous les montants de **trading** (P&L, R, gains, pertes, capital
+  affiché, tooltips charts, calendrier, stats, KPI) → `$`
+- Toutes les **futures sections** du Dashboard trader → `$`
+- Les montants de **facturation FR** (Contrat.tsx HT/TVA/TTC,
+  Revenus admin) → `€` **conservé** (facturation légale française)
+
+**Techniquement** :
+- `fmtEur(x)` de `lib/format.ts` inchangé (utilisé par Contrat +
+  Revenus admin, facturation légitime en EUR)
+- Côté trader : imports basculés vers `fmtUsd(x)` (Progression,
+  Stats), ou suffixe `$` inline (Calendrier, Dashboard, SessionLive)
+- Helper local `fmtEur` d'AnalyseIA renvoie maintenant `$` (nom
+  du helper LOCAL non renommé pour éviter un refactor invasif —
+  fonctionnellement correct, cosmétique)
+- Widget TopbarStats "P&L Mois" renommé "P&L Mois (global)" pour
+  distinguer du "Total mois" contextuel du calendrier (mois affiché
+  + comptes filtrés) — les deux nombres restent différents mais
+  ne portent plus le même intitulé.
+
+**CsvSessionImport** : parse "P&L (€ ou $)" — accepte les deux
+symboles (compat rétro avec les imports historiques des membres).

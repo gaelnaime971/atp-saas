@@ -73,7 +73,7 @@ export default function TopbarStats() {
       color: stats.todayPnl != null ? (stats.todayPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)') : 'var(--color-neutral)',
     },
     {
-      label: 'P&L Mois',
+      label: 'P&L Mois (global)',
       value: `${stats.monthPnl >= 0 ? '+' : ''}${stats.monthPnl.toFixed(0)}$`,
       color: stats.monthPnl >= 0 ? 'var(--color-profit)' : 'var(--color-loss)',
     },

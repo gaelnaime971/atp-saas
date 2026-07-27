@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { fmtEur } from '@/lib/format'
+import { fmtUsd } from '@/lib/format'
 
 /**
  * EntityCard — carte d'entité à sous-KPI imbriqués (compte propfirm,
@@ -220,11 +220,11 @@ export function BalanceHero({
         fontFamily: 'var(--font-data)', lineHeight: 1.05, marginTop: 6,
         letterSpacing: '-0.03em',
       }}>
-        {fmtEur(currentBalance)}
+        {fmtUsd(currentBalance)}
       </div>
       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 11, color: 'var(--color-text-3)', fontFamily: 'var(--font-data)' }}>
-          depuis {fmtEur(startingBalance)}
+          depuis {fmtUsd(startingBalance)}
         </span>
         <span style={{
           padding: '3px 8px', borderRadius: 5,
@@ -234,10 +234,10 @@ export function BalanceHero({
           display: 'inline-flex', alignItems: 'center', gap: 3,
         }}>
           {isZero ? (
-            <>{fmtEur(0)} <span style={{ opacity: 0.75 }}>(0,00%)</span></>
+            <>{fmtUsd(0)} <span style={{ opacity: 0.75 }}>(0,00%)</span></>
           ) : (
             <>
-              {isProfit ? '▲' : '▼'} {isProfit ? '+' : ''}{fmtEur(Math.abs(delta))}
+              {isProfit ? '▲' : '▼'} {isProfit ? '+' : ''}{fmtUsd(Math.abs(delta))}
               <span style={{ opacity: 0.75 }}>({deltaPct >= 0 ? '+' : ''}{deltaPct.toFixed(2)}%)</span>
             </>
           )}
@@ -294,7 +294,7 @@ function PerfCell({ label, value }: { label: string; value: number }) {
         fontSize: 16, fontWeight: 800, color,
         fontFamily: 'var(--font-data)', marginTop: 3, lineHeight: 1,
       }}>
-        {fmtEur(value, 0, { sign: true })}
+        {fmtUsd(value, 0, { sign: true })}
       </div>
     </div>
   )

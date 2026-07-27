@@ -102,7 +102,7 @@ export default function Calculateur() {
         {/* Inputs grid 2x2 */}
         <div className="grid grid-cols-2 gap-4 mb-5">
           <NumericInput
-            label="Taille du compte (€)"
+            label="Taille du compte ($)"
             value={accountSize}
             onChange={setAccountSize}
           />

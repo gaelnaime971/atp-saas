@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import KpiCard from '@/components/ui/KpiCard'
 import Badge from '@/components/ui/Badge'
-import { fmtEur, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
+import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
 import type { TradingSession } from '@/lib/types'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip, Legend } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
@@ -217,7 +217,7 @@ export default function Progression() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
         <KpiCard
           label="P&L cumulé"
-          value={fmtEur(kpis.totalPnl, 2, { sign: true })}
+          value={fmtUsd(kpis.totalPnl, 2, { sign: true })}
           tone={toneForPnl(kpis.totalPnl)}
           hint="Toutes sessions"
         />
@@ -229,7 +229,7 @@ export default function Progression() {
         />
         <KpiCard
           label="Meilleur mois"
-          value={kpis.bestMonth ? fmtEur(kpis.bestMonth[1], 2, { sign: true }) : '—'}
+          value={kpis.bestMonth ? fmtUsd(kpis.bestMonth[1], 2, { sign: true }) : '—'}
           tone={kpis.bestMonth ? toneForPnl(kpis.bestMonth[1]) : 'neutral'}
           hint={kpis.bestMonth ? kpis.bestMonth[0] : '—'}
         />

@@ -415,7 +415,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
     const ra = cap * rp / 100
     const cts = Math.floor(ra / (sl * pv))
     const ar = cts * sl * pv
-    setCalcResult(`RISQUE MAX: ${ra.toFixed(2)}€ | CONTRATS: ${cts} | RISQUE RÉEL: ${ar.toFixed(2)}€ | TP25→ +${(cts * 25 * pv).toFixed(2)}€ | TP50→ +${(cts * 50 * pv).toFixed(2)}€`)
+    setCalcResult(`RISQUE MAX: ${ra.toFixed(2)}$ | CONTRATS: ${cts} | RISQUE RÉEL: ${ar.toFixed(2)}$ | TP25→ +${(cts * 25 * pv).toFixed(2)}$ | TP50→ +${(cts * 50 * pv).toFixed(2)}$`)
   }, [cCap, cRisk, cSl, cInst])
 
   useEffect(() => { doCalc() }, [doCalc])
@@ -480,7 +480,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
     setAiLoading(true)
     setAiCards([])
     setAiSummary('')
-    const ctx = `Session: ${trades.length} trades, P&L ${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}€`
+    const ctx = `Session: ${trades.length} trades, P&L ${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}$`
     const prompt = aiInput.trim()
       ? `Tu es un trader senior sur futures US (YM, NQ, ES). Analyse ces news pour la session de trading.\n\nNEWS: ${aiInput}\nContexte: ${ctx}\n\nRéponds UNIQUEMENT en JSON valide avec cette structure exacte:\n{"items":[{"headline":"titre court","signal":"BULLISH ou BEARISH ou NEUTRE","impact":"FORT ou MODÉRÉ ou FAIBLE","analyse":"2 phrases concises et actionnables","instruments":["YM","NQ"]}],"summary":"biais global + conseil pour la session US en 1-2 phrases"}`
       : `Tu es un trader senior sur futures US.\nDate: ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}. Contexte: ${ctx}\n\nDonne 3 facteurs macro à surveiller pour la session US aujourd'hui.\n\nRéponds UNIQUEMENT en JSON valide avec cette structure exacte:\n{"items":[{"headline":"facteur","signal":"BULLISH ou BEARISH ou NEUTRE","impact":"FORT ou MODÉRÉ ou FAIBLE","analyse":"explication actionnable","instruments":["YM","NQ"]}],"summary":"conseil général pour la session en 1-2 phrases"}`
@@ -925,14 +925,14 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
               <div className="pnlhero">
                 <div className="pnl-glow" />
                 <div className={`pnl-amt ${totalPnl > 0 ? 'pv-p' : totalPnl < 0 ? 'pv-n' : 'pv-z'}`}>
-                  {(totalPnl >= 0 ? '+' : '')}{totalPnl.toFixed(2)} €
+                  {(totalPnl >= 0 ? '+' : '')}{totalPnl.toFixed(2)} $
                 </div>
                 <div className="pnl-meta">
                   <div className="pm">TRADES <span>{trades.length}</span></div>
                   <div className="pm">W/L <span>{wins}/{losses}</span></div>
                   <div className="pm">WIN% <span>{trades.length > 0 ? winPct + '%' : '—'}</span></div>
                   <div className="pm">R∑ <span>{(totalR >= 0 ? '+' : '')}{totalR.toFixed(1)}R</span></div>
-                  <div className="pm">BEST <span>{trades.length > 0 ? '+' + bestTrade.toFixed(2) + '€' : '—'}</span></div>
+                  <div className="pm">BEST <span>{trades.length > 0 ? '+' + bestTrade.toFixed(2) + '$' : '—'}</span></div>
                 </div>
               </div>
               <div className="spk-wrap">
@@ -946,14 +946,14 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
               <div className="risk-wrap">
                 <div className="rsk-row">
                   <div>
-                    <div className="ri-lbl"><span>DAILY LOSS</span><span>{dailyLoss.toFixed(0)}€</span></div>
+                    <div className="ri-lbl"><span>DAILY LOSS</span><span>{dailyLoss.toFixed(0)}$</span></div>
                     <div className="ri-bar"><div className="ri-f ri-loss" style={{ width: `${Math.min((dailyLoss / 500) * 100, 100)}%` }} /></div>
-                    <div className="ri-vals"><span>0</span><span>500€ MAX</span></div>
+                    <div className="ri-vals"><span>0</span><span>500$ MAX</span></div>
                   </div>
                   <div>
-                    <div className="ri-lbl"><span>OBJECTIF</span><span>{dailyObj.toFixed(0)}€</span></div>
+                    <div className="ri-lbl"><span>OBJECTIF</span><span>{dailyObj.toFixed(0)}$</span></div>
                     <div className="ri-bar"><div className="ri-f ri-obj" style={{ width: `${Math.min((dailyObj / 300) * 100, 100)}%` }} /></div>
-                    <div className="ri-vals"><span>0</span><span>300€</span></div>
+                    <div className="ri-vals"><span>0</span><span>300$</span></div>
                   </div>
                 </div>
               </div>
@@ -979,7 +979,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
                     <span className="tc-t">{t.time}</span>
                     <span className="tc-i">{t.inst}</span>
                     <span className={t.side === 'LONG' ? 'tc-l' : 'tc-s'}>{t.side}</span>
-                    <span className={t.pnl >= 0 ? 'tc-pp' : 'tc-pn'}>{(t.pnl >= 0 ? '+' : '') + t.pnl.toFixed(2)}€</span>
+                    <span className={t.pnl >= 0 ? 'tc-pp' : 'tc-pn'}>{(t.pnl >= 0 ? '+' : '') + t.pnl.toFixed(2)}$</span>
                     <span className={t.r >= 0 ? 'tc-rp' : 'tc-rn'}>{(t.r >= 0 ? '+' : '') + t.r.toFixed(1)}R</span>
                     <span className={t.pnl >= 0 ? 'tc-pp' : 'tc-pn'}>{t.status}</span>
                   </div>
@@ -992,7 +992,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
                 <select className="tsel" value={iSide} onChange={e => setISide(e.target.value)} style={{ width: 58 }}>
                   <option>LONG</option><option>SHORT</option>
                 </select>
-                <input className="tinp" type="number" placeholder="P&L €" value={iPnl} onChange={e => setIPnl(e.target.value)} style={{ flex: 1 }} />
+                <input className="tinp" type="number" placeholder="P&L $" value={iPnl} onChange={e => setIPnl(e.target.value)} style={{ flex: 1 }} />
                 <input className="tinp" type="number" placeholder="R" value={iR} onChange={e => setIR(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') logTrade() }} style={{ width: 48 }} />
                 <button className="logbtn" onClick={logTrade}>LOG ▸</button>
               </div>
@@ -1026,9 +1026,9 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
             <div className="widget-body">
               <div className="blk">
                 <div className="sgrid">
-                  <div className="sc"><div className="sclbl">MEILLEUR</div><div className="scval sc-g">{trades.length > 0 ? '+' + bestTrade.toFixed(2) + '€' : '—'}</div></div>
-                  <div className="sc"><div className="sclbl">PIRE</div><div className="scval sc-r">{trades.length > 0 ? worstTrade.toFixed(2) + '€' : '—'}</div></div>
-                  <div className="sc"><div className="sclbl">MOYENNE</div><div className="scval sc-w">{trades.length > 0 ? (avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(2) + '€' : '—'}</div></div>
+                  <div className="sc"><div className="sclbl">MEILLEUR</div><div className="scval sc-g">{trades.length > 0 ? '+' + bestTrade.toFixed(2) + '$' : '—'}</div></div>
+                  <div className="sc"><div className="sclbl">PIRE</div><div className="scval sc-r">{trades.length > 0 ? worstTrade.toFixed(2) + '$' : '—'}</div></div>
+                  <div className="sc"><div className="sclbl">MOYENNE</div><div className="scval sc-w">{trades.length > 0 ? (avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(2) + '$' : '—'}</div></div>
                   <div className="sc"><div className="sclbl">R MAX</div><div className="scval sc-g">{trades.length > 0 ? '+' + rMax.toFixed(1) + 'R' : '—'}</div></div>
                   <div className="sc"><div className="sclbl">PROFIT FACTOR</div><div className="scval sc-w">{pf}</div></div>
                   <div className="sc">
@@ -1056,16 +1056,16 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
                 {dailyObj >= 300 && (
                   <div className="obj-reach show">
                     <div className="or-t">✓ OBJECTIF ATTEINT</div>
-                    <div className="or-s">+300€ — bonne session, tu peux t&apos;arrêter.</div>
+                    <div className="or-s">+300$ — bonne session, tu peux t&apos;arrêter.</div>
                   </div>
                 )}
                 <div className="objcard">
-                  <div className="och"><span className="ocl">P&L OBJECTIF</span><span className="ocv sc-g">{dailyObj.toFixed(0)} / 300€</span></div>
+                  <div className="och"><span className="ocl">P&L OBJECTIF</span><span className="ocv sc-g">{dailyObj.toFixed(0)} / 300$</span></div>
                   <div className="obar"><div className="obfill" style={{ width: `${Math.min(Math.round((dailyObj / 300) * 100), 100)}%` }} /></div>
                   <div className="opct">{Math.min(Math.round((dailyObj / 300) * 100), 100)}%</div>
                 </div>
                 <div className="objcard">
-                  <div className="och"><span className="ocl">DAILY LOSS MAX</span><span className="ocv sc-r">{dailyLoss.toFixed(0)} / 500€</span></div>
+                  <div className="och"><span className="ocl">DAILY LOSS MAX</span><span className="ocv sc-r">{dailyLoss.toFixed(0)} / 500$</span></div>
                   <div className="obar"><div className="obfill" style={{ background: 'linear-gradient(90deg,#cc2200,var(--red))', width: `${Math.min(Math.round((dailyLoss / 500) * 100), 100)}%` }} /></div>
                   <div className="opct">{Math.min(Math.round((dailyLoss / 500) * 100), 100)}%</div>
                 </div>
@@ -1166,7 +1166,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
             <div className="widget-body">
               <div className="blk">
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 7 }}>
-                  <div><div className="blt" style={{ marginBottom: 2 }}>CAPITAL €</div><input className="tinp" type="number" value={cCap} onChange={e => setCCap(e.target.value)} style={{ width: '100%', fontSize: 10 }} /></div>
+                  <div><div className="blt" style={{ marginBottom: 2 }}>CAPITAL $</div><input className="tinp" type="number" value={cCap} onChange={e => setCCap(e.target.value)} style={{ width: '100%', fontSize: 10 }} /></div>
                   <div><div className="blt" style={{ marginBottom: 2 }}>RISQUE %</div><input className="tinp" type="number" value={cRisk} onChange={e => setCRisk(e.target.value)} step="0.1" style={{ width: '100%', fontSize: 10 }} /></div>
                   <div><div className="blt" style={{ marginBottom: 2 }}>SL (pts)</div><input className="tinp" type="number" value={cSl} onChange={e => setCSl(e.target.value)} style={{ width: '100%', fontSize: 10 }} /></div>
                   <div><div className="blt" style={{ marginBottom: 2 }}>INSTRUMENT</div>
@@ -1532,7 +1532,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
           <div className="sbsep" />
           <div className="sbi"><span>TRADES:</span><span className="sbv">{trades.length}</span></div>
           <div className="sbsep" />
-          <div className="sbi"><span>P&L:</span><span className="sbv">{(totalPnl >= 0 ? '+' : '')}{totalPnl.toFixed(2)}€</span></div>
+          <div className="sbi"><span>P&L:</span><span className="sbv">{(totalPnl >= 0 ? '+' : '')}{totalPnl.toFixed(2)}$</span></div>
           <div className="sbsep" />
           <div className="sbi" style={{ marginLeft: 'auto' }}><span className="sbv">ATP TERMINAL v4.0 © 2026</span></div>
         </div>}
@@ -1730,7 +1730,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
                 {[
                   { l: 'DURÉE', v: duration },
                   { l: 'TRADES', v: `${trades.length} (${wins}W / ${losses}L)` },
-                  { l: 'P&L', v: `${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}€`, c: totalPnl >= 0 ? 'var(--g)' : 'var(--red)' },
+                  { l: 'P&L', v: `${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}$`, c: totalPnl >= 0 ? 'var(--g)' : 'var(--red)' },
                   { l: 'R TOTAL', v: `${totalR >= 0 ? '+' : ''}${totalR.toFixed(1)}R`, c: totalR >= 0 ? 'var(--g)' : 'var(--red)' },
                   { l: 'WIN RATE', v: trades.length > 0 ? winPct + '%' : '—' },
                   { l: 'DISCIPLINE', v: discScore + '%', c: discScore >= 70 ? 'var(--g)' : discScore >= 40 ? 'var(--amber)' : 'var(--red)' },
