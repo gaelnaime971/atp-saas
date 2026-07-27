@@ -221,9 +221,9 @@ export default function RecapTradeLive() {
               style={{
                 fontSize: 'var(--text-label)',
                 fontWeight: 500,
-                background: active ? 'rgba(var(--color-profit-rgb), 0.10)' : 'transparent',
-                color: active ? 'var(--color-profit)' : 'var(--color-text-3)',
-                border: `1px solid ${active ? 'rgba(var(--color-profit-rgb), 0.20)' : 'transparent'}`,
+                background: active ? 'rgba(var(--color-accent-rgb), 0.10)' : 'transparent',
+                color: active ? 'var(--color-accent)' : 'var(--color-text-3)',
+                border: `1px solid ${active ? 'rgba(var(--color-accent-rgb), 0.20)' : 'transparent'}`,
               }}
             >
               {f.label}

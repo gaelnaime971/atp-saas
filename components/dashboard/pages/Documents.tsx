@@ -160,7 +160,7 @@ export default function Documents() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {categories.map(cat => {
             const active = activeCategory === cat
-            const color = cat === 'Tous' ? 'var(--green)' : categoryColor(cat)
+            const color = cat === 'Tous' ? 'var(--color-accent)' : categoryColor(cat)
             return (
               <button
                 key={cat}

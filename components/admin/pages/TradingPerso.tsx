@@ -759,7 +759,7 @@ export default function TradingPerso() {
               onClick={() => setActiveTab(t.id)}
               className="flex items-center gap-2 px-4 py-2 rounded-md text-xs font-semibold transition-all"
               style={{
-                background: active ? 'var(--green)' : 'transparent',
+                background: active ? 'var(--color-accent)' : 'transparent',
                 color: active ? '#09090b' : 'var(--text2)',
                 border: 'none',
                 cursor: 'pointer',

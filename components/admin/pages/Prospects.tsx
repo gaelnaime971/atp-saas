@@ -1337,8 +1337,8 @@ export default function Prospects() {
                         style={{
                           padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer',
                           background: csvSource === s.value ? (SOURCE_LABELS[s.value]?.bg || 'var(--bg3)') : 'var(--bg3)',
-                          border: `1px solid ${csvSource === s.value ? (SOURCE_LABELS[s.value]?.color || 'var(--green)') + '44' : 'var(--border)'}`,
-                          color: csvSource === s.value ? (SOURCE_LABELS[s.value]?.color || 'var(--green)') : 'var(--text3)',
+                          border: `1px solid ${csvSource === s.value ? (SOURCE_LABELS[s.value]?.color || 'var(--color-accent)') + '44' : 'var(--border)'}`,
+                          color: csvSource === s.value ? (SOURCE_LABELS[s.value]?.color || 'var(--color-accent)') : 'var(--text3)',
                         }}
                       >
                         {s.label}
@@ -1350,8 +1350,8 @@ export default function Prospects() {
                       style={{
                         padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer',
                         background: csvSource === 'autre' ? 'var(--bg3)' : 'var(--bg3)',
-                        border: `1px solid ${csvSource === 'autre' ? 'var(--green)44' : 'var(--border)'}`,
-                        color: csvSource === 'autre' ? 'var(--green)' : 'var(--text3)',
+                        border: `1px solid ${csvSource === 'autre' ? 'var(--color-accent)' : 'var(--border)'}`,
+                        color: csvSource === 'autre' ? 'var(--color-accent)' : 'var(--text3)',
                       }}
                     >
                       Autre

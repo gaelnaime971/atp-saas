@@ -443,7 +443,7 @@ export default function Pipeline() {
           className="rounded-xl p-3 text-left transition-all hover:opacity-90"
           style={{
             background: filterStatus === 'all' ? 'var(--bg3)' : 'var(--bg2)',
-            border: `1px solid ${filterStatus === 'all' ? 'var(--green)' : 'var(--border)'}`,
+            border: `1px solid ${filterStatus === 'all' ? 'var(--color-accent)' : 'var(--border)'}`,
             cursor: 'pointer',
           }}
         >
@@ -523,7 +523,7 @@ export default function Pipeline() {
         </div>
 
         <label className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all"
-          style={{ background: showAll ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${showAll ? 'var(--green)' : 'var(--border)'}`, color: showAll ? 'var(--green)' : 'var(--text3)' }}>
+          style={{ background: showAll ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${showAll ? 'var(--color-accent)' : 'var(--border)'}`, color: showAll ? 'var(--color-accent)' : 'var(--text3)' }}>
           <input
             type="checkbox"
             checked={showAll}
@@ -1060,20 +1060,20 @@ function RevenueForecast({ prospects, onOpenProspect }: { prospects: Prospect[];
               className="rounded-lg p-2 text-left transition-all"
               style={{
                 background: isSelected
-                  ? 'rgba(34,197,94,0.14)'
-                  : m.isCurrent ? 'rgba(34,197,94,0.06)' : 'var(--bg3)',
+                  ? 'rgba(var(--color-accent-rgb), 0.14)'
+                  : m.isCurrent ? 'rgba(var(--color-accent-rgb), 0.06)' : 'var(--bg3)',
                 border: `1px solid ${
                   isSelected
-                    ? 'var(--green)'
-                    : m.isCurrent ? 'var(--green)' : 'var(--border)'
+                    ? 'var(--color-accent)'
+                    : m.isCurrent ? 'var(--color-accent)' : 'var(--border)'
                 }`,
-                boxShadow: isSelected ? '0 0 0 1px var(--green)' : 'none',
+                boxShadow: isSelected ? '0 0 0 1px var(--color-accent)' : 'none',
                 cursor: clickable ? 'pointer' : 'default',
                 opacity: clickable ? 1 : 0.7,
               }}
               title={clickable ? `Cliquer pour voir le détail · ${m.label} · Reçu ${fmt(b.received)}€ · Prévu ${fmt(b.expected)}€${b.overdue > 0 ? ` · Retard ${fmt(b.overdue)}€` : ''}` : `${m.label} · aucune échéance`}
             >
-              <div className="text-[9px] uppercase tracking-wider font-bold capitalize" style={{ color: m.isCurrent ? 'var(--green)' : 'var(--text3)' }}>
+              <div className="text-[9px] uppercase tracking-wider font-bold capitalize" style={{ color: m.isCurrent ? 'var(--color-accent)' : 'var(--text3)' }}>
                 {m.label}
               </div>
               <div className="text-[11px] font-bold mt-0.5" style={{ color: 'var(--text)' }}>
@@ -1117,11 +1117,11 @@ function RevenueForecast({ prospects, onOpenProspect }: { prospects: Prospect[];
       {selectedMonth && monthDetails && selectedBucket && (
         <div
           className="mt-4 rounded-xl p-3"
-          style={{ background: 'var(--bg3)', border: '1px solid var(--green)' }}
+          style={{ background: 'var(--bg3)', border: '1px solid var(--color-accent)' }}
         >
           <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-xs font-bold capitalize" style={{ color: 'var(--green)' }}>
+              <span className="text-xs font-bold capitalize" style={{ color: 'var(--color-accent)' }}>
                 Détail · {selectedMonthLabel}
               </span>
               <span className="text-[10px]" style={{ color: 'var(--text3)' }}>
@@ -2504,9 +2504,9 @@ function ClosingEmailModal({
                       onClick={() => setPaymentMethod(m)}
                       className="flex-1 px-2 py-2 rounded-md text-[10px] font-bold transition-all"
                       style={{
-                        background: active ? 'rgba(34,197,94,0.12)' : 'var(--bg3)',
-                        border: `1px solid ${active ? 'var(--green)' : 'var(--border)'}`,
-                        color: active ? 'var(--green)' : 'var(--text3)',
+                        background: active ? 'rgba(var(--color-accent-rgb), 0.12)' : 'var(--bg3)',
+                        border: `1px solid ${active ? 'var(--color-accent)' : 'var(--border)'}`,
+                        color: active ? 'var(--color-accent)' : 'var(--text3)',
                         cursor: 'pointer',
                       }}
                     >

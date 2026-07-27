@@ -867,7 +867,7 @@ function TabButton({
       <span
         className="text-[10px] px-1.5 py-0.5 rounded-md font-bold"
         style={{
-          background: active ? 'var(--green)' : 'var(--bg3)',
+          background: active ? 'var(--color-accent)' : 'var(--bg3)',
           color: active ? 'var(--color-surface-0)' : 'var(--text2)',
         }}
       >
@@ -894,12 +894,12 @@ function CategoryChip({
       onClick={onClick}
       className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
       style={{
-        background: active ? 'var(--green-dim)' : 'var(--bg2)',
-        border: `1px solid ${active ? 'var(--green)' : 'var(--border)'}`,
-        color: active ? 'var(--green)' : 'var(--text2)',
+        background: active ? 'rgba(var(--color-accent-rgb), 0.14)' : 'var(--bg2)',
+        border: `1px solid ${active ? 'var(--color-accent)' : 'var(--border)'}`,
+        color: active ? 'var(--color-accent)' : 'var(--text2)',
       }}
     >
-      {label} <span style={{ color: active ? 'var(--green)' : 'var(--text3)' }}>· {count}</span>
+      {label} <span style={{ color: active ? 'var(--color-accent)' : 'var(--text3)' }}>· {count}</span>
     </button>
   )
 }

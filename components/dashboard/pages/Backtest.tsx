@@ -93,7 +93,7 @@ const chipBase: React.CSSProperties = {
 
 const chipActive: React.CSSProperties = {
   ...chipBase,
-  background: 'rgba(var(--color-profit-rgb), 0.15)', color: 'var(--color-profit)', border: '1px solid rgba(var(--color-profit-rgb), 0.35)',
+  background: 'rgba(var(--color-accent-rgb), 0.15)', color: 'var(--color-accent)', border: '1px solid rgba(var(--color-accent-rgb), 0.35)',
 }
 
 const kpiCardStyle: React.CSSProperties = {
@@ -399,7 +399,7 @@ export default function Backtest() {
             style={{
               padding: '8px 24px', borderRadius: 8, fontSize: 13, fontWeight: 600,
               border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-              background: tab === t ? 'var(--green, var(--color-profit))' : 'transparent',
+              background: tab === t ? 'var(--color-accent)' : 'transparent',
               color: tab === t ? '#000' : 'var(--text3)',
             }}
           >
@@ -504,7 +504,7 @@ export default function Backtest() {
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: active ? 'var(--color-profit)' : 'var(--text3)',
+                          color: active ? 'var(--color-accent)' : 'var(--text3)',
                           cursor: 'pointer',
                           fontSize: 12,
                           padding: '0 4px',

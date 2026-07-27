@@ -276,7 +276,7 @@ export default function Dashboard() {
                 onClick={() => setSelectedAccounts(new Set(['all']))}
                 style={{
                   padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600,
-                  background: selectedAccounts.has('all') ? 'var(--green)' : 'var(--bg2)',
+                  background: selectedAccounts.has('all') ? 'var(--color-accent)' : 'var(--bg2)',
                   border: `1px solid ${selectedAccounts.has('all') ? 'transparent' : 'var(--border)'}`,
                   color: selectedAccounts.has('all') ? 'var(--color-surface-0)' : 'var(--text3)',
                   cursor: 'pointer', transition: 'all 0.15s',

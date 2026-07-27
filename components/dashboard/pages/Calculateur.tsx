@@ -77,13 +77,13 @@ export default function Calculateur() {
                   onClick={() => setSelectedContract(key)}
                   className="rounded-xl px-3 py-3 text-left transition-all"
                   style={{
-                    background: active ? 'rgba(74,222,128,0.06)' : 'var(--bg3, var(--color-surface-2))',
-                    border: active ? '2px solid var(--green)' : '2px solid var(--border)',
+                    background: active ? 'rgba(var(--color-accent-rgb), 0.08)' : 'var(--bg3, var(--color-surface-2))',
+                    border: active ? '2px solid var(--color-accent)' : '2px solid var(--border)',
                   }}
                 >
                   <p
                     className="text-sm font-bold"
-                    style={{ color: active ? 'var(--green)' : 'var(--text)' }}
+                    style={{ color: active ? 'var(--color-accent)' : 'var(--text)' }}
                   >
                     {key}
                   </p>

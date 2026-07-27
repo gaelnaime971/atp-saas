@@ -1327,7 +1327,7 @@ export default function AnalyseIA() {
                 <button key={p.id} onClick={() => setPeriod(p.id)}
                   style={{
                     padding: '6px 12px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, cursor: 'pointer',
-                    background: active ? 'var(--green)' : 'transparent',
+                    background: active ? 'var(--color-accent)' : 'transparent',
                     color: active ? '#09090b' : 'var(--text2)',
                     border: 'none', whiteSpace: 'nowrap', transition: 'all 0.15s',
                   }}>
@@ -1704,7 +1704,7 @@ export default function AnalyseIA() {
               return (
                 <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
                   padding: '10px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  background: active ? 'var(--green)' : 'transparent',
+                  background: active ? 'var(--color-accent)' : 'transparent',
                   color: active ? '#09090b' : 'var(--text2)',
                   border: 'none', whiteSpace: 'nowrap', transition: 'all 0.2s',
                   display: 'flex', alignItems: 'center', gap: 6,

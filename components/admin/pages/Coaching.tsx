@@ -361,9 +361,9 @@ export default function AdminCoaching() {
               borderRadius: 8,
               fontSize: 12,
               fontWeight: 600,
-              background: tab === t.id ? 'rgba(var(--color-profit-rgb), 0.1)' : 'var(--bg3)',
-              color: tab === t.id ? 'var(--green)' : 'var(--text2)',
-              border: `1px solid ${tab === t.id ? 'rgba(var(--color-profit-rgb), 0.25)' : 'var(--border)'}`,
+              background: tab === t.id ? 'rgba(var(--color-accent-rgb), 0.1)' : 'var(--bg3)',
+              color: tab === t.id ? 'var(--color-accent)' : 'var(--text2)',
+              border: `1px solid ${tab === t.id ? 'rgba(var(--color-accent-rgb), 0.25)' : 'var(--border)'}`,
               cursor: 'pointer',
               transition: 'all 120ms',
             }}

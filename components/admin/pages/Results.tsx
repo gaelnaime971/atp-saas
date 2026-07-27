@@ -88,7 +88,7 @@ export default function Results() {
             onClick={() => setFilter(f)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               filter === f
-                ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                ? 'bg-[color:rgba(var(--color-accent-rgb),0.10)] text-[var(--color-accent)] border border-[color:rgba(var(--color-accent-rgb),0.20)]'
                 : 'text-[var(--color-neutral)] hover:text-[#a0aec0] bg-[var(--color-surface-2)] border border-[rgba(255,255,255,0.07)]'
             }`}
           >

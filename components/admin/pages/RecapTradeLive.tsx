@@ -417,9 +417,9 @@ export default function RecapTradeLive() {
                     style={{
                       fontSize: 'var(--text-label)',
                       fontWeight: 500,
-                      background: active ? 'rgba(var(--color-profit-rgb), 0.10)' : 'var(--color-surface-2)',
-                      color: active ? 'var(--color-profit)' : 'var(--color-text-3)',
-                      border: `1px solid ${active ? 'rgba(var(--color-profit-rgb), 0.20)' : 'var(--color-border-subtle)'}`,
+                      background: active ? 'rgba(var(--color-accent-rgb), 0.10)' : 'var(--color-surface-2)',
+                      color: active ? 'var(--color-accent)' : 'var(--color-text-3)',
+                      border: `1px solid ${active ? 'rgba(var(--color-accent-rgb), 0.20)' : 'var(--color-border-subtle)'}`,
                     }}
                   >
                     {t.label}
@@ -630,9 +630,9 @@ export default function RecapTradeLive() {
                   className="px-3 py-1.5 rounded-lg transition-all"
                   style={{
                     fontSize: 'var(--text-label)', fontWeight: 500,
-                    background: active ? 'rgba(var(--color-profit-rgb), 0.10)' : 'transparent',
-                    color: active ? 'var(--color-profit)' : 'var(--color-text-3)',
-                    border: `1px solid ${active ? 'rgba(var(--color-profit-rgb), 0.20)' : 'transparent'}`,
+                    background: active ? 'rgba(var(--color-accent-rgb), 0.10)' : 'transparent',
+                    color: active ? 'var(--color-accent)' : 'var(--color-text-3)',
+                    border: `1px solid ${active ? 'rgba(var(--color-accent-rgb), 0.20)' : 'transparent'}`,
                   }}
                 >
                   {f.label}
