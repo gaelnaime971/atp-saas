@@ -46,6 +46,12 @@ export interface ModalProps {
   dismissible?: boolean
   /** Ajouter/masquer le bouton "✕" en haut à droite. Défaut `true`. */
   showCloseButton?: boolean
+  /**
+   * Supprimer le padding standard 1.25rem/1.5rem autour de children.
+   * Utile pour les layouts full-width : grid 2-cols form+preview,
+   * wizard avec stepper header custom, media player. Défaut `false`.
+   */
+  noPadding?: boolean
   /** Classe additionnelle sur le panel (pas le scrim). */
   className?: string
 }
@@ -91,6 +97,7 @@ export default function Modal({
   size = 'md',
   dismissible = true,
   showCloseButton = true,
+  noPadding = false,
   className = '',
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
@@ -285,7 +292,7 @@ export default function Modal({
 
         <div
           style={{
-            padding: '1.25rem 1.5rem',
+            padding: noPadding ? 0 : '1.25rem 1.5rem',
             overflowY: 'auto',
             flex: '1 1 auto',
             minHeight: 0,
