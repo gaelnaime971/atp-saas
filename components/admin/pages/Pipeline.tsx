@@ -756,7 +756,7 @@ function PipelineCard({
                   </span>
                 </div>
                 <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--bg2)' }}>
-                  <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: fullyPaid ? 'var(--green)' : '#22c55e' }} />
+                  <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: 'var(--color-profit)' }} />
                 </div>
               </div>
             )

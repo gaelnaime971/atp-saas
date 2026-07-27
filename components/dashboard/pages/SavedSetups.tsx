@@ -191,7 +191,7 @@ export default function SavedSetups() {
             <div
               key={s.id}
               onClick={() => setViewSetup(s)}
-              className="rounded-xl border cursor-pointer transition-all hover:border-green-500/30"
+              className="rounded-xl border cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)] hover:border-[color:rgba(var(--color-accent-rgb),0.4)]"
               style={{ background: 'var(--bg2)', borderColor: 'var(--border)', overflow: 'hidden' }}
             >
               {s.image_url && (

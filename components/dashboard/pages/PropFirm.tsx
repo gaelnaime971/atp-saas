@@ -9,16 +9,19 @@ import type { TraderAccount, Payout } from '@/lib/types'
 const PROP_FIRMS = ['FTMO', 'TopStep', 'Apex', 'E8', 'My Forex Funds', 'Capital Personnel', 'Autre'] as const
 const ACCOUNT_TYPES: { id: TraderAccount['account_type']; label: string; color: string }[] = [
   { id: 'challenge', label: 'Challenge', color: '#60a5fa' },
-  { id: 'funded', label: 'Financé', color: 'var(--color-profit)' },
-  { id: 'personal', label: 'Personnel', color: 'var(--color-warn)' },
+  // "Financé" = compte propfirm actif = intention métier "argent qui rentre"
+  // → aligné sur --color-payout (déjà utilisé côté TradingPerso admin).
+  { id: 'funded',    label: 'Financé',   color: 'var(--color-payout)' },
+  { id: 'personal',  label: 'Personnel', color: 'var(--color-warn)' },
 ]
 
 const ACCOUNT_STATUSES: { id: string; label: string; color: string; bg: string }[] = [
-  { id: 'active', label: 'Actif', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.1)' },
-  { id: 'challenge_en_cours', label: 'Challenge en cours', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' },
-  { id: 'funded', label: 'Funded', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
-  { id: 'crame', label: 'Cramé', color: 'var(--color-loss)', bg: 'rgba(var(--color-loss-rgb), 0.1)' },
-  { id: 'ferme', label: 'Fermé', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+  { id: 'active',              label: 'Actif',               color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.1)' },
+  { id: 'challenge_en_cours',  label: 'Challenge en cours',  color: '#60a5fa',             bg: 'rgba(96,165,250,0.1)' },
+  // Statut "funded" partage le token payout avec le type funded (cohérence UX).
+  { id: 'funded',              label: 'Funded',              color: 'var(--color-payout)', bg: 'rgba(var(--color-payout-rgb), 0.1)' },
+  { id: 'crame',               label: 'Cramé',               color: 'var(--color-loss)',   bg: 'rgba(var(--color-loss-rgb), 0.1)' },
+  { id: 'ferme',               label: 'Fermé',               color: '#6b7280',             bg: 'rgba(107,114,128,0.1)' },
 ]
 
 export default function PropFirm() {
@@ -213,8 +216,8 @@ export default function PropFirm() {
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-[var(--color-accent-strong)]"
+            style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -292,8 +295,8 @@ export default function PropFirm() {
           <div className="flex gap-2">
             <button
               onClick={handleSave} disabled={saving || !formCapital}
-              className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-              style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+              className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-[var(--color-accent-strong)] disabled:opacity-50"
+              style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
             >
               {saving ? 'Enregistrement...' : editingId ? 'Mettre à jour' : 'Ajouter'}
             </button>
@@ -435,8 +438,8 @@ export default function PropFirm() {
           </div>
           <button
             onClick={() => { setShowPayoutForm(!showPayoutForm); if (accounts.length > 0) setPayoutAccountId(accounts[0].id) }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-[var(--color-accent-strong)]"
+            style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

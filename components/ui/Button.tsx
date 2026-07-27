@@ -13,7 +13,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
 
     const variants = {
-      primary: 'bg-green-500 text-gray-900 hover:bg-green-400 active:bg-green-600',
+      primary: 'bg-[var(--color-accent)] text-[var(--color-surface-0)] hover:bg-[var(--color-accent-strong)] active:bg-[var(--color-accent-strong)]',
       secondary: 'bg-[var(--color-surface-3)] text-[#e8edf5] border border-[rgba(255,255,255,0.07)] hover:bg-[#2a3352] hover:border-[rgba(255,255,255,0.15)]',
       danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20',
       ghost: 'text-[#a0aec0] hover:text-[#e8edf5] hover:bg-[rgba(255,255,255,0.05)]',

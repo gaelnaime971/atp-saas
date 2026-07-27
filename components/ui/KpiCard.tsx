@@ -67,6 +67,14 @@ export interface KpiCardProps {
    * (pas de couleur à teinter).
    */
   highlight?: boolean
+  /**
+   * Feedback visuel au survol : montée 2px, ombre douce, bordure accent.
+   * À passer UNIQUEMENT quand la KpiCard est cliquable (onClick global,
+   * navigation vers page détail). Défaut false. Mêmes règles que Card.
+   */
+  interactive?: boolean
+  /** Handler de clic (auto-attaché au wrapper). Défaut none. */
+  onClick?: () => void
   /** Classe additionnelle sur le wrapper. */
   className?: string
 }
@@ -113,6 +121,8 @@ export default function KpiCard({
   action,
   hint,
   highlight = false,
+  interactive = false,
+  onClick,
   className = '',
 }: KpiCardProps) {
   const valueColor = TONE_COLOR[tone]
@@ -174,9 +184,16 @@ export default function KpiCard({
   const highlightRgbVar = tone === 'profit' ? 'var(--color-profit-rgb)'
     : tone === 'loss' ? 'var(--color-loss-rgb)'
     : 'var(--color-warn-rgb)'
+  const interactiveClasses = interactive
+    ? 'transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)] hover:border-[color:rgba(var(--color-accent-rgb),0.4)] cursor-pointer'
+    : ''
   return (
     <div
-      className={className}
+      className={`${interactiveClasses} ${className}`}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? onClick : undefined}
+      onKeyDown={interactive ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.() } } : undefined}
       style={{
         background: useHighlight ? `rgba(${highlightRgbVar}, 0.08)` : 'var(--color-surface-1)',
         border: useHighlight ? `1px solid rgba(${highlightRgbVar}, 0.3)` : '1px solid var(--color-border-subtle)',

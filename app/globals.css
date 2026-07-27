@@ -31,8 +31,9 @@
   --color-neutral: #5a6a82;    /* neutre / zéro / absence */
 
   /* --- Marque / Interaction (accent unique) --- */
-  --color-accent:      #c9a574;
-  --color-accent-soft: rgba(201, 165, 116, 0.14);
+  --color-accent:        #c9a574;
+  --color-accent-strong: #a68556;   /* or plus foncé — hover/active des boutons primary + gradients d'action */
+  --color-accent-soft:   rgba(201, 165, 116, 0.14);
 
   /* --- Tokens métier violet ---
      Deux sémantiques distinctes qui partagent la même valeur aujourd'hui.
@@ -114,7 +115,7 @@
   --color-background: var(--color-surface-0);
   --color-foreground: var(--color-text-1);
   --color-border:     var(--color-border-subtle);
-  --color-ring:       oklch(0.708 0 0);           /* préservé identique (étape 4 → --color-accent) */
+  --color-ring:       var(--color-accent);        /* focus ring = accent (refresh visuel étape 2026) */
 
   /* --- Radius (alignés sur l'existant hérité de shadcn) ---
      Base 0.625rem (10px), scale par multiples. Diffère de la scale Tailwind
@@ -271,6 +272,24 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text3);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Focus keyboard — a11y non négociable (étape refresh 2026)
+   Cible uniquement les éléments réellement actionnables. NE PAS
+   étendre à `*` : les <div>[tabindex="-1"] du focus trap Modal ne
+   doivent PAS afficher un anneau or.
+   ═══════════════════════════════════════════════════════════════ */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -94,6 +94,16 @@ export interface EntityCardProps {
    */
   dimmed?: boolean
 
+  /**
+   * Feedback visuel au survol : montée 2px, ombre douce renforcée. À passer
+   * UNIQUEMENT quand la carte est réellement cliquable (onClick global,
+   * navigation vers un détail). La bordure accent NE s'ajoute PAS pour
+   * préserver le liseré `accentColor` déjà présent en haut. Défaut false.
+   */
+  interactive?: boolean
+  /** Handler de clic (auto-attaché au wrapper si interactive). */
+  onClick?: () => void
+
   className?: string
 }
 
@@ -309,17 +319,33 @@ export default function EntityCard({
   onEdit,
   onDelete,
   dimmed = false,
+  interactive = false,
+  onClick,
   className = '',
 }: EntityCardProps) {
   const wrapperStyle = { ...wrapperStyleFor(variant, accentColor), opacity: dimmed ? 0.75 : 1 }
+  if (interactive) {
+    wrapperStyle.cursor = 'pointer'
+    wrapperStyle.transition = 'transform 0.15s, box-shadow 0.15s'
+  }
   const autoPerfCells = perfCells ?? (
     weekPnl !== undefined && todayPnl !== undefined
       ? <PerfCells weekPnl={weekPnl} todayPnl={todayPnl} />
       : null
   )
+  const interactiveHover = interactive
+    ? 'hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)]'
+    : ''
 
   return (
-    <div className={className} style={wrapperStyle}>
+    <div
+      className={`${interactiveHover} ${className}`}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? onClick : undefined}
+      onKeyDown={interactive ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.() } } : undefined}
+      style={wrapperStyle}
+    >
       {cornerBadge && (
         <div style={{
           position: 'absolute', top: 10, right: 10,

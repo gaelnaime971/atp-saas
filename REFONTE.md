@@ -401,3 +401,31 @@ width % + background couleur + `transition: width 0.6s ease`. Sites :
 
 **Décision** : primitive `<ProgressBar value tone />` extractable après
 le refresh visuel — sites tous préservés inline pour l'instant, cohérents.
+
+## Cartes de compte cliquables — évolution ergonomique candidate
+
+Découverte pendant le refresh visuel : côté trader, **une seule page a
+des cartes cliquables** — `SavedSetups` (grille de cartes qui ouvrent un
+détail au clic). Toutes les autres pages trader (Dashboard, PropFirm,
+SessionsHistory, Backtest) ont des Cards de lecture avec des boutons
+d'action internes (Edit, Delete révélés en `group-hover`), mais aucune
+Card n'a de `onClick` global.
+
+Conséquence : la prop `interactive={true}` de Card/KpiCard/EntityCard
+n'a presque aucun site d'usage côté trader. Le hover accent (montée 2px
++ shadow) ne se déclenche que sur SavedSetups.
+
+**Candidates ergonomiques** (fonctionnel, PAS de refresh visuel) :
+- **Dashboard KpiCard** → linker chaque KPI vers sa page détail (P&L
+  Total → Stats, Win Rate → Stats, Sessions → SessionsHistory)
+- **Dashboard Card "Heatmap P&L"** → linker vers SessionsHistory
+- **Dashboard Cards charts** → linker vers Stats détaillée
+- **PropFirm Cards** → onClick global qui ouvre le form d'édit (au lieu
+  du bouton icône Edit hover-révélé — moins découvrable au clavier)
+- **SessionsHistory DataTable rows** → passer un `onRowClick` qui ouvre
+  la modale d'édit (au lieu du bouton dans la colonne actions)
+
+**Décision** : ne PAS toucher pendant le refresh visuel — c'est du
+fonctionnel qui change l'ergonomie. À évaluer plus tard, une décision
+produit par cas. Chaque évolution activerait automatiquement le hover
+accent une fois `interactive={true}` passé aux composants concernés.
