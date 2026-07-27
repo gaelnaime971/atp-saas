@@ -83,6 +83,12 @@ interface HistoryEntry {
   }
   verdict_general: string
   trend: Trend
+  // Champs enrichis pour les cartes Dashboard Insight IA (optionnels
+  // pour compat avec les entrées d'avant enrichissement).
+  faiblesse_principale?: string
+  stop_doing_top?: string
+  top_instrument?: { instrument: string; verdict: string; conseil: string }
+  top_pattern?: string
 }
 
 type TabId = 'overview' | 'forces' | 'patterns' | 'plan' | 'instruments' | 'objectifs' | 'metrics' | 'compare'
@@ -437,6 +443,9 @@ export default function AnalyseIA() {
 
   const saveCurrent = () => {
     if (!analysis || !generatedAt) return
+    // Trie les instruments par |pnl| pour extraire le plus significatif
+    // (fallback : le premier de la liste).
+    const topInstrument = analysis.instruments_analysis[0]
     const entry: HistoryEntry = {
       date: generatedAt.toISOString(),
       scores: {
@@ -449,6 +458,13 @@ export default function AnalyseIA() {
       },
       verdict_general: analysis.verdict_general,
       trend: analysis.trend_global,
+      // Enrichi pour les cartes Dashboard Insight IA #1 & #2.
+      faiblesse_principale: analysis.faiblesses[0]?.titre,
+      stop_doing_top: analysis.stop_doing[0],
+      top_instrument: topInstrument
+        ? { instrument: topInstrument.instrument, verdict: topInstrument.verdict, conseil: topInstrument.conseil }
+        : undefined,
+      top_pattern: analysis.patterns_detectes[0]?.titre,
     }
     const existing = loadHistory().filter(h => h.date !== entry.date)
     const next = [...existing, entry].slice(-5)

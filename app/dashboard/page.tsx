@@ -80,7 +80,7 @@ export default function TraderDashboard() {
 
   const renderPage = () => {
     switch (activePage) {
-      case 'dashboard': return <Dashboard />
+      case 'dashboard': return <Dashboard onGoToAnalysis={() => setActivePage('analyse-ia')} />
       case 'session': return <Session />
       case 'sessions-history': return <SessionsHistory />
       case 'stats': return <Stats />

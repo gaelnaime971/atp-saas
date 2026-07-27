@@ -11,6 +11,8 @@ import Badge from '@/components/ui/Badge'
 import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForPlanScore, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 import { chartTokens, verticalGradient, barGradientByValue } from '@/lib/chart-tokens'
 import CalendarPnl from '@/components/dashboard/CalendarPnl'
+import InsightIAPerf from '@/components/dashboard/InsightIAPerf'
+import InsightIAMarket from '@/components/dashboard/InsightIAMarket'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
 import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
@@ -18,7 +20,13 @@ import { Line, Bar } from 'react-chartjs-2'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip)
 
-export default function Dashboard() {
+interface DashboardProps {
+  /** Callback SPA — permet aux cartes internes (Insight IA) de naviguer
+   *  vers une autre page trader (AnalyseIA notamment). */
+  onGoToAnalysis?: () => void
+}
+
+export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [sessions, setSessions] = useState<TradingSession[]>([])
   const [loading, setLoading] = useState(true)
@@ -269,6 +277,12 @@ export default function Dashboard() {
           ) : undefined
         }
       />
+
+      {/* Rangée Insight IA — paire équilibrée (Perf/Discipline + Marché/Setup) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <InsightIAPerf onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
+        <InsightIAMarket onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
+      </div>
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
