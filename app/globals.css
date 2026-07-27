@@ -46,6 +46,65 @@
   --color-status-closed: #a855f7;   /* statut prospect final "closé" (Pipeline STATUS_COLUMNS) */
   --color-info:          #3b82f6;   /* information neutre (alertes niveau INFO, chips info-only) — distinct des bleus métier Pipeline (status-nouveau, temp-froid, etc.) qui obtiendront leurs propres tokens */
 
+  /* --- Tokens Pipeline (33 tokens sémantiques) ---
+     Un token nomme une INTENTION MÉTIER, pas une couleur. Plusieurs
+     tokens peuvent partager la même valeur aujourd'hui (ex: 3 verts
+     distincts pour interesse/tres_interesse/closed) — le jour où une
+     intention doit se distinguer à l'œil, on change UNE variable.
+     Règle non négociable depuis l'étape 1.
+     Voir REFONTE.md § "Tokens Pipeline à créer" pour la traçabilité.
+  */
+
+  /* Statuts prospect (STATUS_COLUMNS) — status-closed déjà défini ci-dessus */
+  --color-status-nouveau:     #3b82f6;   /* 🆕 Nouveau prospect */
+  --color-status-contacte:    #f59e0b;   /* 📞 Contacté */
+  --color-status-call-booke:  #22c55e;   /* 📅 Call booké */
+  --color-status-disqualifie: #ef4444;   /* 🚫 Disqualifié */
+
+  /* Températures (TEMPERATURE_OPTIONS) */
+  --color-temp-chaud: #ef4444;   /* 🔥 Chaud */
+  --color-temp-tiede: #f59e0b;   /* 🌤 Tiède */
+  --color-temp-froid: #3b82f6;   /* ❄️ Froid */
+
+  /* Programmes (PROGRAM_TYPES) */
+  --color-program-ultra:     #22c55e;   /* ATP ULTRA */
+  --color-program-coaching:  #3b82f6;   /* Coaching personnalisé */
+  --color-program-seminaire: #a855f7;   /* Séminaire */
+  --color-program-autre:     #6b7280;   /* Autre */
+
+  /* Sources acquisition (SOURCE_LABELS) — 11 tokens.
+     landing-capture réutilise --color-source-methode-atp (même intention "Méthode ATP",
+     juste 2 landing pages distinctes que je ne différencie pas dans mes stats). */
+  --color-source-methode-atp:         #22c55e;   /* Méthode ATP + landing-capture */
+  --color-source-trading-night:       #a855f7;   /* Trading Night */
+  --color-source-preinscription:      #f59e0b;   /* Pré-inscription event */
+  --color-source-video-methode:       #3b82f6;   /* Vidéo Méthode */
+  --color-source-whop-lt1k:           #06b6d4;   /* Whop <1K */
+  --color-source-whop-1k-2k:          #8b5cf6;   /* Whop 1K-2K */
+  --color-source-whop-gt2k:           #ec4899;   /* Whop +2K */
+  --color-source-instagram:           #e1306c;   /* Instagram (brand color) */
+  --color-source-x-twitter:           #aaaaaa;   /* X/Twitter */
+  --color-source-reference-client:    #f59e0b;   /* Référence client */
+  --color-source-manual:              #6b7280;   /* Ajout manuel */
+  --color-source-csv-import:          #6b7280;   /* Import CSV */
+
+  /* Méthodes paiement (PAYMENT_METHOD_OPTIONS) */
+  --color-pay-stripe:   #635bff;   /* Stripe (brand color) */
+  --color-pay-virement: #22c55e;   /* Virement bancaire */
+  --color-pay-especes:  #f59e0b;   /* Espèces */
+  --color-pay-mixed:    #a855f7;   /* Paiement mixte */
+
+  /* Outcomes call (OUTCOME_OPTIONS) — 7 tokens.
+     interesse / tres_interesse / closed partagent le vert profit mais restent
+     3 tokens distincts (3 intentions métier distinctes). */
+  --color-outcome-pas-repondu:    #6b7280;   /* Pas répondu */
+  --color-outcome-rappel:         #f59e0b;   /* À rappeler */
+  --color-outcome-interesse:      #22c55e;   /* Intéressé */
+  --color-outcome-tres-interesse: #22c55e;   /* Très intéressé */
+  --color-outcome-objection:      #a855f7;   /* Objection */
+  --color-outcome-pas-interesse:  #ef4444;   /* Pas intéressé */
+  --color-outcome-closed:         #22c55e;   /* Closé (outcome, distinct de status-closed) */
+
   /* --- Compat tokens Tailwind ---
      Nécessaires pour que les classes historiques `bg-background`,
      `text-foreground`, `border-border` (utilisées par le @layer base
@@ -105,6 +164,56 @@
   --color-payout-rgb:        168, 85, 247;   /* même valeur que --color-status-closed-rgb, deux intentions distinctes */
   --color-status-closed-rgb: 168, 85, 247;   /* même valeur que --color-payout-rgb, deux intentions distinctes */
   --color-info-rgb:          59, 130, 246;
+
+  /* --- RGB tuples Pipeline (33 tokens, mêmes intentions que ci-dessus) ---
+     Chaque -rgb correspond exactement au token color. Plusieurs -rgb peuvent
+     partager la même valeur (ex: 3 verts profit) — intentions distinctes. */
+
+  /* Statuts prospect */
+  --color-status-nouveau-rgb:     59, 130, 246;
+  --color-status-contacte-rgb:    245, 158, 11;
+  --color-status-call-booke-rgb:  34, 197, 94;
+  --color-status-disqualifie-rgb: 239, 68, 68;
+
+  /* Températures */
+  --color-temp-chaud-rgb: 239, 68, 68;
+  --color-temp-tiede-rgb: 245, 158, 11;
+  --color-temp-froid-rgb: 59, 130, 246;
+
+  /* Programmes */
+  --color-program-ultra-rgb:     34, 197, 94;
+  --color-program-coaching-rgb:  59, 130, 246;
+  --color-program-seminaire-rgb: 168, 85, 247;
+  --color-program-autre-rgb:     107, 114, 128;
+
+  /* Sources acquisition */
+  --color-source-methode-atp-rgb:      34, 197, 94;
+  --color-source-trading-night-rgb:    168, 85, 247;
+  --color-source-preinscription-rgb:   245, 158, 11;
+  --color-source-video-methode-rgb:    59, 130, 246;
+  --color-source-whop-lt1k-rgb:        6, 182, 212;
+  --color-source-whop-1k-2k-rgb:       139, 92, 246;
+  --color-source-whop-gt2k-rgb:        236, 72, 153;
+  --color-source-instagram-rgb:        225, 48, 108;
+  --color-source-x-twitter-rgb:        170, 170, 170;
+  --color-source-reference-client-rgb: 245, 158, 11;
+  --color-source-manual-rgb:           107, 114, 128;
+  --color-source-csv-import-rgb:       107, 114, 128;
+
+  /* Méthodes paiement */
+  --color-pay-stripe-rgb:   99, 91, 255;
+  --color-pay-virement-rgb: 34, 197, 94;
+  --color-pay-especes-rgb:  245, 158, 11;
+  --color-pay-mixed-rgb:    168, 85, 247;
+
+  /* Outcomes call */
+  --color-outcome-pas-repondu-rgb:    107, 114, 128;
+  --color-outcome-rappel-rgb:         245, 158, 11;
+  --color-outcome-interesse-rgb:      34, 197, 94;
+  --color-outcome-tres-interesse-rgb: 34, 197, 94;
+  --color-outcome-objection-rgb:      168, 85, 247;
+  --color-outcome-pas-interesse-rgb:  239, 68, 68;
+  --color-outcome-closed-rgb:         34, 197, 94;
 
   /* --- Ombres (échelle définie, non appliquée à cette étape) ---
      L'app est flat aujourd'hui. Ces tokens existent pour les futurs

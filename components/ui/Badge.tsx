@@ -22,12 +22,52 @@ import type { ReactNode } from 'react'
 export type BadgeTone =
   | 'profit'          // Win, Long, gain, up
   | 'loss'            // Loss, Short, perte, down
-  | 'warn'            // BE, tiède, en attente
+  | 'warn'            // BE, tiède UI, en attente
   | 'neutral'         // défaut, absence, générique
   | 'info'            // information neutre — alertes niveau INFO
   | 'accent'          // gold — brand-forward
   | 'payout'          // violet — argent qui rentre (TradingPerso, PropFirm)
-  | 'status-closed'   // violet — statut prospect final (Pipeline)
+  // ─── Pipeline : statuts prospect ───
+  | 'status-nouveau'
+  | 'status-contacte'
+  | 'status-call-booke'
+  | 'status-closed'   // violet — statut prospect final
+  | 'status-disqualifie'
+  // ─── Pipeline : températures prospect ───
+  | 'temp-chaud'
+  | 'temp-tiede'
+  | 'temp-froid'
+  // ─── Pipeline : programmes ───
+  | 'program-ultra'
+  | 'program-coaching'
+  | 'program-seminaire'
+  | 'program-autre'
+  // ─── Pipeline : sources acquisition ───
+  | 'source-methode-atp'
+  | 'source-trading-night'
+  | 'source-preinscription'
+  | 'source-video-methode'
+  | 'source-whop-lt1k'
+  | 'source-whop-1k-2k'
+  | 'source-whop-gt2k'
+  | 'source-instagram'
+  | 'source-x-twitter'
+  | 'source-reference-client'
+  | 'source-manual'
+  | 'source-csv-import'
+  // ─── Pipeline : méthodes paiement ───
+  | 'pay-stripe'
+  | 'pay-virement'
+  | 'pay-especes'
+  | 'pay-mixed'
+  // ─── Pipeline : outcomes call ───
+  | 'outcome-pas-repondu'
+  | 'outcome-rappel'
+  | 'outcome-interesse'
+  | 'outcome-tres-interesse'
+  | 'outcome-objection'
+  | 'outcome-pas-interesse'
+  | 'outcome-closed'
 
 export type BadgeSize = 'sm' | 'md' | 'lg'
 
@@ -56,14 +96,55 @@ export interface BadgeProps {
 // ═══════════════════════════════════════════════════════════════
 
 const TONE_TOKENS: Record<BadgeTone, { color: string; rgb: string }> = {
-  profit:          { color: 'var(--color-profit)',        rgb: 'var(--color-profit-rgb)'        },
-  loss:            { color: 'var(--color-loss)',          rgb: 'var(--color-loss-rgb)'          },
-  warn:            { color: 'var(--color-warn)',          rgb: 'var(--color-warn-rgb)'          },
-  neutral:         { color: 'var(--color-neutral)',       rgb: 'var(--color-neutral-rgb)'       },
-  info:            { color: 'var(--color-info)',          rgb: 'var(--color-info-rgb)'          },
-  accent:          { color: 'var(--color-accent)',        rgb: 'var(--color-accent-rgb)'        },
-  payout:          { color: 'var(--color-payout)',        rgb: 'var(--color-payout-rgb)'        },
-  'status-closed': { color: 'var(--color-status-closed)', rgb: 'var(--color-status-closed-rgb)' },
+  // ─── Tones sémantiques génériques ───
+  profit:  { color: 'var(--color-profit)',  rgb: 'var(--color-profit-rgb)'  },
+  loss:    { color: 'var(--color-loss)',    rgb: 'var(--color-loss-rgb)'    },
+  warn:    { color: 'var(--color-warn)',    rgb: 'var(--color-warn-rgb)'    },
+  neutral: { color: 'var(--color-neutral)', rgb: 'var(--color-neutral-rgb)' },
+  info:    { color: 'var(--color-info)',    rgb: 'var(--color-info-rgb)'    },
+  accent:  { color: 'var(--color-accent)',  rgb: 'var(--color-accent-rgb)'  },
+  payout:  { color: 'var(--color-payout)',  rgb: 'var(--color-payout-rgb)'  },
+  // ─── Pipeline : statuts prospect ───
+  'status-nouveau':     { color: 'var(--color-status-nouveau)',     rgb: 'var(--color-status-nouveau-rgb)'     },
+  'status-contacte':    { color: 'var(--color-status-contacte)',    rgb: 'var(--color-status-contacte-rgb)'    },
+  'status-call-booke':  { color: 'var(--color-status-call-booke)',  rgb: 'var(--color-status-call-booke-rgb)'  },
+  'status-closed':      { color: 'var(--color-status-closed)',      rgb: 'var(--color-status-closed-rgb)'      },
+  'status-disqualifie': { color: 'var(--color-status-disqualifie)', rgb: 'var(--color-status-disqualifie-rgb)' },
+  // ─── Pipeline : températures ───
+  'temp-chaud': { color: 'var(--color-temp-chaud)', rgb: 'var(--color-temp-chaud-rgb)' },
+  'temp-tiede': { color: 'var(--color-temp-tiede)', rgb: 'var(--color-temp-tiede-rgb)' },
+  'temp-froid': { color: 'var(--color-temp-froid)', rgb: 'var(--color-temp-froid-rgb)' },
+  // ─── Pipeline : programmes ───
+  'program-ultra':     { color: 'var(--color-program-ultra)',     rgb: 'var(--color-program-ultra-rgb)'     },
+  'program-coaching':  { color: 'var(--color-program-coaching)',  rgb: 'var(--color-program-coaching-rgb)'  },
+  'program-seminaire': { color: 'var(--color-program-seminaire)', rgb: 'var(--color-program-seminaire-rgb)' },
+  'program-autre':     { color: 'var(--color-program-autre)',     rgb: 'var(--color-program-autre-rgb)'     },
+  // ─── Pipeline : sources acquisition ───
+  'source-methode-atp':      { color: 'var(--color-source-methode-atp)',      rgb: 'var(--color-source-methode-atp-rgb)'      },
+  'source-trading-night':    { color: 'var(--color-source-trading-night)',    rgb: 'var(--color-source-trading-night-rgb)'    },
+  'source-preinscription':   { color: 'var(--color-source-preinscription)',   rgb: 'var(--color-source-preinscription-rgb)'   },
+  'source-video-methode':    { color: 'var(--color-source-video-methode)',    rgb: 'var(--color-source-video-methode-rgb)'    },
+  'source-whop-lt1k':        { color: 'var(--color-source-whop-lt1k)',        rgb: 'var(--color-source-whop-lt1k-rgb)'        },
+  'source-whop-1k-2k':       { color: 'var(--color-source-whop-1k-2k)',       rgb: 'var(--color-source-whop-1k-2k-rgb)'       },
+  'source-whop-gt2k':        { color: 'var(--color-source-whop-gt2k)',        rgb: 'var(--color-source-whop-gt2k-rgb)'        },
+  'source-instagram':        { color: 'var(--color-source-instagram)',        rgb: 'var(--color-source-instagram-rgb)'        },
+  'source-x-twitter':        { color: 'var(--color-source-x-twitter)',        rgb: 'var(--color-source-x-twitter-rgb)'        },
+  'source-reference-client': { color: 'var(--color-source-reference-client)', rgb: 'var(--color-source-reference-client-rgb)' },
+  'source-manual':           { color: 'var(--color-source-manual)',           rgb: 'var(--color-source-manual-rgb)'           },
+  'source-csv-import':       { color: 'var(--color-source-csv-import)',       rgb: 'var(--color-source-csv-import-rgb)'       },
+  // ─── Pipeline : méthodes paiement ───
+  'pay-stripe':   { color: 'var(--color-pay-stripe)',   rgb: 'var(--color-pay-stripe-rgb)'   },
+  'pay-virement': { color: 'var(--color-pay-virement)', rgb: 'var(--color-pay-virement-rgb)' },
+  'pay-especes':  { color: 'var(--color-pay-especes)',  rgb: 'var(--color-pay-especes-rgb)'  },
+  'pay-mixed':    { color: 'var(--color-pay-mixed)',    rgb: 'var(--color-pay-mixed-rgb)'    },
+  // ─── Pipeline : outcomes call ───
+  'outcome-pas-repondu':    { color: 'var(--color-outcome-pas-repondu)',    rgb: 'var(--color-outcome-pas-repondu-rgb)'    },
+  'outcome-rappel':         { color: 'var(--color-outcome-rappel)',         rgb: 'var(--color-outcome-rappel-rgb)'         },
+  'outcome-interesse':      { color: 'var(--color-outcome-interesse)',      rgb: 'var(--color-outcome-interesse-rgb)'      },
+  'outcome-tres-interesse': { color: 'var(--color-outcome-tres-interesse)', rgb: 'var(--color-outcome-tres-interesse-rgb)' },
+  'outcome-objection':      { color: 'var(--color-outcome-objection)',      rgb: 'var(--color-outcome-objection-rgb)'      },
+  'outcome-pas-interesse':  { color: 'var(--color-outcome-pas-interesse)',  rgb: 'var(--color-outcome-pas-interesse-rgb)'  },
+  'outcome-closed':         { color: 'var(--color-outcome-closed)',         rgb: 'var(--color-outcome-closed-rgb)'         },
 }
 
 // ═══════════════════════════════════════════════════════════════
