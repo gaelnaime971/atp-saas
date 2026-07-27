@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Modal from '@/components/ui/Modal'
 import Badge, { type BadgeTone } from '@/components/ui/Badge'
+import KpiCard from '@/components/ui/KpiCard'
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -1033,26 +1034,11 @@ function RevenueForecast({ prospects, onOpenProspect }: { prospects: Prospect[];
 
       {/* KPI row */}
       <div className="grid grid-cols-5 gap-2 mb-4">
-        <div className="rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)' }}>
-          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: 'var(--green)' }}>Reçu ce mois-ci</div>
-          <div className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--green)' }}>{fmt(kpi.receivedThisMonth)}€</div>
-        </div>
-        <div className="rounded-lg p-3" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: 'var(--text3)' }}>Prévu ce mois-ci</div>
-          <div className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--text)' }}>{fmt(kpi.expectedThisMonth)}€</div>
-        </div>
-        <div className="rounded-lg p-3" style={{ background: kpi.overdueTotal > 0 ? 'rgba(239,68,68,0.08)' : 'var(--bg3)', border: `1px solid ${kpi.overdueTotal > 0 ? 'rgba(239,68,68,0.3)' : 'var(--border)'}` }}>
-          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: kpi.overdueTotal > 0 ? '#ef4444' : 'var(--text3)' }}>En retard</div>
-          <div className="text-lg font-extrabold mt-0.5" style={{ color: kpi.overdueTotal > 0 ? '#ef4444' : 'var(--text)' }}>{fmt(kpi.overdueTotal)}€</div>
-        </div>
-        <div className="rounded-lg p-3" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: 'var(--text3)' }}>À venir (12 mois)</div>
-          <div className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--text)' }}>{fmt(kpi.expectedNext12)}€</div>
-        </div>
-        <div className="rounded-lg p-3" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: 'var(--text3)' }}>Reçu cette année</div>
-          <div className="text-lg font-extrabold mt-0.5" style={{ color: 'var(--text)' }}>{fmt(kpi.receivedYTD)}€</div>
-        </div>
+        <KpiCard label="Reçu ce mois-ci"   value={`${fmt(kpi.receivedThisMonth)}€`} tone="profit" highlight />
+        <KpiCard label="Prévu ce mois-ci"  value={`${fmt(kpi.expectedThisMonth)}€`} tone="neutral" />
+        <KpiCard label="En retard"         value={`${fmt(kpi.overdueTotal)}€`}      tone={kpi.overdueTotal > 0 ? 'loss' : 'neutral'} highlight={kpi.overdueTotal > 0} />
+        <KpiCard label="À venir (12 mois)" value={`${fmt(kpi.expectedNext12)}€`}    tone="neutral" />
+        <KpiCard label="Reçu cette année"  value={`${fmt(kpi.receivedYTD)}€`}       tone="neutral" />
       </div>
 
       {/* 12-month bars */}

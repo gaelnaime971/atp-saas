@@ -60,6 +60,13 @@ export interface KpiCardProps {
    * Distinct de `delta`+`deltaLabel` qui affichent un badge de variation.
    */
   hint?: ReactNode
+  /**
+   * Wrapper teinté selon le tone : bg alpha 0.08 + border alpha 0.3.
+   * Signale visuellement une KPI qui doit ressortir (ex: "En retard" en
+   * loss quand overdue > 0). Défaut false. Sans effet sur tone `neutral`
+   * (pas de couleur à teinter).
+   */
+  highlight?: boolean
   /** Classe additionnelle sur le wrapper. */
   className?: string
 }
@@ -105,6 +112,7 @@ export default function KpiCard({
   loading = false,
   action,
   hint,
+  highlight = false,
   className = '',
 }: KpiCardProps) {
   const valueColor = TONE_COLOR[tone]
@@ -160,12 +168,18 @@ export default function KpiCard({
 
   // ─── Default variant ────────────────────────────────────────
   // Carte pleine, label + value + delta + sparkline.
+  // highlight = wrapper teinté selon le tone (bg alpha 0.08 + border alpha 0.3).
+  // Sans effet sur tone neutral (pas de token -rgb pour teinter).
+  const useHighlight = highlight && tone !== 'neutral'
+  const highlightRgbVar = tone === 'profit' ? 'var(--color-profit-rgb)'
+    : tone === 'loss' ? 'var(--color-loss-rgb)'
+    : 'var(--color-warn-rgb)'
   return (
     <div
       className={className}
       style={{
-        background: 'var(--color-surface-1)',
-        border: '1px solid var(--color-border-subtle)',
+        background: useHighlight ? `rgba(${highlightRgbVar}, 0.08)` : 'var(--color-surface-1)',
+        border: useHighlight ? `1px solid rgba(${highlightRgbVar}, 0.3)` : '1px solid var(--color-border-subtle)',
         borderRadius: 'var(--radius-lg)',
         padding: '1rem 1.125rem',
         display: 'flex',
