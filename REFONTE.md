@@ -321,3 +321,83 @@ en migrant).
 **Décision** : ne pas créer maintenant. Documenter comme candidate.
 Extraire quand on aura 3+ sites migrés qui l'utilisent — critère
 d'extraction cohérent avec la démarche primitive-par-preuve.
+
+## `ToggleBadge` — primitive candidate confirmée par le refactor Pipeline
+
+Le refactor Pipeline (Phases 1-4) a laissé **8 sites toggle interactifs
+inline** — ce sont des chips de sélection statut/température/prospect,
+structurellement des `<button>` d'un groupe avec état actif/inactif.
+La primitive `<Badge>` est intentionnellement read-only ; mélanger
+"badge affichage" et "chip sélection" dans une même primitive brouille
+l'API et complique les usages.
+
+Sites recensés dans Pipeline uniquement :
+- Status filter bar ([Pipeline.tsx:391](components/admin/pages/Pipeline.tsx#L391))
+- Température filter ([L438](components/admin/pages/Pipeline.tsx#L438))
+- Move-to-status dropdown dans PipelineCard ([L826](components/admin/pages/Pipeline.tsx#L826))
+- Status selector dans ProspectDetailModal ([L1573](components/admin/pages/Pipeline.tsx#L1573))
+- Température selector dans ProspectDetailModal ([L1598](components/admin/pages/Pipeline.tsx#L1598))
+- Température dans AddToPipelineModal ([L2188](components/admin/pages/Pipeline.tsx#L2188))
+- Payment method segmented dans ProspectDetailModal ([L2542](components/admin/pages/Pipeline.tsx#L2542))
+- Payment method segmented dans PaymentReminderEmailModal ([L3334](components/admin/pages/Pipeline.tsx#L3334))
+
+Recensés ailleurs :
+- PropFirm status selector dashboard trader ([PropFirm.tsx:363](components/dashboard/pages/PropFirm.tsx#L363))
+- Notebook toolbar toggles Gomme/Clear ([Notebook.tsx:1100-1113](components/dashboard/pages/Notebook.tsx#L1100))
+
+Total : ~10 sites. **Justifie une extraction**.
+
+API pressentie :
+```tsx
+<ToggleBadge
+  tone={BadgeTone}       // couleur active
+  size={BadgeSize}       // sm | md | lg
+  active={boolean}       // état visuel
+  onClick={() => void}   // handler
+  icon={ReactNode}
+>
+  {children}
+</ToggleBadge>
+```
+
+Rendu :
+- Inactif : bg surface-2 + border-subtle + text-3
+- Actif : bg tone-rgb 0.10 + border tone-rgb 0.20 + color tone
+- Hover inactif : bg surface-3
+
+**Décision** : ne pas créer maintenant. La primitive est claire mais
+demande son propre commit dédié (pas de mélange avec le refactor pur en
+cours). Priorité : commencer le REFRESH visuel demandé par le user,
+puis extraire ToggleBadge dans un commit dédié quand il apportera
+autant que Badge apporte aujourd'hui.
+
+## `EmailComposerModal` — infirmée après Phase 2 Pipeline
+
+Après migration des 3 modals email vers la primitive Modal (Phase 2),
+la structure "recipient + form + preview" est **effectivement
+identique** mais chaque modal :
+- Appelle une API distincte (`/send-closing-email`,
+  `/send-welcome-email`, `/send-payment-reminder-email`)
+- Utilise une template HTML distincte (`renderClosingTemplateClient`,
+  `renderWelcomeTemplateClient`, `renderReminderTemplate`)
+- A ses propres flags (`ClosingEmailModal` : stripe/virement/note ;
+  `PaymentReminderEmailModal` : + `alreadyPaidNotice`)
+- A ses propres states métier (Reminder a un éditeur HTML swap,
+  Closing a des options de lien Stripe, Welcome a un montant "payé")
+
+**Décision** : ne PAS créer `EmailComposerModal`. Le layout 2-cols est
+déjà partagé via `<Modal noPadding size="full">` + un pattern `<div grid
+gridTemplateColumns="380px 1fr">` — c'est suffisant. Extraire un
+composant serait de la duplication d'API sans vraie factorisation.
+
+## `ProgressBar` — signalé par l'audit Pipeline
+
+Pattern répété : height 8px, background surface-2, radius 4, contenu
+width % + background couleur + `transition: width 0.6s ease`. Sites :
+- Pipeline PipelineCard payment progress ([L716](components/admin/pages/Pipeline.tsx#L716))
+- Pipeline PaymentSection ([L1280](components/admin/pages/Pipeline.tsx#L1280))
+- TradingPerso AccountCard Progress-to-target + DD gauge
+- TradingPerso ChallengeCard DD gauge
+
+**Décision** : primitive `<ProgressBar value tone />` extractable après
+le refresh visuel — sites tous préservés inline pour l'instant, cohérents.
