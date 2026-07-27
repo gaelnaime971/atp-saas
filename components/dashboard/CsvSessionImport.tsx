@@ -482,7 +482,7 @@ export default function CsvSessionImport({ existingDates, onClose, onImported }:
                 disabled={mapping.date == null || mapping.pnl == null || !aggregation || aggregation.aggregated.length === 0}
                 className="px-4 py-2 rounded-lg text-xs font-bold"
                 style={{
-                  background: (mapping.date != null && mapping.pnl != null && aggregation && aggregation.aggregated.length > 0) ? 'var(--green)' : 'var(--bg3)',
+                  background: (mapping.date != null && mapping.pnl != null && aggregation && aggregation.aggregated.length > 0) ? 'var(--color-accent)' : 'var(--bg3)',
                   color: (mapping.date != null && mapping.pnl != null && aggregation && aggregation.aggregated.length > 0) ? '#000' : 'var(--text3)',
                   cursor: (mapping.date != null && mapping.pnl != null && aggregation && aggregation.aggregated.length > 0) ? 'pointer' : 'not-allowed',
                 }}
@@ -495,13 +495,13 @@ export default function CsvSessionImport({ existingDates, onClose, onImported }:
                 onClick={gotoDedup}
                 disabled={selectedDates.size === 0}
                 className="px-4 py-2 rounded-lg text-xs font-bold"
-                style={{ background: selectedDates.size > 0 ? 'var(--green)' : 'var(--bg3)', color: selectedDates.size > 0 ? '#000' : 'var(--text3)', cursor: selectedDates.size > 0 ? 'pointer' : 'not-allowed' }}
+                style={{ background: selectedDates.size > 0 ? 'var(--color-accent)' : 'var(--bg3)', color: selectedDates.size > 0 ? '#000' : 'var(--text3)', cursor: selectedDates.size > 0 ? 'pointer' : 'not-allowed' }}
               >
                 {dupDates.size > 0 ? `Gérer ${dupDates.size} doublon${dupDates.size > 1 ? 's' : ''} →` : `Importer ${selectedDates.size} sessions`}
               </button>
             )}
             {step === 'dedup' && (
-              <button onClick={runImport} className="px-4 py-2 rounded-lg text-xs font-bold" style={{ background: 'var(--green)', color: '#000', cursor: 'pointer' }}>
+              <button onClick={runImport} className="px-4 py-2 rounded-lg text-xs font-bold" style={{ background: 'var(--color-accent)', color: '#000', cursor: 'pointer' }}>
                 Importer {selectedDates.size} sessions
               </button>
             )}
@@ -538,7 +538,7 @@ function UploadStep({ onFile, error }: { onFile: (f: File) => void; error: strin
         <div style={{ fontSize: 40, marginBottom: 12 }}>📄</div>
         <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, marginBottom: 6 }}>Glisse ton fichier CSV ici</div>
         <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 14 }}>ou clique pour parcourir</div>
-        <label className="inline-block px-4 py-2 rounded-lg cursor-pointer" style={{ background: 'var(--green)', color: '#000', fontSize: 11, fontWeight: 700 }}>
+        <label className="inline-block px-4 py-2 rounded-lg cursor-pointer" style={{ background: 'var(--color-accent)', color: '#000', fontSize: 11, fontWeight: 700 }}>
           Choisir un fichier
           <input type="file" accept=".csv,text/csv" onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f) }} style={{ display: 'none' }} />
         </label>

@@ -248,7 +248,7 @@ export default function NewTraderModal({ onClose, onSuccess }: NewTraderModalPro
               disabled={loading || success}
               className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all"
               style={{
-                background: success ? 'rgba(var(--color-profit-rgb), 0.5)' : 'var(--green)',
+                background: success ? 'rgba(var(--color-accent-rgb), 0.5)' : 'var(--color-accent)',
                 color: 'var(--color-surface-0)',
                 opacity: loading ? 0.7 : 1,
               }}

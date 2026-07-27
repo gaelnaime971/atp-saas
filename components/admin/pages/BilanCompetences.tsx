@@ -122,7 +122,7 @@ export default function BilanCompetences() {
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+            style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -181,7 +181,7 @@ export default function BilanCompetences() {
                 onClick={handleSave}
                 disabled={saving || !title.trim()}
                 className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-                style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+                style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
               >
                 {saving ? 'Enregistrement...' : editingId ? 'Mettre à jour' : 'Ajouter'}
               </button>

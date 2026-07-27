@@ -428,7 +428,7 @@ export default function Pipeline() {
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: '#09090b', cursor: 'pointer' }}
+            style={{ background: 'var(--color-accent)', color: '#09090b', cursor: 'pointer' }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             Ajouter au pipeline
@@ -1783,7 +1783,7 @@ function ProspectDetailModal({
                 disabled={!newNote.trim()}
                 className="px-3 py-1.5 rounded-md text-xs font-bold transition-all"
                 style={{
-                  background: newNote.trim() ? 'var(--green)' : 'var(--bg3)',
+                  background: newNote.trim() ? 'var(--color-accent)' : 'var(--bg3)',
                   color: newNote.trim() ? '#09090b' : 'var(--text3)',
                   cursor: newNote.trim() ? 'pointer' : 'not-allowed',
                   border: '1px solid var(--border)',
@@ -1912,7 +1912,7 @@ function ProspectDetailModal({
             onClick={saveAll}
             disabled={saving}
             className="px-4 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: '#09090b', cursor: saving ? 'wait' : 'pointer' }}
+            style={{ background: 'var(--color-accent)', color: '#09090b', cursor: saving ? 'wait' : 'pointer' }}
           >
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
@@ -2233,7 +2233,7 @@ function AddToPipelineModal({
               onClick={createNew}
               disabled={creating}
               className="px-4 py-2 rounded-lg text-xs font-bold"
-              style={{ background: 'var(--green)', color: '#09090b', cursor: creating ? 'wait' : 'pointer' }}
+              style={{ background: 'var(--color-accent)', color: '#09090b', cursor: creating ? 'wait' : 'pointer' }}
             >
               {creating ? 'Création…' : 'Créer & ajouter au pipeline'}
             </button>
@@ -2670,7 +2670,7 @@ function ClosingEmailModal({
             disabled={!canSubmit() || sending}
             className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
             style={{
-              background: canSubmit() && !sending ? 'var(--green)' : 'var(--bg3)',
+              background: canSubmit() && !sending ? 'var(--color-accent)' : 'var(--bg3)',
               color: canSubmit() && !sending ? '#09090b' : 'var(--text3)',
               cursor: canSubmit() && !sending ? 'pointer' : 'not-allowed',
               border: '1px solid var(--border)',
@@ -2964,7 +2964,7 @@ function WelcomeEmailModal({
             disabled={!canSubmit() || sending}
             className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
             style={{
-              background: canSubmit() && !sending ? 'var(--green)' : 'var(--bg3)',
+              background: canSubmit() && !sending ? 'var(--color-accent)' : 'var(--bg3)',
               color: canSubmit() && !sending ? '#09090b' : 'var(--text3)',
               cursor: canSubmit() && !sending ? 'pointer' : 'not-allowed',
               border: '1px solid var(--border)',

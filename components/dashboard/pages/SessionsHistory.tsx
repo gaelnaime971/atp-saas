@@ -260,7 +260,7 @@ export default function SessionsHistory() {
             <button
               onClick={() => setShowCsvImport(true)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90"
-              style={{ background: 'var(--green)', color: '#000' }}
+              style={{ background: 'var(--color-accent)', color: '#000' }}
               title="Importer un historique de trades depuis un CSV broker"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -683,7 +683,7 @@ export default function SessionsHistory() {
                 onClick={handleSave}
                 disabled={saving}
                 className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-                style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+                style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
               >
                 {saving ? 'Enregistrement...' : 'Sauvegarder'}
               </button>

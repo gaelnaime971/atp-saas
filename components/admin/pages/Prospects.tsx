@@ -791,7 +791,7 @@ export default function Prospects() {
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-            style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+            style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             Nouveau prospect
@@ -899,7 +899,7 @@ export default function Prospects() {
               <button onClick={() => setShowScoring(false)} className="px-4 py-2.5 rounded-lg text-xs font-medium" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)', cursor: 'pointer' }}>
                 Annuler
               </button>
-              <button onClick={handleSaveScoring} className="px-6 py-2.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--green)', color: 'var(--color-surface-0)', cursor: 'pointer' }}>
+              <button onClick={handleSaveScoring} className="px-6 py-2.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)', cursor: 'pointer' }}>
                 Sauvegarder & recalculer
               </button>
             </div>
@@ -1084,7 +1084,7 @@ export default function Prospects() {
                     </div>
                   )}
                 </div>
-                <button onClick={resetEmail} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'var(--green)', color: 'var(--color-surface-0)', cursor: 'pointer' }}>Fermer</button>
+                <button onClick={resetEmail} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)', cursor: 'pointer' }}>Fermer</button>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-5">
@@ -1277,7 +1277,7 @@ export default function Prospects() {
                     onClick={handleSendEmail}
                     disabled={emailSending || !emailSubject.trim() || !emailHtml.trim() || (emailTestMode ? !emailTestAddress : emailRecipientCount === 0)}
                     className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-                    style={{ background: emailTestMode ? 'var(--color-warn)' : 'var(--green)', color: 'var(--color-surface-0)', cursor: emailSending ? 'default' : 'pointer' }}
+                    style={{ background: emailTestMode ? 'var(--color-warn)' : 'var(--color-accent)', color: 'var(--color-surface-0)', cursor: emailSending ? 'default' : 'pointer' }}
                   >
                     {emailSending ? 'Envoi en cours...' : emailTestMode ? `🧪 Envoyer le test` : `📧 Envoyer à ${emailRecipientCount} contact${emailRecipientCount > 1 ? 's' : ''}`}
                   </button>
@@ -1474,7 +1474,7 @@ export default function Prospects() {
                     onClick={handleImport}
                     disabled={importing || !csvMapping.email}
                     className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-                    style={{ background: 'var(--green)', color: 'var(--color-surface-0)', cursor: importing ? 'default' : 'pointer' }}
+                    style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)', cursor: importing ? 'default' : 'pointer' }}
                   >
                     {importing ? 'Import en cours...' : `Importer ${csvData.filter(r => { const idx = csvHeaders.indexOf(csvMapping.email); return idx >= 0 && r[idx] }).length} contacts`}
                   </button>
@@ -1501,7 +1501,7 @@ export default function Prospects() {
                     <div className="text-xs mt-1" style={{ color: 'var(--text3)' }}>Erreurs</div>
                   </div>
                 </div>
-                <button onClick={resetImport} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'var(--green)', color: 'var(--color-surface-0)', cursor: 'pointer' }}>
+                <button onClick={resetImport} className="px-6 py-2.5 rounded-lg text-sm font-semibold" style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)', cursor: 'pointer' }}>
                   Fermer
                 </button>
               </div>
@@ -1583,7 +1583,7 @@ export default function Prospects() {
               onClick={handleAddProspect}
               disabled={addLoading || !addForm.prenom || !addForm.nom || !addForm.email || !addForm.whatsapp || !addForm.experience || !addForm.objectif}
               className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-              style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+              style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
             >
               {addLoading ? 'Ajout en cours...' : 'Ajouter le prospect'}
             </button>

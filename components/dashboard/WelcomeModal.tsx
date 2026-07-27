@@ -172,7 +172,7 @@ export default function WelcomeModal({ userId, firstName, onClose }: WelcomeModa
             onClick={handleClose}
             disabled={closing}
             style={{
-              background: 'var(--green)',
+              background: 'var(--color-accent)',
               color: 'var(--color-surface-0)',
               border: 'none',
               borderRadius: 10,

@@ -318,7 +318,7 @@ export default function Compte() {
                     href={whopLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ padding: '0 14px', borderRadius: 8, background: 'var(--green)', color: 'var(--color-surface-0)', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+                    style={{ padding: '0 14px', borderRadius: 8, background: 'var(--color-accent)', color: 'var(--color-surface-0)', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', textDecoration: 'none' }}
                   >
                     Ouvrir →
                   </a>

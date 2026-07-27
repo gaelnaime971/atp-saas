@@ -450,7 +450,7 @@ export default function AdminCoaching() {
                               borderRadius: 6,
                               fontSize: 11,
                               fontWeight: 700,
-                              background: joinable ? 'var(--green)' : 'var(--bg3)',
+                              background: joinable ? 'var(--color-accent)' : 'var(--bg3)',
                               color: joinable ? '#000' : 'var(--text3)',
                               border: joinable ? 'none' : '1px solid var(--border)',
                               cursor: joinable ? 'pointer' : 'not-allowed',
@@ -580,7 +580,7 @@ export default function AdminCoaching() {
                 onClick={saveAvailability}
                 disabled={savingAvailability}
                 style={{
-                  background: 'var(--green)',
+                  background: 'var(--color-accent)',
                   color: '#000',
                   border: 'none',
                   padding: '10px 18px',
@@ -741,7 +741,7 @@ export default function AdminCoaching() {
                             <button
                               onClick={() => saveNotes(s.id)}
                               style={{
-                                background: 'var(--green)',
+                                background: 'var(--color-accent)',
                                 color: '#000',
                                 border: 'none',
                                 padding: '0 10px',
@@ -948,7 +948,7 @@ function GoogleCalendarStatus({ onToast }: { onToast: (msg: string) => void }) {
           href="/api/google/oauth/start"
           style={{
             padding: "10px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700,
-            background: "var(--green)", color: "#000", textDecoration: "none", whiteSpace: "nowrap",
+            background: "var(--color-accent)", color: "#000", textDecoration: "none", whiteSpace: "nowrap",
           }}
         >
           Connecter Google →

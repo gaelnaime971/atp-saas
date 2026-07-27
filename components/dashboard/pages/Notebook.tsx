@@ -476,7 +476,7 @@ export default function Notebook() {
               onClick={createPage}
               title="Nouvelle page"
               style={{
-                background: 'var(--green)',
+                background: 'var(--color-accent)',
                 color: '#000',
                 border: 'none',
                 borderRadius: 6,
@@ -619,7 +619,7 @@ export default function Notebook() {
               onClick={createPage}
               style={{
                 padding: '8px 20px',
-                background: 'var(--green)',
+                background: 'var(--color-accent)',
                 color: '#000',
                 border: 'none',
                 borderRadius: 8,

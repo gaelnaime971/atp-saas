@@ -410,7 +410,7 @@ export default function Coaching() {
                         style={{
                           flex: 1,
                           minWidth: 0,
-                          background: 'var(--green)',
+                          background: 'var(--color-accent)',
                           color: '#000',
                           border: 'none',
                           padding: '10px 14px',
@@ -584,17 +584,17 @@ export default function Coaching() {
                             borderRadius: 8,
                             fontSize: 12,
                             fontWeight: 600,
-                            background: 'rgba(var(--color-profit-rgb), 0.1)',
-                            color: 'var(--green)',
-                            border: '1px solid rgba(var(--color-profit-rgb), 0.25)',
+                            background: 'rgba(var(--color-accent-rgb), 0.1)',
+                            color: 'var(--color-accent)',
+                            border: '1px solid rgba(var(--color-accent-rgb), 0.25)',
                             cursor: 'pointer',
                             transition: 'background 120ms',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(var(--color-profit-rgb), 0.2)'
+                            e.currentTarget.style.background = 'rgba(var(--color-accent-rgb), 0.2)'
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(var(--color-profit-rgb), 0.1)'
+                            e.currentTarget.style.background = 'rgba(var(--color-accent-rgb), 0.1)'
                           }}
                         >
                           {time}
@@ -694,10 +694,10 @@ export default function Coaching() {
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
-                          color: 'var(--green)',
+                          color: 'var(--color-accent)',
                           textDecoration: 'none',
                           padding: '4px 10px',
-                          border: '1px solid rgba(var(--color-profit-rgb), 0.3)',
+                          border: '1px solid rgba(var(--color-accent-rgb), 0.3)',
                           borderRadius: 6,
                           whiteSpace: 'nowrap',
                         }}
@@ -836,7 +836,7 @@ export default function Coaching() {
                 disabled={booking}
                 style={{
                   flex: 2,
-                  background: 'var(--green)',
+                  background: 'var(--color-accent)',
                   color: '#000',
                   border: 'none',
                   padding: '10px',

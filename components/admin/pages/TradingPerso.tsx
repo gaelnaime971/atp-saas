@@ -717,7 +717,7 @@ export default function TradingPerso() {
           <button
             onClick={() => setShowNewAccount(true)}
             className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2"
-            style={{ background: 'var(--green)', color: '#000', border: 'none', cursor: 'pointer' }}>
+            style={{ background: 'var(--color-accent)', color: '#000', border: 'none', cursor: 'pointer' }}>
             + Nouveau compte
           </button>
         </div>
@@ -1782,7 +1782,7 @@ function AccountModal({
           </button>
           <button onClick={save} disabled={saving || !form.label}
             className="px-4 py-2 rounded-lg text-xs font-bold"
-            style={{ background: saving || !form.label ? 'var(--bg3)' : 'var(--green)', color: saving || !form.label ? 'var(--text3)' : '#000', cursor: saving || !form.label ? 'not-allowed' : 'pointer' }}>
+            style={{ background: saving || !form.label ? 'var(--bg3)' : 'var(--color-accent)', color: saving || !form.label ? 'var(--text3)' : '#000', cursor: saving || !form.label ? 'not-allowed' : 'pointer' }}>
             {saving ? 'Enregistrement…' : (account ? 'Enregistrer' : 'Créer')}
           </button>
         </div>
@@ -1918,7 +1918,7 @@ function PnlModal({
               Annuler
             </button>
             <button onClick={save} disabled={saving} className="px-4 py-2 rounded-lg text-xs font-bold"
-              style={{ background: saving ? 'var(--bg3)' : 'var(--green)', color: saving ? 'var(--text3)' : '#000', cursor: saving ? 'not-allowed' : 'pointer' }}>
+              style={{ background: saving ? 'var(--bg3)' : 'var(--color-accent)', color: saving ? 'var(--text3)' : '#000', cursor: saving ? 'not-allowed' : 'pointer' }}>
               {saving ? 'Enregistrement…' : applyToAll && canApplyToAll ? `Enregistrer sur ${activeAccounts.length} comptes` : 'Enregistrer'}
             </button>
           </div>
@@ -2214,7 +2214,7 @@ function BulkAccountsModal({
           </button>
           <button onClick={save} disabled={saving || validCount === 0} className="px-4 py-2 rounded-lg text-xs font-bold"
             style={{
-              background: saving || validCount === 0 ? 'var(--bg3)' : 'var(--green)',
+              background: saving || validCount === 0 ? 'var(--bg3)' : 'var(--color-accent)',
               color: saving || validCount === 0 ? 'var(--text3)' : '#000',
               cursor: saving || validCount === 0 ? 'not-allowed' : 'pointer',
             }}>

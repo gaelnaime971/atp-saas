@@ -1819,7 +1819,7 @@ export default function AnalyseIA() {
               disabled={chatLoading || !chatInput.trim()}
               style={{
                 padding: '10px 16px',
-                background: chatLoading || !chatInput.trim() ? 'var(--bg3)' : 'var(--green)',
+                background: chatLoading || !chatInput.trim() ? 'var(--bg3)' : 'var(--color-accent)',
                 color: chatLoading || !chatInput.trim() ? 'var(--text3)' : '#000',
                 border: '1px solid var(--border)',
                 borderRadius: 8, fontSize: 12, fontWeight: 700,

@@ -205,7 +205,7 @@ export default function AdminSetupPage() {
                 disabled={loading}
                 className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
                 style={{
-                  background: 'var(--green)',
+                  background: 'var(--color-accent)',
                   color: 'var(--color-surface-0)',
                   opacity: loading ? 0.7 : 1,
                   cursor: loading ? 'not-allowed' : 'pointer',

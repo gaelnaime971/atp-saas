@@ -199,7 +199,7 @@ export default function InvitePage() {
               <button
                 type="submit"
                 className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
-                style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+                style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
               >
                 Valider le code →
               </button>
@@ -273,7 +273,7 @@ export default function InvitePage() {
                 disabled={loading}
                 className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
                 style={{
-                  background: 'var(--green)',
+                  background: 'var(--color-accent)',
                   color: 'var(--color-surface-0)',
                   opacity: loading ? 0.7 : 1,
                 }}

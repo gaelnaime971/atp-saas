@@ -663,7 +663,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                         onClick={saveAdminData}
                         disabled={savingObs}
                         className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
-                        style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+                        style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
                       >
                         {savingObs ? 'Sauvegarde...' : 'Sauvegarder observations + Whop'}
                       </button>
@@ -693,7 +693,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                         onClick={savePrivateNote}
                         disabled={savingNote}
                         className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
-                        style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+                        style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
                       >
                         {savingNote ? 'Sauvegarde...' : 'Sauvegarder'}
                       </button>
@@ -719,7 +719,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                       <button
                         onClick={() => downloadContractPdf(contractInfo.signed_name!, contractInfo.signed_at!.split('T')[0])}
                         className="mt-4 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-                        style={{ background: 'var(--green)', color: 'var(--color-surface-0)' }}
+                        style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
                       >
                         Télécharger le PDF du contrat
                       </button>

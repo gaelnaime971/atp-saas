@@ -203,7 +203,7 @@ export default function AdminDashboard() {
               <button
                 onClick={handleNewTrader}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
-                style={{ background: 'var(--color-profit)', color: 'var(--color-surface-0)' }}
+                style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
