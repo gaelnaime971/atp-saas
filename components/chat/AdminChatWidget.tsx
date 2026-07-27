@@ -122,7 +122,7 @@ export default function AdminChatWidget() {
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
                 <path
                   d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-                  stroke="var(--green)"
+                  stroke="var(--color-accent)"
                   strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -220,7 +220,7 @@ export default function AdminChatWidget() {
                             width: 6,
                             height: 6,
                             borderRadius: '50%',
-                            background: 'var(--green)',
+                            background: 'var(--color-accent)',
                             marginLeft: 'auto',
                             flexShrink: 0,
                           }}

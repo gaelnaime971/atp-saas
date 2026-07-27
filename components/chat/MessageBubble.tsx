@@ -32,7 +32,7 @@ export default function MessageBubble({ message, isMine }: MessageBubbleProps) {
       {message.content && (
         <div
           style={{
-            background: isMine ? 'var(--green)' : 'var(--bg3)',
+            background: isMine ? 'var(--color-accent)' : 'var(--bg3)',
             border: isMine ? 'none' : '1px solid var(--border)',
             borderRadius: isMine ? '10px 10px 2px 10px' : '10px 10px 10px 2px',
             padding: '8px 11px',

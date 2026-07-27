@@ -234,7 +234,7 @@ export default function ChatPanel({
           style={{
             background: 'none',
             border: 'none',
-            color: showEmoji ? 'var(--green)' : 'var(--text3)',
+            color: showEmoji ? 'var(--color-accent)' : 'var(--text3)',
             cursor: 'pointer',
             padding: 4,
             fontSize: 16,
@@ -281,7 +281,7 @@ export default function ChatPanel({
           onClick={handleSend}
           disabled={uploading || (!text.trim() && !imageUrl)}
           style={{
-            background: 'var(--green)',
+            background: 'var(--color-accent)',
             border: 'none',
             borderRadius: 6,
             width: 30,

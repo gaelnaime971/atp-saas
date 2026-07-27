@@ -71,7 +71,7 @@ export default function TraderChatWidget() {
                   width: 8,
                   height: 8,
                   borderRadius: '50%',
-                  background: 'var(--green)',
+                  background: 'var(--color-accent)',
                 }}
               />
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>
