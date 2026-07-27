@@ -9,6 +9,7 @@ import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
 import Badge from '@/components/ui/Badge'
 import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForPlanScore, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
+import { chartTokens, verticalGradient, barGradientByValue } from '@/lib/chart-tokens'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
 import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
@@ -362,19 +363,27 @@ export default function Dashboard() {
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
               const cumulative: number[] = []
               sorted.reduce((acc, s) => { const v = acc + Number(s.pnl) ; cumulative.push(v); return v }, 0)
+              const t = chartTokens()
+              const lastIdx = cumulative.length - 1
               return (
                 <Line
                   data={{
                     labels,
                     datasets: [{
                       data: cumulative,
-                      borderColor: 'rgba(var(--color-profit-rgb), 1)',
-                      backgroundColor: 'rgba(var(--color-profit-rgb), 0.1)',
+                      borderColor: t.profit,
+                      borderWidth: 2.5,
+                      backgroundColor: (ctx) => {
+                        const { chart } = ctx
+                        if (!chart.chartArea) return undefined
+                        return verticalGradient(chart.ctx, chart.chartArea, t.profitRgb, [[0, 0.25], [1, 0]])
+                      },
                       fill: true,
                       tension: 0.3,
-                      pointRadius: 4,
-                      pointBackgroundColor: cumulative.map(v => v < 0 ? 'rgba(var(--color-loss-rgb), 1)' : 'rgba(var(--color-profit-rgb), 1)'),
-                      pointBorderColor: cumulative.map(v => v < 0 ? 'rgba(var(--color-loss-rgb), 1)' : 'rgba(var(--color-profit-rgb), 1)'),
+                      pointRadius: cumulative.map((_, i) => i === lastIdx ? 4 : 0),
+                      pointBackgroundColor: cumulative.map(v => v < 0 ? t.loss : t.profit),
+                      pointBorderColor: cumulative.map(v => v < 0 ? t.loss : t.profit),
+                      pointHoverRadius: 5,
                     }],
                   }}
                   options={{
@@ -385,8 +394,8 @@ export default function Dashboard() {
                       tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} €` } },
                     },
                     scales: {
-                      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4a5568', font: { family: "'DM Mono', monospace" } } },
-                      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4a5568', font: { family: "'DM Mono', monospace" } } },
+                      x: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },
+                      y: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },
                     },
                   }}
                 />
@@ -404,14 +413,17 @@ export default function Dashboard() {
               const sorted = [...filtered].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
               const pnls = sorted.map(s => Number(s.pnl) )
+              const t = chartTokens()
               return (
                 <Bar
                   data={{
                     labels,
                     datasets: [{
                       data: pnls,
-                      backgroundColor: pnls.map(v => v > 0 ? 'rgba(var(--color-profit-rgb), 0.7)' : v < 0 ? 'rgba(var(--color-loss-rgb), 0.7)' : 'rgba(var(--color-warn-rgb), 0.7)'),
-                      borderRadius: 4,
+                      backgroundColor: barGradientByValue(t),
+                      borderRadius: 6,
+                      borderSkipped: false,
+                      maxBarThickness: 32,
                     }],
                   }}
                   options={{
@@ -422,8 +434,8 @@ export default function Dashboard() {
                       tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} €` } },
                     },
                     scales: {
-                      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4a5568', font: { family: "'DM Mono', monospace" } } },
-                      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4a5568', font: { family: "'DM Mono', monospace" } } },
+                      x: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },
+                      y: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { family: t.fontData } } },
                     },
                   }}
                 />

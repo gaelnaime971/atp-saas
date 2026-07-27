@@ -12,6 +12,7 @@ import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
 import Badge, { type BadgeTone } from '@/components/ui/Badge'
 import { toneForPnl, toneForRate } from '@/lib/format'
+import { chartTokens, verticalGradient, barGradientByValue } from '@/lib/chart-tokens'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ChartTooltip, Filler)
 
@@ -258,8 +259,7 @@ export default function RecapTradeLive() {
   const dailyBarData = useMemo(() => {
     const labels = dailyStatsAsc.map(([d]) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }))
     const data = dailyStatsAsc.map(([, d]) => parseFloat(d.r.toFixed(2)))
-    const colors = data.map(v => v >= 0 ? 'rgba(var(--color-profit-rgb), 0.7)' : 'rgba(var(--color-loss-rgb), 0.7)')
-    return { labels, data, colors }
+    return { labels, data }
   }, [dailyStatsAsc])
 
   const inputStyle: React.CSSProperties = {
@@ -690,30 +690,45 @@ export default function RecapTradeLive() {
                 <p style={{ fontSize: 'var(--text-label)', color: 'var(--color-text-3)', textAlign: 'center', padding: '2rem 0' }}>Aucune donnée</p>
               ) : (
                 <div style={{ height: 220 }}>
-                  <Line
-                    data={{
-                      labels: cumulativeRData.labels,
-                      datasets: [{
-                        data: cumulativeRData.data,
-                        borderColor: totalR >= 0 ? '#22c55e' : '#ef4444',
-                        backgroundColor: totalR >= 0 ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-                        fill: true,
-                        tension: 0.3,
-                        pointRadius: cumulativeRData.data.length > 50 ? 0 : 3,
-                        pointBackgroundColor: totalR >= 0 ? '#22c55e' : '#ef4444',
-                        borderWidth: 2,
-                      }],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: { tooltip: { callbacks: { label: ctx => `${(ctx.parsed.y ?? 0) >= 0 ? '+' : ''}${ctx.parsed.y ?? 0}R` } } },
-                      scales: {
-                        x: { display: false },
-                        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6a82', font: { size: 10 }, callback: v => `${v}R` } },
-                      },
-                    }}
-                  />
+                  {(() => {
+                    const t = chartTokens()
+                    const isProfit = totalR >= 0
+                    const stroke = isProfit ? t.profit : t.loss
+                    const strokeRgb = isProfit ? t.profitRgb : t.lossRgb
+                    const lastIdx = cumulativeRData.data.length - 1
+                    return (
+                      <Line
+                        data={{
+                          labels: cumulativeRData.labels,
+                          datasets: [{
+                            data: cumulativeRData.data,
+                            borderColor: stroke,
+                            borderWidth: 2.5,
+                            backgroundColor: (ctx) => {
+                              const { chart } = ctx
+                              if (!chart.chartArea) return undefined
+                              return verticalGradient(chart.ctx, chart.chartArea, strokeRgb, [[0, 0.25], [1, 0]])
+                            },
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: cumulativeRData.data.map((_, i) => i === lastIdx ? 4 : 0),
+                            pointBackgroundColor: stroke,
+                            pointBorderColor: stroke,
+                            pointHoverRadius: 5,
+                          }],
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: { tooltip: { callbacks: { label: ctx => `${(ctx.parsed.y ?? 0) >= 0 ? '+' : ''}${ctx.parsed.y ?? 0}R` } } },
+                          scales: {
+                            x: { display: false },
+                            y: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { size: 10, family: t.fontData }, callback: v => `${v}R` } },
+                          },
+                        }}
+                      />
+                    )
+                  })()}
                 </div>
               )}
             </Card>
@@ -727,26 +742,32 @@ export default function RecapTradeLive() {
                 <p style={{ fontSize: 'var(--text-label)', color: 'var(--color-text-3)', textAlign: 'center', padding: '2rem 0' }}>Aucune donnée</p>
               ) : (
                 <div style={{ height: 220 }}>
-                  <Bar
-                    data={{
-                      labels: dailyBarData.labels,
-                      datasets: [{
-                        data: dailyBarData.data,
-                        backgroundColor: dailyBarData.colors,
-                        borderRadius: 4,
-                        maxBarThickness: 32,
-                      }],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: { tooltip: { callbacks: { label: ctx => `${(ctx.parsed.y ?? 0) >= 0 ? '+' : ''}${ctx.parsed.y ?? 0}R` } } },
-                      scales: {
-                        x: { grid: { display: false }, ticks: { color: '#5a6a82', font: { size: 10 } } },
-                        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a6a82', font: { size: 10 }, callback: v => `${v}R` } },
-                      },
-                    }}
-                  />
+                  {(() => {
+                    const t = chartTokens()
+                    return (
+                      <Bar
+                        data={{
+                          labels: dailyBarData.labels,
+                          datasets: [{
+                            data: dailyBarData.data,
+                            backgroundColor: barGradientByValue(t),
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            maxBarThickness: 32,
+                          }],
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: { tooltip: { callbacks: { label: ctx => `${(ctx.parsed.y ?? 0) >= 0 ? '+' : ''}${ctx.parsed.y ?? 0}R` } } },
+                          scales: {
+                            x: { grid: { display: false }, ticks: { color: t.text3, font: { size: 10, family: t.fontData } } },
+                            y: { grid: { color: t.gridColor }, ticks: { color: t.text3, font: { size: 10, family: t.fontData }, callback: v => `${v}R` } },
+                          },
+                        }}
+                      />
+                    )
+                  })()}
                 </div>
               )}
             </Card>
