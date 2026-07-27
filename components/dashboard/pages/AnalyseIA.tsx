@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Card from '@/components/ui/Card'
+import Badge, { type BadgeTone } from '@/components/ui/Badge'
 import {
   Area,
   AreaChart,
@@ -124,6 +125,14 @@ const TREND_COLOR: Record<Trend, string> = {
   'STAGNATION': '#f59e0b',
   'DEGRADATION': '#ef4444',
 }
+
+// Helpers de mapping enum métier → tone Badge sémantique.
+// Les COLOR maps ci-dessus restent utilisées ailleurs (borders/gradients
+// de Card) — c'est uniquement le rendu des BADGES qui passe par ces helpers.
+const toneForImpact     = (i: Impact):     BadgeTone => i === 'ÉLEVÉ'      ? 'loss' : i === 'MODÉRÉ'    ? 'warn' : 'neutral'
+const toneForPriority   = (p: Priority):   BadgeTone => p === 'HAUTE'      ? 'loss' : p === 'MOYENNE'   ? 'warn' : 'neutral'
+const toneForAlertLevel = (a: AlertLevel): BadgeTone => a === 'CRITIQUE'   ? 'loss' : a === 'ATTENTION' ? 'warn' : 'info'
+const toneForTrend      = (t: Trend):      BadgeTone => t === 'PROGRESSION' ? 'profit' : t === 'STAGNATION' ? 'warn' : 'loss'
 
 const TREND_ICON: Record<Trend, string> = {
   'PROGRESSION': '↗',
@@ -480,17 +489,11 @@ export default function AnalyseIA() {
   }
 
   const ImpactBadge = ({ impact }: { impact: Impact }) => (
-    <span style={{
-      fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 8px', borderRadius: 6,
-      background: `${IMPACT_COLOR[impact]}20`, color: IMPACT_COLOR[impact], border: `1px solid ${IMPACT_COLOR[impact]}40`,
-    }}>{impact}</span>
+    <Badge tone={toneForImpact(impact)} size="sm" bordered uppercase>{impact}</Badge>
   )
 
   const PriorityBadge = ({ priority }: { priority: Priority }) => (
-    <span style={{
-      fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 8px', borderRadius: 6,
-      background: `${PRIORITY_COLOR[priority]}20`, color: PRIORITY_COLOR[priority], border: `1px solid ${PRIORITY_COLOR[priority]}40`,
-    }}>{priority}</span>
+    <Badge tone={toneForPriority(priority)} size="sm" bordered uppercase>{priority}</Badge>
   )
 
   // ---------- Tab content ----------
@@ -561,7 +564,7 @@ export default function AnalyseIA() {
                 const c = ALERT_COLOR[a.niveau] || '#9ca3af'
                 return (
                   <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 14px', borderRadius: 10, background: `${c}10`, border: `1px solid ${c}40` }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 8px', borderRadius: 6, background: `${c}25`, color: c, whiteSpace: 'nowrap' }}>{a.niveau}</span>
+                    <Badge tone={toneForAlertLevel(a.niveau)} size="sm" uppercase>{a.niveau}</Badge>
                     <span style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>{a.message}</span>
                   </div>
                 )
@@ -661,9 +664,7 @@ export default function AnalyseIA() {
               <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{p.titre}</h4>
             </div>
             <p style={{ fontSize: 12.5, color: 'var(--text2)', lineHeight: 1.65, margin: '0 0 12px 0' }}>{p.detail}</p>
-            <div style={{ display: 'inline-block', padding: '4px 10px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, fontSize: 10, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.05em' }}>
-              📊 {p.frequence}
-            </div>
+            <Badge tone="warn" size="md" bordered icon="📊">{p.frequence}</Badge>
           </Card>
         ))}
       </div>
@@ -1234,7 +1235,7 @@ export default function AnalyseIA() {
               <Card key={entry.date}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>{date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: `${trendColor}20`, color: trendColor }}>{entry.trend}</span>
+                  <Badge tone={toneForTrend(entry.trend)} size="sm">{entry.trend}</Badge>
                 </div>
                 <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, margin: '0 0 10px 0' }}>{entry.verdict_general.length > 140 ? `${entry.verdict_general.substring(0, 140)}...` : entry.verdict_general}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, fontSize: 10 }}>

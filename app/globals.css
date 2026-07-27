@@ -44,6 +44,7 @@
   */
   --color-payout:        #a855f7;   /* argent qui rentre : payouts + comptes financés (TradingPerso, PropFirm) */
   --color-status-closed: #a855f7;   /* statut prospect final "closé" (Pipeline STATUS_COLUMNS) */
+  --color-info:          #3b82f6;   /* information neutre (alertes niveau INFO, chips info-only) — distinct des bleus métier Pipeline (status-nouveau, temp-froid, etc.) qui obtiendront leurs propres tokens */
 
   /* --- Compat tokens Tailwind ---
      Nécessaires pour que les classes historiques `bg-background`,
@@ -96,11 +97,14 @@
   /* --- RGB tuples pour rgba() alpha composition ---
      Usage : rgba(var(--color-profit-rgb), 0.15)
   */
-  --color-profit-rgb:  34, 197, 94;
-  --color-loss-rgb:    239, 68, 68;
-  --color-warn-rgb:    245, 158, 11;
-  --color-neutral-rgb: 90, 106, 130;
-  --color-accent-rgb:  201, 165, 116;
+  --color-profit-rgb:        34, 197, 94;
+  --color-loss-rgb:          239, 68, 68;
+  --color-warn-rgb:          245, 158, 11;
+  --color-neutral-rgb:       90, 106, 130;
+  --color-accent-rgb:        201, 165, 116;
+  --color-payout-rgb:        168, 85, 247;   /* même valeur que --color-status-closed-rgb, deux intentions distinctes */
+  --color-status-closed-rgb: 168, 85, 247;   /* même valeur que --color-payout-rgb, deux intentions distinctes */
+  --color-info-rgb:          59, 130, 246;
 
   /* --- Ombres (échelle définie, non appliquée à cette étape) ---
      L'app est flat aujourd'hui. Ces tokens existent pour les futurs
