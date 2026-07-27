@@ -371,6 +371,48 @@ export default function TradingPerso() {
     await fetchAll(userId)
   }
 
+  // Authoritative balance recompute — queries fresh sum from DB, no delta math
+  const recomputeBalance = async (accountId: string) => {
+    const account = accounts.find(a => a.id === accountId)
+    if (!account) return
+    const { data, error } = await supabase.from('propfirm_daily_pnl')
+      .select('pnl').eq('account_id', accountId)
+    if (error) return
+    const sum = (data || []).reduce((s, p) => s + Number(p.pnl), 0)
+    const newBalance = Number(account.starting_balance) + sum
+    await supabase.from('propfirm_accounts').update({ current_balance: newBalance }).eq('id', accountId)
+  }
+
+  const recomputeAllBalances = async () => {
+    if (!userId) return
+    type Row = { account: PropAccount; sum: number; expected: number; current: number; delta: number; count: number; rows: { date: string; pnl: number }[] }
+    const diag: Row[] = []
+    for (const a of accounts) {
+      const { data } = await supabase.from('propfirm_daily_pnl')
+        .select('date, pnl').eq('account_id', a.id).order('date', { ascending: true })
+      const rows = (data || []).map(r => ({ date: r.date as string, pnl: Number(r.pnl) }))
+      const sum = rows.reduce((s, r) => s + r.pnl, 0)
+      const expected = Number(a.starting_balance) + sum
+      const current = Number(a.current_balance)
+      const delta = current - expected
+      diag.push({ account: a, sum, expected, current, delta, count: rows.length, rows })
+    }
+    const drift = diag.filter(d => Math.abs(d.delta) > 0.01)
+    if (drift.length === 0) {
+      alert('✅ Tous les soldes sont déjà synchronisés avec les P&L journaliers.')
+      return
+    }
+    const lines = drift.map(d => {
+      const perDay = d.rows.map(r => `    ${r.date}: ${r.pnl >= 0 ? '+' : ''}${r.pnl}€`).join('\n')
+      return `[${d.account.label}] ${d.count} saisies · somme=${d.sum >= 0 ? '+' : ''}${d.sum}€\n  Solde actuel: ${d.current}€ | Attendu: ${d.expected}€ | Écart: ${d.delta >= 0 ? '+' : ''}${d.delta}€\n  Détail:\n${perDay}`
+    }).join('\n\n')
+    const ok = confirm(`⚠️ ${drift.length} comptes en dérive.\n\n${lines}\n\nCorriger le solde de chaque compte à = starting_balance + somme(P&L) ?`)
+    if (!ok) return
+    for (const d of drift) await recomputeBalance(d.account.id)
+    await fetchAll(userId)
+    alert(`✅ ${drift.length} soldes recalculés.`)
+  }
+
   const savePnl = async (accountId: string, date: string, pnl: number, tradesCount?: number, notes?: string) => {
     if (!userId) return
     const existing = pnls.find(p => p.account_id === accountId && p.date === date)
@@ -387,16 +429,7 @@ export default function TradingPerso() {
       }))
     }
     if (err) { alert(`Erreur P&L : ${err.message}`); return }
-    // Auto-update account current_balance based on all P&L
-    const account = accounts.find(a => a.id === accountId)
-    if (account) {
-      const allPnl = pnls.filter(p => p.account_id === accountId).reduce((s, p) => s + Number(p.pnl), 0)
-      const adjustedPnl = existing
-        ? allPnl - Number(existing.pnl) + pnl
-        : allPnl + pnl
-      const newBalance = Number(account.starting_balance) + adjustedPnl
-      await supabase.from('propfirm_accounts').update({ current_balance: newBalance }).eq('id', accountId)
-    }
+    await recomputeBalance(accountId)
     await fetchAll(userId)
   }
 
@@ -418,13 +451,7 @@ export default function TradingPerso() {
         }))
       }
       if (err) { errors.push(`${accountId}: ${err.message}`); continue }
-      const account = accounts.find(a => a.id === accountId)
-      if (account) {
-        const allPnl = pnls.filter(p => p.account_id === accountId).reduce((s, p) => s + Number(p.pnl), 0)
-        const adjustedPnl = existing ? allPnl - Number(existing.pnl) + pnl : allPnl + pnl
-        const newBalance = Number(account.starting_balance) + adjustedPnl
-        await supabase.from('propfirm_accounts').update({ current_balance: newBalance }).eq('id', accountId)
-      }
+      await recomputeBalance(accountId)
     }
     if (errors.length > 0) alert(`Erreurs P&L :\n${errors.join('\n')}`)
     await fetchAll(userId)
@@ -433,8 +460,10 @@ export default function TradingPerso() {
   const deletePnl = async (id: string) => {
     if (!userId) return
     if (!confirm('Supprimer cette entrée P&L ?')) return
+    const affected = pnls.find(p => p.id === id)
     const { error } = await supabase.from('propfirm_daily_pnl').delete().eq('id', id)
     if (error) { alert(`Erreur suppression : ${error.message}`); return }
+    if (affected) await recomputeBalance(affected.account_id)
     await fetchAll(userId)
   }
 
@@ -666,6 +695,13 @@ export default function TradingPerso() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={recomputeAllBalances}
+            className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2"
+            style={{ background: 'var(--bg3)', color: 'var(--text3)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            title="Recalcule le solde de chaque compte à partir de la somme de ses P&L journaliers">
+            🔄 Recalculer soldes
+          </button>
+          <button
             onClick={() => setShowBulkAdd(true)}
             className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2"
             style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer' }}>
@@ -785,7 +821,7 @@ export default function TradingPerso() {
               <summary style={{ cursor: 'pointer', fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Comptes en pause / échoués ({failedAccounts.length + accounts.filter(a => a.status === 'paused').length})
               </summary>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-3">
                 {[...failedAccounts, ...accounts.filter(a => a.status === 'paused')].map(a => (
                   <AccountCard
                     key={a.id}
@@ -1285,76 +1321,111 @@ function AccountCard({
   const ddColor = ddPct == null ? 'var(--text3)' : ddPct > 75 ? '#ef4444' : ddPct > 50 ? '#f59e0b' : '#22c55e'
 
   return (
-    <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 14, borderTop: `3px solid ${phase.color}` }}>
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{account.label}</div>
-          <div style={{ fontSize: 10, color: 'var(--text3)' }}>{account.propfirm} · {fmtEurRaw(account.account_size)}</div>
+    <div style={{
+      background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 14, padding: 18,
+      borderTop: `4px solid ${phase.color}`, boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      opacity: account.status === 'failed' ? 0.75 : 1,
+    }}>
+      {/* Header — larger */}
+      <div className="flex items-start justify-between gap-2 mb-4">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.01em', lineHeight: 1.15 }}>{account.label}</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span>{account.propfirm}</span>
+            <span style={{ color: 'var(--border)' }}>·</span>
+            <span style={{ fontFamily: 'monospace' }}>{fmtEurRaw(account.account_size)}</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-1 items-end">
-          <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 4, background: phase.bg, color: phase.color }}>
+        <div className="flex flex-col gap-1.5 items-end shrink-0">
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: phase.bg, color: phase.color, letterSpacing: '0.04em' }}>
             {phase.label}
           </span>
-          <span style={{ fontSize: 9, fontWeight: 700, color: status.color }}>● {status.label}</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: status.color, display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ width: 6, height: 6, borderRadius: 3, background: status.color, display: 'inline-block' }} />
+            {status.label}
+          </span>
         </div>
       </div>
 
-      {/* Balance */}
-      <div style={{ padding: '8px 10px', background: 'var(--bg3)', borderRadius: 6, marginBottom: 8 }}>
-        <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase' }}>Balance</div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: totalPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace' }}>
+      {/* ═══ BIG BALANCE HERO ═══ */}
+      <div style={{
+        padding: '16px 18px',
+        background: totalPnl >= 0
+          ? 'linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(34,197,94,0.02) 100%)'
+          : 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)',
+        border: `1px solid ${totalPnl >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+        borderRadius: 12, marginBottom: 12,
+      }}>
+        <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Solde actuel
+        </div>
+        <div style={{
+          fontSize: 32, fontWeight: 800, color: 'var(--text)',
+          fontFamily: 'monospace', lineHeight: 1.05, marginTop: 6, letterSpacing: '-0.03em',
+        }}>
           {fmtEurRaw(account.current_balance)}
         </div>
-        <div style={{ fontSize: 10, color: totalPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace' }}>
-          {fmtEur(totalPnl)} ({totalPct >= 0 ? '+' : ''}{totalPct.toFixed(2)}%)
+        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>
+            depuis {fmtEurRaw(account.starting_balance)}
+          </span>
+          <span style={{
+            padding: '3px 8px', borderRadius: 5,
+            background: totalPnl >= 0 ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)',
+            color: totalPnl >= 0 ? '#22c55e' : '#ef4444',
+            fontWeight: 700, fontFamily: 'monospace', fontSize: 12,
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+          }}>
+            {totalPnl >= 0 ? '▲' : '▼'} {totalPnl >= 0 ? '+' : ''}{fmtEurRaw(Math.abs(totalPnl))}
+            <span style={{ opacity: 0.75 }}>({totalPct >= 0 ? '+' : ''}{totalPct.toFixed(2)}%)</span>
+          </span>
         </div>
       </div>
 
       {/* Progress to target */}
       {progressPct != null && (
-        <div style={{ marginBottom: 8 }}>
-          <div className="flex justify-between text-[9px] mb-1" style={{ color: 'var(--text3)' }}>
-            <span>Objectif {targetPct ? `${targetPct}%` : ''} ({fmtEurRaw(targetAmount)})</span>
-            <span style={{ fontWeight: 700, color: 'var(--text)' }}>{progressPct.toFixed(0)}%</span>
+        <div style={{ marginBottom: 10 }}>
+          <div className="flex justify-between mb-1.5" style={{ fontSize: 10, color: 'var(--text3)' }}>
+            <span>Objectif {targetPct ? `${targetPct}%` : ''} <span style={{ fontFamily: 'monospace' }}>({fmtEurRaw(targetAmount)})</span></span>
+            <span style={{ fontWeight: 800, color: 'var(--text)', fontFamily: 'monospace' }}>{progressPct.toFixed(0)}%</span>
           </div>
-          <div style={{ height: 6, background: 'var(--bg3)', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${progressPct}%`, background: progressPct >= 100 ? '#22c55e' : `linear-gradient(90deg, #3b82f6, #22c55e)` }} />
+          <div style={{ height: 8, background: 'var(--bg3)', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${progressPct}%`, background: progressPct >= 100 ? '#22c55e' : `linear-gradient(90deg, #3b82f6, #22c55e)`, transition: 'width 0.6s ease' }} />
           </div>
         </div>
       )}
 
       {/* DD gauge */}
       {ddPct != null && (
-        <div style={{ marginBottom: 8 }}>
-          <div className="flex justify-between text-[9px] mb-1" style={{ color: 'var(--text3)' }}>
-            <span>DD utilisé ({fmtEurRaw(currentDdEur)} / {fmtEurRaw(maxDdEur)})</span>
-            <span style={{ fontWeight: 700, color: ddColor }}>{ddPct.toFixed(0)}%</span>
+        <div style={{ marginBottom: 12 }}>
+          <div className="flex justify-between mb-1.5" style={{ fontSize: 10, color: 'var(--text3)' }}>
+            <span>DD utilisé <span style={{ fontFamily: 'monospace' }}>({fmtEurRaw(currentDdEur)} / {fmtEurRaw(maxDdEur)})</span></span>
+            <span style={{ fontWeight: 800, color: ddColor, fontFamily: 'monospace' }}>{ddPct.toFixed(0)}%</span>
           </div>
-          <div style={{ height: 6, background: 'var(--bg3)', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min(100, ddPct)}%`, background: ddColor }} />
+          <div style={{ height: 8, background: 'var(--bg3)', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.min(100, ddPct)}%`, background: ddColor, transition: 'width 0.6s ease' }} />
           </div>
         </div>
       )}
 
-      {/* Perf */}
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div>
-          <div style={{ fontSize: 9, color: 'var(--text3)' }}>P&L semaine</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: weekPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace' }}>{fmtEur(weekPnl)}</div>
+      {/* Perf — bigger */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>P&L semaine</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: weekPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(weekPnl)}</div>
         </div>
-        <div>
-          <div style={{ fontSize: 9, color: 'var(--text3)' }}>P&L aujourd&apos;hui</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: todayPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace' }}>{fmtEur(todayPnl)}</div>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aujourd&apos;hui</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: todayPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(todayPnl)}</div>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 mt-3">
-        <button onClick={onEdit} className="flex-1 px-2 py-1.5 rounded text-[10px] font-bold" style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer' }}>
+      <div className="flex gap-2">
+        <button onClick={onEdit} className="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80" style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer' }}>
           ✎ Éditer
         </button>
-        <button onClick={onDelete} className="px-2 py-1.5 rounded text-[10px] font-bold" style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer' }}>
+        <button onClick={onDelete} className="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80" style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer' }}>
           ✕
         </button>
       </div>
@@ -2312,7 +2383,7 @@ function ChallengesSection({
       </div>
 
       {/* Cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {accounts.map(a => (
           <ChallengeCard
             key={a.id}
@@ -2341,113 +2412,156 @@ function ChallengeCard({
 }) {
   const phase = PHASE_LABELS[account.phase]
   const profit = Number(account.current_balance) - Number(account.starting_balance)
+  const profitPct = account.starting_balance > 0 ? (profit / Number(account.starting_balance)) * 100 : 0
   const targetAmount = account.profit_target_amount ?? (account.profit_target_pct != null ? Number(account.account_size) * (Number(account.profit_target_pct) / 100) : 0)
   const remaining = Math.max(0, targetAmount - profit)
   const progressPct = targetAmount > 0 ? (profit / targetAmount) * 100 : 0
 
-  // Trading days elapsed
   const tradingDaysElapsed = accountPnls.filter(p => Number(p.pnl) !== 0).length
   const minDays = account.min_trading_days || 0
   const minDaysMet = tradingDaysElapsed >= minDays
 
-  // DD
   const currentDdEur = Math.max(0, Number(account.starting_balance) - Number(account.current_balance))
   const maxDdEur = account.max_total_dd_pct != null ? Number(account.account_size) * (Number(account.max_total_dd_pct) / 100) : null
   const ddPct = maxDdEur && maxDdEur > 0 ? (currentDdEur / maxDdEur) * 100 : null
   const ddColor = ddPct == null ? 'var(--text3)' : ddPct > 75 ? '#ef4444' : ddPct > 50 ? '#f59e0b' : '#22c55e'
 
-  // ETA to validation
   const positivePnls = accountPnls.filter(p => Number(p.pnl) !== 0).slice(0, 10).map(p => Number(p.pnl))
   const avgDaily = positivePnls.length > 0 ? positivePnls.reduce((s, v) => s + v, 0) / positivePnls.length : 0
   const etaDays = avgDaily > 0 ? Math.ceil(remaining / avgDaily) : null
 
-  // Progress ring
-  const RING = 120
-  const R = 50
+  const RING = 150
+  const R = 62
+  const STROKE = 12
   const CIRC = 2 * Math.PI * R
   const dash = (Math.max(0, Math.min(100, progressPct)) / 100) * CIRC
   const ringColor = progressPct >= 100 ? '#22c55e' : progressPct >= 60 ? '#22c55e' : progressPct >= 30 ? '#3b82f6' : progressPct >= 0 ? '#f59e0b' : '#ef4444'
 
   const validated = progressPct >= 100 && minDaysMet
+  const balanceColor = profit >= 0 ? '#22c55e' : '#ef4444'
 
   return (
     <div style={{
-      background: validated ? 'linear-gradient(135deg, var(--bg2) 0%, rgba(34,197,94,0.08) 100%)' : 'var(--bg2)',
-      border: `1px solid ${validated ? 'rgba(34,197,94,0.35)' : 'var(--border)'}`,
-      borderTop: `3px solid ${validated ? '#22c55e' : phase.color}`,
-      borderRadius: 10, padding: 14,
+      background: validated ? 'linear-gradient(135deg, var(--bg2) 0%, rgba(34,197,94,0.10) 100%)' : 'var(--bg2)',
+      border: `1px solid ${validated ? 'rgba(34,197,94,0.4)' : 'var(--border)'}`,
+      borderTop: `4px solid ${validated ? '#22c55e' : phase.color}`,
+      borderRadius: 14, padding: 18,
       position: 'relative', overflow: 'hidden',
+      boxShadow: validated ? '0 4px 20px rgba(34,197,94,0.08)' : '0 2px 8px rgba(0,0,0,0.15)',
     }}>
       {validated && (
         <div style={{
-          position: 'absolute', top: 8, right: 8,
-          fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 4,
-          background: '#22c55e', color: '#000', letterSpacing: '0.06em',
+          position: 'absolute', top: 10, right: 10,
+          fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6,
+          background: '#22c55e', color: '#000', letterSpacing: '0.08em',
+          boxShadow: '0 2px 8px rgba(34,197,94,0.3)',
         }}>
           ✓ VALIDÉ
         </div>
       )}
 
-      {/* Header */}
-      <div className="mb-3">
-        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{account.label}</div>
-        <div style={{ fontSize: 10, color: 'var(--text3)' }}>
-          {account.propfirm} · {fmtEurRaw(account.account_size)} · <span style={{ color: phase.color, fontWeight: 700 }}>{phase.label}</span>
+      {/* Header — larger */}
+      <div className="mb-4">
+        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.01em', lineHeight: 1.15 }}>{account.label}</div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span>{account.propfirm}</span>
+          <span style={{ color: 'var(--border)' }}>·</span>
+          <span style={{ fontFamily: 'monospace' }}>{fmtEurRaw(account.account_size)}</span>
+          <span style={{
+            padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 10,
+            background: phase.bg, color: phase.color, letterSpacing: '0.04em',
+          }}>{phase.label}</span>
         </div>
       </div>
 
-      {/* Central ring + numbers */}
-      <div className="flex items-center gap-4 mb-3">
+      {/* ═══ BIG BALANCE HERO ═══ */}
+      <div style={{
+        padding: '16px 18px',
+        background: profit >= 0
+          ? 'linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(34,197,94,0.02) 100%)'
+          : 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)',
+        border: `1px solid ${profit >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+        borderRadius: 12, marginBottom: 14,
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Solde actuel
+        </div>
+        <div style={{
+          fontSize: 32, fontWeight: 800, color: 'var(--text)',
+          fontFamily: 'monospace', lineHeight: 1.05, marginTop: 6, letterSpacing: '-0.03em',
+        }}>
+          {fmtEurRaw(account.current_balance)}
+        </div>
+        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>
+            depuis {fmtEurRaw(account.starting_balance)}
+          </span>
+          <span style={{
+            padding: '3px 8px', borderRadius: 5,
+            background: profit >= 0 ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)',
+            color: balanceColor,
+            fontWeight: 700, fontFamily: 'monospace', fontSize: 12,
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+          }}>
+            {profit >= 0 ? '▲' : '▼'} {profit >= 0 ? '+' : ''}{fmtEurRaw(Math.abs(profit))}
+            <span style={{ opacity: 0.75 }}>({profit >= 0 ? '+' : ''}{profitPct.toFixed(2)}%)</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Ring + validation target */}
+      <div className="flex items-center gap-4 mb-4">
         <div style={{ position: 'relative', width: RING, height: RING, flexShrink: 0 }}>
-          <svg width={RING} height={RING} style={{ transform: 'rotate(-90deg)', filter: `drop-shadow(0 0 8px ${ringColor}30)` }}>
-            <circle cx={RING / 2} cy={RING / 2} r={R} fill="none" stroke="var(--bg3)" strokeWidth={10} />
+          <svg width={RING} height={RING} style={{ transform: 'rotate(-90deg)', filter: `drop-shadow(0 0 10px ${ringColor}40)` }}>
+            <circle cx={RING / 2} cy={RING / 2} r={R} fill="none" stroke="var(--bg3)" strokeWidth={STROKE} />
             <circle cx={RING / 2} cy={RING / 2} r={R} fill="none"
-              stroke={ringColor} strokeWidth={10}
+              stroke={ringColor} strokeWidth={STROKE}
               strokeDasharray={`${dash} ${CIRC}`}
               strokeLinecap="round"
               style={{ transition: 'stroke-dasharray 0.8s ease' }} />
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: ringColor, lineHeight: 1, fontFamily: 'monospace' }}>{Math.round(progressPct)}%</div>
-            <div style={{ fontSize: 8, color: 'var(--text3)', marginTop: 2 }}>validation</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: ringColor, lineHeight: 1, fontFamily: 'monospace', letterSpacing: '-0.02em' }}>{Math.round(progressPct)}%</div>
+            <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 3, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em' }}>validation</div>
           </div>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Profit / Target</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: profit >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', lineHeight: 1.1 }}>
-            {fmtEur(profit)}
+          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Objectif</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', fontFamily: 'monospace', lineHeight: 1.1, marginTop: 3, letterSpacing: '-0.02em' }}>
+            {fmtEurRaw(targetAmount)}
           </div>
-          <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'monospace', marginTop: 2 }}>
-            / {fmtEurRaw(targetAmount)} ({account.profit_target_pct}%)
+          <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
+            {account.profit_target_pct}% du compte
           </div>
-          <div style={{ marginTop: 6, fontSize: 10, color: 'var(--text2)' }}>
+          <div style={{ marginTop: 8, padding: '6px 10px', background: 'var(--bg3)', borderRadius: 6, fontSize: 11, color: 'var(--text2)' }}>
             {remaining > 0 ? (
-              <>Reste <strong style={{ color: '#3b82f6', fontFamily: 'monospace' }}>{fmtEurRaw(remaining)}</strong></>
+              <>Reste <strong style={{ color: '#3b82f6', fontFamily: 'monospace', fontSize: 13 }}>{fmtEurRaw(remaining)}</strong></>
             ) : (
-              <span style={{ color: '#22c55e', fontWeight: 700 }}>🎯 Target atteint !</span>
+              <span style={{ color: '#22c55e', fontWeight: 700 }}>🎯 Target atteint</span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Meta grid */}
-      <div className="grid grid-cols-3 gap-2 mb-3" style={{ fontSize: 10 }}>
-        <div style={{ padding: '6px 8px', background: 'var(--bg3)', borderRadius: 6 }}>
-          <div style={{ color: 'var(--text3)', fontSize: 9, textTransform: 'uppercase', fontWeight: 700 }}>Min days</div>
-          <div style={{ color: minDaysMet ? '#22c55e' : 'var(--text)', fontWeight: 700, fontSize: 12, fontFamily: 'monospace' }}>
-            {tradingDaysElapsed}<span style={{ color: 'var(--text3)' }}>/{minDays || '—'}</span>
-            {minDaysMet && <span style={{ marginLeft: 4, color: '#22c55e' }}>✓</span>}
+      {/* Meta grid — bigger cells */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ color: 'var(--text3)', fontSize: 9, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em' }}>Jours tradés</div>
+          <div style={{ color: minDaysMet ? '#22c55e' : 'var(--text)', fontWeight: 800, fontSize: 16, fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>
+            {tradingDaysElapsed}<span style={{ color: 'var(--text3)', fontSize: 12 }}>/{minDays || '—'}</span>
+            {minDaysMet && <span style={{ marginLeft: 4, color: '#22c55e', fontSize: 12 }}>✓</span>}
           </div>
         </div>
-        <div style={{ padding: '6px 8px', background: 'var(--bg3)', borderRadius: 6 }}>
-          <div style={{ color: 'var(--text3)', fontSize: 9, textTransform: 'uppercase', fontWeight: 700 }}>DD utilisé</div>
-          <div style={{ color: ddColor, fontWeight: 700, fontSize: 12, fontFamily: 'monospace' }}>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ color: 'var(--text3)', fontSize: 9, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em' }}>DD utilisé</div>
+          <div style={{ color: ddColor, fontWeight: 800, fontSize: 16, fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>
             {ddPct != null ? `${ddPct.toFixed(0)}%` : '—'}
           </div>
         </div>
-        <div style={{ padding: '6px 8px', background: 'var(--bg3)', borderRadius: 6 }}>
-          <div style={{ color: 'var(--text3)', fontSize: 9, textTransform: 'uppercase', fontWeight: 700 }}>ETA valid.</div>
-          <div style={{ color: etaDays != null ? '#3b82f6' : 'var(--text3)', fontWeight: 700, fontSize: 12, fontFamily: 'monospace' }}>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ color: 'var(--text3)', fontSize: 9, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em' }}>ETA valid.</div>
+          <div style={{ color: etaDays != null ? '#3b82f6' : 'var(--text3)', fontWeight: 800, fontSize: 16, fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>
             {etaDays != null ? `~${etaDays}j` : '—'}
           </div>
         </div>
@@ -2455,36 +2569,36 @@ function ChallengeCard({
 
       {/* DD gauge */}
       {ddPct != null && (
-        <div style={{ marginBottom: 10 }}>
-          <div className="flex justify-between text-[9px] mb-1" style={{ color: 'var(--text3)' }}>
-            <span>Drawdown ({fmtEurRaw(currentDdEur)} / {fmtEurRaw(maxDdEur)})</span>
-            <span style={{ fontWeight: 700, color: ddColor }}>{ddPct.toFixed(0)}%</span>
+        <div style={{ marginBottom: 12 }}>
+          <div className="flex justify-between mb-1.5" style={{ fontSize: 10, color: 'var(--text3)' }}>
+            <span>Drawdown <span style={{ fontFamily: 'monospace' }}>({fmtEurRaw(currentDdEur)} / {fmtEurRaw(maxDdEur)})</span></span>
+            <span style={{ fontWeight: 800, color: ddColor, fontFamily: 'monospace' }}>{ddPct.toFixed(0)}%</span>
           </div>
-          <div style={{ height: 4, background: 'var(--bg3)', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min(100, ddPct)}%`, background: ddColor }} />
+          <div style={{ height: 6, background: 'var(--bg3)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.min(100, ddPct)}%`, background: ddColor, transition: 'width 0.6s ease' }} />
           </div>
         </div>
       )}
 
-      {/* Perf */}
+      {/* Perf — bigger */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <div style={{ padding: '4px 8px', background: 'var(--bg3)', borderRadius: 4 }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)' }}>Semaine</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: weekPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace' }}>{fmtEur(weekPnl)}</div>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Semaine</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: weekPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(weekPnl)}</div>
         </div>
-        <div style={{ padding: '4px 8px', background: 'var(--bg3)', borderRadius: 4 }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)' }}>Aujourd&apos;hui</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: todayPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace' }}>{fmtEur(todayPnl)}</div>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aujourd&apos;hui</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: todayPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(todayPnl)}</div>
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions — bigger buttons */}
       <div className="flex gap-2">
-        <button onClick={onEdit} className="flex-1 px-2 py-1.5 rounded text-[10px] font-bold"
+        <button onClick={onEdit} className="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80"
           style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer' }}>
           ✎ Éditer
         </button>
-        <button onClick={onDelete} className="px-2 py-1.5 rounded text-[10px] font-bold"
+        <button onClick={onDelete} className="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80"
           style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer' }}>
           ✕
         </button>
@@ -2569,7 +2683,7 @@ function FundedSection({
       </div>
 
       {/* Cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {accounts.map(a => {
           const accPayouts = payouts.filter(p => p.account_id === a.id)
           return (
@@ -2602,25 +2716,22 @@ function FundedCard({
   onDelete: () => void
 }) {
   const profit = Number(account.current_balance) - Number(account.starting_balance)
+  const profitPct = account.starting_balance > 0 ? (profit / Number(account.starting_balance)) * 100 : 0
   const totalPayouts = payouts.reduce((s, p) => s + Number(p.amount_eur), 0)
   const lastPayout = payouts[0] || null
 
-  // Profit since last payout
   const profitSinceLastPayout = lastPayout
     ? accountPnls.filter(p => p.date > lastPayout.payout_date).reduce((s, p) => s + Number(p.pnl), 0)
     : profit
 
-  // Days since last payout / days until next payout eligible (assume 14 days min between payouts, common rule)
   const PAYOUT_CYCLE_DAYS = 14
   const daysSinceLastPayout = lastPayout
     ? Math.floor((Date.now() - new Date(lastPayout.payout_date).getTime()) / (86400 * 1000))
     : null
   const daysUntilNextEligible = daysSinceLastPayout != null ? Math.max(0, PAYOUT_CYCLE_DAYS - daysSinceLastPayout) : 0
 
-  // Eligible for payout : profit > 100€ AND (no last payout OR enough days passed)
   const eligible = profitSinceLastPayout >= 100 && (lastPayout == null || daysSinceLastPayout! >= PAYOUT_CYCLE_DAYS)
 
-  // Consistency check
   let consistencyStatus: 'ok' | 'warn' | 'na' = 'na'
   let bestDayPct: number | null = null
   if (account.consistency_rule_pct && profit > 0) {
@@ -2632,7 +2743,6 @@ function FundedCard({
     }
   }
 
-  // Trailing DD (for funded with trailing)
   const currentDdEur = Math.max(0, Number(account.starting_balance) - Number(account.current_balance))
   const maxDdEur = account.max_total_dd_pct != null ? Number(account.account_size) * (Number(account.max_total_dd_pct) / 100) : null
   const ddPct = maxDdEur && maxDdEur > 0 ? (currentDdEur / maxDdEur) * 100 : null
@@ -2640,111 +2750,166 @@ function FundedCard({
 
   const payoutShare = account.payout_split_pct ?? 80
   const yourShareIfPayout = (profitSinceLastPayout * payoutShare) / 100
+  const balanceColor = profit >= 0 ? '#22c55e' : '#ef4444'
 
   return (
     <div style={{
-      background: eligible ? 'linear-gradient(135deg, var(--bg2) 0%, rgba(168,85,247,0.10) 100%)' : 'var(--bg2)',
-      border: `1px solid ${eligible ? 'rgba(168,85,247,0.4)' : 'var(--border)'}`,
-      borderTop: '3px solid #a855f7',
-      borderRadius: 10, padding: 14,
+      background: eligible ? 'linear-gradient(135deg, var(--bg2) 0%, rgba(168,85,247,0.12) 100%)' : 'var(--bg2)',
+      border: `1px solid ${eligible ? 'rgba(168,85,247,0.45)' : 'var(--border)'}`,
+      borderTop: '4px solid #a855f7',
+      borderRadius: 14, padding: 18,
       position: 'relative', overflow: 'hidden',
+      boxShadow: eligible ? '0 4px 20px rgba(168,85,247,0.10)' : '0 2px 8px rgba(0,0,0,0.15)',
     }}>
       {eligible && (
         <div style={{
-          position: 'absolute', top: 8, right: 8,
-          fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 4,
-          background: '#a855f7', color: '#000', letterSpacing: '0.06em',
+          position: 'absolute', top: 10, right: 10,
+          fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 6,
+          background: '#a855f7', color: '#000', letterSpacing: '0.08em',
+          boxShadow: '0 2px 8px rgba(168,85,247,0.35)',
         }}>
           💰 PAYOUT ELIGIBLE
         </div>
       )}
 
-      {/* Header */}
-      <div className="mb-3">
-        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{account.label}</div>
-        <div style={{ fontSize: 10, color: 'var(--text3)' }}>
-          {account.propfirm} · {fmtEurRaw(account.account_size)} · <span style={{ color: '#a855f7', fontWeight: 700 }}>FINANCÉ</span>
+      {/* Header — larger */}
+      <div className="mb-4">
+        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.01em', lineHeight: 1.15 }}>{account.label}</div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span>{account.propfirm}</span>
+          <span style={{ color: 'var(--border)' }}>·</span>
+          <span style={{ fontFamily: 'monospace' }}>{fmtEurRaw(account.account_size)}</span>
+          <span style={{
+            padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 10,
+            background: 'rgba(168,85,247,0.18)', color: '#a855f7', letterSpacing: '0.04em',
+          }}>FINANCÉ</span>
         </div>
       </div>
 
-      {/* Big profit display */}
+      {/* ═══ BIG BALANCE HERO ═══ */}
       <div style={{
-        padding: '12px 14px',
-        background: profit >= 0 ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)',
-        border: `1px solid ${profit >= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
-        borderRadius: 8, marginBottom: 10,
+        padding: '16px 18px',
+        background: profit >= 0
+          ? 'linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(34,197,94,0.02) 100%)'
+          : 'linear-gradient(135deg, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.02) 100%)',
+        border: `1px solid ${profit >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+        borderRadius: 12, marginBottom: 14,
       }}>
-        <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Profit courant {lastPayout ? '(depuis dernier payout)' : ''}
+        <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Solde actuel
         </div>
-        <div style={{ fontSize: 26, fontWeight: 800, color: profitSinceLastPayout >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', lineHeight: 1.1, marginTop: 2 }}>
+        <div style={{
+          fontSize: 32, fontWeight: 800, color: 'var(--text)',
+          fontFamily: 'monospace', lineHeight: 1.05, marginTop: 6, letterSpacing: '-0.03em',
+        }}>
+          {fmtEurRaw(account.current_balance)}
+        </div>
+        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace' }}>
+            depuis {fmtEurRaw(account.starting_balance)}
+          </span>
+          <span style={{
+            padding: '3px 8px', borderRadius: 5,
+            background: profit >= 0 ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)',
+            color: balanceColor,
+            fontWeight: 700, fontFamily: 'monospace', fontSize: 12,
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+          }}>
+            {profit >= 0 ? '▲' : '▼'} {profit >= 0 ? '+' : ''}{fmtEurRaw(Math.abs(profit))}
+            <span style={{ opacity: 0.75 }}>({profit >= 0 ? '+' : ''}{profitPct.toFixed(2)}%)</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Payout profit box — depuis dernier payout */}
+      <div style={{
+        padding: '14px 16px',
+        background: profitSinceLastPayout >= 0
+          ? 'linear-gradient(135deg, rgba(168,85,247,0.10) 0%, rgba(168,85,247,0.02) 100%)'
+          : 'rgba(239,68,68,0.06)',
+        border: `1px solid ${profitSinceLastPayout >= 0 ? 'rgba(168,85,247,0.25)' : 'rgba(239,68,68,0.2)'}`,
+        borderRadius: 10, marginBottom: 12,
+      }}>
+        <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Profit {lastPayout ? 'depuis dernier payout' : 'total (aucun payout)'}
+        </div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: profitSinceLastPayout >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', lineHeight: 1.1, marginTop: 4, letterSpacing: '-0.02em' }}>
           {fmtEur(profitSinceLastPayout)}
         </div>
         {profitSinceLastPayout > 0 && (
-          <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
-            Ta part au payout ({payoutShare}%) : <strong style={{ color: '#a855f7', fontFamily: 'monospace' }}>{fmtEurRaw(yourShareIfPayout)}</strong>
+          <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span>Ta part ({payoutShare}%) :</span>
+            <span style={{
+              padding: '3px 8px', borderRadius: 5,
+              background: 'rgba(168,85,247,0.2)', color: '#a855f7',
+              fontWeight: 800, fontFamily: 'monospace', fontSize: 13,
+            }}>
+              {fmtEurRaw(yourShareIfPayout)}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Meta grid */}
+      {/* Meta grid — bigger cells */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <div style={{ padding: '6px 8px', background: 'var(--bg3)', borderRadius: 6 }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Prochain payout</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: eligible ? '#22c55e' : '#f59e0b', fontFamily: 'monospace' }}>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prochain payout</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: eligible ? '#22c55e' : '#f59e0b', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>
             {eligible ? 'Maintenant ✓' : daysUntilNextEligible > 0 ? `${daysUntilNextEligible}j` : 'Bientôt'}
           </div>
         </div>
-        <div style={{ padding: '6px 8px', background: 'var(--bg3)', borderRadius: 6 }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Payouts reçus</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#a855f7', fontFamily: 'monospace' }}>
-            {fmtEurRaw(totalPayouts)} <span style={{ fontSize: 9, color: 'var(--text3)' }}>({payouts.length})</span>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Payouts reçus</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#a855f7', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>
+            {fmtEurRaw(totalPayouts)}
+            <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4, fontWeight: 500 }}>({payouts.length})</span>
           </div>
         </div>
       </div>
 
-      {/* Consistency + DD */}
+      {/* Consistency + DD — bigger */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div style={{
-          padding: '6px 8px',
+          padding: '10px 12px',
           background: consistencyStatus === 'warn' ? 'rgba(245,158,11,0.08)' : 'var(--bg3)',
           border: consistencyStatus === 'warn' ? '1px solid rgba(245,158,11,0.3)' : '1px solid transparent',
-          borderRadius: 6,
+          borderRadius: 8,
         }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>Consistency</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: consistencyStatus === 'ok' ? '#22c55e' : consistencyStatus === 'warn' ? '#f59e0b' : 'var(--text3)', fontFamily: 'monospace' }}>
-            {consistencyStatus === 'na' ? '—' : `${bestDayPct?.toFixed(0)}% / ${account.consistency_rule_pct}%`}
+          <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Consistency</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: consistencyStatus === 'ok' ? '#22c55e' : consistencyStatus === 'warn' ? '#f59e0b' : 'var(--text3)', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>
+            {consistencyStatus === 'na' ? '—' : `${bestDayPct?.toFixed(0)}%`}
+            {consistencyStatus !== 'na' && <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 500, marginLeft: 3 }}>/ {account.consistency_rule_pct}%</span>}
           </div>
         </div>
-        <div style={{ padding: '6px 8px', background: 'var(--bg3)', borderRadius: 6 }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase' }}>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             DD {account.trailing_dd ? '(trailing)' : ''}
           </div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: ddColor, fontFamily: 'monospace' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: ddColor, fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>
             {ddPct != null ? `${ddPct.toFixed(0)}%` : '—'}
           </div>
         </div>
       </div>
 
-      {/* Perf */}
+      {/* Perf — bigger */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <div style={{ padding: '4px 8px', background: 'var(--bg3)', borderRadius: 4 }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)' }}>Semaine</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: weekPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace' }}>{fmtEur(weekPnl)}</div>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Semaine</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: weekPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(weekPnl)}</div>
         </div>
-        <div style={{ padding: '4px 8px', background: 'var(--bg3)', borderRadius: 4 }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)' }}>Aujourd&apos;hui</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: todayPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace' }}>{fmtEur(todayPnl)}</div>
+        <div style={{ padding: '10px 12px', background: 'var(--bg3)', borderRadius: 8 }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aujourd&apos;hui</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: todayPnl >= 0 ? '#22c55e' : '#ef4444', fontFamily: 'monospace', marginTop: 3, lineHeight: 1 }}>{fmtEur(todayPnl)}</div>
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions — bigger */}
       <div className="flex gap-2">
-        <button onClick={onEdit} className="flex-1 px-2 py-1.5 rounded text-[10px] font-bold"
+        <button onClick={onEdit} className="flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80"
           style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', cursor: 'pointer' }}>
           ✎ Éditer
         </button>
-        <button onClick={onDelete} className="px-2 py-1.5 rounded text-[10px] font-bold"
+        <button onClick={onDelete} className="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-80"
           style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer' }}>
           ✕
         </button>
