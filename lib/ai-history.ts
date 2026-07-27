@@ -32,6 +32,19 @@ export interface AiInstrumentInsight {
   conseil: string
 }
 
+// Bloc mental produit par le prompt /api/ai-coach-analysis (facteur
+// différenciant ATP — le LLM reçoit mood_stats + notes_psycho +
+// plan_correlation, aucun outil concurrent ne donne ces données à son
+// IA). Alimente la carte Dashboard Insight IA #3 "Psychologie & Mental".
+export type AiTiltSignal = 'AUCUN' | 'FAIBLE' | 'MODERE' | 'FORT'
+export interface AiMentalAnalysis {
+  verdict: string
+  tilt_signal: AiTiltSignal
+  tilt_explication: string
+  regularite_emotionnelle_note_sur_10: number
+  conseil_mental: string
+}
+
 export interface AiHistoryEntry {
   date: string  // ISO
   scores: AiScores
@@ -44,6 +57,11 @@ export interface AiHistoryEntry {
   stop_doing_top?: string
   top_instrument?: AiInstrumentInsight
   top_pattern?: string
+
+  // Bloc mental — carte Dashboard Insight IA #3. Optionnel : les
+  // analyses générées avant l'enrichissement du prompt n'en ont pas,
+  // la carte affiche alors un fallback "génère ton analyse".
+  analyse_mentale?: AiMentalAnalysis
 
   // Périmètre de l'analyse — permet aux cartes Dashboard d'afficher
   // "N derniers jours · tous comptes" en sous-titre et d'éviter les

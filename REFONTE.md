@@ -545,6 +545,50 @@ persistance en base) :
 Estimation : 1 commit fix API + 1 commit UI AnalyseIA + 1 commit
 cartes Dashboard re-fetch = 3 commits séparés.
 
+## Onglet « Mental » dans AnalyseIA — chantier différé
+
+**Contexte** : la carte Dashboard Insight IA #3 "Psychologie & Mental"
+lit `analyse_mentale` sur l'entrée localStorage (bloc structuré produit
+par le prompt IA enrichi — verdict / tilt_signal / tilt_explication /
+regularite_emotionnelle_note_sur_10 / conseil_mental). C'est le facteur
+différenciant ATP (data mood_stats + notes_psycho + plan_correlation
+que le LLM reçoit, aucun outil concurrent n'a ça).
+
+**Ce qui manque** : la page AnalyseIA a 8 tabs (`overview / forces /
+patterns / plan / instruments / objectifs / metrics / compare`) — aucune
+n'expose le bloc `analyse_mentale` en grand. Le user qui clique
+« Analyse complète » depuis la carte Dashboard #3 atterrit sur
+`overview` et cherche son verdict mental sans le trouver directement.
+
+**Décision (validée user)** : ne PAS élargir le périmètre du chantier
+"3 cartes IA + layout compact". L'onglet Mental est un chantier séparé,
+à faire quand le retour LLM est stabilisé.
+
+**Chantier** :
+
+1. Ajouter `{ id: 'mental', label: 'Mental', icon: '🧠' }` au tableau
+   `TABS` de [AnalyseIA.tsx:106](components/dashboard/pages/AnalyseIA.tsx#L106),
+   position naturelle après `plan` (les 4 premiers sont vue générale +
+   forces + patterns + plan, le 5e devient mental).
+2. Bloc de rendu conditionnel `{activeTab === 'mental' && ...}` qui
+   affiche :
+   - `analyse_mentale.verdict` en headline
+   - Une jauge circulaire `regularite_emotionnelle_note_sur_10` (Gauge
+     déjà défini dans AnalyseIA.tsx, réutilisable)
+   - Badge `tilt_signal` coloré selon niveau
+     (AUCUN=profit, FAIBLE=neutral, MODERE=warn, FORT=loss)
+   - `tilt_explication` en encadré secondaire
+   - `conseil_mental` en encadré action (border-left accent)
+   - Bloc data-source : "Calculé sur X sessions avec mood renseigné,
+     Y notes psycho, corrélation plan≥8 : +$Z/session" — pour montrer
+     au trader que c'est fondé sur SES données, pas générique.
+3. Fallback si `analyse_mentale` absent (vieille analyse ou LLM qui a
+   sauté le champ) : "Régénère ton analyse pour bénéficier du bloc
+   mental enrichi (ATP v2.x)".
+
+Estimation : 1 commit (fichier unique, ~120 lignes ajoutées, aucun type
+à changer).
+
 ## Règle devise — tout en $ côté trader/trading, € côté facturation
 
 Décision produit prise pendant l'enrichissement du Dashboard : le

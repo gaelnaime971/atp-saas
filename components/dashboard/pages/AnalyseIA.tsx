@@ -46,6 +46,22 @@ interface InstrumentAnalysis { instrument: string; verdict: string; conseil: str
 interface PlanJourType { matin: string; session: string; post_session: string }
 interface Objectifs { court_terme: string; moyen_terme: string; long_terme: string }
 
+// Bloc mental produit par le prompt IA — le différenciateur ATP. Adossé
+// aux mood_stats + notes_psycho_recentes + plan_score_correlation que le
+// LLM reçoit dans son contexte (aucune autre plateforme de trading ne
+// donne ce niveau de data psycho à son IA). Optionnel côté type pour
+// tolérer les vieilles analyses générées avant l'enrichissement du
+// prompt — les consommateurs (cartes Dashboard, éventuelle tab Mental
+// dans AnalyseIA) doivent gérer l'absence.
+type TiltSignal = 'AUCUN' | 'FAIBLE' | 'MODERE' | 'FORT'
+interface MentalAnalysis {
+  verdict: string
+  tilt_signal: TiltSignal
+  tilt_explication: string
+  regularite_emotionnelle_note_sur_10: number
+  conseil_mental: string
+}
+
 interface Analysis {
   verdict_general: string
   trend_global: Trend
@@ -66,6 +82,7 @@ interface Analysis {
   gestion_risque_note_sur_10: number
   consistance_note_sur_10: number
   force_mentale_note_sur_10: number
+  analyse_mentale?: MentalAnalysis   // Optionnel : ancienne analyse ou LLM qui n'a pas suivi le prompt.
   message_motivant: string
 }
 
@@ -89,6 +106,10 @@ interface HistoryEntry {
   stop_doing_top?: string
   top_instrument?: { instrument: string; verdict: string; conseil: string }
   top_pattern?: string
+  // Bloc mental — alimente la carte Dashboard Insight IA #3 "Psychologie
+  // & Mental" (facteur différenciant ATP). Optionnel : les entrées
+  // d'avant l'enrichissement prompt n'en ont pas.
+  analyse_mentale?: MentalAnalysis
   // Périmètre — pour le sous-titre "N derniers jours · tous comptes"
   // des cartes Dashboard Insight IA. Optionnels : les vieilles entrées
   // n'en ont pas et affichent un sous-titre dégradé.
@@ -447,6 +468,7 @@ export default function AnalyseIA() {
             ? { instrument: topInstrument.instrument, verdict: topInstrument.verdict, conseil: topInstrument.conseil }
             : undefined,
           top_pattern: parsed.patterns_detectes[0]?.titre,
+          analyse_mentale: parsed.analyse_mentale,
           period_label: s?.period_label,
           period_from: s?.period_from,
           period_to: s?.period_to,
@@ -485,6 +507,8 @@ export default function AnalyseIA() {
         ? { instrument: topInstrument.instrument, verdict: topInstrument.verdict, conseil: topInstrument.conseil }
         : undefined,
       top_pattern: analysis.patterns_detectes[0]?.titre,
+      // Bloc mental — alimente la carte Insight IA #3 côté Dashboard.
+      analyse_mentale: analysis.analyse_mentale,
       // Périmètre — le sous-titre des cartes Dashboard le lit pour dire
       // "N derniers jours · tous comptes" et éviter la contradiction
       // apparente avec l'ATP Score (profil global sur toute l'historique).

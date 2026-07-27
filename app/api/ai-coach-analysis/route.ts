@@ -75,6 +75,7 @@ INSTRUCTIONS:
 - Si une donnée manque (instrument unique, peu de sessions, etc.), dis-le.
 - Pour les "instruments_analysis", ne renvoie que les instruments présents dans top_instruments.
 - Notes /10: sois honnête, pas de complaisance, mais reste cohérent avec les données.
+- BLOC MENTAL — OBLIGATOIRE. Le champ "analyse_mentale" est le différenciateur clé de ce produit (le trader a une formation neuroscience). Adosse-le impérativement à mood_stats, meilleur_mood, notes_psycho_recentes et correlation_plan_score — ce sont les données que les concurrents n'ont pas. Le verdict doit citer des chiffres réels (ex: "En 😊 tu fais 65% WR contre 32% en 😐 — l'état émotionnel est ton premier levier"). Le conseil_mental doit être une action MESURABLE fondée sur SES données (ex: "Coupe la session à la 2e perte : ton plan_score chute de 8 à 4 après" — PAS "reste calme" ni "respire", banalités interdites). tilt_signal enum strict {AUCUN, FAIBLE, MODERE, FORT} : AUCUN si régularité émotionnelle solide ET pas de chute de plan_score en série pertes ; FORT si mood_stats montrent un écart >30% WR entre moods OU chute plan_score >3 pts en série. Si mood_stats vide et notes_psycho_recentes vide, réponds "AUCUN" avec verdict expliquant qu'il manque des logs pour analyser le mental.
 
 Réponds UNIQUEMENT en JSON valide avec EXACTEMENT cette structure:
 {
@@ -117,6 +118,13 @@ Réponds UNIQUEMENT en JSON valide avec EXACTEMENT cette structure:
   "gestion_risque_note_sur_10": 7,
   "consistance_note_sur_10": 5,
   "force_mentale_note_sur_10": 6,
+  "analyse_mentale": {
+    "verdict": "1-2 phrases citant des chiffres réels de mood_stats/plan_correlation/notes_psycho. Ex: 'En 😊 tu fais 65% WR contre 32% en 😐 — ton état émotionnel est ton premier levier.'",
+    "tilt_signal": "AUCUN ou FAIBLE ou MODERE ou FORT",
+    "tilt_explication": "1 phrase sur le déclencheur observé dans les données. Ex: 'ton plan_score chute de 8 à 4 après 2 pertes consécutives.' Si tilt_signal=AUCUN, décris pourquoi la régularité est bonne.",
+    "regularite_emotionnelle_note_sur_10": 7,
+    "conseil_mental": "1 action MESURABLE basée sur SES données. Ex: 'Coupe la session à la 2e perte : ton plan_score chute de 8 à 4 après.' PAS de banalités type 'reste calme' / 'respire' / 'garde ton sang-froid'."
+  },
   "message_motivant": "1 phrase puissante de coach, pas une banalité"
 }
 
