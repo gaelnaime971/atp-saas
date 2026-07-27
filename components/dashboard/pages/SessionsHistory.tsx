@@ -10,7 +10,8 @@ import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
-import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
+import Badge from '@/components/ui/Badge'
+import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForPlanScore, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 
 interface SessionRow {
   id: string
@@ -372,19 +373,10 @@ export default function SessionsHistory() {
             accessor: s => {
               const p = parseSetup(s.setup)?.plan_score
               if (p == null) return <span style={{ color: 'var(--color-text-3)' }}>—</span>
-              const tone = p >= 8 ? 'profit' : p >= 5 ? 'warn' : 'loss'
               return (
-                <span
-                  className="text-xs"
-                  style={{
-                    padding: '2px 6px', borderRadius: 'var(--radius-sm)',
-                    background: `rgba(var(--color-${tone === 'profit' ? 'profit' : tone === 'warn' ? 'warn' : 'loss'}-rgb), 0.15)`,
-                    color: TONE_COLOR_VAR[tone],
-                    fontFamily: 'var(--font-data)',
-                  }}
-                >
+                <Badge tone={toneForPlanScore(p)} size="sm">
                   {p}/10
-                </span>
+                </Badge>
               )
             },
           },

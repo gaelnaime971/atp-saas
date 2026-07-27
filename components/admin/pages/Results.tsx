@@ -7,7 +7,8 @@ import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
 import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
-import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
+import Badge from '@/components/ui/Badge'
+import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForPlanScore, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 
 interface SessionRow {
   id: string
@@ -135,16 +136,7 @@ export default function Results() {
             accessor: s => {
               const p = getMeta(s)?.plan_score
               if (p == null) return '—'
-              const tone = p >= 8 ? 'profit' : p >= 5 ? 'warn' : 'loss'
-              return (
-                <span
-                  style={{
-                    padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontSize: 11, fontWeight: 500, fontFamily: 'var(--font-data)',
-                    background: `rgba(var(--color-${tone === 'profit' ? 'profit' : tone === 'warn' ? 'warn' : 'loss'}-rgb), 0.10)`,
-                    color: TONE_COLOR_VAR[tone],
-                  }}
-                >{p}/10</span>
-              )
+              return <Badge tone={toneForPlanScore(p)} size="md">{p}/10</Badge>
             } },
           { id: 'mood', header: 'Humeur', align: 'center',
             accessor: s => <span className="text-base">{getMeta(s)?.mood ?? '—'}</span> },

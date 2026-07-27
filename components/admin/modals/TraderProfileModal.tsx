@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
 import { downloadContractPdf } from '@/lib/generateContractPdf'
 import Modal from '@/components/ui/Modal'
+import Badge from '@/components/ui/Badge'
+import { toneForPlanScore } from '@/lib/format'
 
 interface TraderProfileModalProps {
   trader: Profile | null
@@ -190,9 +192,7 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs" style={{ color: 'var(--color-text-3)' }}>{trader.email}</span>
               {trader.plan_type && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-                  {trader.plan_type}
-                </span>
+                <Badge tone="profit" size="sm" bordered>{trader.plan_type}</Badge>
               )}
               {trader.propfirm_name && (
                 <span className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-3)' }}>
@@ -325,12 +325,9 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                                 {meta?.r_value != null ? `${meta.r_value >= 0 ? '+' : ''}${meta.r_value}R` : '—'}
                               </span>
                               {meta?.plan_score != null && (
-                                <span className="text-xs px-1.5 py-0.5 rounded" style={{
-                                  background: meta.plan_score >= 8 ? 'rgba(var(--color-profit-rgb), 0.15)' : meta.plan_score >= 5 ? 'rgba(var(--color-warn-rgb), 0.12)' : 'rgba(var(--color-loss-rgb), 0.15)',
-                                  color: meta.plan_score >= 8 ? 'var(--color-profit)' : meta.plan_score >= 5 ? 'var(--color-warn)' : 'var(--color-loss)',
-                                }}>
+                                <Badge tone={toneForPlanScore(meta.plan_score)} size="sm">
                                   {meta.plan_score}/10
-                                </span>
+                                </Badge>
                               )}
                               {meta?.mood && <span className="text-sm">{meta.mood}</span>}
                               <span className="text-xs ml-auto" style={{ color: 'var(--text3)' }}>{meta?.session_type ?? s.result ?? '—'}</span>
@@ -502,12 +499,9 @@ export default function TraderProfileModal({ trader, onClose }: TraderProfileMod
                               </td>
                               <td className="py-2 pr-3">
                                 {meta?.plan_score != null ? (
-                                  <span className="px-1.5 py-0.5 rounded" style={{
-                                    background: meta.plan_score >= 8 ? 'rgba(var(--color-profit-rgb), 0.15)' : meta.plan_score >= 5 ? 'rgba(var(--color-warn-rgb), 0.12)' : 'rgba(var(--color-loss-rgb), 0.15)',
-                                    color: meta.plan_score >= 8 ? 'var(--color-profit)' : meta.plan_score >= 5 ? 'var(--color-warn)' : 'var(--color-loss)',
-                                  }}>
+                                  <Badge tone={toneForPlanScore(meta.plan_score)} size="sm">
                                     {meta.plan_score}/10
-                                  </span>
+                                  </Badge>
                                 ) : '—'}
                               </td>
                               <td className="py-2 pr-3 text-sm">{meta?.mood ?? '—'}</td>

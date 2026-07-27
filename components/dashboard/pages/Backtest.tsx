@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
+import Badge from '@/components/ui/Badge'
 
 // ── Constants ──────────────────────────────────────────────
 
@@ -935,13 +936,13 @@ export default function Backtest() {
                             {e.r_result > 0 ? '+' : ''}{e.r_result}R
                           </td>
                           <td style={{ padding: '10px' }}>
-                            <span style={{
-                              padding: '3px 8px', borderRadius: 6, fontWeight: 700, fontSize: 10,
-                              textTransform: 'uppercase',
-                              background: resultBg(e.result), color: resultColor(e.result),
-                            }}>
-                              {e.result === 'be' ? 'BE' : e.result.toUpperCase()}
-                            </span>
+                            <Badge
+                              tone={e.result === 'win' ? 'profit' : e.result === 'loss' ? 'loss' : 'warn'}
+                              size="sm"
+                              uppercase
+                            >
+                              {e.result === 'be' ? 'BE' : e.result}
+                            </Badge>
                           </td>
                           <td style={{ padding: '10px' }}>
                             {e.image_url && (

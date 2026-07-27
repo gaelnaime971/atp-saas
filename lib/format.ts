@@ -183,3 +183,19 @@ export function toneForRate(
   if (n == null || Number.isNaN(n) || n === 0) return 'neutral'
   return n >= target ? 'profit' : 'warn'
 }
+
+/**
+ * Tone pour un score de respect du plan (0-10). Pattern répété dans
+ * Session, SessionsHistory, Dashboard, Results, TraderProfileModal.
+ *
+ * toneForPlanScore(9) → 'profit'    (dans le plan)
+ * toneForPlanScore(6) → 'warn'      (partiel)
+ * toneForPlanScore(3) → 'loss'      (hors plan)
+ * toneForPlanScore(null) → 'neutral' (absence)
+ */
+export function toneForPlanScore(n: number | null | undefined): Tone {
+  if (n == null || Number.isNaN(n)) return 'neutral'
+  if (n >= 8) return 'profit'
+  if (n >= 5) return 'warn'
+  return 'loss'
+}

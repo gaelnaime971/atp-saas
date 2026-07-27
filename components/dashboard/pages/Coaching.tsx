@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import VideoCall from '@/components/coaching/VideoCall'
+import Badge, { type BadgeTone } from '@/components/ui/Badge'
 
 type MeetingStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
 
@@ -70,20 +71,14 @@ function dayKey(iso: string): string {
   return parts // YYYY-MM-DD
 }
 
-function statusBadge(status: MeetingStatus | null): { label: string; color: string; bg: string } {
+function statusBadge(status: MeetingStatus | null): { label: string; tone: BadgeTone } {
   switch (status) {
-    case 'scheduled':
-      return { label: 'Planifié', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' }
-    case 'in_progress':
-      return { label: 'En cours', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.15)' }
-    case 'completed':
-      return { label: 'Terminé', color: 'var(--color-profit)', bg: 'rgba(var(--color-profit-rgb), 0.1)' }
-    case 'cancelled':
-      return { label: 'Annulé', color: 'var(--color-loss)', bg: 'rgba(var(--color-loss-rgb), 0.1)' }
-    case 'no_show':
-      return { label: 'Absent', color: 'var(--color-warn)', bg: 'rgba(var(--color-warn-rgb), 0.1)' }
-    default:
-      return { label: '—', color: 'var(--text3)', bg: 'var(--bg3)' }
+    case 'scheduled':   return { label: 'Planifié', tone: 'info'    }
+    case 'in_progress': return { label: 'En cours', tone: 'profit'  }
+    case 'completed':   return { label: 'Terminé',  tone: 'profit'  }
+    case 'cancelled':   return { label: 'Annulé',   tone: 'loss'    }
+    case 'no_show':     return { label: 'Absent',   tone: 'warn'    }
+    default:            return { label: '—',        tone: 'neutral' }
   }
 }
 
@@ -389,21 +384,7 @@ export default function Coaching() {
                         Durée : {s.duration_minutes || 60} min
                       </p>
                     </div>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
-                        color: badge.color,
-                        background: badge.bg,
-                        padding: '4px 8px',
-                        borderRadius: 6,
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {badge.label}
-                    </span>
+                    <Badge tone={badge.tone} size="sm" uppercase>{badge.label}</Badge>
                   </div>
 
                   {s.notes && (
@@ -692,20 +673,7 @@ export default function Coaching() {
                         {fmtTime(s.scheduled_at)} · {s.duration_minutes || 60} min
                       </p>
                     </div>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
-                        color: badge.color,
-                        background: badge.bg,
-                        padding: '3px 8px',
-                        borderRadius: 6,
-                      }}
-                    >
-                      {badge.label}
-                    </span>
+                    <Badge tone={badge.tone} size="sm" uppercase>{badge.label}</Badge>
                     <p
                       style={{
                         flex: 1,

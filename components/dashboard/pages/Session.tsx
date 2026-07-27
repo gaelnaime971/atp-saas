@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import Badge from '@/components/ui/Badge'
 import { createClient } from '@/lib/supabase/client'
+import { toneForPlanScore } from '@/lib/format'
 import type { TraderAccount } from '@/lib/types'
 
 const INSTRUMENTS = ['ES', 'NQ', 'DAX', 'YM', 'MYM', 'MNQ', 'GC', 'MGC']
@@ -370,12 +372,9 @@ export default function Session() {
           <div style={{ marginBottom: 18 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <label style={{ ...labelStyle, marginBottom: 0, fontSize: 11 }}>Respect plan ATP <Tooltip text={TOOLTIPS.plan_score} /></label>
-              <span style={{
-                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6,
-                background: `${planTag.color}20`, color: planTag.color,
-              }}>
+              <Badge tone={toneForPlanScore(planScore)} size="md">
                 {planScore}/10 · {planTag.label}
-              </span>
+              </Badge>
             </div>
             <input
               type="range"

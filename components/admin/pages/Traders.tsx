@@ -9,6 +9,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
 import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
+import Badge from '@/components/ui/Badge'
 import { fmtUsd, fmtPct, fmtCompact, fmtNumber, toneForPnl, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 import NewTraderModal from '@/components/admin/modals/NewTraderModal'
 import TraderProfileModal from '@/components/admin/modals/TraderProfileModal'
@@ -372,14 +373,9 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
             ) },
           { id: 'status', header: 'Statut',
             accessor: t => (
-              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-                t.status === 'pending'
-                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                  : 'bg-green-500/10 text-green-400 border border-green-500/20'
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${t.status === 'pending' ? 'bg-amber-400' : 'bg-green-400'}`} />
+              <Badge tone={t.status === 'pending' ? 'warn' : 'profit'} size="sm" bordered dot>
                 {t.status === 'pending' ? 'En attente' : 'Actif'}
-              </span>
+              </Badge>
             ) },
           { id: 'plan', header: 'Plan',
             accessor: t => (

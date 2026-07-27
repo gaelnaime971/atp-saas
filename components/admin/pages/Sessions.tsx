@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
+import Badge from '@/components/ui/Badge'
 
 interface CoachingSession {
   id: string
@@ -296,13 +297,12 @@ export default function Sessions() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
                     <p className="text-sm font-semibold text-[#e8edf5]">{session.trader_name}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      session.status === 'completed' ? 'bg-green-500/10 text-green-400' :
-                      session.status === 'cancelled' ? 'bg-red-500/10 text-red-400' :
-                      'bg-blue-500/10 text-blue-400'
-                    }`}>
+                    <Badge
+                      tone={session.status === 'completed' ? 'profit' : session.status === 'cancelled' ? 'loss' : 'info'}
+                      size="sm"
+                    >
                       {session.status === 'planned' ? 'Planifié' : session.status === 'completed' ? 'Terminé' : 'Annulé'}
-                    </span>
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-[var(--color-neutral)]">
                     <span className="flex items-center gap-1">

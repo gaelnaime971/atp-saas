@@ -9,6 +9,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
 import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
+import Badge from '@/components/ui/Badge'
 import { fmtEur, fmtNumber } from '@/lib/format'
 
 type PaymentMethod = 'virement' | 'stripe_comptant' | 'stripe_2x' | 'stripe_3x' | 'stripe_4x' | 'crypto'
@@ -321,15 +322,7 @@ export default function Revenus() {
               </span>
             ) },
           { id: 'htttc', header: 'HT/TTC', align: 'center',
-            accessor: r => (
-              <span
-                style={{
-                  padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontSize: 11, fontWeight: 500, fontFamily: 'var(--font-data)',
-                  background: r.is_ttc ? 'rgba(var(--color-profit-rgb), 0.10)' : 'rgba(var(--color-warn-rgb), 0.10)',
-                  color: r.is_ttc ? 'var(--color-profit)' : 'var(--color-warn)',
-                }}
-              >{r.is_ttc ? 'TTC' : 'HT'}</span>
-            ) },
+            accessor: r => <Badge tone={r.is_ttc ? 'profit' : 'warn'} size="md">{r.is_ttc ? 'TTC' : 'HT'}</Badge> },
           { id: 'amount', header: 'Montant', numeric: true, sortable: true, sortValue: r => r.amount,
             accessor: r => (
               <span style={{ color: 'var(--color-profit)', fontWeight: 600 }}>

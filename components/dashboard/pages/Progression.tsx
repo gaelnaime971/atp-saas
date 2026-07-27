@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import KpiCard from '@/components/ui/KpiCard'
+import Badge from '@/components/ui/Badge'
 import { fmtEur, fmtPct, fmtNumber, toneForPnl, toneForRate } from '@/lib/format'
 import type { TradingSession } from '@/lib/types'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip, Legend } from 'chart.js'
@@ -531,29 +532,16 @@ export default function Progression() {
               Points forts / Points a ameliorer
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {tags.map((tag, i) => {
-                const colors = {
-                  green: { bg: 'rgba(var(--color-profit-rgb), 0.1)', color: 'var(--green, var(--color-profit))', border: 'rgba(var(--color-profit-rgb), 0.3)' },
-                  red: { bg: 'rgba(var(--color-loss-rgb), 0.1)', color: 'var(--red, var(--color-loss))', border: 'rgba(var(--color-loss-rgb), 0.3)' },
-                  amber: { bg: 'rgba(var(--color-warn-rgb), 0.1)', color: 'var(--amber, var(--color-warn))', border: 'rgba(var(--color-warn-rgb), 0.3)' },
-                }
-                const c = colors[tag.type]
-                return (
-                  <span
-                    key={i}
-                    style={{
-                      fontSize: 11,
-                      background: c.bg,
-                      color: c.color,
-                      border: `1px solid ${c.border}`,
-                      borderRadius: 4,
-                      padding: '3px 8px',
-                    }}
-                  >
-                    {tag.label}
-                  </span>
-                )
-              })}
+              {tags.map((tag, i) => (
+                <Badge
+                  key={i}
+                  tone={tag.type === 'green' ? 'profit' : tag.type === 'red' ? 'loss' : 'warn'}
+                  size="md"
+                  bordered
+                >
+                  {tag.label}
+                </Badge>
+              ))}
             </div>
           </div>
         </Card>

@@ -6,6 +6,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import KpiCard from '@/components/ui/KpiCard'
 import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
+import Badge, { type BadgeTone } from '@/components/ui/Badge'
 import { toneForPnl, toneForRate } from '@/lib/format'
 
 interface LiveTrade {
@@ -39,15 +40,13 @@ function getStartDate(period: Period, customFrom: string): string | null {
   return null
 }
 
-// Signal : inline dir/result badges + segmented control période sont des patterns
-// répétés qui deviendront <Badge> et <SegmentedControl> quand ces primitives
-// seront extraites (voir REFONTE.md). Refactor pur ici : tokens sémantiques,
-// zéro changement visuel.
+// Segmented control période reste inline : primitive SegmentedControl documentée
+// dans REFONTE.md, à extraire quand 3+ sites migrés l'utilisent.
 
-const RESULT_BADGE: Record<LiveTrade['result'], { label: string; bg: string; color: string; border: string }> = {
-  win:       { label: 'Win',  bg: 'rgba(var(--color-profit-rgb), 0.10)', color: 'var(--color-profit)', border: 'rgba(var(--color-profit-rgb), 0.20)' },
-  loss:      { label: 'Loss', bg: 'rgba(var(--color-loss-rgb), 0.10)',   color: 'var(--color-loss)',   border: 'rgba(var(--color-loss-rgb), 0.20)'   },
-  breakeven: { label: 'BE',   bg: 'rgba(var(--color-warn-rgb), 0.10)',   color: 'var(--color-warn)',   border: 'rgba(var(--color-warn-rgb), 0.20)'   },
+const RESULT_BADGE: Record<LiveTrade['result'], { label: string; tone: BadgeTone }> = {
+  win:       { label: 'Win',  tone: 'profit' },
+  loss:      { label: 'Loss', tone: 'loss'   },
+  breakeven: { label: 'BE',   tone: 'warn'   },
 }
 
 export default function RecapTradeLive() {
@@ -101,24 +100,11 @@ export default function RecapTradeLive() {
     {
       id: 'direction',
       header: 'Direction',
-      accessor: t => {
-        const isLong = t.direction === 'long'
-        return (
-          <span
-            style={{
-              display: 'inline-block',
-              padding: '2px 8px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: 'var(--text-label)',
-              fontWeight: 500,
-              background: isLong ? 'rgba(var(--color-profit-rgb), 0.10)' : 'rgba(var(--color-loss-rgb), 0.10)',
-              color:      isLong ? 'var(--color-profit)'                : 'var(--color-loss)',
-            }}
-          >
-            {isLong ? 'Long' : 'Short'}
-          </span>
-        )
-      },
+      accessor: t => (
+        <Badge tone={t.direction === 'long' ? 'profit' : 'loss'} size="md">
+          {t.direction === 'long' ? 'Long' : 'Short'}
+        </Badge>
+      ),
     },
     {
       id: 'r',
@@ -156,22 +142,7 @@ export default function RecapTradeLive() {
       header: 'Résultat',
       accessor: t => {
         const b = RESULT_BADGE[t.result]
-        return (
-          <span
-            style={{
-              display: 'inline-block',
-              padding: '2px 8px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: 'var(--text-label)',
-              fontWeight: 500,
-              background: b.bg,
-              color: b.color,
-              border: `1px solid ${b.border}`,
-            }}
-          >
-            {b.label}
-          </span>
-        )
+        return <Badge tone={b.tone} size="md" bordered>{b.label}</Badge>
       },
       sortable: true,
       sortValue: t => t.result,
