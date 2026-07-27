@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Modal from '@/components/ui/Modal'
+import Badge, { type BadgeTone } from '@/components/ui/Badge'
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -139,12 +140,71 @@ const OUTCOME_OPTIONS = [
 
 // ── Helpers ───────────────────────────────────────────────────────
 
-function scoreLabel(s: number): { label: string; emoji: string; color: string; bg: string } {
-  if (s >= 75) return { label: 'CHAUD', emoji: '🔥', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' }
-  if (s >= 50) return { label: 'TIÈDE', emoji: '📞', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' }
-  if (s >= 25) return { label: 'FROID', emoji: '❄️', color: '#6b7280', bg: 'rgba(107,114,128,0.12)' }
-  return { label: 'NON QUAL.', emoji: '⏸️', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' }
+function scoreLabel(s: number): { label: string; emoji: string; tone: BadgeTone } {
+  if (s >= 75) return { label: 'CHAUD',     emoji: '🔥', tone: 'profit'  }
+  if (s >= 50) return { label: 'TIÈDE',     emoji: '📞', tone: 'warn'    }
+  if (s >= 25) return { label: 'FROID',     emoji: '❄️', tone: 'neutral' }
+  return         { label: 'NON QUAL.', emoji: '⏸️', tone: 'loss'    }
 }
+
+// Enum → BadgeTone mappings for Pipeline statics (used by both card + detail modal)
+type ProspectStatus = typeof STATUS_COLUMNS[number]['value']
+const toneForStatus = (v: ProspectStatus): BadgeTone => (
+  v === 'nouveau' ? 'status-nouveau' :
+  v === 'contacte' ? 'status-contacte' :
+  v === 'call_booke' ? 'status-call-booke' :
+  v === 'close' ? 'status-closed' :
+  'status-disqualifie'
+)
+type Temperature = typeof TEMPERATURE_OPTIONS[number]['value']
+const toneForTemp = (v: Temperature): BadgeTone => (
+  v === 'chaud' ? 'temp-chaud' : v === 'tiede' ? 'temp-tiede' : 'temp-froid'
+)
+type ProgramType = typeof PROGRAM_TYPES[number]['value']
+const toneForProgram = (v: ProgramType | string): BadgeTone => (
+  v === 'ATP ULTRA' ? 'program-ultra' :
+  v === 'Coaching personnalisé' ? 'program-coaching' :
+  v === 'Séminaire' ? 'program-seminaire' :
+  'program-autre'
+)
+// Sources mapping — landing-capture réutilise le token methode-atp
+// (décision produit : deux landings, une seule intention "Méthode ATP").
+const toneForSource = (v: string): BadgeTone => {
+  const map: Record<string, BadgeTone> = {
+    'methode-atp':          'source-methode-atp',
+    'landing-capture':      'source-methode-atp',
+    'trading-night':        'source-trading-night',
+    'preinscription-event': 'source-preinscription',
+    'video-methode':        'source-video-methode',
+    'whop-1000':            'source-whop-lt1k',
+    'whop-1000-2000':       'source-whop-1k-2k',
+    'whop-2000':            'source-whop-gt2k',
+    'organique-instagram':  'source-instagram',
+    'organique-x':          'source-x-twitter',
+    'reference-client':     'source-reference-client',
+    'manual':               'source-manual',
+    'csv-import':           'source-csv-import',
+  }
+  return map[v] ?? 'neutral'
+}
+type PaymentMethod = typeof PAYMENT_METHOD_OPTIONS[number]['value']
+const toneForPay = (v: PaymentMethod | string): BadgeTone => (
+  v === 'stripe' ? 'pay-stripe' :
+  v === 'virement' ? 'pay-virement' :
+  v === 'especes' ? 'pay-especes' :
+  v === 'mixed' ? 'pay-mixed' :
+  'neutral'
+)
+const toneForOutcome = (v: string): BadgeTone => (
+  v === 'pas_repondu' ? 'outcome-pas-repondu' :
+  v === 'rappel' ? 'outcome-rappel' :
+  v === 'interesse' ? 'outcome-interesse' :
+  v === 'tres_interesse' ? 'outcome-tres-interesse' :
+  v === 'objection' ? 'outcome-objection' :
+  v === 'pas_interesse' ? 'outcome-pas-interesse' :
+  v === 'closé' ? 'outcome-closed' :
+  'neutral'
+)
 
 function fmtDate(iso: string | null): string {
   if (!iso) return ''
@@ -617,7 +677,6 @@ function PipelineCard({
   const score = scoreLabel(p.score || 0)
   const temp = TEMPERATURE_OPTIONS.find(t => t.value === p.temperature)
   const src = SOURCE_LABELS[p.source]
-  const programColor = PROGRAM_TYPES.find(pt => pt.value === p.program_type)?.color || '#6b7280'
 
   const handleCardClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('[data-no-card-click]')) return
@@ -648,43 +707,24 @@ function PipelineCard({
           {(p.prenom || '') + (p.nom ? ' ' + p.nom : '') || <span style={{ color: 'var(--text3)' }}>Sans nom</span>}
         </div>
         {temp && (
-          <span
-            className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0"
-            style={{ background: temp.bg, color: temp.color }}
-            title={`Température : ${temp.label}`}
-          >
-            {temp.emoji}
+          <span className="shrink-0" title={`Température : ${temp.label}`}>
+            <Badge tone={toneForTemp(temp.value)} size="sm">{temp.emoji}</Badge>
           </span>
         )}
       </div>
 
       {/* Score + source row */}
       <div className="flex items-center gap-1.5 flex-wrap mb-2">
-        <span
-          className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
-          style={{ background: score.bg, color: score.color }}
-        >
+        <Badge tone={score.tone} size="sm" uppercase>
           {p.score || 0} {score.emoji} {score.label}
-        </span>
-        {src && (
-          <span
-            className="text-[9px] font-medium px-1.5 py-0.5 rounded"
-            style={{ background: src.bg, color: src.color }}
-          >
-            {src.label}
-          </span>
-        )}
+        </Badge>
+        {src && <Badge tone={toneForSource(p.source)} size="sm">{src.label}</Badge>}
       </div>
 
       {/* Program chip */}
       {p.program_type && (
         <div className="mb-2">
-          <span
-            className="text-[9px] font-semibold px-1.5 py-0.5 rounded"
-            style={{ background: `${programColor}20`, color: programColor, border: `1px solid ${programColor}40` }}
-          >
-            {p.program_type}
-          </span>
+          <Badge tone={toneForProgram(p.program_type)} size="sm" bordered>{p.program_type}</Badge>
         </div>
       )}
 
@@ -1133,20 +1173,17 @@ function RevenueForecast({ prospects, onOpenProspect }: { prospects: Prospect[];
                 const dueDate = row.installment.due_date ? new Date(row.installment.due_date) : null
                 const dueLabel = dueDate ? dueDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
                 const methodOpt = PAYMENT_METHOD_OPTIONS.find(m => m.value === row.installment.method)
-                const statusColor = row.status === 'paid' ? '#22c55e' : row.status === 'overdue' ? '#ef4444' : 'rgba(34,197,94,0.7)'
-                const statusBg = row.status === 'paid' ? 'rgba(34,197,94,0.12)' : row.status === 'overdue' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.05)'
+                const statusTone: BadgeTone = row.status === 'paid' ? 'profit' : row.status === 'overdue' ? 'loss' : 'warn'
                 const statusLabel = row.status === 'paid' ? '✓ Reçu' : row.status === 'overdue' ? '⚠ En retard' : '⏳ À recevoir'
+                const statusColor = row.status === 'paid' ? 'var(--color-profit)' : row.status === 'overdue' ? 'var(--color-loss)' : 'var(--color-warn)'
                 return (
                   <div
                     key={`${row.prospect.id}-${row.installment.num}-${idx}`}
                     className="rounded-md p-2 flex items-center gap-3 transition-all hover:opacity-90"
                     style={{ background: 'var(--bg2)', border: `1px solid ${row.status === 'overdue' ? 'rgba(239,68,68,0.3)' : 'var(--border)'}` }}
                   >
-                    <span
-                      className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0"
-                      style={{ background: statusBg, color: statusColor }}
-                    >
-                      {statusLabel}
+                    <span className="shrink-0">
+                      <Badge tone={statusTone} size="sm">{statusLabel}</Badge>
                     </span>
                     <button
                       onClick={() => onOpenProspect(row.prospect)}
@@ -1163,11 +1200,8 @@ function RevenueForecast({ prospects, onOpenProspect }: { prospects: Prospect[];
                       )}
                     </span>
                     {methodOpt && (
-                      <span
-                        className="text-[10px] px-1.5 py-0.5 rounded shrink-0"
-                        style={{ background: methodOpt.bg, color: methodOpt.color }}
-                      >
-                        {methodOpt.label}
+                      <span className="shrink-0">
+                        <Badge tone={toneForPay(methodOpt.value)} size="sm">{methodOpt.label}</Badge>
                       </span>
                     )}
                     <span className="text-[10px] shrink-0 font-mono" style={{ color: 'var(--text3)', minWidth: 90, textAlign: 'right' }}>
@@ -1520,20 +1554,10 @@ function ProspectDetailModal({
         <div>
           <div className="flex items-center gap-3 flex-wrap">
             <span>{fullName}</span>
-            <span
-              className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider"
-              style={{ background: score.bg, color: score.color }}
-            >
+            <Badge tone={score.tone} size="sm" uppercase>
               {prospect.score || 0} {score.emoji} {score.label}
-            </span>
-            {src && (
-              <span
-                className="text-[10px] font-medium px-2 py-0.5 rounded"
-                style={{ background: src.bg, color: src.color }}
-              >
-                {src.label}
-              </span>
-            )}
+            </Badge>
+            {src && <Badge tone={toneForSource(prospect.source)} size="sm">{src.label}</Badge>}
           </div>
           <div className="flex items-center gap-4 mt-2 text-xs flex-wrap" style={{ color: 'var(--text2)', fontWeight: 400 }}>
             {prospect.email && (
@@ -1804,12 +1828,7 @@ function ProspectDetailModal({
                             {fmtDate(n.call_date) || fmtDate(n.created_at)}
                           </span>
                           {outcome && (
-                            <span
-                              className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                              style={{ background: outcome.bg, color: outcome.color }}
-                            >
-                              {outcome.label}
-                            </span>
+                            <Badge tone={toneForOutcome(outcome.value)} size="sm">{outcome.label}</Badge>
                           )}
                         </div>
                         <button
@@ -2072,25 +2091,9 @@ function AddToPipelineModal({
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span
-                          className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-                          style={{ background: score.bg, color: score.color }}
-                        >
-                          {p.score || 0} {score.emoji}
-                        </span>
-                        {src && (
-                          <span
-                            className="text-[9px] font-medium px-1.5 py-0.5 rounded"
-                            style={{ background: src.bg, color: src.color }}
-                          >
-                            {src.label}
-                          </span>
-                        )}
-                        {p.in_pipeline && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
-                            Déjà dans pipeline
-                          </span>
-                        )}
+                        <Badge tone={score.tone} size="sm">{p.score || 0} {score.emoji}</Badge>
+                        {src && <Badge tone={toneForSource(p.source)} size="sm">{src.label}</Badge>}
+                        {p.in_pipeline && <Badge tone="profit" size="sm">Déjà dans pipeline</Badge>}
                       </div>
                     </button>
                   )
@@ -3208,9 +3211,7 @@ function PaymentReminderEmailModal({
           <span className="flex items-center gap-2">
             <span style={{ color: '#f59e0b' }}>⏰</span> Relance paiement
             {nextUnpaid && (
-              <span className="text-[10px] px-2 py-0.5 rounded font-mono" style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}>
-                Échéance {nextUnpaid.num}/{totalInst} — auto-détectée
-              </span>
+              <Badge tone="warn" size="sm">Échéance {nextUnpaid.num}/{totalInst} — auto-détectée</Badge>
             )}
           </span>
           <div className="flex items-center gap-2 mt-1 flex-wrap" style={{ fontWeight: 400 }}>
