@@ -15,6 +15,7 @@ import InsightIAPerf from '@/components/dashboard/InsightIAPerf'
 import InsightIAMarket from '@/components/dashboard/InsightIAMarket'
 import InsightIAMental from '@/components/dashboard/InsightIAMental'
 import BestWorstDay from '@/components/dashboard/BestWorstDay'
+import InstrumentDonut from '@/components/dashboard/InstrumentDonut'
 import AtpScoreCard from '@/components/dashboard/AtpScoreCard'
 import PropFirmSummary from '@/components/dashboard/PropFirmSummary'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
@@ -456,6 +457,11 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
 
       {/* Records — meilleure et pire journée sur la fenêtre 3 mois. */}
       <BestWorstDay sessions={filtered} scopeLabel={scopeLabelBestWorst} />
+
+      {/* Répartition par instrument — même fenêtre 3 mois que Best/Worst
+          pour cohérence de périmètre (éviter le flou qui a créé le bug
+          de confiance 89 vs -1322). */}
+      <InstrumentDonut sessions={filtered} scopeLabel={scopeLabelBestWorst} />
 
       {/* Session history table */}
       <div>

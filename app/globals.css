@@ -47,6 +47,21 @@
   --color-status-closed: #a855f7;   /* statut prospect final "closé" (Pipeline STATUS_COLUMNS) */
   --color-info:          #3b82f6;   /* information neutre (alertes niveau INFO, chips info-only) — distinct des bleus métier Pipeline (status-nouveau, temp-froid, etc.) qui obtiendront leurs propres tokens */
 
+  /* --- Palette de séries (donuts, pies, breakdowns catégoriels) ---
+     6 teintes ancrées or (DA ATP) + variations chromatiques distinctes.
+     ZÉRO conflit sémantique : pas de vert (profit), pas de rouge (loss),
+     pas de violet (payout), pas de bleu vif (info). Une part d'instrument
+     dans un donut n'est ni un gain ni une perte, c'est une catégorie —
+     ces couleurs ne portent PAS de sens métier.
+     Cycle > 6 séries : reboucler avec opacité 0.7 sur series-1 (rare —
+     un trader futures a typiquement 3-5 instruments max). */
+  --color-series-1: #c9a574;   /* or accent — série primaire (identique à --color-accent) */
+  --color-series-2: #8a6f42;   /* bronze foncé — variation graduée */
+  --color-series-3: #e5c896;   /* sable clair — variation claire */
+  --color-series-4: #6b7280;   /* gris ardoise — neutre distinct, aussi utilisé pour bucket "Non renseigné" */
+  --color-series-5: #94a3b8;   /* gris bleu — neutre froid */
+  --color-series-6: #d4a373;   /* terracotta doux — chaleur alternative */
+
   /* --- Tokens Pipeline (33 tokens sémantiques) ---
      Un token nomme une INTENTION MÉTIER, pas une couleur. Plusieurs
      tokens peuvent partager la même valeur aujourd'hui (ex: 3 verts
