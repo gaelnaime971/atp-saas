@@ -48,16 +48,34 @@ function isSameDay(a: Date, b: Date): boolean {
     && a.getDate() === b.getDate()
 }
 
-function fmtCompact(n: number): string {
-  const sign = n >= 0 ? '+' : ''
-  const abs = Math.abs(n)
-  if (abs >= 1000) return `${sign}${(n / 1000).toFixed(1).replace('.', ',')}k`
-  return `${sign}${Math.round(n)}`
+/**
+ * Format complet fr-FR avec 2 décimales : 1000 → "+1 000,00 $".
+ * Utilisé dans les cases jour et semaine — le trader lit un vrai
+ * montant, pas un abrégé "1,0k" qui pouvait laisser croire à une
+ * marge d'arrondi. Le "+" n'apparaît que sur les gains (pas sur 0).
+ */
+function fmtFull(n: number): string {
+  const sign = n > 0 ? '+' : ''
+  return `${sign}${n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`
 }
 
+/**
+ * Total du header (mois) — pas de décimales, plus lisible pour un
+ * cumul global (le trader s'intéresse à l'ordre de grandeur mensuel,
+ * pas au centime près).
+ */
 function fmtExact(n: number): string {
   const sign = n >= 0 ? '+' : ''
   return `${sign}${Math.round(n).toLocaleString('fr-FR')} $`
+}
+
+/**
+ * "1 trade" (singulier) / "N trades" (pluriel) / "0 trades" possible
+ * mais non affiché car les cases sans session sont vides. Idem pour
+ * la col SEM.
+ */
+function fmtTradesCount(n: number): string {
+  return `${n} trade${n > 1 ? 's' : ''}`
 }
 
 function intensityFor(pnl: number, totalCapital: number): number {
@@ -231,9 +249,12 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
             (s, d) => ({ pnl: s.pnl + d.pnl, count: s.count + d.count }),
             { pnl: 0, count: 0 },
           )
+          // Total semaine coloré selon signe. Cas break-even exact
+          // (pnl === 0 avec trades) → text-1 (blanc net), PAS text-3
+          // qui rendait le total illisible sur fond surface-2 gris.
           const weekColor = weekTotal.pnl > 0 ? 'var(--color-profit)'
             : weekTotal.pnl < 0 ? 'var(--color-loss)'
-            : 'var(--color-text-3)'
+            : 'var(--color-text-1)'
 
           return (
             <div key={wIdx} className="grid grid-cols-[repeat(7,1fr)_1.2fr] gap-1">
@@ -285,19 +306,26 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
                     </div>
                     {day.hasSession && (
                       <div style={{
-                        flex: 1,
+                        flex: 1, minWidth: 0,
                         display: 'flex', flexDirection: 'column',
                         alignItems: 'center', justifyContent: 'center',
-                        gap: 2,
+                        gap: 3,
                       }}>
+                        {/* Montant : 16px pour tenir "1 000,00 $" dans
+                            une case ~90px. ellipsis en filet si un jour
+                            à 5 chiffres saturait la largeur. */}
                         <div style={{
                           fontFamily: 'var(--font-data)',
-                          fontSize: 17, fontWeight: 700,
+                          fontSize: 16, fontWeight: 700,
                           color: pnlColor,
-                          letterSpacing: '-0.02em',
-                          lineHeight: 1,
+                          letterSpacing: '-0.03em',
+                          lineHeight: 1.05,
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
                         }}>
-                          {fmtCompact(day.pnl)}
+                          {fmtFull(day.pnl)}
                         </div>
                         <div style={{
                           fontSize: 10,
@@ -305,22 +333,28 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
                           fontFamily: 'var(--font-data)',
                           lineHeight: 1,
                         }}>
-                          {day.count}t
+                          {fmtTradesCount(day.count)}
                         </div>
                       </div>
                     )}
                   </div>
                 )
               })}
-              {/* Week total (8e col) */}
-              <div style={{
-                background: 'var(--color-surface-2)',
-                border: '1px solid var(--color-border-subtle)',
-                borderRadius: 6,
-                padding: '4px 6px',
-                minHeight: 60,
-                display: 'flex', flexDirection: 'column',
-              }}>
+              {/* Week total (8e col) — tooltip pour lire le montant
+                  exact si l'ellipsis a tronqué (cas 5 chiffres). */}
+              <div
+                title={weekTotal.count > 0
+                  ? `Semaine ${wIdx + 1} : ${fmtFull(weekTotal.pnl)} · ${fmtTradesCount(weekTotal.count)}`
+                  : ''}
+                style={{
+                  background: 'var(--color-surface-2)',
+                  border: '1px solid var(--color-border-subtle)',
+                  borderRadius: 6,
+                  padding: '4px 6px',
+                  minHeight: 60,
+                  display: 'flex', flexDirection: 'column',
+                }}
+              >
                 <div style={{
                   fontSize: 10,
                   color: 'var(--color-text-3)',
@@ -332,19 +366,23 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
                 </div>
                 {weekTotal.count > 0 ? (
                   <div style={{
-                    flex: 1,
+                    flex: 1, minWidth: 0,
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
-                    gap: 2,
+                    gap: 3,
                   }}>
                     <div style={{
                       fontFamily: 'var(--font-data)',
                       fontSize: 16, fontWeight: 700,
                       color: weekColor,
-                      letterSpacing: '-0.02em',
-                      lineHeight: 1,
+                      letterSpacing: '-0.03em',
+                      lineHeight: 1.05,
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}>
-                      {fmtCompact(weekTotal.pnl)}
+                      {fmtFull(weekTotal.pnl)}
                     </div>
                     <div style={{
                       fontSize: 10,
@@ -352,7 +390,7 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
                       fontFamily: 'var(--font-data)',
                       lineHeight: 1,
                     }}>
-                      {weekTotal.count}t
+                      {fmtTradesCount(weekTotal.count)}
                     </div>
                   </div>
                 ) : (
