@@ -10,6 +10,7 @@ import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
 import Badge from '@/components/ui/Badge'
 import AnimatedNumber from '@/components/ui/AnimatedNumber'
+import Reveal from '@/components/ui/Reveal'
 import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForPlanScore, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 import { MOTION, EASE, prefersReducedMotion } from '@/lib/motion'
 import { chartTokens, verticalGradient, barGradientByValue } from '@/lib/chart-tokens'
@@ -309,7 +310,14 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           onClose={() => setShowWelcome(false)}
         />
       )}
+      {/* Cascade d'entrée — chaque section wrapée dans <Reveal> avec un
+          delay incrémenté de 40ms. Fade-in + slide-up 8px sur 320ms.
+          Total séquence ~560ms, sous le seuil "rien qui traîne >800ms".
+          Le count-up des KPI démarre en parallèle du fade (t≈80ms) et
+          finit à ~t=680ms — l'utilisateur voit la valeur monter DURANT
+          l'apparition, effet "morningside" pas "je regarde des barres". */}
       {/* Welcome bar */}
+      <Reveal delay={0}>
       <PageHeader
         title={<>Bonjour, {profile?.full_name ?? 'Trader'} 👋</>}
         subtitle={<span style={{ textTransform: 'capitalize' }}>{dateDisplay}</span>}
@@ -351,6 +359,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           ) : undefined
         }
       />
+      </Reveal>
 
       {/* Rangée Insight IA — trio : Perf/Discipline · Marché/Setup · Psycho/Mental.
           Le 3e (mental) est le différenciant ATP (formation neuroscience,
@@ -358,17 +367,17 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           donne un responsive natif 3→2→1 col selon largeur, sans media
           query. Le seuil 280 est ce que les cartes tolèrent avant que
           les 2/3 pills débordent. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+      <Reveal delay={40} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
         <InsightIAPerf onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
         <InsightIAMarket onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
         <InsightIAMental onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
-      </div>
+      </Reveal>
 
       {/* KPI Cards — valeurs animées en count-up GSAP (zone témoin paquet 3).
           Chaque KpiCard reçoit un <AnimatedNumber> en value. Le format
           arrondit selon les décimales voulues (Math.round pour Win Rate
           et Sessions qui doivent être des ints propres pendant le tween). */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+      <Reveal delay={80} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         <KpiCard
           label="P&L Total"
           value={<AnimatedNumber value={totalPnl} format={n => fmtUsd(n, 2, { sign: true })} />}
@@ -388,7 +397,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           label="Sessions"
           value={<AnimatedNumber value={filtered.length} format={n => fmtNumber(Math.round(n))} />}
         />
-      </div>
+      </Reveal>
 
       {/* Rangée « cœur » : Calendrier (2/3) + stack ATP Score / Prop Firm
           / Répartition instrument (1/3, 3 cartes empilées).
@@ -398,7 +407,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           compact pour tenir dans la col étroite. Sous-stack en
           `auto auto 1fr` : ATP Score et Prop Firm gardent leur hauteur
           naturelle, le donut absorbe l'excédent. */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'stretch' }}>
+      <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'stretch' }}>
         <CalendarPnl sessions={filtered} totalCapital={totalCapital} />
         <div style={{ display: 'grid', gridTemplateRows: 'auto auto 1fr', gap: 16, minWidth: 0, minHeight: 0 }}>
           <AtpScoreCard sessions={filtered} scopeLabel={scopeLabelAtp} />
@@ -413,10 +422,10 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
             layout="vertical"
           />
         </div>
-      </div>
+      </Reveal>
 
       {/* Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+      <Reveal delay={160} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
         {/* P&L Cumulé — zone témoin paquet 3 : count-up déjà en place
             sur les KPI ci-dessus, ici on ajoute (1) tuning de l'animation
             d'entrée Chart.js à 700ms easeOutQuart pour un "dessin de
@@ -468,10 +477,10 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
                     // Animation d'entrée serrée — 700ms easeOutQuart vs
                     // défaut Chart.js 1000ms linear. Cohérent avec le
                     // token --motion-chart-draw et l'ease-out global.
-                    animation: {
-                      duration: 700,
-                      easing: 'easeOutQuart',
-                    },
+                    // reduced-motion → false désactive complètement l'anim.
+                    animation: prefersReducedMotion()
+                      ? false
+                      : { duration: 700, easing: 'easeOutQuart' },
                     plugins: {
                       legend: { display: false },
                       tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} $` } },
@@ -532,6 +541,10 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
+                    // Miroir P&L Cumulé — 700ms easeOutQuart, reduced-motion → off.
+                    animation: prefersReducedMotion()
+                      ? false
+                      : { duration: 700, easing: 'easeOutQuart' },
                     plugins: {
                       legend: { display: false },
                       tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} $` } },
@@ -546,15 +559,17 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
             })()}
           </div>
         </Card>
-      </div>
+      </Reveal>
 
       {/* Records — meilleure et pire journée sur la fenêtre 3 mois.
           La répartition par instrument a migré dans le sous-stack de la
           rangée « cœur » (col droite) pour équilibrer les hauteurs. */}
-      <BestWorstDay sessions={filtered} scopeLabel={scopeLabelBestWorst} />
+      <Reveal delay={200}>
+        <BestWorstDay sessions={filtered} scopeLabel={scopeLabelBestWorst} />
+      </Reveal>
 
       {/* Session history table */}
-      <div>
+      <Reveal delay={240}>
         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text-1)', margin: '0 0 12px 0' }}>
           Historique des sessions
         </h2>
@@ -608,7 +623,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
             />
           )
         })()}
-      </div>
+      </Reveal>
     </div>
   )
 }

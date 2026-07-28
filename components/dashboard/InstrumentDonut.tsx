@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import Card from '@/components/ui/Card'
 import { fmtUsd, fmtPct, TONE_COLOR_VAR } from '@/lib/format'
 import type { TradingSession } from '@/lib/types'
+import { prefersReducedMotion } from '@/lib/motion'
 
 /**
  * Répartition par instrument — donut catégoriel.
@@ -243,6 +244,12 @@ function Body({ slices, totalWeight, layout }: { slices: Slice[]; totalWeight: n
               paddingAngle={2}
               stroke="var(--color-surface-1)"
               strokeWidth={2}
+              // Anim d'entrée : 700ms ease-out, cohérent charts dashboard.
+              // reduced-motion → isAnimationActive=false, segments rendus
+              // direct sans tween Recharts.
+              isAnimationActive={!prefersReducedMotion()}
+              animationDuration={700}
+              animationEasing="ease-out"
             >
               {slices.map((s) => (
                 <Cell key={s.instrument} fill={s.color} />

@@ -12,6 +12,7 @@ import {
 import Card from '@/components/ui/Card'
 import { atpScore, type AtpTone } from '@/lib/session-stats'
 import type { TradingSession } from '@/lib/types'
+import { prefersReducedMotion } from '@/lib/motion'
 
 /**
  * ATP Score — carte data pure, sans dépendance IA.
@@ -224,6 +225,12 @@ function Body({
               stroke={color}
               fill={`rgba(${rgb}, 0.25)`}
               strokeWidth={2}
+              // Anim d'entrée : 700ms ease-out, cohérent avec les charts
+              // du dashboard. reduced-motion → isAnimationActive=false
+              // (radar rendu direct sans tween Recharts).
+              isAnimationActive={!prefersReducedMotion()}
+              animationDuration={700}
+              animationEasing="ease-out"
             />
           </RadarChart>
         </ResponsiveContainer>
