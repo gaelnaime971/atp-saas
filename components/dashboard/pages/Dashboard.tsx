@@ -340,20 +340,27 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
         />
       </div>
 
-      {/* Rangée « cœur » : Calendrier (2/3) + stack ATP Score / Prop Firm (1/3).
-          Grille 2fr/1fr inspirée des dashboards traders premium — la donnée
-          visuelle massive (calendar) à gauche, deux cartes info-dense
-          empilées à droite (score qualitatif au-dessus, snapshot capital
-          en dessous). Le sous-stack 2fr/1fr donne au radar la respiration
-          nécessaire, la carte Prop Firm restant compacte. */}
+      {/* Rangée « cœur » : Calendrier (2/3) + stack ATP Score / Prop Firm
+          / Répartition instrument (1/3, 3 cartes empilées).
+          Le calendrier utilise un layout flex (cases clampées [78,130])
+          pour s'étirer et matcher la hauteur du sous-stack droit, évitant
+          le grand vide en bas côté gauche. Le donut est en layout vertical
+          compact pour tenir dans la col étroite. Sous-stack en
+          `auto auto 1fr` : ATP Score et Prop Firm gardent leur hauteur
+          naturelle, le donut absorbe l'excédent. */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'stretch' }}>
         <CalendarPnl sessions={filtered} totalCapital={totalCapital} />
-        <div style={{ display: 'grid', gridTemplateRows: '2fr 1fr', gap: 16, minWidth: 0, minHeight: 0 }}>
+        <div style={{ display: 'grid', gridTemplateRows: 'auto auto 1fr', gap: 16, minWidth: 0, minHeight: 0 }}>
           <AtpScoreCard sessions={filtered} scopeLabel={scopeLabelAtp} />
           <PropFirmSummary
             accounts={scopedAccounts}
             totalCapital={totalCapital}
             totalPnl={totalPnl}
+          />
+          <InstrumentDonut
+            sessions={filtered}
+            scopeLabel={scopeLabelBestWorst}
+            layout="vertical"
           />
         </div>
       </div>
@@ -455,13 +462,10 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
         </Card>
       </div>
 
-      {/* Records — meilleure et pire journée sur la fenêtre 3 mois. */}
+      {/* Records — meilleure et pire journée sur la fenêtre 3 mois.
+          La répartition par instrument a migré dans le sous-stack de la
+          rangée « cœur » (col droite) pour équilibrer les hauteurs. */}
       <BestWorstDay sessions={filtered} scopeLabel={scopeLabelBestWorst} />
-
-      {/* Répartition par instrument — même fenêtre 3 mois que Best/Worst
-          pour cohérence de périmètre (éviter le flou qui a créé le bug
-          de confiance 89 vs -1322). */}
-      <InstrumentDonut sessions={filtered} scopeLabel={scopeLabelBestWorst} />
 
       {/* Session history table */}
       <div>

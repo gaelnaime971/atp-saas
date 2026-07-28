@@ -31,6 +31,13 @@ import type { TradingSession } from '@/lib/types'
 interface Props {
   sessions: TradingSession[]
   scopeLabel: string
+  /**
+   * 'horizontal' (défaut) : donut à gauche + légende à droite, layout
+   *   pour carte pleine largeur ou 2/3.
+   * 'vertical' : donut au-dessus + légende dessous — pour usage en
+   *   colonne étroite (~280-320px, ex sous-stack col droite Dashboard).
+   */
+  layout?: 'horizontal' | 'vertical'
 }
 
 interface Slice {
@@ -103,19 +110,19 @@ function computeSlices(sessions: TradingSession[]): Slice[] {
   return sorted
 }
 
-export default function InstrumentDonut({ sessions, scopeLabel }: Props) {
+export default function InstrumentDonut({ sessions, scopeLabel, layout = 'horizontal' }: Props) {
   const slices = useMemo(() => computeSlices(sessions), [sessions])
   const totalWeight = slices.reduce((s, sl) => s + sl.weight, 0)
 
   return (
-    <Card>
+    <Card style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <Header scopeLabel={scopeLabel} />
       {slices.length === 0 ? (
         <EmptyBody />
       ) : slices.length === 1 ? (
         <SingleBody slice={slices[0]} />
       ) : (
-        <Body slices={slices} totalWeight={totalWeight} />
+        <Body slices={slices} totalWeight={totalWeight} layout={layout} />
       )}
     </Card>
   )
@@ -208,16 +215,23 @@ function SingleBody({ slice }: { slice: Slice }) {
   )
 }
 
-function Body({ slices, totalWeight }: { slices: Slice[]; totalWeight: number }) {
+function Body({ slices, totalWeight, layout }: { slices: Slice[]; totalWeight: number; layout: 'horizontal' | 'vertical' }) {
+  const isVertical = layout === 'vertical'
+  // Vertical (col étroite) : donut plus petit (~150px) pour laisser
+  // place à la légende dessous. Horizontal (pleine largeur) : donut
+  // plus grand (220px) avec légende à droite.
+  const donutHeight = isVertical ? 150 : 220
+
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1.2fr 1fr',
-      gap: 16, alignItems: 'center', minHeight: 220,
+      flex: 1, display: 'grid',
+      gridTemplateColumns: isVertical ? '1fr' : '1.2fr 1fr',
+      gap: isVertical ? 10 : 16,
+      alignItems: 'center', minHeight: 0,
     }}>
       {/* Donut Recharts (SVG → CSS vars résolues nativement, pas
           besoin du helper chartTokens comme pour Chart.js). */}
-      <div style={{ height: 220, minWidth: 0 }}>
+      <div style={{ height: donutHeight, minWidth: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -238,10 +252,12 @@ function Body({ slices, totalWeight }: { slices: Slice[]; totalWeight: number })
         </ResponsiveContainer>
       </div>
 
-      {/* Légende dense — 1 ligne par instrument, montant SIGNÉ + %. */}
+      {/* Légende dense — 1 ligne par instrument, montant SIGNÉ + %.
+          Gap plus serré en layout vertical pour tenir dans la col
+          étroite. */}
       <div style={{
         display: 'flex', flexDirection: 'column',
-        gap: 8, minWidth: 0,
+        gap: isVertical ? 6 : 8, minWidth: 0,
       }}>
         {slices.map(s => {
           const pct = totalWeight > 0 ? (s.weight / totalWeight) * 100 : 0

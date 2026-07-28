@@ -160,7 +160,7 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
     : 'var(--color-text-1)'
 
   return (
-    <Card>
+    <Card style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div className="flex items-center gap-2">
@@ -242,8 +242,12 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
         </div>
       </div>
 
-      {/* Weeks */}
-      <div className="flex flex-col gap-1">
+      {/* Weeks — flex:1 pour occuper toute la hauteur du Card. Les rows
+          se répartissent équitablement l'espace vertical alloué par la
+          grille parente 2fr/1fr du Dashboard, avec une hauteur clampée
+          [78, 130] par case pour préserver la densité TopstepX en cas
+          nominal tout en évitant les "cases géantes" sur mois court. */}
+      <div className="flex flex-col gap-1" style={{ flex: 1, minHeight: 0 }}>
         {weeks.map((week, wIdx) => {
           const weekTotal = week.reduce(
             (s, d) => ({ pnl: s.pnl + d.pnl, count: s.count + d.count }),
@@ -257,7 +261,11 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
             : 'var(--color-text-1)'
 
           return (
-            <div key={wIdx} className="grid grid-cols-[repeat(7,1fr)_1.2fr] gap-1">
+            <div
+              key={wIdx}
+              className="grid grid-cols-[repeat(7,1fr)_1.2fr] gap-1"
+              style={{ flex: 1, minHeight: 78, maxHeight: 130 }}
+            >
               {week.map(day => {
                 const intensity = day.hasSession ? intensityFor(day.pnl, totalCapital) : 0
                 const alpha = ALPHAS[intensity]
@@ -290,7 +298,11 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
                       border,
                       borderRadius: 6,
                       padding: '3px 5px',
-                      height: 78,
+                      // height 100% : remplit la row flex-1 (clampée
+                      // [78,130] côté parent). minHeight 78 en fallback
+                      // si un contexte inattendu casse le flex.
+                      height: '100%',
+                      minHeight: 78,
                       opacity: day.inMonth ? 1 : 0.3,
                       display: 'flex',
                       flexDirection: 'column',
@@ -351,6 +363,7 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
                   border: '1px solid var(--color-border-subtle)',
                   borderRadius: 6,
                   padding: '4px 6px',
+                  height: '100%',
                   minHeight: 60,
                   display: 'flex', flexDirection: 'column',
                 }}
