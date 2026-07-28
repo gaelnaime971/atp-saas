@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import gsap from 'gsap'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
@@ -8,7 +9,9 @@ import KpiCard from '@/components/ui/KpiCard'
 import DataTable, { type Column } from '@/components/ui/DataTable'
 import EmptyState from '@/components/ui/EmptyState'
 import Badge from '@/components/ui/Badge'
+import AnimatedNumber from '@/components/ui/AnimatedNumber'
 import { fmtUsd, fmtPct, fmtNumber, toneForPnl, toneForPlanScore, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
+import { MOTION, EASE, prefersReducedMotion } from '@/lib/motion'
 import { chartTokens, verticalGradient, barGradientByValue } from '@/lib/chart-tokens'
 import CalendarPnl from '@/components/dashboard/CalendarPnl'
 import InsightIAPerf from '@/components/dashboard/InsightIAPerf'
@@ -39,6 +42,13 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
   const [accounts, setAccounts] = useState<TraderAccount[]>([])
   const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set(['all']))
   const supabase = createClient()
+
+  // Refs pour le halo parallaxe sur la Card P&L Cumulé (zone témoin
+  // paquet 3 dynamique — le seul endroit du dashboard qui a un halo,
+  // décision produit validée : "impressionne une fois, fatigue ensuite,
+  // subtil sur ma courbe de capital suffit au premier premium").
+  const pnlCardRef = useRef<HTMLDivElement>(null)
+  const haloRef = useRef<HTMLDivElement>(null)
 
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
@@ -89,6 +99,43 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
 
     fetchData()
   }, [])
+
+  // Halo parallaxe P&L Cumulé — un cercle diffus qui suit doucement le
+  // curseur (lerp GSAP via quickTo). Actif uniquement quand le contenu
+  // est rendu (loading=false, refs disponibles) et hors reduced-motion.
+  // Deps [loading] pour se rebrancher après le passage skeleton→contenu.
+  useEffect(() => {
+    if (loading) return
+    const card = pnlCardRef.current
+    const halo = haloRef.current
+    if (!card || !halo || prefersReducedMotion()) return
+
+    // xPercent/yPercent = -50 pour que (x,y) du curseur soit le CENTRE
+    // du halo, pas son coin haut-gauche. GSAP additionne ces percent
+    // aux x/y en px animés par quickTo.
+    gsap.set(halo, { xPercent: -50, yPercent: -50 })
+
+    const xTo = gsap.quickTo(halo, 'x', { duration: MOTION.countUp, ease: EASE.outLong })
+    const yTo = gsap.quickTo(halo, 'y', { duration: MOTION.countUp, ease: EASE.outLong })
+
+    const onMove = (e: MouseEvent) => {
+      const rect = card.getBoundingClientRect()
+      xTo(e.clientX - rect.left)
+      yTo(e.clientY - rect.top)
+    }
+    const onEnter = () => { gsap.to(halo, { opacity: 1, duration: MOTION.slow, ease: EASE.out }) }
+    const onLeave = () => { gsap.to(halo, { opacity: 0, duration: MOTION.slow, ease: EASE.out }) }
+
+    card.addEventListener('mousemove', onMove)
+    card.addEventListener('mouseenter', onEnter)
+    card.addEventListener('mouseleave', onLeave)
+
+    return () => {
+      card.removeEventListener('mousemove', onMove)
+      card.removeEventListener('mouseenter', onEnter)
+      card.removeEventListener('mouseleave', onLeave)
+    }
+  }, [loading])
 
   // Account filter
   function toggleAccount(id: string) {
@@ -317,26 +364,29 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
         <InsightIAMental onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — valeurs animées en count-up GSAP (zone témoin paquet 3).
+          Chaque KpiCard reçoit un <AnimatedNumber> en value. Le format
+          arrondit selon les décimales voulues (Math.round pour Win Rate
+          et Sessions qui doivent être des ints propres pendant le tween). */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         <KpiCard
           label="P&L Total"
-          value={fmtUsd(totalPnl, 2, { sign: true })}
+          value={<AnimatedNumber value={totalPnl} format={n => fmtUsd(n, 2, { sign: true })} />}
           tone={toneForPnl(totalPnl)}
         />
         <KpiCard
           label="Win Rate"
-          value={fmtPct(winRate, 0)}
+          value={<AnimatedNumber value={winRate} format={n => fmtPct(Math.round(n), 0)} />}
           tone={toneForRate(winRate, 50)}
         />
         <KpiCard
           label="Profit Factor"
-          value={fmtNumber(profitFactor, 2)}
+          value={<AnimatedNumber value={profitFactor} format={n => fmtNumber(n, 2)} />}
           tone={toneForRate(profitFactor, 1)}
         />
         <KpiCard
           label="Sessions"
-          value={fmtNumber(filtered.length)}
+          value={<AnimatedNumber value={filtered.length} format={n => fmtNumber(Math.round(n))} />}
         />
       </div>
 
@@ -367,14 +417,23 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
 
       {/* Charts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-        <Card>
+        {/* P&L Cumulé — zone témoin paquet 3 : count-up déjà en place
+            sur les KPI ci-dessus, ici on ajoute (1) tuning de l'animation
+            d'entrée Chart.js à 700ms easeOutQuart pour un "dessin de
+            courbe" plus vif que le défaut 1s, (2) halo parallaxe subtil
+            en overlay qui suit le curseur — géré par useEffect halo en
+            haut du composant via pnlCardRef + haloRef. */}
+        <Card
+          ref={pnlCardRef}
+          style={{ position: 'relative', overflow: 'hidden' }}
+        >
           <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>
             P&L Cumulé
           </h2>
           {/* 280px : une courbe cumulée écrasée à 200px devenait
               illisible depuis la réorg 2fr/1fr (calendrier vole la
               hauteur visuelle). P&L par Session est aligné pour l'harmonie. */}
-          <div style={{ height: 280 }}>
+          <div style={{ height: 280, position: 'relative', zIndex: 1 }}>
             {(() => {
               const sorted = [...filtered].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
@@ -406,6 +465,13 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
+                    // Animation d'entrée serrée — 700ms easeOutQuart vs
+                    // défaut Chart.js 1000ms linear. Cohérent avec le
+                    // token --motion-chart-draw et l'ease-out global.
+                    animation: {
+                      duration: 700,
+                      easing: 'easeOutQuart',
+                    },
                     plugins: {
                       legend: { display: false },
                       tooltip: { callbacks: { label: (ctx) => `${(ctx.parsed.y ?? 0).toFixed(2)} $` } },
@@ -419,6 +485,26 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
               )
             })()}
           </div>
+          {/* Halo parallaxe — cercle diffus 500px teinté profit, opacity
+              contrôlée par GSAP (hover in/out). Suit le curseur via
+              quickTo (lerp) avec un ease long (power3.out) pour glisser
+              doucement. pointer-events:none pour ne pas capter les
+              tooltips Chart.js. zIndex 0 pour rester sous le canvas. */}
+          <div
+            ref={haloRef}
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: 0, left: 0,
+              width: 500, height: 500,
+              pointerEvents: 'none',
+              opacity: 0,
+              background: 'radial-gradient(circle, rgba(var(--color-profit-rgb), 0.12) 0%, transparent 60%)',
+              willChange: 'transform, opacity',
+              zIndex: 0,
+              mixBlendMode: 'screen',
+            }}
+          />
         </Card>
 
         <Card>

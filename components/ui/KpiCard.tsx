@@ -25,11 +25,13 @@ export interface KpiCardProps {
   /** Libellé mono uppercase tracked au-dessus de la value. */
   label: string
   /**
-   * Valeur formatée (via lib/format helpers).
-   * Toujours string — pas de nombre brut, pour forcer le passage par un helper
-   * de format et garantir un rendu cohérent.
+   * Valeur formatée (via lib/format helpers) OU ReactNode pour cas
+   * spéciaux (ex <AnimatedNumber> qui anime un count-up GSAP). Le
+   * ReactNode hérite du style `--font-data` du span parent — tabular-nums
+   * conservés. Éviter de passer un nombre brut ici (pas de format
+   * implicite), passer par un helper ou un composant animé.
    */
-  value: string
+  value: string | ReactNode
   /**
    * Delta optionnel (ex: "+12,3 %", "-45 €"). Formaté par l'appelant.
    */

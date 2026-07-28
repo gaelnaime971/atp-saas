@@ -163,6 +163,40 @@
   --text-body:    0.875rem;    /* 14px */
   --text-label:   0.6875rem;   /* 11px */
   --text-data:    1.5rem;      /* 24px */
+
+  /* --- Motion tokens ---
+     Durations serrées (jamais > 700ms) — un dashboard trading est ouvert
+     8h/jour, chaque animation coûte de l'attention. Easing unique
+     "power expo out" (départ franc, arrivée douce, ZÉRO bounce) : cohérent
+     avec un produit pro, pas un jouet. Les valeurs longues (count-up,
+     chart-draw) sont réservées à des moments d'ancrage (arrivée initiale,
+     changement de filtre), jamais aux tick temps réel.
+     Note GSAP : ces tokens sont surtout pour les transitions CSS. Les
+     tweens GSAP utilisent des durées en SECONDES (ex 0.6) — voir
+     lib/motion.ts si besoin de partager les valeurs. */
+  --motion-fast:       120ms;   /* hover, focus, feedback immédiat */
+  --motion-base:       200ms;   /* state change, transitions standard */
+  --motion-slow:       320ms;   /* reveal, exit, transitions marquées */
+  --motion-count-up:   600ms;   /* count-up numérique KPI */
+  --motion-chart-draw: 700ms;   /* dessin d'entrée chart */
+  --motion-ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Accessibilité — respect strict de prefers-reduced-motion.
+   Non négociable : un utilisateur sensible au mouvement (vestibulaire,
+   TSA, migraines) doit pouvoir couper TOUTES les animations via son OS.
+   Cette règle universelle coupe les transitions/animations CSS de
+   l'ensemble du site. Les animations JS (GSAP) sont coupées séparément
+   au niveau composant via prefersReducedMotion() de lib/motion.ts.
+   ═══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
