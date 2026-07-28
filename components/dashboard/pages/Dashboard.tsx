@@ -14,6 +14,7 @@ import CalendarPnl from '@/components/dashboard/CalendarPnl'
 import InsightIAPerf from '@/components/dashboard/InsightIAPerf'
 import InsightIAMarket from '@/components/dashboard/InsightIAMarket'
 import InsightIAMental from '@/components/dashboard/InsightIAMental'
+import BestWorstDay from '@/components/dashboard/BestWorstDay'
 import AtpScoreCard from '@/components/dashboard/AtpScoreCard'
 import PropFirmSummary from '@/components/dashboard/PropFirmSummary'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
@@ -128,14 +129,23 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
     (s, a) => s + (Number(a.initial_balance) || Number(a.capital) || 0), 0,
   )
 
-  // Sous-titre de périmètre pour l'ATP Score. Dit explicitement sur quoi
-  // le score est calculé pour éviter la contradiction apparente avec les
-  // Insight IA (qui, eux, portent sur une fenêtre glissante de N jours).
-  //   "Profil global · tous comptes"
-  //   "Profil global · 2 comptes"
-  const scopeLabel = selectedAccounts.has('all') || scopedAccounts.length === accounts.length
-    ? 'Profil global · tous comptes'
-    : `Profil global · ${scopedAccounts.length} compte${scopedAccounts.length > 1 ? 's' : ''}`
+  // Suffixe commun pour les sous-titres de périmètre — "tous comptes"
+  // ou "N comptes" selon le filtre header. Utilisé par plusieurs cartes
+  // (ATP Score, Best/Worst) pour garantir une formulation identique.
+  const accountsSuffix = selectedAccounts.has('all') || scopedAccounts.length === accounts.length
+    ? 'tous comptes'
+    : `${scopedAccounts.length} compte${scopedAccounts.length > 1 ? 's' : ''}`
+
+  // Sous-titre ATP Score : profil global (toute l'historique). Dit
+  // explicitement sur quoi le score est calculé pour éviter la
+  // contradiction apparente avec les Insight IA (qui, eux, portent sur
+  // une fenêtre glissante).
+  const scopeLabelAtp = `Profil global · ${accountsSuffix}`
+
+  // Sous-titre Best/Worst Day : fenêtre 3 mois (décision produit —
+  // records datant de >6 mois deviennent déprimants sur un dashboard
+  // ouvert chaque matin).
+  const scopeLabelBestWorst = `3 derniers mois · ${accountsSuffix}`
 
   // Last 8 sessions for table
   const recentSessions = filtered.slice(0, 8)
@@ -338,7 +348,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'stretch' }}>
         <CalendarPnl sessions={filtered} totalCapital={totalCapital} />
         <div style={{ display: 'grid', gridTemplateRows: '2fr 1fr', gap: 16, minWidth: 0, minHeight: 0 }}>
-          <AtpScoreCard sessions={filtered} scopeLabel={scopeLabel} />
+          <AtpScoreCard sessions={filtered} scopeLabel={scopeLabelAtp} />
           <PropFirmSummary
             accounts={scopedAccounts}
             totalCapital={totalCapital}
@@ -443,6 +453,9 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           </div>
         </Card>
       </div>
+
+      {/* Records — meilleure et pire journée sur la fenêtre 3 mois. */}
+      <BestWorstDay sessions={filtered} scopeLabel={scopeLabelBestWorst} />
 
       {/* Session history table */}
       <div>
