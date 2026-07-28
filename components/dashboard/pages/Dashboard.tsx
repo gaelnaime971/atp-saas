@@ -13,6 +13,7 @@ import { chartTokens, verticalGradient, barGradientByValue } from '@/lib/chart-t
 import CalendarPnl from '@/components/dashboard/CalendarPnl'
 import InsightIAPerf from '@/components/dashboard/InsightIAPerf'
 import InsightIAMarket from '@/components/dashboard/InsightIAMarket'
+import InsightIAMental from '@/components/dashboard/InsightIAMental'
 import AtpScoreCard from '@/components/dashboard/AtpScoreCard'
 import PropFirmSummary from '@/components/dashboard/PropFirmSummary'
 import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
@@ -293,10 +294,16 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
         }
       />
 
-      {/* Rangée Insight IA — paire équilibrée (Perf/Discipline + Marché/Setup) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      {/* Rangée Insight IA — trio : Perf/Discipline · Marché/Setup · Psycho/Mental.
+          Le 3e (mental) est le différenciant ATP (formation neuroscience,
+          prompt enrichi analyse_mentale). auto-fit + minmax(280px,1fr)
+          donne un responsive natif 3→2→1 col selon largeur, sans media
+          query. Le seuil 280 est ce que les cartes tolèrent avant que
+          les 2/3 pills débordent. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
         <InsightIAPerf onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
         <InsightIAMarket onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
+        <InsightIAMental onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
       </div>
 
       {/* KPI Cards */}
@@ -346,7 +353,10 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>
             P&L Cumulé
           </h2>
-          <div style={{ height: 200 }}>
+          {/* 280px : une courbe cumulée écrasée à 200px devenait
+              illisible depuis la réorg 2fr/1fr (calendrier vole la
+              hauteur visuelle). P&L par Session est aligné pour l'harmonie. */}
+          <div style={{ height: 280 }}>
             {(() => {
               const sorted = [...filtered].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
@@ -397,7 +407,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>
             P&L par Session
           </h2>
-          <div style={{ height: 200 }}>
+          <div style={{ height: 280 }}>
             {(() => {
               const sorted = [...filtered].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })

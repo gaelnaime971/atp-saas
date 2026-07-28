@@ -141,11 +141,16 @@ function Content({ entry, onGoToAnalysis }: { entry: AiHistoryEntry; onGoToAnaly
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Verdict général */}
+      {/* Verdict général — tronqué à 3 lignes en col 1/3 pour cohérence
+          de hauteur avec les 2 autres cartes de la rangée. */}
       <p style={{
         fontSize: 14, color: 'var(--color-text-1)',
         lineHeight: 1.55, margin: 0,
         fontStyle: 'italic',
+        display: '-webkit-box',
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
       }}>
         “{entry.verdict_general}”
       </p>
@@ -175,6 +180,10 @@ function Content({ entry, onGoToAnalysis }: { entry: AiHistoryEntry; onGoToAnaly
           <div style={{
             fontSize: 13, color: 'var(--color-text-1)',
             lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
           }}>
             {point}
           </div>

@@ -133,12 +133,17 @@ function Content({ entry, onGoToAnalysis }: { entry: AiHistoryEntry; onGoToAnaly
   // si un signal encore plus explicite est voulu.
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Verdict du top instrument (miroir du verdict général de #1) */}
+      {/* Verdict du top instrument (miroir du verdict général de #1),
+          tronqué à 3 lignes pour cohérence de hauteur en col 1/3. */}
       {inst ? (
         <p style={{
           fontSize: 14, color: 'var(--color-text-1)',
           lineHeight: 1.55, margin: 0,
           fontStyle: 'italic',
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
         }}>
           “{inst.verdict}”
         </p>
@@ -175,6 +180,10 @@ function Content({ entry, onGoToAnalysis }: { entry: AiHistoryEntry; onGoToAnaly
           <div style={{
             fontSize: 13, color: 'var(--color-text-1)',
             lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
           }}>
             {inst.conseil}
           </div>
