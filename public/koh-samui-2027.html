@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATP — Koh Samui, 10 › 16 mai 2027</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Manrope:wght@300;400;500;600&family=Oxanium:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#050706;
+  --ink-2:#0b100e;
+  --ink-3:#121917;
+  --sand:#EDE6DA;
+  --sand-dim:#9a978f;
+  --gold:#C9A574;
+  --gold-soft:rgba(201,165,116,.16);
+  --jade:#1F4D45;
+  --green:#22c55e;
+  --line:rgba(237,230,218,.10);
+  --display:"Cormorant",Georgia,serif;
+  --body:"Manrope",system-ui,sans-serif;
+  --data:"Oxanium",monospace;
+  --pad:clamp(20px,5vw,80px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink);color:var(--sand);
+  font-family:var(--body);font-weight:300;
+  line-height:1.65;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit}
+
+/* ---------- CURSEUR CROSSHAIR ---------- */
+.xh{position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:0;transition:opacity .4s}
+.xh.on{opacity:1}
+.xh i{position:absolute;background:rgba(201,165,116,.32)}
+.xh .h{left:0;right:0;height:1px}
+.xh .v{top:0;bottom:0;width:1px}
+.xh .tag{
+  position:absolute;top:0;left:0;
+  background:var(--gold);color:#1a1206;
+  font-family:var(--data);font-size:10px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;padding:4px 9px;white-space:nowrap;
+  opacity:0;transform:translate(22px,14px) scale(.94);transform-origin:0 0;
+  transition:opacity .22s,transform .22s;
+}
+.xh.hot .tag{opacity:1;transform:translate(22px,14px) scale(1)}
+.xh .dot{
+  position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;
+  border:1px solid rgba(201,165,116,.5);border-radius:50%;
+  transition:width .25s,height .25s,margin .25s,background .25s;
+}
+.xh.hot .dot{width:58px;height:58px;margin:-29px 0 0 -29px;background:rgba(201,165,116,.10)}
+@media (hover:none){.xh{display:none!important}}
+
+/* ---------- LAYOUT ---------- */
+section{padding:clamp(72px,11vh,140px) var(--pad);position:relative}
+.wrap{max-width:1180px;margin:0 auto}
+.eyebrow{
+  font-family:var(--data);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:22px;
+}
+h2{
+  font-family:var(--display);font-weight:300;
+  font-size:clamp(30px,4.6vw,58px);line-height:1.08;
+  letter-spacing:-.01em;margin-bottom:26px;max-width:19ch;
+}
+h2 em{font-style:italic;color:var(--gold)}
+p.lead{font-size:clamp(16px,1.5vw,19px);max-width:60ch;color:rgba(237,230,218,.82)}
+p+p{margin-top:18px}
+
+/* ---------- REVEAL ---------- */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.rv[data-d="1"]{transition-delay:.09s}
+.rv[data-d="2"]{transition-delay:.18s}
+.rv[data-d="3"]{transition-delay:.27s}
+
+/* ---------- HERO ---------- */
+.hero{
+  min-height:100svh;display:flex;flex-direction:column;justify-content:space-between;
+  padding-top:clamp(24px,4vh,44px);padding-bottom:clamp(28px,5vh,52px);
+  background:
+    radial-gradient(120% 80% at 78% 8%,rgba(31,77,69,.55) 0%,transparent 58%),
+    radial-gradient(90% 60% at 12% 92%,rgba(201,165,116,.13) 0%,transparent 60%),
+    var(--ink);
+}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.logo{font-family:var(--data);font-weight:600;letter-spacing:.16em;font-size:13px}
+.logo b{color:var(--green);font-weight:600}
+.topbar .meta{font-family:var(--data);font-size:11px;letter-spacing:.14em;color:var(--sand-dim)}
+.hero-main{padding:clamp(30px,6vh,70px) 0}
+h1{
+  font-family:var(--display);font-weight:300;
+  font-size:clamp(44px,9.2vw,132px);line-height:.94;letter-spacing:-.02em;
+  max-width:14ch;
+}
+h1 em{font-style:italic;color:var(--gold);display:block}
+.hero-sub{margin-top:32px;max-width:46ch;font-size:clamp(16px,1.6vw,19px);color:rgba(237,230,218,.8)}
+.hero-facts{
+  display:flex;gap:clamp(20px,4vw,56px);flex-wrap:wrap;
+  border-top:1px solid var(--line);padding-top:26px;
+}
+.fact .k{font-family:var(--data);font-size:clamp(18px,2.4vw,30px);color:var(--sand)}
+.fact .l{font-family:var(--data);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--sand-dim);margin-top:6px}
+
+/* ---------- CTA ---------- */
+.cta{
+  display:inline-flex;align-items:center;gap:14px;
+  background:var(--gold);color:#160f04;
+  font-family:var(--data);font-weight:600;font-size:13px;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:17px 30px;border:0;cursor:pointer;text-decoration:none;
+  transition:background .25s,transform .25s,box-shadow .25s;
+}
+.cta:hover{background:#d8b98c;box-shadow:0 12px 40px -12px rgba(201,165,116,.6)}
+.cta:focus-visible{outline:2px solid var(--sand);outline-offset:3px}
+.cta .arw{transition:transform .25s}
+.cta:hover .arw{transform:translateX(5px)}
+.cta-ghost{
+  display:inline-flex;align-items:center;gap:12px;background:none;border:1px solid var(--line);
+  color:var(--sand);font-family:var(--data);font-size:12px;letter-spacing:.1em;
+  text-transform:uppercase;padding:15px 26px;cursor:pointer;transition:border-color .25s,color .25s;
+}
+.cta-ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ---------- PROBLEME ---------- */
+.problem{background:var(--ink-2)}
+.problem .grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,6vw,90px);align-items:start}
+.tick-list{list-style:none;border-top:1px solid var(--line)}
+.tick-list li{
+  padding:20px 0 20px 26px;border-bottom:1px solid var(--line);
+  font-size:16px;color:rgba(237,230,218,.75);position:relative;
+}
+.tick-list li::before{
+  content:"";position:absolute;left:0;top:29px;width:9px;height:1px;background:var(--gold);
+}
+
+/* ---------- TIMELINE (SIGNATURE) ---------- */
+.day{background:var(--ink);overflow:hidden}
+.tl{margin-top:52px;user-select:none}
+.tl-bands{position:relative;height:64px;border-bottom:1px solid var(--line);margin-bottom:2px}
+.band{
+  position:absolute;top:0;height:18px;border-radius:2px;
+  font-family:var(--data);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  display:flex;align-items:center;padding:0 8px;color:rgba(237,230,218,.9);white-space:nowrap;overflow:hidden;
+}
+.band.tokyo{background:rgba(31,77,69,.85);top:2px}
+.band.londres{background:rgba(201,165,116,.30);top:23px}
+.band.ny{background:rgba(34,197,94,.22);top:44px}
+.tl-track{
+  position:relative;height:86px;background:linear-gradient(180deg,rgba(237,230,218,.04),transparent);
+  border-bottom:1px solid var(--line);cursor:ew-resize;touch-action:none;
+}
+.tl-mark{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.tl-mark span{
+  position:absolute;top:calc(100% + 10px);left:0;transform:translateX(-50%);
+  font-family:var(--data);font-size:10px;color:var(--sand-dim);letter-spacing:.06em;
+}
+.tl-mark.key{background:rgba(201,165,116,.4)}
+.tl-head{
+  position:absolute;top:-10px;bottom:-10px;width:2px;background:var(--gold);
+  box-shadow:0 0 22px 2px rgba(201,165,116,.45);pointer-events:none;
+  transition:left .12s linear;
+}
+.tl-head::after{
+  content:"";position:absolute;top:50%;left:50%;width:11px;height:11px;
+  transform:translate(-50%,-50%) rotate(45deg);background:var(--gold);
+}
+.tl-panel{
+  margin-top:46px;display:grid;grid-template-columns:auto 1fr;gap:clamp(20px,4vw,54px);
+  align-items:start;min-height:112px;
+}
+.tl-time{font-family:var(--data);font-size:clamp(34px,5.4vw,66px);color:var(--gold);line-height:1;letter-spacing:-.02em}
+.tl-title{font-family:var(--display);font-size:clamp(24px,3.2vw,38px);font-weight:400;line-height:1.15;margin-bottom:12px}
+.tl-desc{color:rgba(237,230,218,.72);max-width:52ch}
+.tl-fade{opacity:0;transform:translateY(9px);transition:opacity .3s,transform .3s}
+.tl-fade.show{opacity:1;transform:none}
+.tl-hint{
+  font-family:var(--data);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--sand-dim);margin-top:34px;display:flex;align-items:center;gap:10px;
+}
+.tl-hint::before{content:"";width:34px;height:1px;background:var(--gold)}
+
+/* ---------- PREPARATION ---------- */
+.prep{background:var(--ink-2)}
+.prep .grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,6vw,90px);align-items:center}
+.pull{
+  font-family:var(--display);font-style:italic;font-weight:300;
+  font-size:clamp(24px,3vw,36px);line-height:1.28;color:var(--gold);
+  border-left:1px solid var(--gold);padding-left:28px;
+}
+
+/* ---------- INCLUS ---------- */
+.inc{display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,80px);margin-top:46px}
+.inc h3{font-family:var(--data);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:20px}
+.inc.out h3{color:var(--sand-dim)}
+.inc ul{list-style:none}
+.inc li{padding:14px 0;border-bottom:1px solid var(--line);font-size:15.5px;color:rgba(237,230,218,.8)}
+.inc-note{margin-top:24px;font-size:14px;color:var(--sand-dim);font-style:italic}
+
+/* ---------- MEDIA PLACEHOLDERS ---------- */
+.gal{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:46px}
+.ph{
+  aspect-ratio:3/4;background:linear-gradient(150deg,var(--ink-3),rgba(31,77,69,.35));
+  border:1px solid var(--line);display:flex;align-items:flex-end;padding:14px;
+  font-family:var(--data);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--sand-dim);
+  transition:transform .5s cubic-bezier(.2,.7,.2,1),border-color .4s;
+}
+.ph:hover{transform:translateY(-8px);border-color:var(--gold)}
+.ph.wide{grid-column:span 2;aspect-ratio:3/2}
+.play{width:60px;height:60px;border:1px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .35s,transform .35s;background:rgba(5,7,6,.4)}
+.play::after{content:"";border-left:12px solid var(--gold);border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:4px}
+.frame{
+  position:relative;border:1px solid var(--line);overflow:hidden;
+  background:linear-gradient(150deg,var(--ink-3),rgba(31,77,69,.34));
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .4s;
+}
+.frame:hover{border-color:var(--gold)}
+.frame:hover .play{background:var(--gold);transform:scale(1.06)}
+.frame:hover .play::after{border-left-color:#160f04}
+.frame .cap{
+  position:absolute;left:16px;bottom:14px;font-family:var(--data);font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--sand-dim);
+}
+.frame .dur{
+  position:absolute;right:16px;bottom:14px;font-family:var(--data);font-size:10px;
+  letter-spacing:.08em;color:var(--sand-dim);
+}
+.frame.wide{aspect-ratio:16/9}
+
+/* présentation */
+.me .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(30px,5vw,72px);align-items:center}
+.me .sig{font-family:var(--display);font-style:italic;font-size:26px;color:var(--gold);margin-top:26px}
+.creds{list-style:none;border-top:1px solid var(--line);margin-top:28px}
+.creds li{
+  display:flex;gap:18px;padding:14px 0;border-bottom:1px solid var(--line);
+  font-size:15px;color:rgba(237,230,218,.78);
+}
+.creds .yr{font-family:var(--data);font-size:11px;color:var(--gold);letter-spacing:.1em;min-width:66px;padding-top:3px}
+
+/* interviews */
+.itw{display:grid;grid-template-columns:1fr 1fr;gap:clamp(22px,3.4vw,44px);margin-top:46px}
+.itw .who{font-family:var(--data);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin:20px 0 10px}
+.itw .quote{font-family:var(--display);font-style:italic;font-weight:300;font-size:clamp(20px,2.2vw,26px);line-height:1.34}
+
+/* ---------- PLACES ---------- */
+.places{background:var(--ink-2);text-align:center}
+.dots{display:flex;gap:11px;justify-content:center;margin:46px 0 40px;flex-wrap:wrap}
+.dot-seat{
+  width:15px;height:15px;border:1px solid var(--gold);transform:rotate(45deg);
+  transition:background .4s,transform .4s;
+}
+.dot-seat.f{background:var(--gold)}
+.places h2{margin-left:auto;margin-right:auto;max-width:16ch}
+.places p.lead{margin-left:auto;margin-right:auto;text-align:center}
+
+/* ---------- PAIEMENT ---------- */
+.pay .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(34px,6vw,86px);align-items:center;margin-top:46px}
+.slider-box{border:1px solid var(--line);padding:clamp(24px,3.4vw,42px);background:var(--ink-2)}
+.slider-lbl{font-family:var(--data);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--sand-dim);margin-bottom:18px}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--line);
+  outline:none;cursor:pointer;margin:14px 0 10px;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:20px;height:20px;background:var(--gold);
+  border-radius:50%;cursor:grab;box-shadow:0 0 0 6px rgba(201,165,116,.14);transition:box-shadow .25s;
+}
+input[type=range]:active::-webkit-slider-thumb{box-shadow:0 0 0 11px rgba(201,165,116,.2);cursor:grabbing}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;background:var(--gold);border:0;border-radius:50%;cursor:grab}
+input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:8px}
+.ticks{display:flex;justify-content:space-between;font-family:var(--data);font-size:10px;color:var(--sand-dim);letter-spacing:.06em}
+.pay-out{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:34px;border-top:1px solid var(--line);padding-top:30px}
+.pay-out .v{font-family:var(--data);font-size:clamp(26px,3.4vw,42px);color:var(--gold);line-height:1}
+.pay-out .l{font-family:var(--data);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--sand-dim);margin-top:9px}
+.pay-when{font-family:var(--display);font-style:italic;font-size:clamp(22px,2.8vw,32px);color:var(--sand);margin-bottom:4px}
+
+/* ---------- ETAPES ---------- */
+.steps{counter-reset:s;display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(22px,3vw,44px);margin-top:46px}
+.step{border-top:1px solid var(--gold);padding-top:24px}
+.step .n{font-family:var(--data);font-size:11px;letter-spacing:.2em;color:var(--gold);margin-bottom:14px}
+.step h4{font-family:var(--display);font-weight:400;font-size:24px;margin-bottom:10px}
+.step p{font-size:15px;color:rgba(237,230,218,.7)}
+
+/* ---------- FAQ ---------- */
+.faq{background:var(--ink-2)}
+.q{border-bottom:1px solid var(--line)}
+.q button{
+  width:100%;background:none;border:0;color:var(--sand);text-align:left;cursor:pointer;
+  padding:26px 40px 26px 0;font-family:var(--display);font-size:clamp(19px,2.1vw,26px);
+  font-weight:400;position:relative;transition:color .25s;
+}
+.q button:hover{color:var(--gold)}
+.q button:focus-visible{outline:1px solid var(--gold);outline-offset:4px}
+.q button::after{
+  content:"";position:absolute;right:6px;top:50%;width:11px;height:1px;background:var(--gold);
+}
+.q button::before{
+  content:"";position:absolute;right:11px;top:50%;width:1px;height:11px;background:var(--gold);
+  transform:translateY(-50%);transition:transform .35s,opacity .35s;
+}
+.q.open button::before{transform:translateY(-50%) rotate(90deg);opacity:0}
+.a{max-height:0;overflow:hidden;transition:max-height .45s cubic-bezier(.2,.7,.2,1)}
+.a p{padding:0 0 28px;max-width:62ch;color:rgba(237,230,218,.72);font-size:15.5px}
+
+/* ---------- FINAL ---------- */
+.final{
+  text-align:center;
+  background:radial-gradient(80% 100% at 50% 100%,rgba(31,77,69,.5),transparent 62%),var(--ink);
+}
+.final h2{margin:0 auto 26px;max-width:20ch}
+.final .dates{font-family:var(--data);font-size:clamp(13px,1.5vw,16px);letter-spacing:.28em;color:var(--gold);margin-bottom:26px}
+.final p{margin:0 auto 40px;max-width:44ch;color:rgba(237,230,218,.75)}
+footer{padding:36px var(--pad);border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;font-family:var(--data);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--sand-dim)}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:900px){
+  .problem .grid,.prep .grid,.pay .grid,.inc{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr}
+  .gal{grid-template-columns:repeat(2,1fr)}
+  .ph.wide{grid-column:span 2}
+  .itw,.me .grid{grid-template-columns:1fr}
+  .tl-panel{grid-template-columns:1fr;gap:16px}
+  .pay-out{grid-template-columns:1fr;gap:22px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none}
+  .xh{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- CURSEUR -->
+<div class="xh" id="xh" aria-hidden="true">
+  <i class="h" id="xhH"></i><i class="v" id="xhV"></i>
+  <div class="dot" id="xhD"></div>
+  <div class="tag" id="xhT">—</div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap topbar">
+    <div class="logo">ALPHA TRADING<b>PRO</b></div>
+    <div class="meta">ÉDITION KOH SAMUI · THAÏLANDE</div>
+  </div>
+
+  <div class="wrap hero-main">
+    <h1 class="rv">7 jours pour<em>trader autrement</em></h1>
+    <p class="hero-sub rv" data-d="1">Une immersion en villa privée à Koh Samui avec neuf autres traders. Marchés le matin, travail de fond l'après-midi, aucune distraction.</p>
+    <div style="margin-top:40px" class="rv" data-d="2">
+      <a href="#reserver" class="cta" data-cur="Prendre rendez-vous">Réserver mon appel de sélection <span class="arw">→</span></a>
+    </div>
+  </div>
+
+  <div class="wrap hero-facts rv" data-d="3">
+    <div class="fact"><div class="k">10 › 16 MAI 2027</div><div class="l">Dates</div></div>
+    <div class="fact"><div class="k">10</div><div class="l">Places</div></div>
+    <div class="fact"><div class="k">UTC+7</div><div class="l">Session asiatique</div></div>
+    <div class="fact"><div class="k">1</div><div class="l">Villa privée</div></div>
+  </div>
+</section>
+
+<!-- PROBLEME -->
+<section class="problem">
+  <div class="wrap grid">
+    <div>
+      <div class="eyebrow rv">Le constat</div>
+      <h2 class="rv" data-d="1">Le problème n'est presque jamais <em>la stratégie</em></h2>
+    </div>
+    <div>
+      <p class="lead rv">Tu connais tes setups. Tu sais reconnaître un order block, tu sais ce qu'est un FVG, tu as backtesté. Sur le papier, ça tient.</p>
+      <p class="lead rv" data-d="1">Et pourtant les résultats ne suivent pas.</p>
+      <ul class="tick-list rv" data-d="2" style="margin-top:34px">
+        <li>Une bonne semaine, puis un trade de trop qui efface tout.</li>
+        <li>Une règle fixée le dimanche, cassée le mardi à 14h47.</li>
+        <li>Un plan écrit que tu ne suis que quand tu es en avance.</li>
+      </ul>
+      <p class="lead rv" data-d="3" style="margin-top:30px">Ce n'est pas un problème technique. C'est un problème d'exécution, de structure et d'environnement. Et ça ne se règle pas seul, devant un écran, chez toi.</p>
+    </div>
+  </div>
+</section>
+
+<!-- JOURNEE TYPE — SIGNATURE -->
+<section class="day">
+  <div class="wrap">
+    <div class="eyebrow rv">La journée</div>
+    <h2 class="rv" data-d="1">Le <em>rythme asiatique</em></h2>
+    <p class="lead rv" data-d="2">À Koh Samui, la session asiatique ouvre en pleine matinée locale. Tu trades le matin, frais, reposé — sans avoir passé la nuit debout.</p>
+
+    <div class="tl rv" data-d="3">
+      <div class="tl-bands" id="bands"></div>
+      <div class="tl-track" id="track" role="slider" tabindex="0" data-cur="Glisser sur la journée"
+           aria-label="Déroulé de la journée" aria-valuemin="6" aria-valuemax="22" aria-valuenow="8">
+        <div class="tl-head" id="head" style="left:12.5%"></div>
+      </div>
+
+      <div class="tl-panel">
+        <div class="tl-time" id="tTime">08:00</div>
+        <div>
+          <div class="tl-title tl-fade show" id="tTitle">Session live</div>
+          <div class="tl-desc tl-fade show" id="tDesc">On trade ensemble. Tokyo, puis le pré-Londres. Je commente chaque décision en direct, tu exécutes en parallèle sur ton propre compte.</div>
+        </div>
+      </div>
+      <div class="tl-hint">Fais glisser le curseur sur la journée</div>
+    </div>
+  </div>
+</section>
+
+<!-- PREPARATION -->
+<section class="prep">
+  <div class="wrap grid">
+    <div>
+      <div class="eyebrow rv">Avant le départ</div>
+      <h2 class="rv" data-d="1">Tu n'arriveras pas <em>en touriste</em></h2>
+      <p class="lead rv" data-d="2">La pire chose qui puisse arriver, c'est qu'un participant passe la semaine à essayer de suivre. Il n'apprend rien, il ralentit le groupe, il repart frustré. Donc ça n'arrivera pas.</p>
+      <p class="lead rv" data-d="2">Dès ton inscription validée, on commence à travailler. Pas en mai — dès maintenant. Sessions individuelles avec moi, en visio ou en présentiel si la géographie le permet : lecture de structure, gestion du risque, routine d'exécution, discipline.</p>
+      <p class="lead rv" data-d="3">Le rythme est défini avec toi lors de l'appel, selon ton niveau réel. Certains auront besoin de deux sessions, d'autres de dix. Ce n'est pas un forfait, c'est une préparation.</p>
+    </div>
+    <div class="pull rv" data-d="2">Celui qui s'inscrit en novembre arrive à Koh Samui après six mois de travail avec moi. Celui qui s'inscrit en mars en aura fait deux.</div>
+  </div>
+</section>
+
+<!-- INCLUS -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow rv">Le détail</div>
+    <h2 class="rv" data-d="1">Ce qui est <em>compris</em></h2>
+    <div class="inc">
+      <div class="rv" data-d="2">
+        <h3>Inclus</h3>
+        <ul>
+          <li>6 nuits en villa privée, chambre individuelle</li>
+          <li>Tous les repas, préparés sur place par un chef privé</li>
+          <li>Sessions de trading live chaque matin</li>
+          <li>Ateliers psychologie et gestion du risque</li>
+          <li>Préparation individuelle dès l'inscription</li>
+          <li>Activités et sorties sur l'île</li>
+          <li>Transferts aéroport ↔ villa</li>
+        </ul>
+      </div>
+      <div class="inc out rv" data-d="3">
+        <h3>Non inclus</h3>
+        <ul>
+          <li>Ton vol jusqu'à Koh Samui</li>
+          <li>Ton assurance voyage</li>
+          <li>Tes dépenses personnelles</li>
+        </ul>
+        <p class="inc-note">Compte 700 à 1 000 € pour le vol depuis la France selon la période de réservation. Prends-le tôt.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIEU -->
+<section class="prep">
+  <div class="wrap">
+    <div class="eyebrow rv">Le lieu</div>
+    <h2 class="rv" data-d="1">Une villa, dix personnes, <em>rien d'autre à faire</em></h2>
+    <p class="lead rv" data-d="2">Koh Samui n'est pas un décor. C'est un endroit coupé de tout ce qui te déconcentre habituellement — les obligations, les notifications, les gens qui ne comprennent pas ce que tu fais. Villa privée, chambres individuelles, espace de travail commun, fibre.</p>
+    <div class="gal rv" data-d="3">
+      <div class="ph wide" data-cur="Agrandir">Photo — espace de travail</div>
+      <div class="ph" data-cur="Agrandir">Photo — villa</div>
+      <div class="ph" data-cur="Agrandir">Photo — table du dîner</div>
+      <div class="ph" data-cur="Agrandir">Photo — île</div>
+      <div class="ph" data-cur="Agrandir">Photo — sortie bateau</div>
+      <div class="ph wide" data-cur="Agrandir">Photo — vue générale</div>
+    </div>
+  </div>
+</section>
+
+<!-- QUI JE SUIS -->
+<section class="me">
+  <div class="wrap">
+    <div class="eyebrow rv">Qui t'accompagne</div>
+    <h2 class="rv" data-d="1">Gaël</h2>
+    <div class="grid" style="margin-top:36px">
+      <div class="frame wide rv" data-d="2" data-cur="Lire la présentation">
+        <div class="play"></div>
+        <span class="cap">Vidéo — présentation</span>
+        <span class="dur">3 min</span>
+      </div>
+      <div class="rv" data-d="3">
+        <p class="lead">Ingénieur financier, spécialisé en finance de marché. Plusieurs années comme trader en banque d'investissement, puis en hedge fund. Depuis quatre ans, à mon compte — et je trade tous les jours, en direct, devant ma communauté.</p>
+        <ul class="creds">
+          <li><span class="yr">MÉTIER</span><span>Trader en banque d'investissement, puis en hedge fund</span></li>
+          <li><span class="yr">DEPUIS 4 ANS</span><span>Indépendant, en live quotidien</span></li>
+          <li><span class="yr">ATP</span><span>1 200 traders réunis autour de la méthode</span></li>
+          <li><span class="yr">CHAQUE AN</span><span>Un séminaire en immersion — la Guadeloupe, puis Koh Samui</span></li>
+        </ul>
+        <p class="sig">« Alpha », parce que c'est la mesure de la performance en salle de marché.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INTERVIEWS -->
+<section class="problem">
+  <div class="wrap">
+    <div class="eyebrow rv">Les éditions précédentes</div>
+    <h2 class="rv" data-d="1">Ils y sont <em>déjà allés</em></h2>
+    <p class="lead rv" data-d="2">Deux entretiens, sans montage promotionnel. Ce qu'ils sont venus chercher, ce qu'ils ont trouvé, et ce qui a changé après.</p>
+    <div class="itw rv" data-d="3">
+      <div>
+        <div class="frame wide" data-cur="Lire l'entretien">
+          <div class="play"></div>
+          <span class="cap">Entretien — participant 01</span>
+          <span class="dur">00:00</span>
+        </div>
+        <div class="who">Prénom — séminaire Guadeloupe</div>
+        <p class="quote">« Phrase forte extraite de l'entretien. »</p>
+      </div>
+      <div>
+        <div class="frame wide" data-cur="Lire l'entretien">
+          <div class="play"></div>
+          <span class="cap">Entretien — participant 02</span>
+          <span class="dur">00:00</span>
+        </div>
+        <div class="who">Prénom — séminaire Guadeloupe</div>
+        <p class="quote">« Phrase forte extraite de l'entretien. »</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLACES -->
+<section class="places">
+  <div class="wrap">
+    <div class="eyebrow rv">La contrainte</div>
+    <h2 class="rv" data-d="1">Pourquoi <em>seulement dix</em></h2>
+    <div class="dots rv" data-d="2" id="seats" aria-hidden="true"></div>
+    <p class="lead rv" data-d="2">Parce qu'au-delà, ça ne marche plus. À dix, je vois chaque trade de chacun. Je sais où tu en es le mercredi, je sais ce que tu dois corriger le jeudi. À vingt, je fais une conférence — et tu n'as pas besoin d'aller en Thaïlande pour assister à une conférence.</p>
+    <p class="lead rv" data-d="3" style="margin-top:22px">Dix places, une seule fois. Il n'y aura pas de deuxième session en 2027.</p>
+    <div style="margin-top:40px" class="rv" data-d="3"><a href="#reserver" class="cta" data-cur="Prendre rendez-vous">Réserver mon appel <span class="arw">→</span></a></div>
+  </div>
+</section>
+
+<!-- PAIEMENT -->
+<section class="pay" id="reserver">
+  <div class="wrap">
+    <div class="eyebrow rv">Le paiement</div>
+    <h2 class="rv" data-d="1">Comptant, ou <em>jusqu'à huit fois</em></h2>
+    <p class="lead rv" data-d="2">Acompte de 1 500 € à la réservation, solde réparti jusqu'en mars 2027. Deux raisons de ne pas attendre : la mensualité, et le temps qu'on aura pour te préparer.</p>
+
+    <div class="grid">
+      <div class="slider-box rv" data-d="2">
+        <div class="slider-lbl">Je réserve en…</div>
+        <div class="pay-when" id="pWhen">Octobre – novembre 2026</div>
+        <input type="range" id="pRange" data-cur="Glisser" min="0" max="4" value="0" step="1" aria-label="Mois de réservation">
+        <div class="ticks"><span>OCT</span><span>DÉC</span><span>JAN</span><span>FÉV</span><span>MAR</span></div>
+        <div class="pay-out">
+          <div><div class="v" id="pMonth">550 €</div><div class="l">par mois × 8</div></div>
+          <div><div class="v" id="pPrep">6 mois</div><div class="l">de préparation</div></div>
+        </div>
+      </div>
+      <div class="rv" data-d="3">
+        <div class="steps" style="grid-template-columns:1fr;margin-top:0">
+          <div class="step"><div class="n">01</div><h4>Tu réserves un appel</h4><p>30 minutes, en visio. On parle de ton trading, de là où tu en es, de ce que tu veux corriger.</p></div>
+          <div class="step"><div class="n">02</div><h4>On valide ensemble</h4><p>Je te dis franchement si l'immersion est faite pour toi. Si oui, on définit ta préparation d'ici mai. Si non, je te le dis aussi.</p></div>
+          <div class="step"><div class="n">03</div><h4>Tu choisis ta formule</h4><p>Le lien de paiement t'est envoyé après l'appel. Ta place est bloquée à réception de l'acompte.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="wrap">
+    <div class="eyebrow rv">Questions</div>
+    <h2 class="rv" data-d="1">Ce qu'on me demande <em>le plus souvent</em></h2>
+    <div class="rv" data-d="2" style="margin-top:34px" id="faq">
+      <div class="q"><button type="button" data-cur="Ouvrir">Quel niveau faut-il ?</button><div class="a"><p>Tu dois trader régulièrement et avoir une base. Le reste se travaille avant — c'est l'objet de la préparation individuelle. Si l'écart est trop important, je te le dirai lors de l'appel.</p></div></div>
+      <div class="q"><button type="button" data-cur="Ouvrir">Je trade les indices, le forex, les futures — est-ce adapté ?</button><div class="a"><p>Oui. La méthode porte sur la lecture de structure et l'exécution, pas sur un instrument en particulier.</p></div></div>
+      <div class="q"><button type="button" data-cur="Ouvrir">Que faut-il apporter ?</button><div class="a"><p>Ton ordinateur portable et ton setup habituel. La connexion et l'espace de travail sont sur place.</p></div></div>
+      <div class="q"><button type="button" data-cur="Ouvrir">Comment gère-t-on le décalage horaire ?</button><div class="a"><p>Koh Samui est à UTC+7, soit cinq heures d'avance sur la France en mai. C'est précisément ce qui permet de trader le matin plutôt que la nuit.</p></div></div>
+      <div class="q"><button type="button" data-cur="Ouvrir">Faut-il un visa ?</button><div class="a"><p>Pas pour les ressortissants français sur un séjour touristique de cette durée. Vérifie les conditions en vigueur avant ton départ, et que ton passeport est valable plus de six mois.</p></div></div>
+      <div class="q"><button type="button" data-cur="Ouvrir">Puis-je venir accompagné ?</button><div class="a"><p>La villa est réservée aux participants. Contacte-moi si tu souhaites prolonger sur place avant ou après le séminaire.</p></div></div>
+      <div class="q"><button type="button" data-cur="Ouvrir">Et si j'annule ?</button><div class="a"><p>Les sommes versées ne sont pas remboursables : la préparation démarre dès l'inscription et les engagements sur place sont pris à l'avance. Si j'annule l'événement, tu es intégralement remboursé.</p></div></div>
+      <div class="q"><button type="button" data-cur="Ouvrir">Puis-je payer via ma société ?</button><div class="a"><p>Oui, une facture est émise.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="final">
+  <div class="wrap">
+    <div class="dates rv">10 › 16 MAI 2027</div>
+    <h2 class="rv" data-d="1">Dix traders. Une villa. <em>Sept jours.</em></h2>
+    <p class="rv" data-d="2">Les places partent dans l'ordre des appels.</p>
+    <div class="rv" data-d="3"><a href="#" class="cta" data-cur="Prendre rendez-vous">Réserver mon appel de sélection <span class="arw">→</span></a></div>
+  </div>
+</section>
+
+<footer>
+  <span>ALPHA TRADING PRO — KOH SAMUI 2027</span>
+  <span>Mentions légales · CGV · Confidentialité</span>
+</footer>
+
+<script>
+const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- CURSEUR CROSSHAIR ---------- */
+(function(){
+  if(RM || window.matchMedia('(hover:none)').matches) return;
+  const xh=document.getElementById('xh'),H=document.getElementById('xhH'),
+        V=document.getElementById('xhV'),D=document.getElementById('xhD'),T=document.getElementById('xhT');
+  let tx=0,ty=0,cx=0,cy=0;
+  addEventListener('mousemove',e=>{
+    tx=e.clientX;ty=e.clientY;xh.classList.add('on');
+    H.style.top=ty+'px';V.style.left=tx+'px';
+  },{passive:true});
+  (function loop(){
+    cx+=(tx-cx)*.18;cy+=(ty-cy)*.18;
+    D.style.transform=`translate(${cx}px,${cy}px)`;
+    T.style.left=cx+'px';T.style.top=cy+'px';
+    requestAnimationFrame(loop);
+  })();
+  document.querySelectorAll('[data-cur]').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{T.textContent=el.dataset.cur;xh.classList.add('hot')});
+    el.addEventListener('mouseleave',()=>xh.classList.remove('hot'));
+  });
+})();
+
+/* ---------- REVEAL AU SCROLL ---------- */
+(function(){
+  const io=new IntersectionObserver(es=>es.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}
+  }),{threshold:.15,rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+})();
+
+/* ---------- TIMELINE ---------- */
+(function(){
+  const START=6,END=22,SPAN=END-START;
+  const PROG=[
+    {t:7,   ti:"Réveil, petit-déjeuner", d:"Préparation de la journée : biais, niveaux, plan. On arrive à l'ouverture avec un scénario écrit, pas une intuition."},
+    {t:8,   ti:"Session live",           d:"On trade ensemble. Tokyo, puis le pré-Londres. Je commente chaque décision en direct, tu exécutes en parallèle sur ton propre compte."},
+    {t:11,  ti:"Debrief",                d:"Chaque trade repassé. Ce qui était dans le plan, ce qui ne l'était pas, et pourquoi. C'est souvent là que ça se joue."},
+    {t:12.5,ti:"Déjeuner",               d:"Cuisiné sur place par notre chef. On coupe une heure, sans écran."},
+    {t:14,  ti:"Atelier",                d:"Psychologie, gestion du risque, construction de routine. Format court, applicable dès le lendemain."},
+    {t:16,  ti:"Travail individuel ou sortie", d:"Selon les jours : session personnelle sur ton journal, ou on sort — bateau, île, temple."},
+    {t:19,  ti:"Dîner",                  d:"Ensemble, sur la terrasse. C'est souvent ce dont les participants reparlent le plus."},
+    {t:20.5,ti:"Ouverture US — optionnel",d:"Ceux qui veulent restent pour l'open de New York. Aucune obligation, et personne ne juge ceux qui vont se coucher."}
+  ];
+  const BANDS=[
+    {c:'tokyo',   n:'Tokyo',     a:7,    b:15},
+    {c:'londres', n:'Londres',   a:14,   b:22},
+    {c:'ny',      n:'New York',  a:20.5, b:22}
+  ];
+  const pct=h=>((h-START)/SPAN)*100;
+  const bands=document.getElementById('bands'),track=document.getElementById('track'),
+        head=document.getElementById('head'),eT=document.getElementById('tTime'),
+        eTi=document.getElementById('tTitle'),eD=document.getElementById('tDesc');
+
+  BANDS.forEach(b=>{
+    const el=document.createElement('div');
+    el.className='band '+b.c;el.style.left=pct(b.a)+'%';el.style.width=(pct(b.b)-pct(b.a))+'%';
+    el.textContent=b.n;bands.appendChild(el);
+  });
+  for(let h=START;h<=END;h+=2){
+    const m=document.createElement('div');
+    m.className='tl-mark'+(PROG.some(p=>Math.floor(p.t)===h)?' key':'');
+    m.style.left=pct(h)+'%';
+    m.innerHTML='<span>'+String(h).padStart(2,'0')+'h</span>';
+    track.appendChild(m);
+  }
+  const fmt=t=>String(Math.floor(t)).padStart(2,'0')+'h'+String(Math.round((t%1)*60)).padStart(2,'0');
+  let cur=null;
+  function setH(h){
+    h=Math.max(START,Math.min(END,h));
+    head.style.left=pct(h)+'%';
+    track.setAttribute('aria-valuenow',h.toFixed(1));
+    let s=PROG[0];for(const p of PROG){if(h>=p.t)s=p}
+    eT.textContent=fmt(s.t);
+    if(s!==cur){
+      cur=s;
+      [eTi,eD].forEach(n=>n.classList.remove('show'));
+      setTimeout(()=>{eTi.textContent=s.ti;eD.textContent=s.d;
+        [eTi,eD].forEach(n=>n.classList.add('show'))},RM?0:160);
+    }
+    track.setAttribute('aria-valuetext',fmt(s.t)+' — '+s.ti);
+  }
+  const fromX=x=>{const r=track.getBoundingClientRect();return START+((x-r.left)/r.width)*SPAN};
+  let drag=false;
+  const down=e=>{drag=true;setH(fromX((e.touches?e.touches[0]:e).clientX))};
+  const move=e=>{if(drag)setH(fromX((e.touches?e.touches[0]:e).clientX))};
+  track.addEventListener('mousedown',down);track.addEventListener('mousemove',move);
+  track.addEventListener('touchstart',down,{passive:true});track.addEventListener('touchmove',move,{passive:true});
+  addEventListener('mouseup',()=>drag=false);addEventListener('touchend',()=>drag=false);
+  track.addEventListener('keydown',e=>{
+    const i=PROG.indexOf(cur);
+    if(e.key==='ArrowRight'||e.key==='ArrowUp'){e.preventDefault();setH(PROG[Math.min(PROG.length-1,i+1)].t)}
+    if(e.key==='ArrowLeft'||e.key==='ArrowDown'){e.preventDefault();setH(PROG[Math.max(0,i-1)].t)}
+  });
+  setH(8);
+})();
+
+/* ---------- PLACES ---------- */
+(function(){
+  const s=document.getElementById('seats');
+  for(let i=0;i<10;i++){const d=document.createElement('span');d.className='dot-seat';s.appendChild(d)}
+})();
+
+/* ---------- PAIEMENT ---------- */
+(function(){
+  const P=[
+    {w:"Octobre – novembre 2026",n:8,m:550, p:"6 mois"},
+    {w:"Décembre 2026",          n:6,m:733, p:"5 mois"},
+    {w:"Janvier 2027",           n:4,m:1100,p:"4 mois"},
+    {w:"Février 2027",           n:2,m:2200,p:"3 mois"},
+    {w:"Mars 2027 et après",     n:0,m:5900,p:"2 mois"}
+  ];
+  const r=document.getElementById('pRange'),w=document.getElementById('pWhen'),
+        m=document.getElementById('pMonth'),pr=document.getElementById('pPrep'),
+        lbl=document.querySelector('#pMonth').nextElementSibling;
+  const eur=n=>n.toLocaleString('fr-FR')+' €';
+  function upd(){
+    const o=P[+r.value];
+    w.textContent=o.w;pr.textContent=o.p;
+    m.textContent=eur(o.m);
+    lbl.textContent=o.n?('par mois × '+o.n):'comptant, en une fois';
+  }
+  r.addEventListener('input',upd);upd();
+})();
+
+/* ---------- FAQ ---------- */
+document.querySelectorAll('#faq .q button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const q=b.parentElement,a=q.querySelector('.a'),open=q.classList.contains('open');
+    document.querySelectorAll('#faq .q').forEach(o=>{o.classList.remove('open');o.querySelector('.a').style.maxHeight=null});
+    if(!open){q.classList.add('open');a.style.maxHeight=a.scrollHeight+'px'}
+  });
+});
+</script>
+</body>
+</html>
