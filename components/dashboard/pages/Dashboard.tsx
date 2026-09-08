@@ -35,6 +35,30 @@ interface DashboardProps {
   onGoToAnalysis?: () => void
 }
 
+/**
+ * Placeholder pour les cases charts Chart.js quand aucune session
+ * n'existe. Aligné sur la hauteur 280px du parent pour zéro layout
+ * shift. Existe UNIQUEMENT pour éviter le crash Chart.js "Cannot read
+ * 'y' of undefined" qui remonte à l'error boundary global de Next.js
+ * quand on lui passe des datasets vides (typiquement compte trader
+ * fraîchement créé).
+ */
+function ChartEmpty({ text }: { text: string }) {
+  return (
+    <div style={{
+      height: '100%',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      textAlign: 'center', gap: 8,
+      color: 'var(--color-text-3)',
+      fontSize: 13,
+    }}>
+      <div style={{ fontSize: 24, opacity: 0.4 }}>📊</div>
+      <div style={{ maxWidth: '32ch', lineHeight: 1.5 }}>{text}</div>
+    </div>
+  )
+}
+
 export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [sessions, setSessions] = useState<TradingSession[]>([])
@@ -444,6 +468,13 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
               hauteur visuelle). P&L par Session est aligné pour l'harmonie. */}
           <div style={{ height: 280, position: 'relative', zIndex: 1 }}>
             {(() => {
+              // Guard vital : Chart.js crashe (Cannot read 'y' of undefined
+              // dans resolveNamedOptions → _getSharedOptions) quand on lui
+              // envoie un dataset avec des arrays vides. Un trader tout
+              // frais (compte créé, 0 session) tombait sur l'error boundary
+              // global "This page couldn't load". Placeholder propre à la
+              // place, aligné sur la hauteur 280px pour zéro layout shift.
+              if (filtered.length === 0) return <ChartEmpty text="Log ta première session pour voir ta courbe P&L cumulée." />
               const sorted = [...filtered].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
               const cumulative: number[] = []
@@ -522,6 +553,8 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           </h2>
           <div style={{ height: 280 }}>
             {(() => {
+              // Même guard que P&L Cumulé — Chart.js Bar crashe pareil sur dataset vide.
+              if (filtered.length === 0) return <ChartEmpty text="Log ta première session pour voir tes barres P&L." />
               const sorted = [...filtered].sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
               const labels = sorted.map(s => { const d = new Date(s.session_date + 'T00:00:00'); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) })
               const pnls = sorted.map(s => Number(s.pnl) )

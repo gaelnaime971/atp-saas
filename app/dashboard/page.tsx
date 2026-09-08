@@ -56,6 +56,40 @@ const pageTitles: Record<DashboardPage, string> = {
   compte: 'Mon compte',
 }
 
+/**
+ * Date du jour affichée dans le topbar. Rendue UNIQUEMENT côté client
+ * (useEffect + useState vide au SSR) pour éviter le React hydration
+ * mismatch #418 : `new Date()` au SSR utilise le fuseau serveur (UTC
+ * chez Vercel), le client utilise son fuseau local — un trader à
+ * Bangkok voit "dim. 6 sept" côté client là où le serveur a rendu
+ * "sam. 5 sept" → HTML différent → écran noir global error boundary.
+ * Skeleton invisible au SSR (span vide même dimensions grâce au border
+ * et padding), remplacé par la date après hydratation.
+ */
+function TopbarDate() {
+  const [label, setLabel] = useState<string>('')
+  useEffect(() => {
+    setLabel(new Date().toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    }))
+  }, [])
+  return (
+    <span
+      className="text-xs px-3 py-1.5 rounded-lg font-mono shrink-0"
+      style={{
+        color: 'var(--color-text-3)',
+        border: '1px solid var(--color-border-subtle)',
+        background: 'var(--color-surface-1)',
+        minWidth: '9ch',   // évite le layout shift au premier render vide
+      }}
+    >
+      {label || ' '}
+    </span>
+  )
+}
+
 export default function TraderDashboard() {
   const [activePage, setActivePage] = useState<DashboardPage>('dashboard')
   const [sessionLive, setSessionLive] = useState(false)
@@ -203,20 +237,7 @@ export default function TraderDashboard() {
               <div className="h-5 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
               <TopbarStats />
               <div className="h-5 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
-              <span
-                className="text-xs px-3 py-1.5 rounded-lg font-mono shrink-0"
-                style={{
-                  color: 'var(--color-text-3)',
-                  border: '1px solid var(--color-border-subtle)',
-                  background: 'var(--color-surface-1)',
-                }}
-              >
-                {new Date().toLocaleDateString('fr-FR', {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                })}
-              </span>
+              <TopbarDate />
             </>
           }
         />
