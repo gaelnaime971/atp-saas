@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>ALIGNÉ — Espace de pilotage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+--olive:#5B5C4A; --olive-d:#434436; --olive-l:#7E8A6A;
+--encre:#2F322A; --encre-2:#5A5D51;
+--papier:#EDE7DA; --creme:#E6DDCE; --lin:#DDD4C2; --blanc:#F7F4ED;
+--hib:#8C4A5B; --hib-l:#B37083; --ambre:#B8873F;
+--r:3px;
+--d:'Jost',system-ui,sans-serif; --s:'Newsreader',Georgia,serif;
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--d);color:var(--encre);background:var(--papier);
+ font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4{margin:0;font-weight:400;letter-spacing:-.01em}
+p{margin:0 0 1em}
+:focus-visible{outline:2px solid var(--hib);outline-offset:3px}
+.num{font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+body{background:#E9E3D6}
+
+/* ---------- Coquille ---------- */
+.app{display:grid;grid-template-columns:246px 1fr;min-height:100vh}
+.side{background:var(--olive-d);color:#C6C1B2;padding:18px 0 28px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side-h{display:flex;align-items:center;gap:11px;padding:0 20px 18px;border-bottom:1px solid rgba(230,221,206,.13);margin-bottom:14px}
+.side-h img{width:36px;height:36px;border-radius:2px}
+.side-h b{font-weight:400;font-size:.96rem;letter-spacing:.15em;color:var(--creme);display:block}
+.side-h span{font-size:.69rem;color:#918C7D;letter-spacing:.04em}
+.side-g{padding:14px 20px 6px;font-size:.68rem;letter-spacing:.11em;color:#7D7869}
+.side a{display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:.875rem;color:#BDB8A9;border-left:2px solid transparent;cursor:pointer}
+.side a:hover{color:var(--creme);background:rgba(230,221,206,.05)}
+.side a.on{color:var(--creme);border-left-color:var(--hib-l);background:rgba(230,221,206,.08)}
+.side a i{width:15px;height:15px;flex-shrink:0;opacity:.75}
+.side a em{margin-left:auto;font-style:normal;font-size:.68rem;background:var(--hib);color:#fff;padding:1px 6px;border-radius:9px}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{background:var(--papier);border-bottom:1px solid var(--lin);padding:15px 30px;
+ display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:20}
+.top h1{font-size:1.24rem;font-weight:400}
+.top .sub{font-size:.78rem;color:var(--encre-2);margin-top:1px}
+.top-r{margin-left:auto;display:flex;align-items:center;gap:10px}
+.who{display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid var(--lin)}
+.av{width:31px;height:31px;border-radius:50%;background:var(--olive);color:var(--creme);
+ display:grid;place-items:center;font-size:.76rem}
+.body{padding:26px 30px 60px;flex:1}
+@media(max-width:1080px){.app{grid-template-columns:1fr}.side{position:static;height:auto}
+ .side a{display:inline-flex;border-left:0;border-bottom:2px solid transparent}
+ .side a.on{border-left:0;border-bottom-color:var(--hib-l)}.side-g{display:none}
+ .body,.top{padding-left:18px;padding-right:18px}}
+
+/* ---------- Primitives ---------- */
+.card{background:var(--blanc);border:1px solid var(--lin);border-radius:var(--r)}
+.card-h{padding:15px 18px;border-bottom:1px solid var(--lin);display:flex;align-items:center;gap:12px}
+.card-h h3{font-size:.97rem;font-weight:500}
+.card-h .mini{margin-left:auto}
+.card-b{padding:18px}
+.row{display:grid;gap:16px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:repeat(3,1fr)}
+.c4{grid-template-columns:repeat(4,1fr)}.c5{grid-template-columns:repeat(5,1fr)}
+.c21{grid-template-columns:2fr 1fr}.c12{grid-template-columns:1fr 2fr}
+@media(max-width:1200px){.c5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:1000px){.c2,.c3,.c4,.c5,.c21,.c12{grid-template-columns:1fr}}
+.mini{font-size:.76rem;color:var(--encre-2);line-height:1.45}
+.lbl{font-size:.74rem;color:var(--encre-2);letter-spacing:.03em}
+.mt{margin-top:16px}.mb0{margin-bottom:0}
+
+/* ---------- KPI ---------- */
+.kpi{background:var(--blanc);border:1px solid var(--lin);border-radius:var(--r);padding:15px 17px}
+.kpi .v{font-size:1.85rem;font-weight:300;line-height:1.1;margin:5px 0 3px}
+.kpi .d{font-size:.75rem}
+.up{color:#4F6B3E}.down{color:var(--hib)}
+.kpi.dark{background:var(--olive);border-color:var(--olive);color:var(--creme)}
+.kpi.dark .lbl,.kpi.dark .mini{color:#BFB9A9}
+
+/* ---------- Tags ---------- */
+.t{display:inline-block;font-size:.71rem;padding:2px 9px;border-radius:2px;border:1px solid var(--lin);
+ background:#EFEBE1;color:var(--encre-2);white-space:nowrap}
+.t.v{background:#E4EADA;border-color:#C5D0B4;color:#47582F}
+.t.h{background:#F2E1E5;border-color:#E0C2CA;color:#7A3C4C}
+.t.a{background:#F5EBD8;border-color:#E4D2AC;color:#7E5D1E}
+.t.o{background:var(--olive);border-color:var(--olive);color:var(--creme)}
+.t.n{background:#E7E8EC;border-color:#D2D4DA;color:#4C5060}
+
+/* ---------- Tableaux ---------- */
+.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
+.tbl th{text-align:left;font-weight:500;font-size:.74rem;color:var(--encre-2);
+ padding:10px 14px;border-bottom:1px solid var(--lin);white-space:nowrap;background:#F1ECE2}
+.tbl td{padding:11px 14px;border-bottom:1px solid #E6E0D4;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr:hover{background:#F3EFE6}
+.tbl .r{text-align:right}
+.tbl b{font-weight:500}
+.scroll{overflow-x:auto}
+.nm{display:flex;align-items:center;gap:9px}
+.nm .av{width:27px;height:27px;font-size:.7rem;background:var(--lin);color:var(--olive-d)}
+.nm small{display:block;font-size:.72rem;color:var(--encre-2)}
+
+/* ---------- Barres ---------- */
+.pb{height:6px;background:var(--lin);border-radius:3px;overflow:hidden}
+.pb i{display:block;height:100%;background:var(--olive-l)}
+.pb.h i{background:var(--hib)}.pb.a i{background:var(--ambre)}
+.pb.sm{height:4px}
+
+/* ---------- Boutons ---------- */
+.b{display:inline-flex;align-items:center;gap:7px;background:var(--olive);color:var(--creme);
+ border:1px solid var(--olive);border-radius:2px;padding:8px 15px;font-size:.83rem;cursor:pointer}
+.b:hover{background:var(--olive-d)}
+.b.g{background:transparent;color:var(--encre);border-color:var(--lin)}
+.b.g:hover{background:#E9E3D6}
+.b.h{background:var(--hib);border-color:var(--hib);color:#fff}
+.b.sm{padding:5px 11px;font-size:.77rem}
+.inp{padding:8px 12px;background:var(--blanc);border:1px solid var(--lin);border-radius:2px;font-size:.84rem}
+.seg{display:inline-flex;border:1px solid var(--lin);border-radius:2px;overflow:hidden;background:var(--blanc)}
+.seg button{background:none;border:0;padding:7px 14px;font-size:.81rem;cursor:pointer;border-right:1px solid var(--lin)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--olive);color:var(--creme)}
+
+/* ---------- Kanban ---------- */
+.kan{display:grid;grid-template-columns:repeat(5,minmax(230px,1fr));gap:13px;overflow-x:auto;padding-bottom:8px}
+.kcol{background:#E4DECF;border-radius:var(--r);padding:11px;min-width:230px}
+.kcol-h{display:flex;align-items:center;gap:8px;margin-bottom:11px;padding:0 3px}
+.kcol-h b{font-size:.83rem;font-weight:500}
+.kcol-h span{font-size:.72rem;color:var(--encre-2);margin-left:auto}
+.kc{background:var(--blanc);border:1px solid #DED7C8;border-radius:2px;padding:11px 12px;margin-bottom:9px;cursor:grab}
+.kc:hover{border-color:var(--olive-l)}
+.kc b{font-size:.86rem;font-weight:500;display:block}
+.kc .mini{margin-top:3px}
+.kc-f{display:flex;align-items:center;gap:6px;margin-top:9px;flex-wrap:wrap}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--olive-l);display:inline-block}
+.dot.h{background:var(--hib)}.dot.a{background:var(--ambre)}
+
+/* ---------- Funnel ---------- */
+.fun{display:flex;flex-direction:column;gap:7px}
+.fstep{display:grid;grid-template-columns:1fr 66px 50px;gap:10px;align-items:center}
+.fbar{height:36px;min-width:104px;background:var(--olive);border-radius:2px;display:flex;align-items:center;
+ padding:0 11px;color:var(--creme);font-size:.8rem;white-space:nowrap;overflow:hidden}
+.fstep:nth-child(2) .fbar{background:#666B54}
+.fstep:nth-child(3) .fbar{background:#727864}
+.fstep:nth-child(4) .fbar{background:#808673}
+.fstep:nth-child(5) .fbar{background:var(--hib)}
+.fv{font-size:.95rem;text-align:right}
+.fp{font-size:.78rem;color:var(--encre-2);text-align:right}
+
+/* ---------- Jauges cohorte ---------- */
+.ga{display:flex;gap:4px;flex-wrap:wrap;margin-top:12px}
+.ga i{width:17px;height:17px;border-radius:2px;background:var(--lin);display:block}
+.ga i.f{background:var(--olive)}
+.ga i.w{background:var(--ambre);opacity:.5}
+
+/* ---------- Calendrier social ---------- */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--lin);border:1px solid var(--lin);border-radius:var(--r);overflow:hidden}
+.cal .dh{background:#F1ECE2;padding:7px 9px;font-size:.72rem;color:var(--encre-2);text-align:center}
+.cd{background:var(--blanc);min-height:104px;padding:7px 8px}
+.cd.out{background:#EDE8DD;color:#A9A496}
+.cd .n{font-size:.75rem;color:var(--encre-2);margin-bottom:5px}
+.cd.today .n{background:var(--olive);color:var(--creme);border-radius:2px;padding:0 5px;display:inline-block}
+.post{font-size:.7rem;padding:3px 6px;border-radius:2px;margin-bottom:3px;line-height:1.3;border-left:2px solid}
+.post.ig{background:#F2E1E5;border-color:var(--hib);color:#6E3746}
+.post.li{background:#E1E6EC;border-color:#5A6E85;color:#3D4B5B}
+.post.nl{background:#E4EADA;border-color:#6B7D52;color:#43512F}
+.post.yt{background:#F5EBD8;border-color:var(--ambre);color:#6F5219}
+
+/* ---------- Divers ---------- */
+.feed{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid #E6E0D4;font-size:.84rem}
+.feed:last-child{border-bottom:0}
+.feed .ic{width:27px;height:27px;border-radius:50%;background:#EDE7DA;display:grid;place-items:center;flex-shrink:0;font-size:.73rem}
+.feed time{display:block;font-size:.72rem;color:var(--encre-2);margin-top:2px}
+.note{background:#F4EBD9;border:1px solid #E5D5B0;border-left:3px solid var(--ambre);
+ border-radius:2px;padding:11px 14px;font-size:.82rem;color:#6F5219}
+.vid{aspect-ratio:16/9;background:linear-gradient(145deg,#8A9078,#5B5C4A);border-radius:2px;
+ display:grid;place-items:center;color:rgba(247,244,237,.85);font-size:.78rem}
+.page{display:none}.page.on{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+ <div class="side-h"><img src="data:image/png;base64,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" alt=""><div><b>ALIGNÉ</b><span>Espace de pilotage</span></div></div>
+ <div class="side-g">Pilotage</div>
+ <a data-go="accueil" class="on">Vue d'ensemble</a>
+ <a data-go="pipeline">Pipeline d'appels<em>7</em></a>
+ <a data-go="prospects">Prospects</a>
+ <a data-go="tunnel">Tunnel de vente</a>
+ <div class="side-g">Programme</div>
+ <a data-go="cohortes">Cohortes RÉGÉNÈRE</a>
+ <a data-go="membres">Participantes</a>
+ <a data-go="contenus">Vidéos &amp; coaching</a>
+ <a data-go="evenements">Événements</a>
+ <div class="side-g">Commerce</div>
+ <a data-go="ventes">Ventes &amp; paiements<em>3</em></a>
+ <a data-go="boutique">Boutique &amp; stocks</a>
+ <a data-go="finances">Finances</a>
+ <div class="side-g">Diffusion</div>
+ <a data-go="social">Réseaux sociaux</a>
+ <a data-go="emails">Emails &amp; séquences</a>
+ <a data-go="journal">Journal</a>
+ <div class="side-g">Administration</div>
+ <a data-go="reglages">Réglages &amp; équipe</a>
+</aside>
+
+<div class="main">
+ <div class="top">
+  <div><h1 id="pt">Vue d'ensemble</h1><div class="sub" id="ps">Samedi 19 septembre 2026</div></div>
+  <div class="top-r">
+   <input class="inp" placeholder="Rechercher une participante, une commande…" style="width:270px">
+   <button class="b g sm">Exporter</button>
+   <div class="who"><div class="av">EJ</div><div><div style="font-size:.83rem">Erika Jasor</div><div class="mini">Administratrice</div></div></div>
+  </div>
+ </div>
+ <div class="body">
+<!-- ======== VUE D'ENSEMBLE ======== -->
+<div class="page on" id="g-accueil">
+ <div class="row c5" style="margin-bottom:16px">
+  <div class="kpi dark"><div class="lbl">Encaissé en février</div><div class="v num">12 480 €</div><div class="d mini">Échéances 2 sur 3 de la cohorte</div></div>
+  <div class="kpi"><div class="lbl">Signé — cohorte de janvier</div><div class="v num">31 220 €</div><div class="d up">18 places sur 18 vendues</div></div>
+  <div class="kpi"><div class="lbl">Nouveaux profils ce mois</div><div class="v num">214</div><div class="d up">+38 % contre janvier</div></div>
+  <div class="kpi"><div class="lbl">Appels planifiés</div><div class="v num">7</div><div class="d mini">dont 3 cette semaine</div></div>
+  <div class="kpi"><div class="lbl">Taux de closing sur appel</div><div class="v num">41 %</div><div class="d up">+6 points sur 30 jours</div></div>
+ </div>
+
+ <div class="note" style="margin-bottom:16px">La cohorte d'avril ouvre à la vente dans 12 jours. 46 personnes sont sur la liste d'attente et n'ont pas encore été relancées.</div>
+
+ <div class="row c21" style="margin-bottom:16px">
+  <div class="card">
+   <div class="card-h"><h3>Chiffre d'affaires signé</h3><div class="seg mini" style="margin-left:auto"><button class="on">12 mois</button><button>6 mois</button></div></div>
+   <div class="card-b"><div class="ch" data-type="area" data-h="230"
+     data-v="0,0,0,0,1780,2340,3150,4620,9840,18600,31220,6480"
+     data-l="mar,avr,mai,juin,juil,août,sept,oct,nov,déc,janv,févr"></div>
+    <div class="mini mt">Les pics de novembre et janvier correspondent à l'ouverture des ventes de la cohorte et aux soldes réglés en une fois.</div>
+   </div>
+  </div>
+  <div class="card">
+   <div class="card-h"><h3>Du visiteur à la participante</h3></div>
+   <div class="card-b">
+    <div class="fun">
+     <div class="fstep"><div class="fbar" style="width:100%">Visiteuses du site</div><div class="fv num">4 820</div><div class="fp">—</div></div>
+     <div class="fstep"><div class="fbar" style="width:78%">Profils complétés</div><div class="fv num">214</div><div class="fp">4,4 %</div></div>
+     <div class="fstep"><div class="fbar" style="width:52%">Appels réservés</div><div class="fv num">39</div><div class="fp">18,2 %</div></div>
+     <div class="fstep"><div class="fbar" style="width:34%">Appels tenus</div><div class="fv num">31</div><div class="fp">79,5 %</div></div>
+     <div class="fstep"><div class="fbar" style="width:20%">Inscriptions</div><div class="fv num">13</div><div class="fp">41,9 %</div></div>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <div class="row c21">
+  <div class="card">
+   <div class="card-h"><h3>Vos prochains appels</h3><span class="mini">7 planifiés</span><button class="b g sm" style="margin-left:12px">Ouvrir l'agenda</button></div>
+   <div class="scroll"><table class="tbl">
+    <thead><tr><th>Prospect</th><th>Quand</th><th>Profil</th><th>Intérêt</th><th>Source</th><th class="r">Score</th></tr></thead>
+    <tbody>
+     <tr><td><div class="nm"><div class="av">ML</div><div><b>Marie-Line Cadet</b><small>Le Gosier · 52 ans</small></div></div></td><td>Aujourd'hui 14 h 00</td><td><span class="t o">Épuisée lucide</span></td><td>Premium</td><td>Atelier plantes</td><td class="r"><b>92</b></td></tr>
+     <tr><td><div class="nm"><div class="av">SB</div><div><b>Sandrine Bellemare</b><small>Fort-de-France · 47 ans</small></div></div></td><td>Aujourd'hui 16 h 30</td><td><span class="t v">En recherche</span></td><td>Intégrale</td><td>Instagram</td><td class="r"><b>78</b></td></tr>
+     <tr><td><div class="nm"><div class="av">JD</div><div><b>Josiane Duplan</b><small>Baie-Mahault · 55 ans</small></div></div></td><td>Demain 10 h 00</td><td><span class="t o">Épuisée lucide</span></td><td>Intégrale</td><td>Bouche-à-oreille</td><td class="r"><b>85</b></td></tr>
+     <tr><td><div class="nm"><div class="av">CN</div><div><b>Corinne Nabajoth</b><small>Paris 12e · 49 ans</small></div></div></td><td>Jeudi 18 h 00</td><td><span class="t a">Curieuse</span></td><td>Essentielle</td><td>Recherche Google</td><td class="r"><b>54</b></td></tr>
+     <tr><td><div class="nm"><div class="av">VL</div><div><b>Véronique Lacavé</b><small>Sainte-Anne · 51 ans</small></div></div></td><td>Vendredi 9 h 30</td><td><span class="t v">En recherche</span></td><td>Intégrale</td><td>Newsletter</td><td class="r"><b>71</b></td></tr>
+    </tbody>
+   </table></div>
+  </div>
+  <div class="card">
+   <div class="card-h"><h3>Ce qui vient de se passer</h3></div>
+   <div class="card-b" style="padding-top:4px">
+    <div class="feed"><div class="ic">€</div><div><b style="font-weight:500">Véronique Lacavé</b> a réglé l'échéance 2 sur 3 — 563 €<time>Il y a 24 minutes</time></div></div>
+    <div class="feed"><div class="ic">✓</div><div>Nouveau profil complété — typologie <b style="font-weight:500">Épuisée lucide</b><time>Il y a 1 heure</time></div></div>
+    <div class="feed"><div class="ic">▶</div><div>12 participantes ont terminé le module 7<time>Il y a 3 heures</time></div></div>
+    <div class="feed"><div class="ic">!</div><div>Paiement refusé — <b style="font-weight:500">Nadine Sylvestre</b>, relance envoyée<time>Hier 18 h 40</time></div></div>
+    <div class="feed"><div class="ic">◆</div><div>Coffret Nuit profonde — stock sous le seuil (4 restants)<time>Hier 15 h 12</time></div></div>
+    <div class="feed"><div class="ic">✎</div><div>Article « L'atoumo » publié sur le Journal<time>Lundi</time></div></div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<!-- ======== PIPELINE ======== -->
+<div class="page" id="g-pipeline">
+ <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+  <div class="seg"><button class="on">Toutes les cohortes</button><button>Avril 2027</button><button>Octobre 2027</button></div>
+  <input class="inp" placeholder="Filtrer par nom ou profil">
+  <button class="b" style="margin-left:auto">Ajouter un prospect</button>
+ </div>
+ <div class="row c5" style="margin-bottom:16px">
+  <div class="kpi"><div class="lbl">Dans le pipeline</div><div class="v num">34</div><div class="d mini">valeur estimée 48 600 €</div></div>
+  <div class="kpi"><div class="lbl">Appels tenus ce mois</div><div class="v num">31</div><div class="d up">+9 contre janvier</div></div>
+  <div class="kpi"><div class="lbl">Taux de présence</div><div class="v num">79 %</div><div class="d down">−4 points</div></div>
+  <div class="kpi"><div class="lbl">Panier moyen signé</div><div class="v num">1 734 €</div><div class="d up">+112 €</div></div>
+  <div class="kpi"><div class="lbl">Délai moyen de closing</div><div class="v num">9 j</div><div class="d mini">du profil à l'inscription</div></div>
+ </div>
+ <div class="kan">
+  <div class="kcol"><div class="kcol-h"><b>Profil complété</b><span>14</span></div>
+   <div class="kc"><b>Chantal Régina</b><div class="mini">Épuisée lucide · Sainte-Rose</div><div class="kc-f"><span class="t">Score 68</span><span class="mini">il y a 2 j</span></div></div>
+   <div class="kc"><b>Patricia Édouard</b><div class="mini">Curieuse · Lamentin</div><div class="kc-f"><span class="t">Score 41</span><span class="mini">il y a 3 j</span></div></div>
+   <div class="kc"><b>Murielle Toussaint</b><div class="mini">En recherche · Schœlcher</div><div class="kc-f"><span class="t">Score 73</span><span class="mini">il y a 3 j</span></div></div>
+   <div class="kc"><b>Gladys Boucard</b><div class="mini">Épuisée lucide · Abymes</div><div class="kc-f"><span class="t">Score 81</span><span class="mini">il y a 4 j</span></div></div>
+   <div class="kc"><b>Isabelle Mounien</b><div class="mini">Curieuse · Bordeaux</div><div class="kc-f"><span class="t">Score 38</span><span class="mini">il y a 5 j</span></div></div>
+  </div>
+  <div class="kcol"><div class="kcol-h"><b>Appel réservé</b><span>7</span></div>
+   <div class="kc"><b>Marie-Line Cadet</b><div class="mini">Premium envisagé · Le Gosier</div><div class="kc-f"><span class="dot h"></span><span class="t h">Aujourd'hui 14 h</span></div></div>
+   <div class="kc"><b>Sandrine Bellemare</b><div class="mini">Intégrale envisagée · Martinique</div><div class="kc-f"><span class="dot h"></span><span class="t h">Aujourd'hui 16 h 30</span></div></div>
+   <div class="kc"><b>Josiane Duplan</b><div class="mini">Intégrale envisagée · Baie-Mahault</div><div class="kc-f"><span class="dot a"></span><span class="t a">Demain 10 h</span></div></div>
+   <div class="kc"><b>Corinne Nabajoth</b><div class="mini">Essentielle envisagée · Paris</div><div class="kc-f"><span class="dot"></span><span class="t">Jeudi 18 h</span></div></div>
+   <div class="kc"><b>Véronique Lacavé</b><div class="mini">Intégrale envisagée · Sainte-Anne</div><div class="kc-f"><span class="dot"></span><span class="t">Vendredi 9 h 30</span></div></div>
+  </div>
+  <div class="kcol"><div class="kcol-h"><b>Appel tenu</b><span>6</span></div>
+   <div class="kc"><b>Fabienne Larcher</b><div class="mini">Intégrale · relance prévue lundi</div><div class="kc-f"><span class="t v">Chaud</span><span class="mini">1 690 €</span></div></div>
+   <div class="kc"><b>Nicole Bernus</b><div class="mini">Hésite entre Essentielle et Intégrale</div><div class="kc-f"><span class="t a">Tiède</span><span class="mini">890 €</span></div></div>
+   <div class="kc"><b>Sylviane Gustave</b><div class="mini">Attend l'accord de son conjoint</div><div class="kc-f"><span class="t a">Tiède</span><span class="mini">1 690 €</span></div></div>
+   <div class="kc"><b>Laurence Pieds</b><div class="mini">Veut la cohorte d'octobre</div><div class="kc-f"><span class="t">Reporté</span><span class="mini">2 890 €</span></div></div>
+  </div>
+  <div class="kcol"><div class="kcol-h"><b>Proposition envoyée</b><span>4</span></div>
+   <div class="kc"><b>Denise Ramassamy</b><div class="mini">Premium · lien de paiement envoyé</div><div class="kc-f"><span class="t v">Ouvre le lien</span><span class="mini">2 890 €</span></div></div>
+   <div class="kc"><b>Maryse Calixte</b><div class="mini">Intégrale · 3 × 563 €</div><div class="kc-f"><span class="t v">Chaud</span><span class="mini">1 690 €</span></div></div>
+   <div class="kc"><b>Rose-Hélène Marc</b><div class="mini">Intégrale · demande un délai</div><div class="kc-f"><span class="t a">À relancer</span><span class="mini">1 690 €</span></div></div>
+  </div>
+  <div class="kcol"><div class="kcol-h"><b>Inscrite</b><span>13</span></div>
+   <div class="kc"><b>Véronique Lacavé</b><div class="mini">Intégrale · cohorte de janvier</div><div class="kc-f"><span class="t o">Réglé 2/3</span></div></div>
+   <div class="kc"><b>Marie-Line Cadet</b><div class="mini">Premium · cohorte de janvier</div><div class="kc-f"><span class="t o">Réglé en une fois</span></div></div>
+   <div class="kc"><b>Josiane Duplan</b><div class="mini">Intégrale · cohorte de janvier</div><div class="kc-f"><span class="t o">Réglé 2/3</span></div></div>
+   <div class="kc"><b>Nadine Sylvestre</b><div class="mini">Essentielle · cohorte de janvier</div><div class="kc-f"><span class="t h">Paiement refusé</span></div></div>
+  </div>
+ </div>
+</div>
+
+<!-- ======== PROSPECTS ======== -->
+<div class="page" id="g-prospects">
+ <div class="row c4" style="margin-bottom:16px">
+  <div class="kpi"><div class="lbl">Contacts en base</div><div class="v num">1 486</div><div class="d up">+214 ce mois</div></div>
+  <div class="kpi"><div class="lbl">Profils scorés</div><div class="v num">892</div><div class="d mini">60 % de la base</div></div>
+  <div class="kpi"><div class="lbl">Score moyen</div><div class="v num">58</div><div class="d up">+4 points</div></div>
+  <div class="kpi"><div class="lbl">Sur liste d'attente avril</div><div class="v num">46</div><div class="d mini">jamais relancées</div></div>
+ </div>
+ <div class="row c12" style="margin-bottom:16px">
+  <div class="card"><div class="card-h"><h3>Répartition par typologie</h3></div><div class="card-b">
+   <div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Épuisée lucide</span><b class="num">312</b></div><div class="pb"><i style="width:35%"></i></div><p class="mini" style="margin:5px 0 0">Score moyen 76 · convertit le mieux</p></div>
+   <div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>En recherche active</span><b class="num">248</b></div><div class="pb"><i style="width:28%"></i></div><p class="mini" style="margin:5px 0 0">Score moyen 68</p></div>
+   <div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Curieuse</span><b class="num">201</b></div><div class="pb a"><i style="width:23%"></i></div><p class="mini" style="margin:5px 0 0">Score moyen 42 · à nourrir</p></div>
+   <div><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Prescriptrice</span><b class="num">131</b></div><div class="pb"><i style="width:14%"></i></div><p class="mini" style="margin:5px 0 0">Cherche pour une proche</p></div>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Origine des contacts sur 90 jours</h3></div><div class="card-b">
+   <div class="ch" data-type="bars" data-h="196"
+    data-v="286,214,163,98,74,57"
+    data-l="Instagram,Bouche-à-oreille,Recherche Google,Événements,Newsletter,Presse"></div>
+  </div></div>
+ </div>
+ <div class="card">
+  <div class="card-h"><h3>Tous les contacts</h3>
+   <div class="seg mini" style="margin-left:auto"><button class="on">Tous</button><button>Score &gt; 70</button><button>Liste d'attente</button><button>Clientes</button></div>
+   <button class="b g sm" style="margin-left:10px">Exporter en CSV</button>
+  </div>
+  <div class="scroll"><table class="tbl">
+   <thead><tr><th>Contact</th><th>Typologie</th><th>Score</th><th>Source</th><th>Étape</th><th>Dernier contact</th><th>Intérêt</th><th class="r">Valeur</th></tr></thead>
+   <tbody>
+    <tr><td><div class="nm"><div class="av">MC</div><div><b>Marie-Line Cadet</b><small>marie-line.c@mail.fr</small></div></div></td><td><span class="t o">Épuisée lucide</span></td><td><b>92</b></td><td>Atelier plantes</td><td><span class="t v">Inscrite</span></td><td>Aujourd'hui</td><td>Premium</td><td class="r num">2 890 €</td></tr>
+    <tr><td><div class="nm"><div class="av">JD</div><div><b>Josiane Duplan</b><small>j.duplan@mail.gp</small></div></div></td><td><span class="t o">Épuisée lucide</span></td><td><b>85</b></td><td>Bouche-à-oreille</td><td><span class="t v">Inscrite</span></td><td>Hier</td><td>Intégrale</td><td class="r num">1 690 €</td></tr>
+    <tr><td><div class="nm"><div class="av">GB</div><div><b>Gladys Boucard</b><small>gladys.b@mail.fr</small></div></div></td><td><span class="t o">Épuisée lucide</span></td><td><b>81</b></td><td>Instagram</td><td><span class="t">Profil complété</span></td><td>Il y a 4 j</td><td>—</td><td class="r mini">à qualifier</td></tr>
+    <tr><td><div class="nm"><div class="av">SB</div><div><b>Sandrine Bellemare</b><small>s.bellemare@mail.mq</small></div></div></td><td><span class="t v">En recherche</span></td><td><b>78</b></td><td>Instagram</td><td><span class="t h">Appel aujourd'hui</span></td><td>Il y a 2 j</td><td>Intégrale</td><td class="r num">1 690 €</td></tr>
+    <tr><td><div class="nm"><div class="av">MT</div><div><b>Murielle Toussaint</b><small>m.toussaint@mail.mq</small></div></div></td><td><span class="t v">En recherche</span></td><td><b>73</b></td><td>Newsletter</td><td><span class="t">Profil complété</span></td><td>Il y a 3 j</td><td>—</td><td class="r mini">à qualifier</td></tr>
+    <tr><td><div class="nm"><div class="av">VL</div><div><b>Véronique Lacavé</b><small>v.lacave@mail.gp</small></div></div></td><td><span class="t v">En recherche</span></td><td><b>71</b></td><td>Newsletter</td><td><span class="t v">Inscrite</span></td><td>Il y a 1 j</td><td>Intégrale</td><td class="r num">1 690 €</td></tr>
+    <tr><td><div class="nm"><div class="av">CR</div><div><b>Chantal Régina</b><small>chantal.regina@mail.fr</small></div></div></td><td><span class="t o">Épuisée lucide</span></td><td><b>68</b></td><td>Recherche Google</td><td><span class="t">Liste d'attente avril</span></td><td>Il y a 2 j</td><td>—</td><td class="r mini">à relancer</td></tr>
+    <tr><td><div class="nm"><div class="av">CN</div><div><b>Corinne Nabajoth</b><small>c.nabajoth@mail.fr</small></div></div></td><td><span class="t a">Curieuse</span></td><td><b>54</b></td><td>Recherche Google</td><td><span class="t a">Appel jeudi</span></td><td>Il y a 6 j</td><td>Essentielle</td><td class="r num">890 €</td></tr>
+    <tr><td><div class="nm"><div class="av">PE</div><div><b>Patricia Édouard</b><small>p.edouard@mail.gp</small></div></div></td><td><span class="t a">Curieuse</span></td><td><b>41</b></td><td>Instagram</td><td><span class="t">Profil complété</span></td><td>Il y a 3 j</td><td>—</td><td class="r mini">à nourrir</td></tr>
+    <tr><td><div class="nm"><div class="av">IM</div><div><b>Isabelle Mounien</b><small>i.mounien@mail.fr</small></div></div></td><td><span class="t a">Curieuse</span></td><td><b>38</b></td><td>Presse</td><td><span class="t">Profil complété</span></td><td>Il y a 5 j</td><td>—</td><td class="r mini">à nourrir</td></tr>
+   </tbody>
+  </table></div>
+ </div>
+</div>
+
+<!-- ======== TUNNEL ======== -->
+<div class="page" id="g-tunnel">
+ <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+  <div class="seg"><button>7 jours</button><button class="on">30 jours</button><button>Depuis le lancement</button></div>
+  <span class="mini">Période du 16 janvier au 15 février 2027</span>
+ </div>
+ <div class="row c2" style="margin-bottom:16px">
+  <div class="card"><div class="card-h"><h3>Le parcours complet</h3></div><div class="card-b">
+   <div class="fun">
+    <div class="fstep"><div class="fbar" style="width:100%">Visiteuses uniques</div><div class="fv num">4 820</div><div class="fp">—</div></div>
+    <div class="fstep"><div class="fbar" style="width:82%">Page Formules vue</div><div class="fv num">1 104</div><div class="fp">22,9 %</div></div>
+    <div class="fstep"><div class="fbar" style="width:60%">Profil complété</div><div class="fv num">214</div><div class="fp">19,4 %</div></div>
+    <div class="fstep"><div class="fbar" style="width:38%">Appel réservé</div><div class="fv num">39</div><div class="fp">18,2 %</div></div>
+    <div class="fstep"><div class="fbar" style="width:20%">Inscription payée</div><div class="fv num">13</div><div class="fp">33,3 %</div></div>
+   </div>
+   <div class="note mt">La plus grosse déperdition se situe entre la page Formules et le questionnaire. Un appel à l'action plus haut dans la page serait à tester.</div>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Conversion par source d'acquisition</h3></div><div class="scroll">
+   <table class="tbl">
+    <thead><tr><th>Source</th><th class="r">Visiteuses</th><th class="r">Profils</th><th class="r">Appels</th><th class="r">Ventes</th><th class="r">CA</th></tr></thead>
+    <tbody>
+     <tr><td><b>Instagram</b></td><td class="r num">2 140</td><td class="r num">86</td><td class="r num">14</td><td class="r num">4</td><td class="r num">6 160 €</td></tr>
+     <tr><td><b>Bouche-à-oreille</b></td><td class="r num">612</td><td class="r num">64</td><td class="r num">13</td><td class="r num">6</td><td class="r num">10 830 €</td></tr>
+     <tr><td><b>Recherche Google</b></td><td class="r num">1 284</td><td class="r num">38</td><td class="r num">6</td><td class="r num">1</td><td class="r num">890 €</td></tr>
+     <tr><td><b>Événements</b></td><td class="r num">318</td><td class="r num">18</td><td class="r num">5</td><td class="r num">2</td><td class="r num">4 580 €</td></tr>
+     <tr><td><b>Newsletter</b></td><td class="r num">298</td><td class="r num">6</td><td class="r num">1</td><td class="r num">0</td><td class="r num">—</td></tr>
+     <tr><td><b>Presse</b></td><td class="r num">168</td><td class="r num">2</td><td class="r num">0</td><td class="r num">0</td><td class="r num">—</td></tr>
+    </tbody>
+   </table>
+   <div class="card-b"><p class="mini mb0">Le bouche-à-oreille apporte trois fois moins de visiteuses qu'Instagram mais génère 76 % de plus de chiffre d'affaires. C'est le levier à travailler en priorité.</p></div>
+  </div></div>
+ </div>
+ <div class="row c3">
+  <div class="card"><div class="card-h"><h3>Paniers abandonnés</h3></div><div class="card-b">
+   <div class="kpi" style="border:0;padding:0;background:none"><div class="v num">9</div><div class="d mini">soit 14 210 € de potentiel</div></div>
+   <div class="mt"><div style="display:flex;justify-content:space-between;font-size:.82rem;padding:7px 0;border-top:1px solid #E6E0D4"><span>Maryse Calixte — Intégrale</span><b class="num">1 690 €</b></div>
+   <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:7px 0;border-top:1px solid #E6E0D4"><span>Denise Ramassamy — Premium</span><b class="num">2 890 €</b></div>
+   <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:7px 0;border-top:1px solid #E6E0D4"><span>Nicole Bernus — Essentielle</span><b class="num">890 €</b></div></div>
+   <button class="b g sm mt">Relancer les 9 paniers</button>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Répartition des ventes</h3></div><div class="card-b">
+   <div class="ch" data-type="donut" data-h="180" data-v="5,9,4" data-l="Essentielle,Intégrale,Premium"></div>
+   <p class="mini mt mb0">L'Intégrale représente la moitié des inscriptions et 49 % du chiffre d'affaires.</p>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Modes de paiement choisis</h3></div><div class="card-b">
+   <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Paiement en trois fois</span><b class="num">10</b></div><div class="pb"><i style="width:56%"></i></div></div>
+   <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Paiement en une fois</span><b class="num">6</b></div><div class="pb"><i style="width:33%"></i></div></div>
+   <div><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Quatre fois via Alma</span><b class="num">2</b></div><div class="pb a"><i style="width:11%"></i></div></div>
+   <p class="mini mt mb0">Le paiement fractionné est choisi par 67 % des participantes. Le retirer coûterait des ventes.</p>
+  </div></div>
+ </div>
+</div>
+<!-- ======== COHORTES ======== -->
+<div class="page" id="g-cohortes">
+ <div class="row c3" style="margin-bottom:16px">
+  <div class="card"><div class="card-h"><h3>Cohorte de janvier 2027</h3><span class="t o" style="margin-left:auto">En cours</span></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mini">Semaine 6 sur 12</span><b class="num" style="font-size:1.5rem;font-weight:300">18 / 18</b></div>
+   <div class="ga">
+    <i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i>
+    <i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i>
+   </div>
+   <table class="tbl mt" style="font-size:.82rem"><tbody>
+    <tr><td>Chiffre d'affaires signé</td><td class="r"><b class="num">31 220 €</b></td></tr>
+    <tr><td>Encaissé à ce jour</td><td class="r"><b class="num">22 940 €</b></td></tr>
+    <tr><td>Reste à encaisser</td><td class="r"><b class="num">8 280 €</b></td></tr>
+    <tr><td>Progression moyenne</td><td class="r"><b>48 %</b></td></tr>
+   </tbody></table>
+   <button class="b g sm mt">Ouvrir la cohorte</button>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Cohorte d'avril 2027</h3><span class="t a" style="margin-left:auto">Ouvre dans 12 j</span></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mini">Ventes non ouvertes</span><b class="num" style="font-size:1.5rem;font-weight:300">0 / 18</b></div>
+   <div class="ga">
+    <i class="w"></i><i class="w"></i><i class="w"></i><i class="w"></i><i class="w"></i><i class="w"></i><i class="w"></i><i class="w"></i><i class="w"></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+   </div>
+   <p class="mini mt">Les carrés ambrés représentent la liste d'attente : 46 inscrites pour 18 places.</p>
+   <table class="tbl mt" style="font-size:.82rem"><tbody>
+    <tr><td>Liste d'attente</td><td class="r"><b class="num">46</b></td></tr>
+    <tr><td>Potentiel estimé</td><td class="r"><b class="num">31 000 €</b></td></tr>
+    <tr><td>Ouverture des ventes</td><td class="r"><b>27 février</b></td></tr>
+   </tbody></table>
+   <button class="b mt">Ouvrir les ventes maintenant</button>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Cohorte d'octobre 2027</h3><span class="t" style="margin-left:auto">Préparation</span></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mini">Non configurée</span><b class="num" style="font-size:1.5rem;font-weight:300">— / 18</b></div>
+   <div class="ga"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+   <p class="mini mt">Définissez les dates, la jauge et le calendrier des sessions pour ouvrir les préinscriptions.</p>
+   <button class="b g sm mt">Configurer la cohorte</button>
+  </div></div>
+ </div>
+ <div class="row c21">
+  <div class="card"><div class="card-h"><h3>Calendrier — cohorte de janvier</h3><span class="mini">6 sessions collectives</span></div><div class="scroll">
+   <table class="tbl">
+    <thead><tr><th>Date</th><th>Session</th><th>Thème</th><th class="r">Présentes</th><th>Replay</th><th></th></tr></thead>
+    <tbody>
+     <tr><td>9 janvier</td><td>Session 1</td><td>Poser le terrain</td><td class="r">17 / 18</td><td><span class="t v">En ligne</span></td><td class="r"><button class="b g sm">Voir</button></td></tr>
+     <tr><td>23 janvier</td><td>Session 2</td><td>Sommeil et digestion</td><td class="r">16 / 18</td><td><span class="t v">En ligne</span></td><td class="r"><button class="b g sm">Voir</button></td></tr>
+     <tr><td>6 février</td><td>Session 3</td><td>Protocoles plantes</td><td class="r">18 / 18</td><td><span class="t v">En ligne</span></td><td class="r"><button class="b g sm">Voir</button></td></tr>
+     <tr><td>20 février</td><td>Session 4</td><td>L'énergie de milieu de journée</td><td class="r">—</td><td><span class="t a">À venir</span></td><td class="r"><button class="b g sm">Préparer</button></td></tr>
+     <tr><td>6 mars</td><td>Session 5</td><td>Émotions et limites</td><td class="r">—</td><td><span class="t">Planifiée</span></td><td class="r"><button class="b g sm">Préparer</button></td></tr>
+     <tr><td>20 mars</td><td>Session 6</td><td>Souveraineté et suite du parcours</td><td class="r">—</td><td><span class="t">Planifiée</span></td><td class="r"><button class="b g sm">Préparer</button></td></tr>
+    </tbody>
+   </table>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Réglages de vente</h3></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Fermeture automatique</b><p class="mini mb0">Quand la jauge est atteinte</p></div><span class="t v">Activée</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Liste d'attente</b><p class="mini mb0">Ouverte dès la fermeture</p></div><span class="t v">Activée</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Paiement en trois fois</b><p class="mini mb0">Sans frais, via Stripe</p></div><span class="t v">Activée</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Quatre fois via Alma</b><p class="mini mb0">Formule Premium uniquement</p></div><span class="t v">Activée</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0"><div><b style="font-weight:500;font-size:.87rem">Codes promotionnels</b><p class="mini mb0">2 codes actifs</p></div><button class="b g sm">Gérer</button></div>
+  </div></div>
+ </div>
+</div>
+
+<!-- ======== PARTICIPANTES ======== -->
+<div class="page" id="g-membres">
+ <div class="row c4" style="margin-bottom:16px">
+  <div class="kpi"><div class="lbl">Participantes actives</div><div class="v num">18</div><div class="d mini">cohorte de janvier</div></div>
+  <div class="kpi"><div class="lbl">Taux de complétion des vidéos</div><div class="v num">71 %</div><div class="d up">objectif du cahier des charges : 60 %</div></div>
+  <div class="kpi"><div class="lbl">Indice de régénération moyen</div><div class="v num">58</div><div class="d up">+16 depuis le départ</div></div>
+  <div class="kpi"><div class="lbl">Membres du Cercle</div><div class="v num">12</div><div class="d mini">cohorte pilote de 2026</div></div>
+ </div>
+ <div class="card" style="margin-bottom:16px">
+  <div class="card-h"><h3>Participantes — cohorte de janvier 2027</h3>
+   <div class="seg mini" style="margin-left:auto"><button class="on">Toutes</button><button>En retard</button><button>Cercle</button></div>
+   <button class="b g sm" style="margin-left:10px">Exporter</button>
+  </div>
+  <div class="scroll"><table class="tbl">
+   <thead><tr><th>Participante</th><th>Formule</th><th style="width:170px">Progression</th><th class="r">Indice</th><th>Journal de bord</th><th>Paiement</th><th>Dernière connexion</th></tr></thead>
+   <tbody>
+    <tr><td><div class="nm"><div class="av">MC</div><div><b>Marie-Line Cadet</b><small>52 ans · Le Gosier</small></div></div></td><td><span class="t o">Premium</span></td><td><div class="pb"><i style="width:75%"></i></div><small class="mini">9 modules sur 12</small></td><td class="r"><b>74</b> <small class="up">+22</small></td><td><span class="t v">À jour</span></td><td><span class="t v">Soldé</span></td><td>Aujourd'hui</td></tr>
+    <tr><td><div class="nm"><div class="av">JD</div><div><b>Josiane Duplan</b><small>55 ans · Baie-Mahault</small></div></div></td><td><span class="t">Intégrale</span></td><td><div class="pb"><i style="width:67%"></i></div><small class="mini">8 modules sur 12</small></td><td class="r"><b>68</b> <small class="up">+19</small></td><td><span class="t v">À jour</span></td><td><span class="t">2 sur 3 réglées</span></td><td>Hier</td></tr>
+    <tr><td><div class="nm"><div class="av">VL</div><div><b>Véronique Lacavé</b><small>51 ans · Sainte-Anne</small></div></div></td><td><span class="t">Intégrale</span></td><td><div class="pb"><i style="width:58%"></i></div><small class="mini">7 modules sur 12</small></td><td class="r"><b>62</b> <small class="up">+18</small></td><td><span class="t v">À jour</span></td><td><span class="t">2 sur 3 réglées</span></td><td>Il y a 2 j</td></tr>
+    <tr><td><div class="nm"><div class="av">SG</div><div><b>Sylviane Gustave</b><small>48 ans · Petit-Bourg</small></div></div></td><td><span class="t">Intégrale</span></td><td><div class="pb"><i style="width:50%"></i></div><small class="mini">6 modules sur 12</small></td><td class="r"><b>55</b> <small class="up">+12</small></td><td><span class="t a">Une semaine de retard</span></td><td><span class="t">2 sur 3 réglées</span></td><td>Il y a 3 j</td></tr>
+    <tr><td><div class="nm"><div class="av">NS</div><div><b>Nadine Sylvestre</b><small>46 ans · Abymes</small></div></div></td><td><span class="t">Essentielle</span></td><td><div class="pb a"><i style="width:25%"></i></div><small class="mini">3 modules sur 12</small></td><td class="r"><b>41</b> <small class="up">+4</small></td><td><span class="t h">Trois semaines de retard</span></td><td><span class="t h">Paiement refusé</span></td><td>Il y a 16 j</td></tr>
+    <tr><td><div class="nm"><div class="av">FL</div><div><b>Fabienne Larcher</b><small>53 ans · Le Moule</small></div></div></td><td><span class="t">Essentielle</span></td><td><div class="pb"><i style="width:58%"></i></div><small class="mini">7 modules sur 12</small></td><td class="r"><b>59</b> <small class="up">+15</small></td><td><span class="t v">À jour</span></td><td><span class="t v">Soldé</span></td><td>Aujourd'hui</td></tr>
+    <tr><td><div class="nm"><div class="av">MJ</div><div><b>Maryline Joseph</b><small>57 ans · Saint-Claude</small></div></div></td><td><span class="t o">Premium</span></td><td><div class="pb"><i style="width:83%"></i></div><small class="mini">10 modules sur 12</small></td><td class="r"><b>77</b> <small class="up">+26</small></td><td><span class="t v">À jour</span></td><td><span class="t v">Soldé</span></td><td>Aujourd'hui</td></tr>
+   </tbody>
+  </table></div>
+ </div>
+ <div class="row c2">
+  <div class="card"><div class="card-h"><h3>Évolution de l'indice de régénération</h3><span class="mini">moyenne de la cohorte</span></div><div class="card-b">
+   <div class="ch" data-type="area" data-h="180" data-v="42,44,47,49,53,55,58" data-l="S1,S2,S3,S4,S5,S6,S7"></div>
+   <p class="mini mt mb0">Mesuré au départ, à six semaines et en fin de parcours. Les valeurs intermédiaires viennent du journal de bord hebdomadaire.</p>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>À surveiller</h3></div><div class="card-b" style="padding-top:6px">
+   <div class="feed"><div class="ic">!</div><div><b style="font-weight:500">Nadine Sylvestre</b> — trois semaines sans connexion et paiement en échec<time>Relance automatique envoyée deux fois</time></div></div>
+   <div class="feed"><div class="ic">◷</div><div><b style="font-weight:500">Sylviane Gustave</b> — journal de bord non rempli depuis le 5 février<time>Aucune relance envoyée</time></div></div>
+   <div class="feed"><div class="ic">★</div><div>4 participantes ont terminé tous les modules disponibles. Bon moment pour demander un témoignage.<time>Cohorte de janvier</time></div></div>
+   <div class="feed"><div class="ic">◆</div><div>Le Cercle de la cohorte pilote arrive à échéance en juin. 12 membres à réengager.<time>Dans 4 mois</time></div></div>
+  </div></div>
+ </div>
+</div>
+
+<!-- ======== CONTENUS ======== -->
+<div class="page" id="g-contenus">
+ <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+  <div class="seg"><button class="on">Modules du parcours</button><button>Replays de sessions</button><button>Bibliothèque PDF</button><button>Le Cercle</button></div>
+  <button class="b" style="margin-left:auto">Ajouter une vidéo</button>
+ </div>
+ <div class="row c4" style="margin-bottom:16px">
+  <div class="kpi"><div class="lbl">Vidéos en ligne</div><div class="v num">31</div><div class="d mini">18 h 42 min au total</div></div>
+  <div class="kpi"><div class="lbl">Durée moyenne de visionnage</div><div class="v num">82 %</div><div class="d up">+7 points</div></div>
+  <div class="kpi"><div class="lbl">Module le plus regardé</div><div class="v num" style="font-size:1.1rem;margin-top:12px">Les plantes du sommeil</div><div class="d mini">18 vues sur 18</div></div>
+  <div class="kpi"><div class="lbl">Ressources téléchargées</div><div class="v num">247</div><div class="d mini">ce mois-ci</div></div>
+ </div>
+ <div class="row c3" style="margin-bottom:16px">
+  <div class="card"><div class="vid">Module 5 — Les plantes du sommeil</div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:start"><div><b style="font-weight:500;font-size:.9rem">Module 5 — Les plantes du sommeil</b><p class="mini mb0">18 min · débloqué en semaine 5</p></div><span class="t v">En ligne</span></div>
+   <div class="pb mt"><i style="width:100%"></i></div><p class="mini" style="margin-top:6px">18 vues sur 18 · complétion 94 %</p>
+  </div></div>
+  <div class="card"><div class="vid">Module 6 — Le repas du soir</div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:start"><div><b style="font-weight:500;font-size:.9rem">Module 6 — Le repas du soir</b><p class="mini mb0">22 min · débloqué en semaine 6</p></div><span class="t v">En ligne</span></div>
+   <div class="pb mt"><i style="width:89%"></i></div><p class="mini" style="margin-top:6px">16 vues sur 18 · complétion 88 %</p>
+  </div></div>
+  <div class="card"><div class="vid">Module 7 — L'énergie de 11 heures</div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:start"><div><b style="font-weight:500;font-size:.9rem">Module 7 — L'énergie de 11 heures</b><p class="mini mb0">16 min · débloqué cette semaine</p></div><span class="t o">En cours</span></div>
+   <div class="pb mt"><i style="width:67%"></i></div><p class="mini" style="margin-top:6px">12 vues sur 18 · complétion 74 %</p>
+  </div></div>
+ </div>
+ <div class="card">
+  <div class="card-h"><h3>Toute la bibliothèque</h3><span class="mini">protection anti-téléchargement et lecture restreinte au domaine</span></div>
+  <div class="scroll"><table class="tbl">
+   <thead><tr><th>Contenu</th><th>Type</th><th>Accès</th><th>Déblocage</th><th class="r">Vues</th><th class="r">Complétion</th><th>État</th></tr></thead>
+   <tbody>
+    <tr><td><b>Module 8 — Bouffées de chaleur</b></td><td>Vidéo · 21 min</td><td>Cohorte de janvier</td><td>24 février</td><td class="r">—</td><td class="r">—</td><td><span class="t a">Programmé</span></td></tr>
+    <tr><td><b>Protocole plantes — modèle personnalisable</b></td><td>PDF · 4 pages</td><td>Intégrale et Premium</td><td>Immédiat</td><td class="r">13</td><td class="r">—</td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>Journal de bord — semaines 5 à 8</b></td><td>PDF · 12 pages</td><td>Toutes formules</td><td>Immédiat</td><td class="r">18</td><td class="r">—</td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>Replay — session collective du 6 février</b></td><td>Vidéo · 1 h 24</td><td>Cohorte de janvier</td><td>Immédiat</td><td class="r">15</td><td class="r">61 %</td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>Fiches plantes — les six essentielles</b></td><td>PDF · 18 pages</td><td>Toutes formules</td><td>Immédiat</td><td class="r">17</td><td class="r">—</td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>Masterclass — L'hormonal expliqué simplement</b></td><td>Vidéo · 48 min</td><td>Le Cercle</td><td>Immédiat</td><td class="r">9</td><td class="r">72 %</td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>Module 9 — Le mouvement qui répare</b></td><td>Vidéo · 19 min</td><td>Cohorte de janvier</td><td>3 mars</td><td class="r">—</td><td class="r">—</td><td><span class="t">Brouillon</span></td></tr>
+   </tbody>
+  </table></div>
+ </div>
+</div>
+
+<!-- ======== ÉVÉNEMENTS ======== -->
+<div class="page" id="g-evenements">
+ <div class="row c4" style="margin-bottom:16px">
+  <div class="kpi"><div class="lbl">Événements à venir</div><div class="v num">4</div><div class="d mini">dont 1 complet</div></div>
+  <div class="kpi"><div class="lbl">Billets vendus ce mois</div><div class="v num">38</div><div class="d up">+14 contre janvier</div></div>
+  <div class="kpi"><div class="lbl">Recette billetterie</div><div class="v num">2 340 €</div><div class="d mini">sur 30 jours</div></div>
+  <div class="kpi"><div class="lbl">Participantes venues d'un événement</div><div class="v num">31 %</div><div class="d mini">des inscriptions au programme</div></div>
+ </div>
+ <div class="card" style="margin-bottom:16px">
+  <div class="card-h"><h3>Agenda</h3><button class="b sm" style="margin-left:auto">Créer un événement</button></div>
+  <div class="scroll"><table class="tbl">
+   <thead><tr><th>Événement</th><th>Date</th><th>Lieu</th><th style="width:150px">Remplissage</th><th class="r">Tarif</th><th class="r">Recette</th><th>État</th><th></th></tr></thead>
+   <tbody>
+    <tr><td><b>Matinée respiration et mouvement</b></td><td>8 mars</td><td>Plage de Viard</td><td><div class="pb"><i style="width:72%"></i></div><small class="mini">18 sur 25</small></td><td class="r num">35 €</td><td class="r num">630 €</td><td><span class="t v">En vente</span></td><td class="r"><button class="b g sm">Gérer</button></td></tr>
+    <tr><td><b>Retraite du Cercle — 3 jours</b></td><td>18 au 20 avril</td><td>Deshaies</td><td><div class="pb h"><i style="width:100%"></i></div><small class="mini">12 sur 12 · 7 en attente</small></td><td class="r num">690 €</td><td class="r num">8 280 €</td><td><span class="t h">Complet</span></td><td class="r"><button class="b g sm">Gérer</button></td></tr>
+    <tr><td><b>Soirée de lancement — cohorte d'avril</b></td><td>14 mars</td><td>Le Gosier</td><td><div class="pb"><i style="width:30%"></i></div><small class="mini">12 sur 40</small></td><td class="r num">25 €</td><td class="r num">300 €</td><td><span class="t v">En vente</span></td><td class="r"><button class="b g sm">Gérer</button></td></tr>
+    <tr><td><b>Atelier plantes — session 2</b></td><td>26 avril</td><td>Sainte-Anne</td><td><div class="pb"><i style="width:0%"></i></div><small class="mini">Pas encore ouvert</small></td><td class="r num">65 €</td><td class="r num">—</td><td><span class="t">Brouillon</span></td><td class="r"><button class="b g sm">Ouvrir</button></td></tr>
+    <tr><td><b>Atelier « Plantes de nos jardins »</b></td><td>7 décembre 2026</td><td>Sainte-Anne</td><td><div class="pb"><i style="width:100%"></i></div><small class="mini">16 sur 16</small></td><td class="r num">65 €</td><td class="r num">1 040 €</td><td><span class="t n">Terminé</span></td><td class="r"><button class="b g sm">Bilan</button></td></tr>
+   </tbody>
+  </table></div>
+ </div>
+ <div class="row c21">
+  <div class="card"><div class="card-h"><h3>Inscrites — Matinée respiration du 8 mars</h3><button class="b g sm" style="margin-left:auto">Exporter la liste</button></div>
+   <div class="scroll"><table class="tbl">
+    <thead><tr><th>Participante</th><th>Billet</th><th>Réglé</th><th>Billet envoyé</th><th>Déjà cliente</th></tr></thead>
+    <tbody>
+     <tr><td><b>Gladys Boucard</b></td><td>Plein tarif</td><td><span class="t v">35 €</span></td><td>PDF avec QR envoyé</td><td>Non</td></tr>
+     <tr><td><b>Chantal Régina</b></td><td>Plein tarif</td><td><span class="t v">35 €</span></td><td>PDF avec QR envoyé</td><td>Non</td></tr>
+     <tr><td><b>Marie-Line Cadet</b></td><td>Tarif participante</td><td><span class="t v">Offert</span></td><td>PDF avec QR envoyé</td><td>Oui · Premium</td></tr>
+     <tr><td><b>Murielle Toussaint</b></td><td>Duo</td><td><span class="t v">60 €</span></td><td>PDF avec QR envoyé</td><td>Non</td></tr>
+     <tr><td><b>Patricia Édouard</b></td><td>Plein tarif</td><td><span class="t a">En attente</span></td><td>Non envoyé</td><td>Non</td></tr>
+    </tbody>
+   </table></div>
+  </div>
+  <div class="card"><div class="card-h"><h3>Rappels automatiques</h3></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Confirmation immédiate</b><p class="mini mb0">Billet PDF et fichier agenda</p></div><span class="t v">Activé</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Rappel 7 jours avant</b><p class="mini mb0">Email avec plan d'accès</p></div><span class="t v">Activé</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Rappel la veille</b><p class="mini mb0">Email et SMS</p></div><span class="t v">Activé</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0"><div><b style="font-weight:500;font-size:.87rem">Relance après l'événement</b><p class="mini mb0">Invitation à faire le questionnaire</p></div><span class="t a">Désactivé</span></div>
+   <p class="mini mt mb0">Un tiers de vos inscriptions viennent d'un événement. La relance après l'événement est le levier le plus rentable et elle est coupée.</p>
+  </div></div>
+ </div>
+</div>
+<!-- ======== VENTES ======== -->
+<div class="page" id="g-ventes">
+ <div class="row c5" style="margin-bottom:16px">
+  <div class="kpi dark"><div class="lbl">Encaissé en février</div><div class="v num">12 480 €</div><div class="d mini">19 transactions</div></div>
+  <div class="kpi"><div class="lbl">À encaisser</div><div class="v num">8 280 €</div><div class="d mini">échéances 3 sur 3</div></div>
+  <div class="kpi"><div class="lbl">Paiements en échec</div><div class="v num">3</div><div class="d down">1 780 € concernés</div></div>
+  <div class="kpi"><div class="lbl">Panier moyen</div><div class="v num">1 734 €</div><div class="d up">+112 €</div></div>
+  <div class="kpi"><div class="lbl">Remboursements</div><div class="v num">1</div><div class="d mini">dans le délai de 14 jours</div></div>
+ </div>
+ <div class="note" style="margin-bottom:16px">Trois échéances ont échoué ce mois. Une relance automatique part à J+1 et J+4, puis l'accès à l'espace membres se suspend à J+10.</div>
+ <div class="card" style="margin-bottom:16px">
+  <div class="card-h"><h3>Commandes</h3>
+   <div class="seg mini" style="margin-left:auto"><button class="on">Toutes</button><button>Formules</button><button>Billetterie</button><button>Boutique</button><button>En échec</button></div>
+   <button class="b g sm" style="margin-left:10px">Export comptable</button>
+  </div>
+  <div class="scroll"><table class="tbl">
+   <thead><tr><th>N°</th><th>Cliente</th><th>Objet</th><th>Échéancier</th><th>Date</th><th>Moyen</th><th>État</th><th class="r">Montant</th><th></th></tr></thead>
+   <tbody>
+    <tr><td class="num">#1127</td><td><b>Véronique Lacavé</b></td><td>Intégrale — janvier 2027</td><td>2 sur 3</td><td>15 févr.</td><td>Carte</td><td><span class="t v">Réglé</span></td><td class="r num">563 €</td><td class="r"><button class="b g sm">Facture</button></td></tr>
+    <tr><td class="num">#1126</td><td><b>Gladys Boucard</b></td><td>Billet — Matinée respiration</td><td>—</td><td>14 févr.</td><td>Carte</td><td><span class="t v">Réglé</span></td><td class="r num">35 €</td><td class="r"><button class="b g sm">Facture</button></td></tr>
+    <tr><td class="num">#1125</td><td><b>Nadine Sylvestre</b></td><td>Essentielle — janvier 2027</td><td>2 sur 3</td><td>14 févr.</td><td>Carte</td><td><span class="t h">Refusé</span></td><td class="r num">297 €</td><td class="r"><button class="b h sm">Relancer</button></td></tr>
+    <tr><td class="num">#1124</td><td><b>Josiane Duplan</b></td><td>Intégrale — janvier 2027</td><td>2 sur 3</td><td>13 févr.</td><td>Carte</td><td><span class="t v">Réglé</span></td><td class="r num">563 €</td><td class="r"><button class="b g sm">Facture</button></td></tr>
+    <tr><td class="num">#1123</td><td><b>Sylviane Gustave</b></td><td>Coffret Nuit profonde</td><td>—</td><td>12 févr.</td><td>Carte</td><td><span class="t o">Expédié</span></td><td class="r num">48 €</td><td class="r"><button class="b g sm">Suivi</button></td></tr>
+    <tr><td class="num">#1122</td><td><b>Maryline Joseph</b></td><td>Premium — janvier 2027</td><td>En une fois</td><td>11 févr.</td><td>Alma 4×</td><td><span class="t v">Réglé</span></td><td class="r num">2 890 €</td><td class="r"><button class="b g sm">Facture</button></td></tr>
+    <tr><td class="num">#1121</td><td><b>Murielle Toussaint</b></td><td>Billet duo — Matinée respiration</td><td>—</td><td>10 févr.</td><td>Carte</td><td><span class="t v">Réglé</span></td><td class="r num">60 €</td><td class="r"><button class="b g sm">Facture</button></td></tr>
+    <tr><td class="num">#1120</td><td><b>Fabienne Larcher</b></td><td>Essentielle — janvier 2027</td><td>Soldé</td><td>9 févr.</td><td>Carte</td><td><span class="t v">Réglé</span></td><td class="r num">297 €</td><td class="r"><button class="b g sm">Facture</button></td></tr>
+    <tr><td class="num">#1119</td><td><b>Rose-Hélène Marc</b></td><td>Intégrale — janvier 2027</td><td>1 sur 3</td><td>8 févr.</td><td>Carte</td><td><span class="t n">Remboursé</span></td><td class="r num">−563 €</td><td class="r"><button class="b g sm">Avoir</button></td></tr>
+   </tbody>
+  </table></div>
+ </div>
+ <div class="row c2">
+  <div class="card"><div class="card-h"><h3>Échéances des trois prochains mois</h3></div><div class="card-b">
+   <div class="ch" data-type="bars" data-h="180" data-v="8280,4120,1890" data-l="Mars,Avril,Mai"></div>
+   <p class="mini mt mb0">Prévisionnel d'encaissement sur les paiements fractionnés déjà engagés, hors ventes de la cohorte d'avril.</p>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Codes promotionnels actifs</h3><button class="b g sm" style="margin-left:auto">Créer un code</button></div>
+   <div class="scroll"><table class="tbl">
+    <thead><tr><th>Code</th><th>Remise</th><th>Conditions</th><th class="r">Utilisé</th><th>État</th></tr></thead>
+    <tbody>
+     <tr><td><b>PILOTE2026</b></td><td>−15 %</td><td>Cohorte pilote uniquement</td><td class="r">9 sur 12</td><td><span class="t v">Actif</span></td></tr>
+     <tr><td><b>SOIREE14</b></td><td>−100 €</td><td>Présentes à la soirée, valable 7 jours</td><td class="r">4 sur 40</td><td><span class="t v">Actif</span></td></tr>
+     <tr><td><b>DUO</b></td><td>−10 %</td><td>Inscription à deux</td><td class="r">2</td><td><span class="t n">Expiré</span></td></tr>
+    </tbody>
+   </table></div>
+  </div>
+ </div>
+</div>
+
+<!-- ======== BOUTIQUE ======== -->
+<div class="page" id="g-boutique">
+ <div class="row c4" style="margin-bottom:16px">
+  <div class="kpi"><div class="lbl">Chiffre d'affaires boutique</div><div class="v num">1 864 €</div><div class="d up">+22 % sur 30 jours</div></div>
+  <div class="kpi"><div class="lbl">Panier moyen</div><div class="v num">68 €</div><div class="d up">objectif du cahier des charges : 60 €</div></div>
+  <div class="kpi"><div class="lbl">Commandes à expédier</div><div class="v num">6</div><div class="d mini">dont 2 depuis plus de 48 h</div></div>
+  <div class="kpi"><div class="lbl">Références en rupture</div><div class="v num">1</div><div class="d down">Coffret Régénération</div></div>
+ </div>
+ <div class="note" style="margin-bottom:16px">Deux commandes attendent d'être expédiées depuis plus de 48 heures. Le délai annoncé sur le site est de 48 heures ouvrées.</div>
+ <div class="row c21" style="margin-bottom:16px">
+  <div class="card"><div class="card-h"><h3>Catalogue</h3><button class="b sm" style="margin-left:auto">Ajouter un produit</button></div>
+   <div class="scroll"><table class="tbl">
+    <thead><tr><th>Produit</th><th>Référence</th><th class="r">Prix</th><th style="width:130px">Stock</th><th class="r">Vendus 30 j</th><th>État</th></tr></thead>
+    <tbody>
+     <tr><td><b>Coffret Nuit profonde</b><small class="mini" style="display:block">Tisanes · 3 plantes</small></td><td class="num">CNP-01</td><td class="r num">48 €</td><td><div class="pb h"><i style="width:13%"></i></div><small class="mini">4 en stock · seuil 6</small></td><td class="r">11</td><td><span class="t h">Seuil atteint</span></td></tr>
+     <tr><td><b>Rituel du soir</b><small class="mini" style="display:block">Coffret complet</small></td><td class="num">RDS-01</td><td class="r num">89 €</td><td><div class="pb"><i style="width:62%"></i></div><small class="mini">19 en stock</small></td><td class="r">6</td><td><span class="t v">En vente</span></td></tr>
+     <tr><td><b>Huile de massage Ancrage</b><small class="mini" style="display:block">Macérat · 50 ml</small></td><td class="num">HMA-01</td><td class="r num">36 €</td><td><div class="pb"><i style="width:78%"></i></div><small class="mini">31 en stock</small></td><td class="r">8</td><td><span class="t v">En vente</span></td></tr>
+     <tr><td><b>Coffret Élan du matin</b><small class="mini" style="display:block">Tisanes · 4 plantes</small></td><td class="num">CEM-01</td><td class="r num">52 €</td><td><div class="pb"><i style="width:55%"></i></div><small class="mini">14 en stock</small></td><td class="r">5</td><td><span class="t v">En vente</span></td></tr>
+     <tr><td><b>Coffret Régénération</b><small class="mini" style="display:block">Coffret du programme</small></td><td class="num">CRG-01</td><td class="r num">129 €</td><td><div class="pb h"><i style="width:0%"></i></div><small class="mini">0 en stock</small></td><td class="r">7</td><td><span class="t h">Rupture</span></td></tr>
+     <tr><td><b>Journal de régénération</b><small class="mini" style="display:block">Carnet · 120 pages</small></td><td class="num">JDR-01</td><td class="r num">24 €</td><td><div class="pb"><i style="width:85%"></i></div><small class="mini">42 en stock</small></td><td class="r">9</td><td><span class="t v">En vente</span></td></tr>
+    </tbody>
+   </table></div>
+  </div>
+  <div class="card"><div class="card-h"><h3>À expédier</h3></div><div class="card-b" style="padding-top:6px">
+   <div class="feed"><div class="ic">◆</div><div><b style="font-weight:500">#1123 — Sylviane Gustave</b><br><span class="mini">Coffret Nuit profonde · Petit-Bourg</span><time>Commandé il y a 3 jours</time></div></div>
+   <div class="feed"><div class="ic">◆</div><div><b style="font-weight:500">#1118 — Nicole Bernus</b><br><span class="mini">Rituel du soir · Paris 15e</span><time>Commandé il y a 3 jours</time></div></div>
+   <div class="feed"><div class="ic">◇</div><div><b style="font-weight:500">#1115 — Denise Ramassamy</b><br><span class="mini">Huile Ancrage ×2 · Le Lamentin</span><time>Commandé hier</time></div></div>
+   <div class="feed"><div class="ic">◇</div><div><b style="font-weight:500">#1114 — Laurence Pieds</b><br><span class="mini">Journal de régénération · Fort-de-France</span><time>Commandé hier</time></div></div>
+   <button class="b mt" style="width:100%">Éditer les étiquettes Colissimo</button>
+  </div></div>
+ </div>
+ <div class="row c3">
+  <div class="card"><div class="card-h"><h3>Ventes par produit sur 30 jours</h3></div><div class="card-b">
+   <div class="ch" data-type="bars" data-h="170" data-v="11,9,8,7,6,5" data-l="Nuit profonde,Journal,Huile Ancrage,Régénération,Rituel du soir,Élan du matin"></div>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Destinations</h3></div><div class="card-b">
+   <div class="ch" data-type="donut" data-h="170" data-v="24,11,8" data-l="Guadeloupe,Hexagone,Martinique"></div>
+   <p class="mini mt mb0">Franco de port à partir de 70 € dans les Antilles.</p>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Paramètres d'expédition</h3></div><div class="card-b">
+   <table class="tbl" style="font-size:.82rem"><tbody>
+    <tr><td>Guadeloupe et Martinique</td><td class="r"><b class="num">6,90 €</b></td></tr>
+    <tr><td>France hexagonale</td><td class="r"><b class="num">8,50 €</b></td></tr>
+    <tr><td>Union européenne</td><td class="r"><b class="num">14,90 €</b></td></tr>
+    <tr><td>Franco de port Antilles</td><td class="r"><b class="num">dès 70 €</b></td></tr>
+    <tr><td>Délai annoncé</td><td class="r"><b>48 h ouvrées</b></td></tr>
+    <tr><td>Retour possible</td><td class="r"><b>14 jours</b></td></tr>
+   </tbody></table>
+  </div></div>
+ </div>
+</div>
+
+<!-- ======== FINANCES ======== -->
+<div class="page" id="g-finances">
+ <div class="row c5" style="margin-bottom:16px">
+  <div class="kpi dark"><div class="lbl">Chiffre d'affaires 2027</div><div class="v num">37 684 €</div><div class="d mini">depuis le 1er janvier</div></div>
+  <div class="kpi"><div class="lbl">Encaissé ce mois</div><div class="v num">12 480 €</div><div class="d up">+18 % contre janvier</div></div>
+  <div class="kpi"><div class="lbl">Restant à encaisser</div><div class="v num">8 280 €</div><div class="d mini">engagé sur mars à mai</div></div>
+  <div class="kpi"><div class="lbl">Frais de paiement</div><div class="v num">462 €</div><div class="d mini">1,2 % du CA encaissé</div></div>
+  <div class="kpi"><div class="lbl">TVA collectée</div><div class="v num">—</div><div class="d mini">régime DROM, à confirmer</div></div>
+ </div>
+ <div class="row c21" style="margin-bottom:16px">
+  <div class="card"><div class="card-h"><h3>Répartition du chiffre d'affaires</h3><div class="seg mini" style="margin-left:auto"><button class="on">2027</button><button>12 derniers mois</button></div></div><div class="card-b">
+   <div class="ch" data-type="area" data-h="220" data-v="18600,31220,6480,0,0,0" data-l="déc 26,janv 27,févr 27,mars 27,avril 27,mai 27"></div>
+   <p class="mini mt mb0">Le creux de février est structurel : les ventes d'une cohorte se concentrent sur les six semaines qui précèdent son démarrage. C'est exactement ce que la cohorte d'avril vient lisser.</p>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Par ligne d'activité</h3></div><div class="card-b">
+   <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Formules RÉGÉNÈRE</span><b class="num">31 220 €</b></div><div class="pb"><i style="width:83%"></i></div></div>
+   <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Billetterie</span><b class="num">2 340 €</b></div><div class="pb"><i style="width:6%"></i></div></div>
+   <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Boutique</span><b class="num">1 864 €</b></div><div class="pb"><i style="width:5%"></i></div></div>
+   <div><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Accompagnement individuel</span><b class="num">2 260 €</b></div><div class="pb"><i style="width:6%"></i></div></div>
+   <p class="mini mt mb0">Le programme représente 83 % du chiffre d'affaires. Diversifier reste un objectif de la deuxième année, pas de la première.</p>
+  </div></div>
+ </div>
+ <div class="card">
+  <div class="card-h"><h3>Exports et pièces comptables</h3><button class="b g sm" style="margin-left:auto">Tout exporter en CSV</button></div>
+  <div class="scroll"><table class="tbl">
+   <thead><tr><th>Document</th><th>Période</th><th>Pièces</th><th class="r">Montant</th><th>État</th><th></th></tr></thead>
+   <tbody>
+    <tr><td><b>Journal des ventes</b></td><td>Février 2027</td><td>19 factures</td><td class="r num">12 480 €</td><td><span class="t a">En cours</span></td><td class="r"><button class="b g sm">Télécharger</button></td></tr>
+    <tr><td><b>Journal des ventes</b></td><td>Janvier 2027</td><td>41 factures</td><td class="r num">31 220 €</td><td><span class="t v">Clôturé</span></td><td class="r"><button class="b g sm">Télécharger</button></td></tr>
+    <tr><td><b>Relevé des encaissements</b></td><td>Janvier 2027</td><td>Carte et Alma</td><td class="r num">22 940 €</td><td><span class="t v">Rapproché</span></td><td class="r"><button class="b g sm">Télécharger</button></td></tr>
+    <tr><td><b>Avoirs émis</b></td><td>Février 2027</td><td>1 avoir</td><td class="r num">−563 €</td><td><span class="t v">Clôturé</span></td><td class="r"><button class="b g sm">Télécharger</button></td></tr>
+    <tr><td><b>Frais de plateforme</b></td><td>Février 2027</td><td>Stripe et Alma</td><td class="r num">462 €</td><td><span class="t a">En cours</span></td><td class="r"><button class="b g sm">Télécharger</button></td></tr>
+   </tbody>
+  </table></div>
+ </div>
+</div>
+
+<!-- ======== RÉSEAUX SOCIAUX ======== -->
+<div class="page" id="g-social">
+ <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+  <div class="seg"><button class="on">Février 2027</button><button>Mars 2027</button></div>
+  <span class="t h">Instagram</span><span class="t n">LinkedIn</span><span class="t v">Newsletter</span><span class="t a">YouTube</span>
+  <button class="b" style="margin-left:auto">Planifier une publication</button>
+ </div>
+ <div class="row c4" style="margin-bottom:16px">
+  <div class="kpi"><div class="lbl">Publications planifiées</div><div class="v num">14</div><div class="d mini">sur les 30 prochains jours</div></div>
+  <div class="kpi"><div class="lbl">Abonnés Instagram</div><div class="v num">4 218</div><div class="d up">+312 ce mois</div></div>
+  <div class="kpi"><div class="lbl">Taux d'engagement</div><div class="v num">6,4 %</div><div class="d up">+1,1 point</div></div>
+  <div class="kpi"><div class="lbl">Profils générés par le social</div><div class="v num">86</div><div class="d mini">40 % des profils du mois</div></div>
+ </div>
+ <div class="card" style="margin-bottom:16px">
+  <div class="card-h"><h3>Calendrier éditorial</h3><span class="mini">Glissez une publication pour la déplacer</span></div>
+  <div class="card-b">
+   <div class="cal">
+    <div class="dh">Lundi</div><div class="dh">Mardi</div><div class="dh">Mercredi</div><div class="dh">Jeudi</div><div class="dh">Vendredi</div><div class="dh">Samedi</div><div class="dh">Dimanche</div>
+    <div class="cd out"><div class="n">26</div></div>
+    <div class="cd out"><div class="n">27</div></div>
+    <div class="cd out"><div class="n">28</div></div>
+    <div class="cd"><div class="n">29</div></div>
+    <div class="cd"><div class="n">30</div></div>
+    <div class="cd"><div class="n">31</div></div>
+    <div class="cd"><div class="n">1</div><div class="post ig">Carrousel — 3 signes de la périménopause</div></div>
+
+    <div class="cd"><div class="n">2</div><div class="post nl">Newsletter — L'article sur le sommeil</div></div>
+    <div class="cd"><div class="n">3</div></div>
+    <div class="cd"><div class="n">4</div><div class="post ig">Reel — Atoumo, comment la préparer</div></div>
+    <div class="cd"><div class="n">5</div><div class="post li">Post — La charge invisible des dirigeantes</div></div>
+    <div class="cd"><div class="n">6</div><div class="post ig">Story — Coulisses session collective</div></div>
+    <div class="cd"><div class="n">7</div></div>
+    <div class="cd"><div class="n">8</div><div class="post ig">Témoignage — Marie-Line</div></div>
+
+    <div class="cd"><div class="n">9</div><div class="post yt">Vidéo — Le repas du soir</div></div>
+    <div class="cd"><div class="n">10</div><div class="post ig">Carrousel — 4 plantes d'ici</div></div>
+    <div class="cd"><div class="n">11</div></div>
+    <div class="cd"><div class="n">12</div><div class="post li">Post — Pourquoi 18 places et pas 40</div></div>
+    <div class="cd"><div class="n">13</div><div class="post ig">Reel — Une journée d'Erika</div></div>
+    <div class="cd"><div class="n">14</div></div>
+    <div class="cd today"><div class="n">15</div><div class="post ig">Story — Rappel matinée respiration</div></div>
+
+    <div class="cd"><div class="n">16</div><div class="post nl">Newsletter — Ouverture cohorte avril</div></div>
+    <div class="cd"><div class="n">17</div><div class="post ig">Carrousel — Ce que contient RÉGÉNÈRE</div></div>
+    <div class="cd"><div class="n">18</div></div>
+    <div class="cd"><div class="n">19</div><div class="post li">Post — Les résultats de la cohorte pilote</div></div>
+    <div class="cd"><div class="n">20</div><div class="post ig">Live — Questions ouvertes</div></div>
+    <div class="cd"><div class="n">21</div></div>
+    <div class="cd"><div class="n">22</div><div class="post ig">Témoignage — Josiane</div></div>
+
+    <div class="cd"><div class="n">23</div></div>
+    <div class="cd"><div class="n">24</div><div class="post ig">Carrousel — Liste d'attente avril</div></div>
+    <div class="cd"><div class="n">25</div><div class="post yt">Vidéo — L'énergie de 11 heures</div></div>
+    <div class="cd"><div class="n">26</div><div class="post nl">Newsletter — J−1 ouverture</div></div>
+    <div class="cd"><div class="n">27</div><div class="post ig">Annonce — Les ventes sont ouvertes</div><div class="post li">Post — Ouverture cohorte avril</div></div>
+    <div class="cd"><div class="n">28</div></div>
+    <div class="cd out"><div class="n">1</div></div>
+   </div>
+  </div>
+ </div>
+ <div class="row c2">
+  <div class="card"><div class="card-h"><h3>File d'attente</h3><button class="b g sm" style="margin-left:auto">Tout voir</button></div>
+   <div class="scroll"><table class="tbl">
+    <thead><tr><th>Publication</th><th>Canal</th><th>Programmée</th><th>Visuel</th><th>État</th></tr></thead>
+    <tbody>
+     <tr><td><b>Story — Rappel matinée respiration</b></td><td><span class="t h">Instagram</span></td><td>Aujourd'hui 18 h</td><td><span class="t v">Prêt</span></td><td><span class="t a">En attente</span></td></tr>
+     <tr><td><b>Newsletter — Ouverture cohorte avril</b></td><td><span class="t v">Newsletter</span></td><td>16 févr. 9 h</td><td>—</td><td><span class="t">Brouillon</span></td></tr>
+     <tr><td><b>Carrousel — Ce que contient RÉGÉNÈRE</b></td><td><span class="t h">Instagram</span></td><td>17 févr. 12 h</td><td><span class="t a">À produire</span></td><td><span class="t">Brouillon</span></td></tr>
+     <tr><td><b>Post — Les résultats de la cohorte pilote</b></td><td><span class="t n">LinkedIn</span></td><td>19 févr. 8 h</td><td><span class="t v">Prêt</span></td><td><span class="t v">Validé</span></td></tr>
+     <tr><td><b>Live — Questions ouvertes</b></td><td><span class="t h">Instagram</span></td><td>20 févr. 19 h</td><td>—</td><td><span class="t v">Validé</span></td></tr>
+    </tbody>
+   </table></div>
+  </div>
+  <div class="card"><div class="card-h"><h3>Ce qui marche le mieux</h3><span class="mini">90 derniers jours</span></div>
+   <div class="scroll"><table class="tbl">
+    <thead><tr><th>Publication</th><th class="r">Portée</th><th class="r">Engagement</th><th class="r">Profils générés</th></tr></thead>
+    <tbody>
+     <tr><td><b>Témoignage — Marie-Line</b><small class="mini" style="display:block">Instagram · 8 févr.</small></td><td class="r num">14 200</td><td class="r"><b>11,2 %</b></td><td class="r"><b>23</b></td></tr>
+     <tr><td><b>Reel — Atoumo, comment la préparer</b><small class="mini" style="display:block">Instagram · 4 févr.</small></td><td class="r num">28 400</td><td class="r"><b>7,8 %</b></td><td class="r"><b>19</b></td></tr>
+     <tr><td><b>Carrousel — 3 signes de la périménopause</b><small class="mini" style="display:block">Instagram · 1er févr.</small></td><td class="r num">9 800</td><td class="r"><b>9,4 %</b></td><td class="r"><b>14</b></td></tr>
+     <tr><td><b>Post — La charge invisible</b><small class="mini" style="display:block">LinkedIn · 5 févr.</small></td><td class="r num">6 100</td><td class="r"><b>4,1 %</b></td><td class="r"><b>8</b></td></tr>
+    </tbody>
+   </table>
+   <div class="card-b"><p class="mini mb0">Les témoignages génèrent trois fois plus de profils que les contenus pédagogiques, pour une portée deux fois moindre. À produire en priorité.</p></div>
+  </div></div>
+ </div>
+</div>
+
+<!-- ======== EMAILS ======== -->
+<div class="page" id="g-emails">
+ <div class="row c4" style="margin-bottom:16px">
+  <div class="kpi"><div class="lbl">Contacts abonnés</div><div class="v num">1 486</div><div class="d up">+214 ce mois</div></div>
+  <div class="kpi"><div class="lbl">Taux d'ouverture moyen</div><div class="v num">48 %</div><div class="d up">+5 points</div></div>
+  <div class="kpi"><div class="lbl">Taux de clic moyen</div><div class="v num">9,2 %</div><div class="d up">+1,4 point</div></div>
+  <div class="kpi"><div class="lbl">Désabonnements</div><div class="v num">0,4 %</div><div class="d mini">sur 30 jours</div></div>
+ </div>
+ <div class="card" style="margin-bottom:16px">
+  <div class="card-h"><h3>Séquences automatiques</h3><button class="b sm" style="margin-left:auto">Créer une séquence</button></div>
+  <div class="scroll"><table class="tbl">
+   <thead><tr><th>Séquence</th><th>Déclencheur</th><th>Emails</th><th class="r">En cours</th><th class="r">Ouverture</th><th class="r">Clic</th><th class="r">Ventes</th><th>État</th></tr></thead>
+   <tbody>
+    <tr><td><b>Bienvenue — profil complété</b></td><td>Questionnaire terminé</td><td>5 sur 12 jours</td><td class="r">214</td><td class="r">61 %</td><td class="r">14,8 %</td><td class="r"><b>6</b></td><td><span class="t v">Active</span></td></tr>
+    <tr><td><b>Nurturing — profil Curieuse</b></td><td>Score inférieur à 50</td><td>8 sur 6 semaines</td><td class="r">201</td><td class="r">44 %</td><td class="r">6,2 %</td><td class="r"><b>1</b></td><td><span class="t v">Active</span></td></tr>
+    <tr><td><b>Nurturing — profil Épuisée lucide</b></td><td>Score supérieur à 70</td><td>6 sur 3 semaines</td><td class="r">312</td><td class="r">58 %</td><td class="r">17,1 %</td><td class="r"><b>9</b></td><td><span class="t v">Active</span></td></tr>
+    <tr><td><b>Panier abandonné</b></td><td>Tunnel quitté</td><td>3 sur 4 jours</td><td class="r">9</td><td class="r">52 %</td><td class="r">21,4 %</td><td class="r"><b>3</b></td><td><span class="t v">Active</span></td></tr>
+    <tr><td><b>Post-achat et prise en main</b></td><td>Paiement confirmé</td><td>4 sur 10 jours</td><td class="r">18</td><td class="r">89 %</td><td class="r">46,2 %</td><td class="r">—</td><td><span class="t v">Active</span></td></tr>
+    <tr><td><b>Relance liste d'attente</b></td><td>Ouverture de cohorte</td><td>3 sur 5 jours</td><td class="r">46</td><td class="r">—</td><td class="r">—</td><td class="r">—</td><td><span class="t a">Programmée</span></td></tr>
+    <tr><td><b>Réengagement du Cercle</b></td><td>Fin de parcours à 30 jours</td><td>2 sur 2 semaines</td><td class="r">0</td><td class="r">—</td><td class="r">—</td><td class="r">—</td><td><span class="t">Brouillon</span></td></tr>
+   </tbody>
+  </table></div>
+ </div>
+ <div class="row c2">
+  <div class="card"><div class="card-h"><h3>Derniers envois</h3></div>
+   <div class="scroll"><table class="tbl">
+    <thead><tr><th>Objet</th><th>Segment</th><th class="r">Envoyés</th><th class="r">Ouverture</th><th class="r">Clic</th></tr></thead>
+    <tbody>
+     <tr><td><b>Pourquoi vous vous réveillez à 3 h du matin</b></td><td>Tous</td><td class="r num">1 412</td><td class="r">54 %</td><td class="r">12,1 %</td></tr>
+     <tr><td><b>La matinée du 8 mars, il reste 7 places</b></td><td>Guadeloupe</td><td class="r num">684</td><td class="r">49 %</td><td class="r">8,8 %</td></tr>
+     <tr><td><b>Ce que la cohorte pilote a obtenu en 3 mois</b></td><td>Score &gt; 60</td><td class="r num">548</td><td class="r">62 %</td><td class="r">18,4 %</td></tr>
+     <tr><td><b>Votre journal de bord de la semaine 6</b></td><td>Cohorte de janvier</td><td class="r num">18</td><td class="r">94 %</td><td class="r">72,2 %</td></tr>
+    </tbody>
+   </table></div>
+  </div>
+  <div class="card"><div class="card-h"><h3>Segments</h3><button class="b g sm" style="margin-left:auto">Créer un segment</button></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.86rem">Profils à fort score</b><p class="mini mb0">Score supérieur à 70, jamais cliente</p></div><b class="num">248</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.86rem">Liste d'attente avril</b><p class="mini mb0">Inscrites à la liste, non relancées</p></div><b class="num">46</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.86rem">Venues à un événement</b><p class="mini mb0">Convertissent trois fois mieux</p></div><b class="num">98</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.86rem">Clientes boutique uniquement</b><p class="mini mb0">Jamais entrées dans le programme</p></div><b class="num">37</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0"><div><b style="font-weight:500;font-size:.86rem">Hexagone</b><p class="mini mb0">Pour les contenus sans présentiel</p></div><b class="num">412</b></div>
+  </div></div>
+ </div>
+</div>
+
+<!-- ======== JOURNAL ======== -->
+<div class="page" id="g-journal">
+ <div class="row c4" style="margin-bottom:16px">
+  <div class="kpi"><div class="lbl">Articles publiés</div><div class="v num">14</div><div class="d mini">2 en brouillon</div></div>
+  <div class="kpi"><div class="lbl">Visites depuis la recherche</div><div class="v num">1 284</div><div class="d up">+34 % sur 30 jours</div></div>
+  <div class="kpi"><div class="lbl">Temps de lecture moyen</div><div class="v num">4 min 12</div><div class="d up">+22 s</div></div>
+  <div class="kpi"><div class="lbl">Profils générés par le Journal</div><div class="v num">38</div><div class="d mini">18 % des profils du mois</div></div>
+ </div>
+ <div class="card" style="margin-bottom:16px">
+  <div class="card-h"><h3>Articles</h3><button class="b sm" style="margin-left:auto">Écrire un article</button></div>
+  <div class="scroll"><table class="tbl">
+   <thead><tr><th>Titre</th><th>Catégorie</th><th>Publié</th><th class="r">Vues</th><th class="r">Temps de lecture</th><th class="r">Profils</th><th>État</th></tr></thead>
+   <tbody>
+    <tr><td><b>Pourquoi vous vous réveillez à trois heures du matin</b></td><td>Sommeil</td><td>12 sept.</td><td class="r num">2 148</td><td class="r">6 min 04</td><td class="r"><b>14</b></td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>L'atoumo, cette plante que tout le monde a dans son jardin</b></td><td>Plantes locales</td><td>28 août</td><td class="r num">1 642</td><td class="r">7 min 48</td><td class="r"><b>9</b></td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>Périménopause : les six signes qu'on attribue à autre chose</b></td><td>Ménopause</td><td>14 août</td><td class="r num">3 210</td><td class="r">8 min 12</td><td class="r"><b>11</b></td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>« Je n'ai plus envie de faire semblant »</b></td><td>Souveraineté</td><td>2 août</td><td class="r num">986</td><td class="r">5 min 31</td><td class="r"><b>4</b></td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>Le petit-déjeuner créole revisité</b></td><td>Nutrition</td><td>19 juil.</td><td class="r num">1 104</td><td class="r">3 min 48</td><td class="r"><b>3</b></td><td><span class="t v">En ligne</span></td></tr>
+    <tr><td><b>Les bouffées de chaleur, ce qui les déclenche vraiment</b></td><td>Ménopause</td><td>—</td><td class="r">—</td><td class="r">—</td><td class="r">—</td><td><span class="t a">Relu, à publier</span></td></tr>
+    <tr><td><b>Six semaines pour retrouver un sommeil continu</b></td><td>Sommeil</td><td>—</td><td class="r">—</td><td class="r">—</td><td class="r">—</td><td><span class="t">Brouillon</span></td></tr>
+   </tbody>
+  </table></div>
+ </div>
+ <div class="row c2">
+  <div class="card"><div class="card-h"><h3>Mots-clés qui vous amènent du trafic</h3></div>
+   <div class="scroll"><table class="tbl">
+    <thead><tr><th>Recherche</th><th class="r">Position</th><th class="r">Impressions</th><th class="r">Clics</th></tr></thead>
+    <tbody>
+     <tr><td>réveil 3h du matin ménopause</td><td class="r"><b>4</b></td><td class="r num">8 420</td><td class="r num">612</td></tr>
+     <tr><td>atoumo bienfaits</td><td class="r"><b>2</b></td><td class="r num">5 180</td><td class="r num">498</td></tr>
+     <tr><td>périménopause symptômes 45 ans</td><td class="r"><b>11</b></td><td class="r num">14 600</td><td class="r num">284</td></tr>
+     <tr><td>naturopathe ménopause guadeloupe</td><td class="r"><b>1</b></td><td class="r num">740</td><td class="r num">218</td></tr>
+     <tr><td>plantes ménopause antilles</td><td class="r"><b>6</b></td><td class="r num">1 960</td><td class="r num">142</td></tr>
+    </tbody>
+   </table></div>
+  </div>
+  <div class="card"><div class="card-h"><h3>Performance technique du site</h3></div><div class="card-b">
+   <div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Performance</span><b>94</b></div><div class="pb"><i style="width:94%"></i></div></div>
+   <div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Accessibilité</span><b>96</b></div><div class="pb"><i style="width:96%"></i></div></div>
+   <div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Bonnes pratiques</span><b>100</b></div><div class="pb"><i style="width:100%"></i></div></div>
+   <div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:5px"><span>Référencement</span><b>98</b></div><div class="pb"><i style="width:98%"></i></div></div>
+   <p class="mini mt mb0">Objectif contractuel : 85 sur chaque axe. Premier affichage à 1,2 s en 4G, affichage principal à 1,9 s.</p>
+  </div></div>
+ </div>
+</div>
+
+<!-- ======== RÉGLAGES ======== -->
+<div class="page" id="g-reglages">
+ <div class="row c2" style="margin-bottom:16px">
+  <div class="card"><div class="card-h"><h3>Équipe et permissions</h3><button class="b sm" style="margin-left:auto">Inviter</button></div>
+   <div class="scroll"><table class="tbl">
+    <thead><tr><th>Personne</th><th>Rôle</th><th>Accès</th><th>Dernière connexion</th></tr></thead>
+    <tbody>
+     <tr><td><div class="nm"><div class="av" style="background:var(--olive);color:var(--creme)">EJ</div><div><b>Erika Jasor</b><small>erika@aligne-bienetre.fr</small></div></div></td><td><span class="t o">Administratrice</span></td><td>Tout, y compris les finances</td><td>Aujourd'hui</td></tr>
+     <tr><td><div class="nm"><div class="av">LM</div><div><b>Laure Mathurin</b><small>laure@aligne-bienetre.fr</small></div></div></td><td><span class="t">Éditrice</span></td><td>Contenus et réseaux sociaux</td><td>Hier</td></tr>
+     <tr><td><div class="nm"><div class="av">SB</div><div><b>Sabine Boulogne</b><small>sabine@cabinet-compta.fr</small></div></div></td><td><span class="t">Comptabilité</span></td><td>Lecture des commandes et factures</td><td>Il y a 6 j</td></tr>
+     <tr><td><div class="nm"><div class="av">CD</div><div><b>Christelle Dorville</b><small>christelle@aligne-bienetre.fr</small></div></div></td><td><span class="t">Facilitatrice du Cercle</span></td><td>Membres en lecture, espace Cercle</td><td>Il y a 2 j</td></tr>
+    </tbody>
+   </table></div>
+   <div class="card-b"><p class="mini mb0">Le cloisonnement est appliqué au niveau du serveur et de la base de données. Une éditrice ne peut pas accéder aux montants, même en contournant l'affichage.</p></div>
+  </div>
+  <div class="card"><div class="card-h"><h3>Services connectés</h3></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Stripe</b><p class="mini mb0">Paiements, facturation, échéanciers</p></div><span class="t v">Connecté</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Alma</b><p class="mini mb0">Paiement en quatre fois, formule Premium</p></div><span class="t v">Connecté</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Plateforme vidéo</b><p class="mini mb0">Lecture restreinte au domaine, anti-téléchargement</p></div><span class="t v">Connecté</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Outil d'emailing</b><p class="mini mb0">Synchronisation des contacts et segments</p></div><span class="t v">Connecté</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E6E0D4"><div><b style="font-weight:500;font-size:.87rem">Colissimo</b><p class="mini mb0">Étiquettes et suivi des colis</p></div><span class="t v">Connecté</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0"><div><b style="font-weight:500;font-size:.87rem">Réseaux sociaux</b><p class="mini mb0">Publication programmée Instagram et LinkedIn</p></div><span class="t a">À reconnecter</span></div>
+  </div></div>
+ </div>
+ <div class="row c3">
+  <div class="card"><div class="card-h"><h3>Données personnelles</h3></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><span style="font-size:.86rem">Consentements enregistrés</span><b class="num">1 486</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><span style="font-size:.86rem">Demandes d'effacement traitées</span><b class="num">3</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><span style="font-size:.86rem">Demandes en attente</span><b class="num">0</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0"><span style="font-size:.86rem">Hébergement des données</span><b style="font-size:.86rem">Union européenne</b></div>
+   <button class="b g sm mt">Exporter le registre</button>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Sauvegardes</h3></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><span style="font-size:.86rem">Dernière sauvegarde</span><b style="font-size:.86rem">Ce matin 4 h 00</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><span style="font-size:.86rem">Fréquence</span><b style="font-size:.86rem">Quotidienne</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><span style="font-size:.86rem">Rétention</span><b style="font-size:.86rem">30 jours</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0"><span style="font-size:.86rem">Disponibilité sur 30 jours</span><b style="font-size:.86rem">100 %</b></div>
+   <button class="b g sm mt">Tester une restauration</button>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>Identité du site</h3></div><div class="card-b">
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><span style="font-size:.86rem">Nom de domaine</span><b style="font-size:.86rem">aligne-bienetre.fr</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><span style="font-size:.86rem">Certificat de sécurité</span><b style="font-size:.86rem">Valide jusqu'au 4 mai</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #E6E0D4"><span style="font-size:.86rem">Raison sociale</span><b style="font-size:.86rem">SASU ALIGNÉ</b></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0"><span style="font-size:.86rem">Documents légaux</span><b style="font-size:.86rem">5 en ligne</b></div>
+   <button class="b g sm mt">Modifier</button>
+  </div></div>
+ </div>
+</div>
+
+</div></div></div>
+
+<script>
+var TITRES={
+ accueil:["Vue d'ensemble","Lundi 15 février 2027 — cohorte de janvier, semaine 6 sur 12"],
+ pipeline:["Pipeline d'appels","34 prospects suivis · 48 600 € de valeur estimée"],
+ prospects:["Prospects","1 486 contacts · 892 profils scorés"],
+ tunnel:["Tunnel de vente","Du visiteur à la participante, sur 30 jours"],
+ cohortes:["Cohortes RÉGÉNÈRE","Janvier en cours · avril ouvre dans 12 jours"],
+ membres:["Participantes","18 actives · 12 membres du Cercle"],
+ contenus:["Vidéos & coaching","31 contenus en ligne · 18 h 42 de vidéo"],
+ evenements:["Événements","4 à venir · 38 billets vendus ce mois"],
+ ventes:["Ventes & paiements","12 480 € encaissés en février · 3 échecs à traiter"],
+ boutique:["Boutique & stocks","6 commandes à expédier · 1 rupture"],
+ finances:["Finances","37 684 € depuis janvier"],
+ social:["Réseaux sociaux","14 publications planifiées · 4 218 abonnés"],
+ emails:["Emails & séquences","7 séquences · 1 486 contacts abonnés"],
+ journal:["Journal","14 articles en ligne · 1 284 visites depuis la recherche"],
+ reglages:["Réglages & équipe","4 personnes · 6 services connectés"]
+};
+function go(id){
+ document.querySelectorAll('.page').forEach(function(p){p.classList.toggle('on',p.id==='g-'+id)});
+ document.querySelectorAll('.side a').forEach(function(a){a.classList.toggle('on',a.dataset.go===id)});
+ var t=TITRES[id]||['',''];
+ document.getElementById('pt').textContent=t[0];
+ document.getElementById('ps').textContent=t[1];
+ window.scrollTo({top:0,behavior:'instant'});
+ draw();
+}
+document.addEventListener('click',function(e){
+ var a=e.target.closest('[data-go]'); if(a){e.preventDefault();go(a.dataset.go);return}
+ var b=e.target.closest('.seg button');
+ if(b){b.parentElement.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});b.classList.add('on')}
+});
+
+/* ---- Graphiques SVG ---- */
+var NS='http://www.w3.org/2000/svg';
+function el(n,at){var e=document.createElementNS(NS,n);for(var k in at)e.setAttribute(k,at[k]);return e}
+function fmt(n){return n.toLocaleString('fr-FR')}
+function draw(){
+ document.querySelectorAll('.ch').forEach(function(c){
+  if(c.dataset.done)return; if(!c.offsetWidth)return;
+  c.dataset.done='1';
+  var v=c.dataset.v.split(',').map(Number), l=(c.dataset.l||'').split(','),
+      W=c.offsetWidth, H=+(c.dataset.h||200), t=c.dataset.type;
+  var s=el('svg',{viewBox:'0 0 '+W+' '+H,width:'100%',height:H});
+  if(t==='area'){
+   var pad=30, bw=W-14, max=Math.max.apply(null,v)*1.12||1;
+   var x=function(i){return 8+i*(bw-8)/(v.length-1)}, y=function(d){return H-pad-(d/max)*(H-pad-12)};
+   var ln='',ar='';
+   v.forEach(function(d,i){ln+=(i?' L':'M')+x(i).toFixed(1)+' '+y(d).toFixed(1)});
+   ar=ln+' L'+x(v.length-1).toFixed(1)+' '+(H-pad)+' L'+x(0).toFixed(1)+' '+(H-pad)+' Z';
+   var g=el('linearGradient',{id:'gr'+Math.random().toString(36).slice(2),x1:0,y1:0,x2:0,y2:1});
+   g.appendChild(el('stop',{offset:0,'stop-color':'#5B5C4A','stop-opacity':.32}));
+   g.appendChild(el('stop',{offset:1,'stop-color':'#5B5C4A','stop-opacity':.02}));
+   var df=el('defs');df.appendChild(g);s.appendChild(df);
+   [0,.5,1].forEach(function(f){s.appendChild(el('line',{x1:8,x2:bw,y1:(12+f*(H-pad-12)).toFixed(1),y2:(12+f*(H-pad-12)).toFixed(1),stroke:'#DDD4C2','stroke-width':1}))});
+   s.appendChild(el('path',{d:ar,fill:'url(#'+g.id+')'}));
+   s.appendChild(el('path',{d:ln,fill:'none',stroke:'#5B5C4A','stroke-width':2,'stroke-linejoin':'round'}));
+   v.forEach(function(d,i){if(d)s.appendChild(el('circle',{cx:x(i).toFixed(1),cy:y(d).toFixed(1),r:3,fill:'#F7F4ED',stroke:'#5B5C4A','stroke-width':2}))});
+   l.forEach(function(t2,i){var an=i===0?'start':(i===v.length-1?'end':'middle');var tx=el('text',{x:x(i).toFixed(1),y:H-9,'text-anchor':an,'font-size':10,fill:'#6E7164','font-family':'Jost'});tx.textContent=t2;s.appendChild(tx)});
+  }
+  if(t==='bars'){
+   var pad2=34, max2=Math.max.apply(null,v)*1.1||1, n=v.length, gap=9,
+       bw2=(W-gap*(n-1))/n;
+   v.forEach(function(d,i){
+    var h=(d/max2)*(H-pad2-14), xx=i*(bw2+gap), yy=H-pad2-h;
+    s.appendChild(el('rect',{x:xx.toFixed(1),y:yy.toFixed(1),width:bw2.toFixed(1),height:Math.max(h,1).toFixed(1),fill:i===0?'#5B5C4A':'#8B9179',rx:2}));
+    var tv=el('text',{x:(xx+bw2/2).toFixed(1),y:(yy-5).toFixed(1),'text-anchor':'middle','font-size':10,fill:'#3F4237','font-family':'Jost'});
+    tv.textContent=fmt(d);s.appendChild(tv);
+    var tl=el('text',{x:(xx+bw2/2).toFixed(1),y:H-12,'text-anchor':'middle','font-size':9.5,fill:'#6E7164','font-family':'Jost'});
+    tl.textContent=(l[i]||'').length>13?(l[i]||'').slice(0,12)+'…':(l[i]||'');s.appendChild(tl);
+   });
+  }
+  if(t==='donut'){
+   var tot=v.reduce(function(a,b){return a+b},0), cx=W/2, cy=H/2-4, R=Math.min(W,H)/2-16, r2=R*.6, a0=-Math.PI/2;
+   var cols=['#5B5C4A','#8C4A5B','#8B9179'];
+   v.forEach(function(d,i){
+    var a1=a0+(d/tot)*Math.PI*2, lg=(a1-a0)>Math.PI?1:0;
+    var p='M'+(cx+R*Math.cos(a0)).toFixed(1)+' '+(cy+R*Math.sin(a0)).toFixed(1)
+     +'A'+R+' '+R+' 0 '+lg+' 1 '+(cx+R*Math.cos(a1)).toFixed(1)+' '+(cy+R*Math.sin(a1)).toFixed(1)
+     +'L'+(cx+r2*Math.cos(a1)).toFixed(1)+' '+(cy+r2*Math.sin(a1)).toFixed(1)
+     +'A'+r2+' '+r2+' 0 '+lg+' 0 '+(cx+r2*Math.cos(a0)).toFixed(1)+' '+(cy+r2*Math.sin(a0)).toFixed(1)+'Z';
+    s.appendChild(el('path',{d:p,fill:cols[i%3]}));a0=a1;
+   });
+   var tt=el('text',{x:cx,y:cy+5,'text-anchor':'middle','font-size':19,fill:'#2F322A','font-family':'Jost','font-weight':300});
+   tt.textContent=fmt(tot);s.appendChild(tt);
+  }
+  c.innerHTML='';c.appendChild(s);
+  if(t==='donut'){
+   var lg2=document.createElement('div');lg2.style.cssText='display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px';
+   var cs=['#5B5C4A','#8C4A5B','#8B9179'];
+   l.forEach(function(t3,i){lg2.innerHTML+='<span style="font-size:.76rem;display:flex;align-items:center;gap:5px"><i style="width:9px;height:9px;border-radius:2px;background:'+cs[i%3]+';display:inline-block"></i>'+t3+' · '+v[i]+'</span>'});
+   c.appendChild(lg2);
+  }
+ });
+}
+window.addEventListener('load',draw);
+go('accueil');
+</script>
+</body>
+</html>

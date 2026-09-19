@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>ALIGNÉ — Maquette du site vitrine</title>
+<meta name="description" content="Maquette de présentation du site Bien-être ALIGNÉ et du programme RÉGÉNÈRE.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+--olive:#5B5C4A; --olive-d:#434436; --olive-l:#7E8A6A;
+--encre:#2F322A; --encre-2:#5A5D51;
+--papier:#EDE7DA; --creme:#E6DDCE; --lin:#DDD4C2; --blanc:#F7F4ED;
+--hib:#8C4A5B; --hib-l:#B37083; --ambre:#B8873F;
+--r:3px;
+--d:'Jost',system-ui,sans-serif; --s:'Newsreader',Georgia,serif;
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--d);color:var(--encre);background:var(--papier);
+ font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4{margin:0;font-weight:400;letter-spacing:-.01em}
+p{margin:0 0 1em}
+:focus-visible{outline:2px solid var(--hib);outline-offset:3px}
+.num{font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1160px;margin:0 auto;padding:0 28px}
+.wrap-n{max-width:720px}
+section{padding:96px 0}
+.pad-s{padding:64px 0}
+@media(max-width:760px){section{padding:64px 0}.wrap{padding:0 20px}}
+
+/* ---------- Type ---------- */
+.dsp{font-family:var(--d);font-weight:300;line-height:1.04;letter-spacing:-.025em}
+.d1{font-size:clamp(2.6rem,5.6vw,4.5rem)}
+.d2{font-size:clamp(2rem,4vw,3.2rem)}
+.d3{font-size:clamp(1.4rem,2.2vw,1.9rem);letter-spacing:-.015em}
+.prose{font-family:var(--s);font-weight:300;font-size:1.115rem;line-height:1.72;color:var(--encre-2);max-width:62ch}
+.prose.big{font-size:1.32rem;line-height:1.64;color:var(--encre)}
+.kicker{font-size:.79rem;letter-spacing:.1em;color:var(--olive);font-weight:500}
+.mini{font-size:.82rem;color:var(--encre-2);line-height:1.5}
+
+/* ---------- Nav ---------- */
+.nav{position:sticky;top:0;z-index:60;background:rgba(237,231,218,.93);
+ backdrop-filter:blur(14px);border-bottom:1px solid var(--lin)}
+.nav-in{max-width:1160px;margin:0 auto;padding:0 28px;height:70px;display:flex;align-items:center;gap:30px}
+.mark{display:flex;align-items:center;gap:11px;flex-shrink:0}
+.mark img{width:38px;height:38px;border-radius:2px}
+.mark b{font-weight:400;font-size:1.02rem;letter-spacing:.17em}
+.nav-links{display:flex;gap:25px;margin-left:auto;align-items:center}
+.nav-links a{font-size:.88rem;color:var(--encre-2);padding:6px 0;border-bottom:1px solid transparent;transition:color .15s,border-color .15s}
+.nav-links a:hover{color:var(--encre)}
+.nav-links a.on{color:var(--olive);border-bottom-color:var(--olive)}
+.burger{display:none;margin-left:auto;background:none;border:1px solid var(--lin);padding:9px 13px;border-radius:2px;cursor:pointer;font-size:.85rem}
+@media(max-width:980px){
+ .nav-links{display:none;position:absolute;top:70px;left:0;right:0;background:var(--papier);
+  flex-direction:column;align-items:stretch;gap:0;padding:8px 28px 20px;border-bottom:1px solid var(--lin)}
+ .nav-links.open{display:flex}
+ .nav-links a{padding:12px 0;border-bottom:1px solid var(--lin)}
+ .burger{display:block}
+}
+
+/* ---------- Boutons ---------- */
+.btn{display:inline-block;background:var(--olive);color:var(--creme);padding:14px 28px;
+ border:1px solid var(--olive);border-radius:2px;font-size:.92rem;cursor:pointer;transition:background .18s}
+.btn:hover{background:var(--olive-d);border-color:var(--olive-d)}
+.btn-o{background:transparent;color:var(--olive);border-color:var(--olive)}
+.btn-o:hover{background:var(--olive);color:var(--creme)}
+.btn-c{background:var(--creme);color:var(--olive);border-color:var(--creme)}
+.btn-c:hover{background:var(--blanc);border-color:var(--blanc)}
+.btn-h{background:var(--hib);border-color:var(--hib);color:#fff}
+.btn-h:hover{background:#763d4c;border-color:#763d4c}
+
+/* ---------- Blocs ---------- */
+.olive{background:var(--olive);color:var(--creme)}
+.olive .prose,.olive .mini{color:#D3CDBE}
+.olive .kicker{color:var(--creme);opacity:.62}
+.lin{background:var(--lin)}
+.rule{height:1px;background:var(--lin);border:0;margin:0}
+.olive .rule{background:rgba(230,221,206,.22)}
+
+/* ---------- Hero ---------- */
+.hero{background:var(--olive);color:var(--creme);padding:112px 0 104px;position:relative;overflow:hidden}
+.hero-in{display:grid;grid-template-columns:1fr 300px;gap:60px;align-items:end}
+.hero h1{max-width:13ch}
+.hero-sq{width:300px;height:300px;padding:20px;background:var(--creme);border-radius:3px;box-shadow:0 22px 60px rgba(0,0,0,.3)}
+.hero .prose{color:#CFC9B9;max-width:46ch;margin-top:26px}
+.hero-cta{margin-top:34px;display:flex;gap:14px;flex-wrap:wrap}
+.hero-foot{margin-top:76px;padding-top:22px;border-top:1px solid rgba(230,221,206,.2);
+ display:flex;gap:46px;flex-wrap:wrap}
+.hero-foot div{max-width:23ch}
+.hero-foot b{display:block;font-family:var(--d);font-weight:300;font-size:2.15rem;line-height:1}
+.hero-foot span{font-size:.83rem;color:#BDB7A8;display:block;margin-top:5px}
+@media(max-width:900px){.hero-in{grid-template-columns:1fr}.hero-sq{width:170px;height:170px;order:-1}}
+
+/* ---------- Grilles ---------- */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:56px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:32px}
+@media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr;gap:38px}}
+@media(max-width:1000px) and (min-width:901px){.g4{grid-template-columns:1fr 1fr}}
+
+/* ---------- Piliers ---------- */
+.pil{border-top:1px solid var(--lin);padding-top:20px}
+.olive .pil{border-top-color:rgba(230,221,206,.25)}
+.pil h3{font-size:1.16rem;margin-bottom:9px;font-weight:400}
+.pil p{font-family:var(--s);font-weight:300;font-size:1rem;line-height:1.65;color:var(--encre-2);margin:0}
+.olive .pil p{color:#C9C3B4}
+
+/* ---------- Étapes du parcours ---------- */
+.step{display:grid;grid-template-columns:78px 1fr;gap:26px;padding:28px 0;border-top:1px solid var(--lin)}
+.step-n{font-family:var(--d);font-weight:300;font-size:2.2rem;color:var(--olive-l);line-height:1}
+.step h4{font-size:1.14rem;font-weight:400;margin-bottom:7px}
+.step p{font-family:var(--s);font-weight:300;color:var(--encre-2);margin:0;max-width:58ch}
+@media(max-width:700px){.step{grid-template-columns:1fr;gap:8px}}
+
+/* ---------- Formules ---------- */
+.form-g{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:start}
+@media(max-width:940px){.form-g{grid-template-columns:1fr}}
+.fcard{background:var(--blanc);border:1px solid var(--lin);border-radius:var(--r);padding:34px 30px 30px;display:flex;flex-direction:column;min-height:100%}
+.fcard.mid{background:var(--olive);color:var(--creme);border-color:var(--olive);position:relative}
+.fcard .tag{position:absolute;top:-11px;left:30px;background:var(--hib);color:#fff;font-size:.71rem;padding:4px 11px;border-radius:2px;letter-spacing:.05em}
+.fcard h3{font-size:1.52rem;font-weight:300;margin-bottom:6px}
+.fcard .px{font-family:var(--d);font-weight:300;font-size:2.5rem;line-height:1;margin:18px 0 4px}
+.fcard .px small{font-size:.84rem;color:var(--encre-2)}
+.fcard.mid .px small{color:#BDB7A8}
+.fcard ul{list-style:none;margin:24px 0 28px;padding:0;flex:1}
+.fcard li{font-size:.925rem;padding:9px 0 9px 22px;position:relative;border-bottom:1px solid var(--lin);line-height:1.45}
+.fcard.mid li{border-bottom-color:rgba(230,221,206,.18)}
+.fcard li::before{content:'';position:absolute;left:0;top:16px;width:9px;height:1px;background:var(--olive-l)}
+.fcard.mid li::before{background:var(--creme);opacity:.6}
+.fcard li.off{color:#A7A398;text-decoration:line-through;text-decoration-color:#C9C4B7}
+.fcard .btn{text-align:center}
+
+/* ---------- Témoignages ---------- */
+.temo{border-left:2px solid var(--olive-l);padding:4px 0 4px 24px}
+.temo q{font-family:var(--s);font-style:italic;font-weight:300;font-size:1.14rem;line-height:1.62;display:block;quotes:none;color:var(--encre)}
+.olive .temo q{color:var(--creme)}
+.temo cite{display:block;margin-top:14px;font-style:normal;font-size:.84rem;color:var(--encre-2)}
+.olive .temo cite{color:#BDB7A8}
+
+/* ---------- Listes / items ---------- */
+.item{display:grid;grid-template-columns:120px 1fr auto;gap:26px;align-items:center;
+ padding:22px 0;border-top:1px solid var(--lin)}
+.item .when{font-size:.85rem;color:var(--olive);line-height:1.35}
+.item h4{font-size:1.1rem;font-weight:400;margin-bottom:4px}
+.item p{margin:0;font-size:.9rem;color:var(--encre-2)}
+@media(max-width:760px){.item{grid-template-columns:1fr;gap:10px}}
+
+/* ---------- Produits ---------- */
+.prod{background:var(--blanc);border:1px solid var(--lin);border-radius:var(--r);overflow:hidden}
+.prod .ph{aspect-ratio:4/5;background:linear-gradient(150deg,#C8C0AC,#9EA38B);position:relative}
+.prod .ph span{position:absolute;inset:auto 0 0 0;padding:12px 16px;font-size:.74rem;color:#F2EEE4;background:linear-gradient(transparent,rgba(47,50,42,.5))}
+.prod .bd{padding:16px 18px 20px}
+.prod h4{font-size:1.02rem;font-weight:400;margin-bottom:4px}
+.prod .pp{font-size:1.05rem;margin-top:10px}
+
+/* ---------- Articles ---------- */
+.art{border-top:1px solid var(--lin);padding-top:18px}
+.art .cat{font-size:.76rem;color:var(--hib);letter-spacing:.06em}
+.art h4{font-size:1.15rem;font-weight:400;margin:9px 0 8px;line-height:1.3}
+.art p{font-family:var(--s);font-weight:300;font-size:.97rem;color:var(--encre-2);margin:0}
+
+/* ---------- Formulaire ---------- */
+.field{margin-bottom:18px}
+.field label{display:block;font-size:.85rem;margin-bottom:7px;color:var(--encre-2)}
+.field input,.field select,.field textarea{width:100%;padding:12px 14px;background:var(--blanc);
+ border:1px solid var(--lin);border-radius:2px;font-size:.95rem}
+.field textarea{min-height:120px;resize:vertical}
+.opts{display:flex;gap:10px;flex-wrap:wrap}
+.opt{border:1px solid var(--lin);background:var(--blanc);padding:11px 17px;border-radius:2px;
+ font-size:.9rem;cursor:pointer}
+.opt.sel{background:var(--olive);color:var(--creme);border-color:var(--olive)}
+.prog{height:2px;background:var(--lin);margin-bottom:30px}
+.prog i{display:block;height:2px;background:var(--olive);width:40%}
+
+/* ---------- Espace membres ---------- */
+.mb{background:var(--blanc);border:1px solid var(--lin);border-radius:var(--r);padding:24px}
+.bar{height:5px;background:var(--lin);border-radius:3px;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;background:var(--olive-l)}
+.mod{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:14px 0;border-top:1px solid var(--lin)}
+.pill{font-size:.74rem;padding:3px 10px;border-radius:20px;border:1px solid var(--lin);color:var(--encre-2)}
+.pill.ok{background:#E7EADF;border-color:#CBD3BC;color:#4E5A3C}
+.pill.now{background:var(--olive);border-color:var(--olive);color:var(--creme)}
+
+/* ---------- Footer ---------- */
+footer{background:var(--olive-d);color:#C4BFB0;padding:64px 0 34px}
+footer h5{font-family:var(--d);font-weight:400;font-size:.88rem;color:var(--creme);margin:0 0 14px;letter-spacing:.06em}
+footer a{display:block;font-size:.86rem;padding:4px 0;color:#B3AE9F}
+footer a:hover{color:var(--creme)}
+.foot-b{margin-top:44px;padding-top:22px;border-top:1px solid rgba(230,221,206,.16);
+ display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:.79rem}
+
+/* ---------- Bandeau maquette ---------- */
+.demo{background:var(--hib);color:#fff;text-align:center;padding:9px 20px;font-size:.81rem;letter-spacing:.02em}
+.page{display:none}.page.on{display:block;animation:fi .28s ease}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="demo">Maquette de présentation — données et visuels d'illustration · Conçue pour SASU ALIGNÉ par Omega Investment</div>
+
+<nav class="nav">
+ <div class="nav-in">
+  <a href="#" class="mark" data-go="accueil"><img src="data:image/png;base64,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" alt="ALIGNÉ"><b>ALIGNÉ</b></a>
+  <button class="burger" onclick="document.querySelector('.nav-links').classList.toggle('open')">Menu</button>
+  <div class="nav-links">
+   <a data-go="accueil">Accueil</a>
+   <a data-go="programme">Le programme</a>
+   <a data-go="formules">Formules</a>
+   <a data-go="cercle">Le Cercle</a>
+   <a data-go="evenements">Événements</a>
+   <a data-go="boutique">Boutique</a>
+   <a data-go="journal">Journal</a>
+   <a data-go="erika">Qui est Erika</a>
+   <a data-go="membres" style="color:var(--hib)">Espace membres</a>
+  </div>
+ </div>
+</nav>
+<!-- ============ ACCUEIL ============ -->
+<div class="page on" id="p-accueil">
+
+<header class="hero">
+ <div class="wrap hero-in">
+  <div>
+   <p class="kicker" style="margin-bottom:22px">Guadeloupe · Programme RÉGÉNÈRE</p>
+   <h1 class="dsp d1">Votre corps n'a pas cessé. Il a changé de langue.</h1>
+   <p class="prose">Un accompagnement de trois mois pour les femmes qui traversent la périménopause et la ménopause. Corps, hormones, émotions, souveraineté — réunis dans une même méthode, ancrée dans le patrimoine caribéen.</p>
+   <div class="hero-cta">
+    <a class="btn btn-c" data-go="formules">Découvrir le programme</a>
+    <a class="btn btn-o" style="color:var(--creme);border-color:rgba(230,221,206,.45)" data-go="profil">Connaître mon profil</a>
+   </div>
+  </div>
+  <img class="hero-sq" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAIAAACzY+a1AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAlqADAAQAAAABAAAAlgAAAAAXS0ggAAAmnUlEQVR4Ae3d+ZdcxZUn8KrKrMraS/u+lBAICbFI7JtBbIY5A+Pjbh/32HhOt+d/mjPzu4977AHbbcDQB8OMzY4QAqF9QUL7UirVvi85n3ghZScpFVIVytIDMk7qKV682N79xr1x48aNV9X/8uufTExMjI+PV1VV1dTUVFdXi+TzeddKSCEFJicnI0auMdSksJeVLk2LAhUIp0WuNGauQJhGVKbVpwqE0yJXGjNXIEwjKtPqUwXCaZErjZkrEKYRlWn1qQLhtMiVxswVCNOIyrT6VIFwWuRKY+YKhGlEZVp9qkA4LXKlMXMFwjSiMq0+VSCcFrnSmLkCYRpRmVafKhBOi1xpzFyBMI2oTKtPFQinRa40Zq5AmEZUptWnCoTTIlcaM1cgTCMq0+pTBcJpkSuNmSsQphGVafWpAuG0yJXGzBUI04jKtPpUgXBa5Epj5gqEaURlWn2qQDgtcqUxcwXCNKIyrT5VIJwWudKYOZvGTs20T/lwsC6E6h/S2brUcSEYrv0XAYvXklIx0esV3jBmiClTXYsrjPGxsbG6urra2loH+6Q40uc4ZjzkNzo6KiWbzcozNDQk3QHNy2sod8oNaPL6vlLJC0wmjAitklCcMi0ebWxsdH52eHjYsVkBWlDM5XKuHmUymfioublZ4sjISEm7s3CbOkE6LfpeTqCaq4lQrFRzCeDAVlcLUIEcwCKHYUclIv+JeIQLXcEMTkDOPoolg/hqL5TK54V3KMBfiBT6W5wSkbsW/CJIJCQIQeVaEKcNDQ2RKeXBfwCWrdDcbEZSx4Xf8uWLoSpAW1xnlKiT+TDjXjWoDXJVjrfn87WZjAoHR0aGx8YwXFdnZ1NTU319PfAmx8dlyE9MDPT1Zevqrlrt9c3w/YEQuQuoiF+OX3GGQs6rUhMwGI547O7unjNnzsqVKzGi24ULF545c2ZgYACEpKg5UoSYvZogv2qD087w/YHQqwPpigGcxWKzgN9U+YsrAU99XU7O+XPnPfbYY/feey/mk6Gzs/NPf/rT7t27AZzNZKoyYVI0zY4m3w4prqHc8csHa7lbvDH1e0+/a8Gs0L+YubG+YXBwEOfdeuut99xzT0tLC3a0hHjttdf27dsnMwjBjC/lGR8dm32Czn6LBRJdORK1O0sx2kHUF4xucWQSRFBKOs1CCPNQcus1sj6ak8/X19WNjYyIRO3DpBUrUVAIM1Y+r8jk+ERNWONVq5N6KYRbolj14xN+IurMJBn6unsee+TRn/6Xn0yMjo0ODbc0Nr3/zru7v9hZl8nOaWkdGRwSyWVrs9U16klauMLlym97PVLTKEjhh7IwQAlUtvCKiBa/LxTiLaUEkGgnT9VkHvXrskHvj8o9XTFiqR5Pcw31g6Mj9BLsogaJMFZQqVgbzBJkPanOVCcfUspXr1u3bs2aNVF+9vb2Hjhw4J133lEqjgY1hMqrqqQ0VleNTYSPMM1mqE7d158mJ4kmsgtFADN37txo+EAUJIvXwiB3Kxu8h7ECJMbG65saETQQF0dNTKAvLANL1dSMDY9kc3W1DfVDI8MYTv44ShSnbboCVU6lYkOWmKrSmdERqGeMhtiuDLpEF1WzauMQMc7I2L7+/lxzY/G8W8Aywly4nXEkjjzFVRhD6riwAA9KgXDDhg3otW3bNiQreW0vcJHWNTUYBdggpBN+9dVX3X2945NB5CKxlJtuWbN+/XqCripT0z889MEHH6jzYtmqqomxsbWr2+fPnx+bjsYBBTPJ58yibIxSAYrx1hKeCiroUoQwZti3f39Xf29JP8t9m0YIkQYFEQvJNm3aBMvt27fDo0CLOPrireGPoM8+++xtt64fGx3tHxj4zW9+c/rc2cbmpoTIQWAuWrTooYceqq+twzd9w4Mff/gh8DG16dMUODgxuXH9hi1btkQIpatZE2F2zNT09fW1trbCSX9iiyJqNjKULowh+Q0Ls/TH27cV+jk7kdRBiBZGNOqI3HTTTdZh4iLHjh0rUMSjQhzMFmfVk3myl8Srpdnn80G/qA1zFXKDDYowkG40WCFAPRYP+gt5OzoGpJCYaDqmTE81EQMg+/v7xZWFnEioqqpKIlGsiTi2IKobR44cKXRs1iKpgzAObaQhOe+77z4kE3/kkUdOnjyJKOIxxLirWQpx0VFOt4pHEkNUTjMZ4qpKnvxkqPN814WWpmajBMUpkwESNbBwYsjJfBg5YI1cmAyjqrqaMOeZFBubtGJMqN+4UaGaNSFRbeBsbmxatnTpua5OxWczpA5COih6IUpDrn7juvUj/YPid99x1x9f/kOgV3UgWSScSIFS8sCADkkfAarb+lwdjQai2OvgwYOZqururi5apYXIhQsXQKvseH6yriZbn2hP8FMKqLAfGB5SCs+ZUGEMKoABT7txhGla8MhVPTKD0MbF5zt2VNVmCr2anUjqIBwZG7WazlXXPHDPvS219ayOrY1Nwz39/+2ffvE//tf/bJ7bNpYYna0GGhOdEN8FTrICmZgkTrOZYG5GdMp9FHStzS2d5zr+3/ETEJJtmHpZF/iSXlrf2CDzyNAwvjPtjQ2NMaG99+EHb77114aWZiNAW4TvtJCorc7+h5SfVsmZZk4dhBhlsH9gQUvbyuUrLK5xSfVEvmYyv3De/Ns3bvx8187mOW34A0MEZSSbDewAgOT9oz1F1K4hFKWbviBkahRAKFBtOru7yEbZcLwRICewjQMhkhGijHCgs7yvzcy22Tr24dqvqYMQQcmlFRs2tre3DwwNNdaH1RiGaGtru//++0EIObvjwAjT0tTbAqFU+BcE3eLFi9tXrwY8uBsaGz/c+rF4QSTKUAAvxhM0zYlhUiSWXa89RNF67fm/fc7UQYgFGcnuuusuK+Wu850oODw4WN/Y6FXppetvWXf81MkscZlo+TbRa7JXJjGMoWf1XtfUdNtttz315JOqgs3hI0c+3/mFUZLJZmAsW9X4xe9al1AzAjn7kJR046q3ZFW6gslvzer2m2++2VxV11B/8vSpHTt3NjQ1joyPNTU0PvTgg9bv0doCEmw2Ve/NdjED7Z/YFMe1wpIlS8QjMLG4a0TrIvN9vUY5pxW+Xno27tIFod5Yz226404zIqWQSXPHnl0ffPJx3+BAIhQnGWsWL1qUZ+4eC9oKqTsVkeDkkSuFRcRcKEJ4wgnnqS2mq8Gj4npK4FRkWmGq/pQvPV0Qes+Vy5bDCbsg64Wurj1792LEz3Z8HsGgrJoRgSeDFOSeijQQElBfhshGiohHRUa6RLcR6UIlJRWW3BaypSqSOgiXLVu2aOFC5MaIx06eYCqrymY+3b6diojo0u/ZfHdzUxNxaiWXeDxcmZ6gkjmyVIGN4pIcbJHtoiCl2ghquSJg05KicVhcuUNlS71hEGKRKNDQF0EZGOMy7pGHH7Y2IN2sr7du+4QuWlef23/ooP1xJFaKmmP3HAyKRx6SHrFBQXGzoEfqlFiQmR5ZzmtFc5CTLqe4CkXI0iioI6iR2tJFCvBfY6RsSE1Z8Q2DEIEEGCAugsLPVhydc27bHAoIFmRRO3funGVDyFab/ezzzymfUQze1L5m4YIFFvL0minf7Afz4IZBCLw4rg38yAqk2Z133sniDCeIYjsQYiYoue7au+f4iRMYi3ikVW668y5KDbPZDwapKV/0hkEYWRB4gBQH29KlS60l9JTEY8bcs2ePp3hUwK2j42PvfvA+kxikx0dGH7zv/tamZgDesBeYkqSz/eBGUgB48IjsCCdbg1iQlZkU5Vl06tQp0x6es8UAY4k7d+7k94cR5WEnw4ijwzfAAX62IbpaezcSQiI0Bp20aX777beLmBcpHbt27cKCFBPQykOpsfweHh358KOPIFpTm+Vp8fCDD2LEq73g9//5DYMQNtAyyWFEUpSLH+daKbZsjh49ynmiuaGRkxJdEbPCQX6MaPveU5JWkTAjbtr0/Yfoam94wyDEWwUIWaxvam+vz9ZWj082tTQfP3mip6cHYHZlc7W1dgGDD0Syb3em4xz/FB632YacTXqOuZlJXrjBQbT4QMxF/5evv3zcxwjT59etcmHFOYVWVNj6iGS6YcT6+ouU3M1SrzRT8sN8GI4ZenR4eOWSZQ9svmdiaISG2Xnhwu79+6prs4yiVoRgHhkaYobBjBiRyc0+wymuMXNauwf7Fy5b8syTT+UHR8YGhxluwBz2coPozY+NBNdQ8Js78XFw0s1XwZtljpOanKHmkRHiWmbCIIyRS7YegAbweGDYx096HoZIkljyFvG2hKazfDurOxVxUEd/ePRCO3zG7fPee+6ZHBnL5qvrcrn3P/n43PkOj7IsoOhYc8mfk4NgfmLh/AVmxPfee691TltzW2tDfcPyJUuXLl5CzkbllvoDIpgJIJcIJ8Ml7P8lplHjhgLFLhAtCTwPtQVOTcWOFQAATyHERyUZCk9vbGRWISx+VSQ29vt6epxV4OiO1rWZrO3ZLw8domfW1mTELR64DXKgJuj4nw2PjWaag1lt767d3GrWtq8xZa5atWrd+lutOiAH76HR4OwEI5MoBwApGoUWL7fRbFBf6UraghlRHNguOZSkJ8V9K45fi+2gGOxryV9c/7eP3zAIkQ+VvcDatWu5gPKRAerp06e3bf2ES8vyZctaWluZ2ezQYqUxQm94eGBwsLenh1Gm49y5XTu+uG3draypPNKoQlwOA89VhW1e+OVrqmtzdXwvtEKDhb19j8GBAfh7Ghk00g4LxpSpSInz/AqTomzF8alKzWb6rEJYLIhMb2Evty63+c67cIapDjUt+J566qn5CxesXrmKXuOpK5IFGAaH7CCeOnHy2Inj+/fu27N7946bb7np5rUk57KVK0CFU6HICBclpKoI0OBiIzQ38eNuohBls2dPn5EB2+FFhFYcD7lekegRPzUX81lxzjTAOasQFr+8eDCKtq9hkeHrWVOXw0Itba1btmzhY4HKcDWN9fX0ojV0SULswgLHL/upJ5609g9z2OjYSH4EQvhUhVJI48DcE9jtoqs8FDUkP39R1Z47fcbUiBGJWRUqFcTpNYc0YFbS2VmCMM4QxWOZumh3997Nd9MYo6LBs6Vt3lzcgycibB5BBbkjYyG9xYYrPzNAcp6Aa1dPt1cyt8kmElFRvK2hFQ8ZB/29vTt3fHH40JcDvX3QWrF0GR2Kw5M8eDHUnCioJXSJtwDzU28BuUKkOP/sz3/Frc8ShMVNFuKQwFWQwDegEphj2NjYYjrOnuvoPN/f29fd22M7wloiW5O5c9NdMjS3tvCv4TMoPjA0qGxcHsADQkI4ppTPD/UP1NbnTH6kMVwxNDFLgJ44cYLi08ihdOTiZlMsXuhVSSSiGBMLQ/DGYlbSw7JDiBVQ2SoNQnjEkMculmvcA/kytSVGUbopEoOEDrJn394vDx/evWuXfQnciU1MYJQU1P/Lv7+xYvnyTZs3b1i/vqm+Obja88CvreVGXVsVzmC0trTYqHL+D+r1uRx7ON2noS5nRagqaow+4OzMZPDr1RwB29jcrHvi6KJjWFyFhtGoPGMhT1gaXjIFFCwA9Fw5rUFVaARwNzVKhGCLyOVKSFzu27JDaOx7Sa8aWQSKyMpnzPyzefPm+AhBkcPW0hc7d3700UejQecfb2huiowlHkSroZCpOXzs6JdHv7KtyEWfIjrfmduuEFjj0K63u0cRMyWXNcVxM+y1i7jgodmqCjdTeYBy7PTJN954o6unR+26R66GbjTW3XHHHStWrWydN9fgUzY/GrqKF90KEc2g4PATHx1x0NCmmETFpRDsoC03ZiX1lx3COE4DfmFPKYTJcWuE8XVrb165grMvIlVZxTv9/Pd33rHBNDA6LE+geFUejWJ3Ed2208TYqEqU3rl7FyPcAw888OD9DyxduIi8xY5mVrYejqN8GPnAjfHjTaBCUxUCGASmxsBV2QyHpxH9SDxLtYURI8yuTLVktWOIMDP+MhN5PcSIkQUlAkw8PEpc6NQ5Z9488JPqUuhTJSQu923Z20MggEUCxZcBqmPND9x/f2DQyTydH1R/+9vftm7daguivqHeTBPZgqMa6qMviiurHkX4U/hRUrdu2/bFF1/88y9/tWbValKP7mpzyloFTXPOdQ4NZ+rrtAunCJU4QuPC8VEKa9CSYseMF80JYXgBJnFMNUObbkMqG+xk+NrC5RAaCipUSRwEDYHVTRCzfcq3MEOXa6xE8FwRSPDCWjLSreiNbqQHkP2Hd999V564BYGlkAY1E+ycwA3+os75iZicxFUSq7Iz/Nvf/hZT5hobLEgCQZP9YTNiGB8JcQ2RoNdkmMYD83FJVYmqkJs6SvDqj8wqJAw1HVVit57GDM5g+BEV4afApaCUDptNlTILKg74ctFx6nrLzoWaDoMzfhyJ1JyYqKutu+WWW/j1IjH62jx6/bW/YIs58+cF99/kIFlEGh0VRxrEkhN7wS/oIwlveYSCp86e+fMrr+Cz++8NJ9noTTKf7Tj31//7dv/gQK6+3qToKS2UDqXaWpqUeQuEudqOjg4yMKhbiSspaMeHR3l47Nj5hW0Qkly3cw51XJoCtVjgRXFdOnL0qM4IwNZWENSzHsoOIaqhbBBIZGBtOMWCUjxFA6q4cGLCsemzZ8+ubF8dOS8eXDLQQ4bEVK0GpVBGonoEFSK6dIculi5fdvSro2+++aZJiIrLM0M6LofukaNfdff34U5FhjmmkgT5qlwmWYS4baxXjyacQtM06kPCkafz58/v3bt3ZGKcnDSeJke/pp5EpUZnDAvi2tXr6J7AzhDcsbJlF2wlg2Q2IETu+JIRS1r+KqeWUDOXO3ri+K49u1nIxiYnMA1yxP7JD90Er6ADKhjTY2KgdXLw09Do6rxgx98W1XsfvG+LkRuqM4I0Qyrr4PDQ/i8PhdZZuhNjt93HieFRi0JWUxZU7nHAE9RGnwkAZII4JS2dnwruAcbQFCdvqLm6F0ZZYlIQVzAOshISl/u27EMmWLysA00t2VpvSUd/9KGHbTsM9PUD7JNPtxFZg2Mjw+NjLW1tZK55Cbu4KkPDbGpoQPfmxkZlASbFLYNqmL5w5/iEqjCK0eC8yx///G80I6s6OsUdt2187NEfLV6w0EQFcqx5MVTnNRe2NRJQdcxTV8FMJm7Cs1UpA0SlAIZguPwHeCwIP+Dpi4GiBvFyA3Z5/WWHsPjFvKH5Iy69EYvi0NvXZ8pBRVfEQgvGFJtNhJJTvvab6Jk9Xd1+JrnLf3ajhpPpx+e0aByco956660Qz2SYs6F4/333KWUJz10KhNjR+jII5ctCXDlclvwdSCi7IL0IoQmsKsiouW1ttpZQk8yxFjTxwBXFJ8Ynw6CmLzCpTEz6iogtCwyEvZQysRn1yKm2SNRCJBhikiO7NBTfKmE1OHj4yx89/IhSivD7ZuXZvnOH4RI8OYYGtfsdgGU6XSw7hDoDpKDUJQIHfgL6ojubNY4BBgirgpVqAkRNuQYrDaerN9y63tpANqyJd8GpqgJyhYjMdgdtVsQT2M5k//53v4MTFGlJviT0Tz//eceFzgOHDi5YsrgYP2x3cTh8I72uyLLfWGK2H5ZdkEa6wy9CaKKia0DFLEIJxBxxOpFNBlcLLOk4Uh4BvwJPNtOS4FGMFK4mIdzGxqagtaNd++6enn979ZW9B/bbtKI0mYN/8vwL4irh2F9C4G94/4LyWVIkbbff8ArXp6tgiCAlIIa9CKwQ0fJIBAb4D1fJFpqsrmbfsjawRqRZ2KMQd53qZ81uTLS18KNhjMm2NbdYCBLRf371lQs93STwYF//zWvX/vd/+bVhEaWxZrDg9yaUjsrr/mJAgo1vGEYLcZCZiTyULm5FDEIsZhHGshVkKbW+qurA4S//9f/8Pk6ZrrJFgAvyM0YwGcvrnNa2Bx98MOZpbGhgRmeO+eroUSj+7Cc/ldOgYfh+/PHHKcBspFd9R/xHfl6LmL1qVbOQoewQYjVEBBh1pgCeSIQQcWEDORDGyCS3F19SGhrcc2C/lYNlvJ0EdmhVICsGklK4qqdmIo//HAzmymbyMyAwOplJBXUYitx+8Re/PHXmNHPrC//5eU7+XDcK4Hw/eDGRXeUcKvAwgUERl4AzTFeJnYxMsyTHiOSbqwkP9SNvOQETNBz7hHjUpwubmjiUMkUGFxi1kKk2bNmgg8htZRm3nGeO6b7Q5bNO+NL2U5hufTWmanLr9k/5nVqaqs8O0z+/+CtLTFGcHUW6LtniCDpREsLYukQN9ftdukvv/2WHEG9FbAKr1dRYosFJJGBRX+80EzVEHNJAFaYiFaIjt4KKx7lTBPAGxIIFCzShYMwQ4x5B2jh4+U9/PHnmtDw84NgZfvYP/2jhb9a0/DBlqsSo0pNQ/DuA1xXIU3YI0Qg8ke6IaxUBRVqGQW+pwPeJ0JMuD6LjD30Mq+zLrkGo+jgXzmAGS1ingWdNogetXr1a/Qq6tQEZjEEmvGTH0Sx7vrvrlVdesQDlIVBXk+F0Y7Eov3Y1yoZgvRjm4KJAYpP78VeUnNJo2SHEPVgHf6CaiKXe4cOHCboIGAhNVzgJeeTBDToU+1RyVVZKqCcxcwctKPlolynQ1xJJ41BD+AVzl7aiV6Mp1ibi0ePHXnrppagW+Upz+PLlhg1u2YkMI/UoklJ8rqFbkVDXkHGmWchGDIdGKIWyIo4JFua/FStWOJ0EV4hGQ8xV28Gp0FQDNnK94/bb+YNbDgZ9yXfU7O0nn1a2cHTmG3tpEYo2h9/4y+t4Lk6BTz/9dPyuhuaiVLhqu6nNUHYIEVHw/vBzBSQv+kOHDsXJjxDjP8FeA2YpkR2vSCyVyBPYKzmuFvFTcOOG2/gAeGSBSM5GW6samFi5H1pCgND4wPd2tT755BMRdgCa1PPPP6+4z5yS6vJcsdHvRGLZIURx9MU3EUg8BCfnWmgxETOM+Oijj6ImlpItEYZRJH7tSpkxvYEx/vg7zJ0/36xGkFJPcDDdNSiTQE52D+xgMI6T0gRmwD6bYSL469tvYUeAGQFr1qyxITVv3jx8CePvBFpX7GTZIYSThqMeL8KeaQ/ps11f+PSqL5Ezk6L5Y48+usiu0NAQ45sOXfFHkTG9hQUmnk42pFavXPnk41vwEOxdNRF5UURDfDLa29vV6ZElChnr2NSZs2fffvttlnS8eL6j4757733umR8zq1pzROqQxt+5UHYIIRQom5xHwUB2wx1hmqyvffm1P3f29SxYutiuEF3/17/81eMPPdLd0emIWpB+43YHbYBn/NzaMLJ6k43BM/gB56ue3PLEcz9+1kQ7ODJMfmI1bK0t+71hO3dygjcNR2+8i/uBimsvDPS1zp975MiR3//r/w7KLX4fm3jswYfv33Q377PQyeQPaAXvtOTLpVJMq1Evvfwa9KZLv/g0nKKqCSqboKpYoaZ1QMfKNzIymzav11icDLRU1sa8KsuIU5ciZ8+dsyBbd8stDjGdPnGSxn/b+g3emx8injCTueoW/HJ1dS3NzeK2D/v7+hYvXPT0k0/5nh67KHwaGxpNrtb7QZtNlpvbPv1UzdGiHdfphXat232g9vjx4zyhbr1lHfoSA+vX3WpN0zYn6D5qObD/wKHDX5LMZHJEJJKl5BoRAkyBYjES3AHs+ycTtjwC2sbZ5LqgqMLYUKE/swphtGwlODKF1rB2wax9dTuEwj5tTQ3//KXLltFxLnR2EnQOpHl/uiWDC4Yzb919990/fuaZTXfdBWBPwXbu7NkPP/xw0eLFZlNTGiuBb0ZRcW0fBlaIZIs8kFwtHAFz6MtDc+fPW758OYuPSljG0T3MiNVVBw4exKlGQ1iA8nxMTgUbKyU/0iQ4Gusfj8ZLEfHA8cm3/ZE44lduCMtuI51q6Bnmpkne0DwwfvbTf0DNc2fOSgQS/zaO3rbg4Ur3QQgEpX04DerjsDQRnmfWCeYzUKnh888/33T3ZiSTWc6oFk3VLunXMm/OhfOdL738sg8uaOvMqdNQtECMRea0tXHtURv3C9TXJUxMdJdcSfiYEgztyVODQwo/K0NTnwWVqDNiOVV/vn36DYMQuRHOe/IA5j/x3HPPrV61CiQIiprtq1bf1L7GDIc5jGtgiyMoWYpSdB90IfGsEw5+ecicBzkp5JVrLGVRX0IdhBaY+/oow7k6Q+H3f3j5xf/6CzIcDHhdZwhwn+nzh0uosmqTX22uU0EYYQs1J0CaR3/3h5ecLFBVFKc6/72FkMTDLlBEo22fbbfJYGnBaDJnXlhdwBJRgi5TUz02PNY30C/uRKCrU/ZDA4P81T58/4ML3V3QxY7IhNCwRzJwIt9U7hUqUTkvVi7hZ86dffX1v/z8H3+2YP582hB5aGCpcN6cufAzYvQtqFcxXJxXkxtxX3NPBHVsOnzJWx+qw9/Iu5g90Y881R+IXqykDP/NKhdGPohvwULGaB1olM06pcaj11b7jh07rPRJS3/wwRFtZ5e4U6Bpi69WVFdzGTtx/LjPeO3bu/fY8eMoaEcJHjI4wy0n7OPEI6WYVrHdiIWJCtJDg0NEMU6xtP/3v7757NPPSLTwADDJaaDomKqEXPLHC4tri3GPRC7idynCRBsluUriI4OpkOfySq5LyqxCWNzjKGq8npe0Ng8EpY7u3/fV8WPUmSULFy1ZvmzR/AU2b+0EsZ+dP3vO50nPnjrtC8H2GeYumO9vMJ3v7DQCUI0KioHIRgi5xdzRzFbcYoyTkCZCug/JaTaW31kqfMzXRgYaje5gZVVRuATcKd0eFqYruVrjxhTfWolPQWinLPZBWQVjbeLlY8Tqcv/ltDha0RR1jHq3EArkSz6lBsL4qpgAsdCOk4tdBR+RITytDtlckBJzWF2E5Xm2lg6Jq6SYh9QGYEysoBmosaVZbaiGXkHXuLQacx9yJgGDOvoUlM8kXOxY+MOHehS+7uZjG1jQkLKAkRZgoDfTPx2qGhnl6sg4zlWuMVcvxTLU0/gHvdj5LFKDnTZpSMEo1WND1wtCLxLfyzWGsi8qcAn5Jpj8eEUAD5WNUxFbtWCDqNeTIWKJn/SyLhf+pF1zS4viYAdSc0szO4tjm0KYieBkyeDUWX29JYdS6om6fchAm0j+cpqI2qSrHEItTU1OpMlAbeFHpULrQtvFinP76O3rzdAzfT1BbzjkE90T45g+V59jLtC0z70T1739fY5f9chsJ9nX4PzFy8T0o4i/Q0n+RrQuUThMpTElYvktr6pSs0oK9ZcdQk2CAR6hycTMbU09d84c3hJ9vX39A8HNMJg9zTr19T5UsmDhQp/kdlYw8QIPxwqdRkTTcx0d4WC8SdGKED1Norzr+aNmExephgbpKK8RzUFNcVdIB/Ds/luuoX5vr5aa/PWlsXHDon3NGusWUygXfU2gCh4FbfuadoAZXsG3kYu3j4glI4nEiB0IooP7cmDOYA3wlNucP9oW+pzIzGIUvyVmJcUvh7DsBjZkjShGIK3//lMSXnzxRW+LZGiELZAbzBZqGzduxC6KkEIekWwKUlvsLOKzCJJSEt3al7fzbhDgJ48Sfgs7HmpwVb86i+dI8tmJDlOXmhX3CTdGdtZUYwOl1GOEE4P6IN3SXSIe7enqMgU408aLxwEBhtze7m5XPXbc3KPB/n4uzuvXrQsnb4pCCfXLdFt2dQY1TTxGCm81TqAmNvx18Mh+R5nWrFkTP30f5prxcV9GIJEgJ7gVUAOWiPjCCy+QuocPH3799dctP0yc0umi8vhy1I9+9CODwAaWp3gLpYIsra6ipBgTMSeWwpFUTWip31T3xBNPqN/279mODouTMCkmnzFhq5u3YAHWZLcLVvh8FeB55UCa98bjjz3OsNDZcd6hcFqYcaBmbgN6qE76Lbc5Iyn23DXCpg+F+HUHsuxcqMeoVuA23OOj2y+//PLf//53p9qRFcYyAM97ygaeqPjgIZ3DXksWLcITH/juWmvrsiVLcJuhLptliYivmPobo6+++io2tQuoBhMbPHAnxxxe/Xie3Y6W5JF0qMuw8c472Hr279/vgBnLDhi05qneRlrje02EARcwz9rrp7PcvuE2EvjzT7fTXGg9GNrq0N+XvXPj7XSc9995VyuKF0IBv+sOW3GFZedCIgtpCD4IIQrOMHJB4syRV5UiPeqHIZsPwZh1HN2rbwC7TQkewCwyB/bt++zT7TiMFkqgResl/vBJKLiaz7CIskYDhIwSfICaB5Kg/vjCmqPi0mBxIVbGMT5gsnDxYtzsDKKjTIo7NqgG/GcnC/MNN4ZzrPAKUtpoa2ygc5493wFgdRLRzKMSaT2Hj3515NjRFatXSddQMYnLHS+7OoNeUKQXIhAdgQVk7c03r1y9iss21pFCl0Em36GQDcDgce6XxuGrGDJTLP0xQerolse3dHV3bf3445HREaoQ7YMi4yjaooWLTp89QzkFw8EDB/iA84fhhop5MFZkCH0QYExjBIa9X+sWZqDN99yj0a2fbGX5tmjxgbfA+ZN5A8LfpPGnDDvOnyfaLfUMQW358KL4kcNHLHVotlRTBlUtHjp4aPWadqeofMThxKlTcUo2dGLrEcLrhWusNg6UWH/Z14UFJohvUiK4g8JwpSCbR9/mOhXJzK6xweKmwyLyYnJpb8jqK/ZEPVdOLzMLxolWLy/iRwMv7XKZ74sJ9w1NxWzf5jpV5VfswFT4qWS6fZiq3fKll3BF+Rqq1FwuClQgLBdlZ63eCoSzRupyNVSBsFyUnbV6KxDOGqnL1VAFwnJRdtbqLfuiYqr12ay9YUlD16s/16ueku7N4LbChTMgWrqKVCBMFx4z6E0FwhkQLV1FKhCmC48Z9KYC4QyIlq4iFQjThccMelOBcAZES1eRCoTpwmMGvalAOAOipatIBcJ04TGD3lQgnAHR0lWkAmG68JhBbyoQzoBo6SpSgTBdeMygNxUIZ0C0dBWpQJguPGbQmwqEMyBauopUIEwXHjPoTQXCGRAtXUUqEKYLjxn0pgLhDIiWriIVCNOFxwx6U4FwBkRLV5FwIFZwCjAeBIzukYXbdHW20pvw/RNHiOPhU0cMUSTvYx6XPoibfJylAmHKx0k8O6yTkIpgVQRpyiEr7V6ErZDq9uL3dcLHlJLgsHlFihYIlOZI4MEkhK8VRdh0V0qMQ1E8zS/wg+1bMhf+hxQFU/g7VqZD35xAFPhF5ED4g6VR6l/84twHqRj+PzX0ubfNITSVAAAAAElFTkSuQmCC" alt="">
+ </div>
+ <div class="wrap">
+  <div class="hero-foot">
+   <div><b class="num">3</b><span>mois d'accompagnement intégré</span></div>
+   <div><b class="num">12</b><span>mois de Cercle communautaire</span></div>
+   <div><b class="num">18</b><span>femmes par cohorte au maximum</span></div>
+   <div><b class="num">3</b><span>cohortes par an : janvier, avril, octobre</span></div>
+  </div>
+ </div>
+</header>
+
+<section>
+ <div class="wrap g2">
+  <div>
+   <h2 class="dsp d2">« Je fonctionne. Mais je suis fatiguée. »</h2>
+  </div>
+  <div>
+   <p class="prose big">C'est la phrase que sept femmes sur dix nous ont dite, mot pour mot, pendant notre étude en Guadeloupe et en Martinique.</p>
+   <p class="prose">Vous tenez votre entreprise, votre famille, vos engagements. De l'extérieur, tout va. À l'intérieur, le sommeil s'effrite, l'énergie se dérobe, l'humeur devient une étrangère. On vous répond que c'est l'âge, qu'il faut faire avec.</p>
+   <p class="prose">RÉGÉNÈRE part d'un autre endroit : ce que vous vivez a une mécanique, cette mécanique se comprend, et elle se travaille. Pas pour revenir à vos trente ans — pour habiter pleinement la femme que vous êtes en train de devenir.</p>
+  </div>
+ </div>
+</section>
+
+<section class="olive">
+ <div class="wrap">
+  <h2 class="dsp d2" style="max-width:17ch;margin-bottom:56px">Quatre choses que vous ne trouverez pas ailleurs</h2>
+  <div class="g4">
+   <div class="pil"><h3>Une méthode unifiée</h3><p>Corps, hormones, émotions et souveraineté travaillés ensemble, dans un même parcours. Pas quatre praticiens qui s'ignorent.</p></div>
+   <div class="pil"><h3>Un indice de régénération</h3><p>Votre état évalué au départ, à six semaines et à la fin. Vous voyez ce qui bouge, chiffres à l'appui.</p></div>
+   <div class="pil"><h3>Le patrimoine d'ici</h3><p>Les plantes de nos jardins, les rituels de nos grand-mères, relus à la lumière de la naturopathie contemporaine.</p></div>
+   <div class="pil"><h3>Un Cercle qui dure</h3><p>Douze mois après le parcours, vous restez entourée. Les cohortes ne se dispersent pas.</p></div>
+  </div>
+ </div>
+</section>
+
+<section>
+ <div class="wrap">
+  <p class="kicker" style="margin-bottom:14px">Le parcours</p>
+  <h2 class="dsp d2" style="margin-bottom:44px">Trois mois, puis une année</h2>
+  <div class="step"><div class="step-n num">01</div><div><h4>Mois 1 — Poser le terrain</h4><p>Bilan complet, indice de régénération initial, réglage du sommeil et de la digestion. On répare le socle avant de construire dessus.</p></div></div>
+  <div class="step"><div class="step-n num">02</div><div><h4>Mois 2 — Accompagner l'hormonal</h4><p>Protocoles plantes personnalisés, alimentation adaptée à votre profil, travail sur les bouffées de chaleur et l'énergie de milieu de journée.</p></div></div>
+  <div class="step"><div class="step-n num">03</div><div><h4>Mois 3 — Reprendre la main</h4><p>Émotions, limites, place dans le couple et dans le travail. Le volet souveraineté, celui dont personne ne parle et que toutes attendent.</p></div></div>
+  <div class="step"><div class="step-n num">04</div><div><h4>Les douze mois suivants — Le Cercle</h4><p>Une rencontre mensuelle en visio, deux retrouvailles en présentiel dans l'année, un espace d'échange entre femmes qui savent de quoi vous parlez.</p></div></div>
+ </div>
+</section>
+
+<section class="lin">
+ <div class="wrap">
+  <div class="g3">
+   <div class="temo"><q>J'ai arrêté de me réveiller à trois heures du matin. C'est bête à dire, mais ça a tout changé dans ma façon de diriger mon équipe.</q><cite>Marie-Line, 52 ans, Le Gosier — cohorte pilote</cite></div>
+   <div class="temo"><q>On m'avait proposé des compléments, des régimes, une thérapie. Jamais les quatre ensemble, jamais quelqu'un qui relie.</q><cite>Sandrine, 47 ans, Fort-de-France — cohorte pilote</cite></div>
+   <div class="temo"><q>Le Cercle, c'est ce qui m'a fait tenir après le programme. On ne repart pas seule.</q><cite>Josiane, 55 ans, Baie-Mahault — cohorte pilote</cite></div>
+  </div>
+ </div>
+</section>
+
+<section>
+ <div class="wrap g2" style="align-items:center">
+  <div>
+   <p class="kicker" style="margin-bottom:14px">En cinq minutes</p>
+   <h2 class="dsp d2" style="margin-bottom:20px">Quel est votre profil de régénération ?</h2>
+   <p class="prose">Six questions sur votre sommeil, votre énergie, votre cycle et votre charge mentale. Vous recevez votre typologie par email, avec trois premières recommandations applicables dès cette semaine. Sans engagement, et sans vous inscrire à quoi que ce soit.</p>
+   <a class="btn" data-go="profil" style="margin-top:12px">Commencer le questionnaire</a>
+  </div>
+  <div class="mb">
+   <p class="mini" style="margin-bottom:6px">Question 2 sur 6</p>
+   <div class="prog"><i></i></div>
+   <h3 class="dsp d3" style="margin-bottom:18px">Comment décririez-vous vos nuits en ce moment ?</h3>
+   <div class="opts" style="flex-direction:column;align-items:stretch">
+    <button class="opt">Je dors bien, je me réveille reposée</button>
+    <button class="opt sel">Je m'endors mais je me réveille la nuit</button>
+    <button class="opt">J'ai du mal à trouver le sommeil</button>
+    <button class="opt">Je dors peu et je me réveille épuisée</button>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section class="pad-s" style="padding-top:0">
+ <div class="wrap">
+  <hr class="rule" style="margin-bottom:44px">
+  <div class="g2" style="align-items:end;margin-bottom:34px">
+   <h2 class="dsp d2">Prochains rendez-vous</h2>
+   <div style="text-align:right"><a class="btn btn-o" data-go="evenements">Voir l'agenda</a></div>
+  </div>
+  <div class="item"><div class="when">Jeudi 14 novembre<br>19 h — Le Gosier</div><div><h4>Soirée de lancement RÉGÉNÈRE</h4><p>Présentation du programme, rencontre avec Erika, dégustation de tisanes du jardin. 40 places.</p></div><div><a class="btn btn-o">Réserver · 25 €</a></div></div>
+  <div class="item"><div class="when">Samedi 7 décembre<br>9 h — Sainte-Anne</div><div><h4>Atelier « Plantes de nos jardins »</h4><p>Reconnaître, cueillir et préparer six plantes locales utiles à la périménopause.</p></div><div><a class="btn btn-o">Réserver · 65 €</a></div></div>
+  <div class="item" style="border-bottom:1px solid var(--lin)"><div class="when">18 au 20 avril<br>Deshaies</div><div><h4>Retraite Cercle — trois jours</h4><p>Réservée aux membres du Cercle. Jeûne doux, marche, travail émotionnel en petit groupe.</p></div><div><a class="btn btn-o">Liste d'attente</a></div></div>
+ </div>
+</section>
+
+<section class="olive pad-s">
+ <div class="wrap" style="text-align:center">
+  <h2 class="dsp d2" style="max-width:20ch;margin:0 auto 20px">La cohorte de janvier ouvre le 2 janvier 2027</h2>
+  <p class="prose" style="margin:0 auto 30px;max-width:52ch">Dix-huit places. Trois formules. Un paiement en une ou trois fois. Les inscriptions ferment dès que la jauge est atteinte.</p>
+  <a class="btn btn-c" data-go="formules">Voir les formules et les tarifs</a>
+ </div>
+</section>
+</div>
+
+<!-- ============ PROGRAMME ============ -->
+<div class="page" id="p-programme">
+<section class="olive" style="padding:88px 0 74px">
+ <div class="wrap">
+  <p class="kicker" style="margin-bottom:20px">Le programme</p>
+  <h1 class="dsp d1" style="max-width:15ch;margin-bottom:24px">RÉGÉNÈRE</h1>
+  <p class="prose big" style="max-width:58ch;color:#D8D2C3">Trois mois pour comprendre ce qui se joue dans votre corps, agir dessus avec méthode, et reprendre la main sur ce que vous aviez laissé filer.</p>
+ </div>
+</section>
+
+<section>
+ <div class="wrap g2">
+  <div>
+   <h2 class="dsp d2" style="margin-bottom:22px">Pourquoi quatre dimensions plutôt qu'une</h2>
+   <p class="prose">La périménopause n'est pas un problème hormonal avec des conséquences annexes. C'est un basculement qui touche en même temps le métabolisme, le sommeil, la régulation émotionnelle et la place que vous prenez — au travail, dans votre couple, dans votre famille.</p>
+   <p class="prose">Traiter une dimension seule, c'est ce que fait la plupart des offres. Et c'est pour cela qu'elles s'essoufflent au bout de six semaines.</p>
+  </div>
+  <div>
+   <div class="pil" style="margin-bottom:26px"><h3>Corps</h3><p>Sommeil, digestion, énergie, mouvement. Le socle : rien ne tient si ces quatre-là ne tiennent pas.</p></div>
+   <div class="pil" style="margin-bottom:26px"><h3>Hormones</h3><p>Comprendre votre profil, l'accompagner par l'alimentation et les plantes. Sans promesse médicale, sans se substituer à votre médecin.</p></div>
+   <div class="pil" style="margin-bottom:26px"><h3>Émotions</h3><p>L'irritabilité, la tristesse sans cause, la perte de repères. Nommées, expliquées, travaillées.</p></div>
+   <div class="pil"><h3>Souveraineté</h3><p>Ce que vous acceptez, ce que vous ne voulez plus. La dimension que personne n'ose mettre dans un programme de santé.</p></div>
+  </div>
+ </div>
+</section>
+
+<section class="lin">
+ <div class="wrap">
+  <h2 class="dsp d2" style="margin-bottom:40px">Ce que contient concrètement le parcours</h2>
+  <div class="g3">
+   <div class="pil"><h3>12 modules vidéo</h3><p>Quatre par mois, entre 12 et 25 minutes. Débloqués progressivement, accessibles à vie sur votre espace.</p></div>
+   <div class="pil"><h3>6 sessions collectives</h3><p>Une visio toutes les deux semaines avec Erika et la cohorte. Questions, ajustements, retours d'expérience.</p></div>
+   <div class="pil"><h3>Votre protocole plantes</h3><p>Établi après le bilan initial, révisé à mi-parcours. Plantes disponibles localement, en tisane ou en macérat.</p></div>
+   <div class="pil"><h3>Le journal de bord</h3><p>Un carnet à remplir chaque semaine. C'est lui qui alimente votre indice de régénération.</p></div>
+   <div class="pil"><h3>La bibliothèque</h3><p>Protocoles, recettes, fiches plantes, playlists de respiration. Téléchargeables au format PDF.</p></div>
+   <div class="pil"><h3>Le groupe de cohorte</h3><p>Un fil d'échange entre vous, actif du premier au dernier jour. Modéré, bienveillant, jamais commercial.</p></div>
+  </div>
+ </div>
+</section>
+
+<section>
+ <div class="wrap wrap-n">
+  <h2 class="dsp d2" style="margin-bottom:34px">Questions fréquentes</h2>
+  <div class="step" style="grid-template-columns:1fr"><h4>Est-ce que je peux suivre le programme si je suis sous traitement hormonal ?</h4><p>Oui. RÉGÉNÈRE ne remplace ni ne contredit un suivi médical. Erika est naturopathe, pas médecin : le programme accompagne, il ne prescrit pas.</p></div>
+  <div class="step" style="grid-template-columns:1fr"><h4>Combien de temps faut-il y consacrer chaque semaine ?</h4><p>Comptez deux heures : le module vidéo, le journal de bord, et la session collective une semaine sur deux. Tout est enregistré si vous ne pouvez pas être là en direct.</p></div>
+  <div class="step" style="grid-template-columns:1fr"><h4>Je vis en métropole, est-ce que c'est possible ?</h4><p>Oui. Le parcours est intégralement accessible à distance. Les plantes du protocole ont des équivalents disponibles en France hexagonale, précisés dans vos fiches.</p></div>
+  <div class="step" style="grid-template-columns:1fr"><h4>Que se passe-t-il si je rate le démarrage de ma cohorte ?</h4><p>Vous basculez sans frais sur la cohorte suivante. Les places libérées sont proposées à la liste d'attente.</p></div>
+  <div class="step" style="grid-template-columns:1fr;border-bottom:1px solid var(--lin)"><h4>Y a-t-il une garantie ?</h4><p>Quatorze jours après le démarrage, si le programme ne vous correspond pas, vous êtes remboursée intégralement, sans justification à fournir.</p></div>
+  <div style="margin-top:36px"><a class="btn" data-go="formules">Voir les formules</a></div>
+ </div>
+</section>
+</div>
+
+<!-- ============ FORMULES ============ -->
+<div class="page" id="p-formules">
+<section style="padding-bottom:40px">
+ <div class="wrap">
+  <p class="kicker" style="margin-bottom:16px">Formules &amp; tarifs</p>
+  <h1 class="dsp d2" style="max-width:20ch;margin-bottom:18px">Trois façons d'entrer dans le programme</h1>
+  <p class="prose" style="margin-bottom:34px">Toutes incluent le parcours de trois mois et les douze mois de Cercle. Ce qui change, c'est le degré d'accompagnement individuel.</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+   <span class="mini">Cohorte :</span>
+   <button class="opt sel">Janvier 2027 — 6 places restantes</button>
+   <button class="opt">Avril 2027 — 18 places</button>
+   <button class="opt">Octobre 2027 — 18 places</button>
+  </div>
+ </div>
+</section>
+
+<section style="padding-top:20px">
+ <div class="wrap form-g">
+  <div class="fcard">
+   <h3>Essentielle</h3>
+   <p class="mini">Pour avancer en autonomie, entourée par le groupe.</p>
+   <div class="px num">890 €<br><small>ou 3 × 297 € sans frais</small></div>
+   <ul>
+    <li>12 modules vidéo, accès à vie</li>
+    <li>6 sessions collectives en visio</li>
+    <li>Journal de bord et bibliothèque</li>
+    <li>Groupe de cohorte</li>
+    <li>12 mois de Cercle</li>
+    <li class="off">Bilan individuel</li>
+    <li class="off">Protocole plantes personnalisé</li>
+    <li class="off">Rendez-vous en tête à tête</li>
+   </ul>
+   <a class="btn btn-o">Choisir Essentielle</a>
+  </div>
+  <div class="fcard mid">
+   <span class="tag">La plus choisie</span>
+   <h3>Intégrale</h3>
+   <p class="mini" style="color:#BDB7A8">Le parcours complet, avec un suivi qui vous est propre.</p>
+   <div class="px num">1 690 €<br><small>ou 3 × 563 € sans frais</small></div>
+   <ul>
+    <li>Tout le contenu de la formule Essentielle</li>
+    <li>Bilan individuel de 90 minutes</li>
+    <li>Protocole plantes personnalisé</li>
+    <li>Indice de régénération suivi sur 3 points</li>
+    <li>2 rendez-vous individuels de 45 minutes</li>
+    <li>Réponses prioritaires dans le groupe</li>
+    <li>Une place à l'atelier présentiel de la cohorte</li>
+    <li class="off">Accompagnement hebdomadaire</li>
+   </ul>
+   <a class="btn btn-c">Choisir Intégrale</a>
+  </div>
+  <div class="fcard">
+   <h3>Premium</h3>
+   <p class="mini">Un accompagnement rapproché, pour les situations qui le demandent.</p>
+   <div class="px num">2 890 €<br><small>ou 4 × 723 € via Alma</small></div>
+   <ul>
+    <li>Tout le contenu de la formule Intégrale</li>
+    <li>6 rendez-vous individuels de 45 minutes</li>
+    <li>Ajustement du protocole chaque mois</li>
+    <li>Ligne directe avec Erika en semaine</li>
+    <li>Coffret rituel de démarrage offert</li>
+    <li>Place réservée à la retraite annuelle</li>
+    <li>Bilan de sortie à 6 mois</li>
+    <li>Accès prioritaire aux cohortes suivantes</li>
+   </ul>
+   <a class="btn btn-o">Choisir Premium</a>
+  </div>
+ </div>
+</section>
+
+<section class="lin pad-s">
+ <div class="wrap g2" style="align-items:center">
+  <div>
+   <h2 class="dsp d3" style="margin-bottom:14px">Vous hésitez entre deux formules ?</h2>
+   <p class="prose" style="margin:0">Vingt minutes au téléphone avec Erika, sans engagement. On regarde où vous en êtes et on choisit ensemble — y compris si la réponse est « pas maintenant ».</p>
+  </div>
+  <div style="text-align:right"><a class="btn btn-h" data-go="contact">Réserver un appel</a></div>
+ </div>
+</section>
+
+<section>
+ <div class="wrap wrap-n">
+  <h2 class="dsp d2" style="margin-bottom:30px">Paiement et conditions</h2>
+  <div class="step" style="grid-template-columns:1fr"><h4>En une ou plusieurs fois</h4><p>Carte bancaire en une fois, ou trois fois sans frais. Pour la formule Premium, un paiement en quatre fois est possible via Alma, sous réserve d'acceptation.</p></div>
+  <div class="step" style="grid-template-columns:1fr"><h4>Ce qui se passe après le paiement</h4><p>Vous recevez immédiatement votre facture, vos accès à l'espace membres, le lien vers le groupe de votre cohorte et le calendrier complet des sessions.</p></div>
+  <div class="step" style="grid-template-columns:1fr;border-bottom:1px solid var(--lin)"><h4>Report et annulation</h4><p>Report sans frais vers la cohorte suivante jusqu'à sept jours avant le démarrage. Remboursement intégral dans les quatorze jours suivant le début du parcours.</p></div>
+ </div>
+</section>
+</div>
+<!-- ============ CERCLE ============ -->
+<div class="page" id="p-cercle">
+<section class="olive" style="padding:88px 0 74px">
+ <div class="wrap">
+  <p class="kicker" style="margin-bottom:20px">Inclus dans toutes les formules</p>
+  <h1 class="dsp d1" style="max-width:14ch;margin-bottom:24px">Le Cercle</h1>
+  <p class="prose big" style="max-width:56ch;color:#D8D2C3">Douze mois après la fin du parcours. Parce que la traversée dure plus longtemps que trois mois, et que personne ne devrait la faire seule.</p>
+ </div>
+</section>
+<section>
+ <div class="wrap g2">
+  <div>
+   <h2 class="dsp d2" style="margin-bottom:20px">Ce qui s'y passe</h2>
+   <p class="prose">Une rencontre en visio chaque mois, toujours le même jour, avec un thème annoncé à l'avance et beaucoup de place pour vos questions. Deux retrouvailles en présentiel dans l'année, en Guadeloupe. Et entre les deux, un espace d'échange où l'on se répond vraiment.</p>
+   <p class="prose">Le Cercle réunit toutes les cohortes. Celles qui commencent croisent celles qui ont terminé il y a un an. C'est là que se transmet le plus de choses.</p>
+  </div>
+  <div>
+   <div class="item" style="grid-template-columns:100px 1fr"><div class="when">Chaque mois</div><div><h4>La rencontre du Cercle</h4><p>90 minutes en visio, un thème, un temps de parole libre.</p></div></div>
+   <div class="item" style="grid-template-columns:100px 1fr"><div class="when">Avril</div><div><h4>Retraite de trois jours</h4><p>Deshaies. Jeûne doux, marche, travail émotionnel en petit groupe.</p></div></div>
+   <div class="item" style="grid-template-columns:100px 1fr"><div class="when">Octobre</div><div><h4>Journée des cohortes</h4><p>Toutes les promotions réunies, ateliers et transmission.</p></div></div>
+   <div class="item" style="grid-template-columns:100px 1fr;border-bottom:1px solid var(--lin)"><div class="when">En continu</div><div><h4>L'annuaire des membres</h4><p>Sur inscription volontaire. Beaucoup de femmes y trouvent des clientes, des associées, des amies.</p></div></div>
+  </div>
+ </div>
+</section>
+<section class="lin pad-s">
+ <div class="wrap" style="text-align:center">
+  <p class="prose big" style="margin:0 auto 24px;max-width:46ch">Le Cercle n'est pas vendu séparément. Il s'obtient en rejoignant une cohorte.</p>
+  <a class="btn" data-go="formules">Voir les formules</a>
+ </div>
+</section>
+</div>
+
+<!-- ============ ÉVÉNEMENTS ============ -->
+<div class="page" id="p-evenements">
+<section style="padding-bottom:30px">
+ <div class="wrap">
+  <p class="kicker" style="margin-bottom:16px">Agenda</p>
+  <h1 class="dsp d2" style="max-width:18ch;margin-bottom:18px">Se rencontrer pour de vrai</h1>
+  <p class="prose">Soirées de présentation, ateliers d'une journée, retraites. La plupart de nos participantes sont d'abord venues à un événement.</p>
+ </div>
+</section>
+<section style="padding-top:20px">
+ <div class="wrap">
+  <div class="item"><div class="when">Jeu. 14 nov.<br>19 h — 21 h 30</div><div><h4>Soirée de lancement RÉGÉNÈRE</h4><p>Le Gosier, Villa Créole. Présentation du programme, échange avec Erika, dégustation de tisanes du jardin. 40 places, 12 restantes.</p></div><div><a class="btn btn-o">Réserver · 25 €</a></div></div>
+  <div class="item"><div class="when">Sam. 7 déc.<br>9 h — 16 h</div><div><h4>Atelier « Plantes de nos jardins »</h4><p>Sainte-Anne. Reconnaître, cueillir, sécher et préparer six plantes locales utiles à la périménopause. Repas inclus. 16 places, 3 restantes.</p></div><div><a class="btn btn-o">Réserver · 65 €</a></div></div>
+  <div class="item"><div class="when">Mar. 14 janv.<br>19 h — 20 h 30</div><div><h4>Rencontre d'ouverture — cohorte de janvier</h4><p>En visio. Réservée aux participantes inscrites.</p></div><div><span class="pill">Sur inscription</span></div></div>
+  <div class="item"><div class="when">Sam. 8 févr.<br>9 h — 13 h</div><div><h4>Matinée respiration et mouvement</h4><p>Plage de Viard, Petit-Bourg. Ouvert à toutes, participantes ou non. 25 places.</p></div><div><a class="btn btn-o">Réserver · 35 €</a></div></div>
+  <div class="item" style="border-bottom:1px solid var(--lin)"><div class="when">18 — 20 avr.<br>Trois jours</div><div><h4>Retraite du Cercle</h4><p>Deshaies. Hébergement, repas et accompagnement inclus. Réservée aux membres du Cercle. Complet.</p></div><div><a class="btn btn-o">Liste d'attente</a></div></div>
+ </div>
+</section>
+<section class="olive pad-s">
+ <div class="wrap g2" style="align-items:center">
+  <div><h2 class="dsp d3" style="margin-bottom:10px">Être prévenue des prochaines dates</h2><p class="prose" style="margin:0">Un email quand une date s'ouvre, rien d'autre.</p></div>
+  <div class="field" style="margin:0;display:flex;gap:10px"><input placeholder="votre@email.fr" style="background:rgba(247,244,237,.1);border-color:rgba(230,221,206,.3);color:var(--creme)"><button class="btn btn-c" style="white-space:nowrap">Me prévenir</button></div>
+ </div>
+</section>
+</div>
+
+<!-- ============ BOUTIQUE ============ -->
+<div class="page" id="p-boutique">
+<section style="padding-bottom:36px">
+ <div class="wrap">
+  <p class="kicker" style="margin-bottom:16px">Boutique</p>
+  <h1 class="dsp d2" style="max-width:20ch;margin-bottom:18px">Les coffrets rituels</h1>
+  <p class="prose">Composés en Guadeloupe, à partir de plantes cueillies ou cultivées ici. Ce sont les mêmes que celles utilisées dans les protocoles du programme.</p>
+ </div>
+</section>
+<section style="padding-top:0">
+ <div class="wrap">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:30px">
+   <button class="opt sel">Tous les coffrets</button><button class="opt">Sommeil</button><button class="opt">Énergie</button><button class="opt">Rituels du soir</button><button class="opt">Coffrets cadeaux</button>
+  </div>
+  <div class="g4">
+   <div class="prod"><div class="ph"><span>Tisanes · 3 plantes</span></div><div class="bd"><h4>Coffret Nuit profonde</h4><p class="mini">Passiflore, verveine du pays, fleur d'oranger. 30 préparations.</p><div class="pp num">48 €</div></div></div>
+   <div class="prod"><div class="ph"><span>Macérat · 50 ml</span></div><div class="bd"><h4>Huile de massage Ancrage</h4><p class="mini">Macérat de gingembre et de bois d'Inde, base coco.</p><div class="pp num">36 €</div></div></div>
+   <div class="prod"><div class="ph"><span>Coffret complet</span></div><div class="bd"><h4>Rituel du soir</h4><p class="mini">Tisane, huile, bougie de cire d'abeille, carnet de bord.</p><div class="pp num">89 €</div></div></div>
+   <div class="prod"><div class="ph"><span>Tisanes · 4 plantes</span></div><div class="bd"><h4>Coffret Élan du matin</h4><p class="mini">Moringa, citronnelle, atoumo, gingembre. 30 préparations.</p><div class="pp num">52 €</div></div></div>
+   <div class="prod"><div class="ph"><span>Rupture</span></div><div class="bd"><h4>Coffret Régénération</h4><p class="mini">Le coffret complet du programme. Réapprovisionnement mi-décembre.</p><div class="pp num" style="color:#A7A398">129 €</div></div></div>
+   <div class="prod"><div class="ph"><span>Format duo</span></div><div class="bd"><h4>Duo Nuit profonde</h4><p class="mini">Deux coffrets Nuit profonde, emballage cadeau inclus.</p><div class="pp num">86 €</div></div></div>
+   <div class="prod"><div class="ph"><span>Carnet · 120 pages</span></div><div class="bd"><h4>Journal de régénération</h4><p class="mini">Le carnet du programme, vendu seul. Papier recyclé, imprimé ici.</p><div class="pp num">24 €</div></div></div>
+   <div class="prod"><div class="ph"><span>Coffret découverte</span></div><div class="bd"><h4>Trois plantes d'ici</h4><p class="mini">Pour découvrir sans s'engager. Atoumo, moringa, verveine.</p><div class="pp num">29 €</div></div></div>
+  </div>
+  <p class="mini" style="margin-top:28px">Livraison offerte en Guadeloupe et Martinique dès 70 € d'achat. Expédition sous 48 h ouvrées. Retour possible sous 14 jours.</p>
+ </div>
+</section>
+</div>
+
+<!-- ============ JOURNAL ============ -->
+<div class="page" id="p-journal">
+<section style="padding-bottom:36px">
+ <div class="wrap">
+  <p class="kicker" style="margin-bottom:16px">Journal</p>
+  <h1 class="dsp d2" style="max-width:20ch;margin-bottom:18px">Ce qu'on ne vous a jamais expliqué</h1>
+  <p class="prose">Des articles écrits pour être utiles, pas pour remplir un calendrier éditorial.</p>
+ </div>
+</section>
+<section style="padding-top:0">
+ <div class="wrap">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:38px">
+   <button class="opt sel">Tout</button><button class="opt">Ménopause</button><button class="opt">Nutrition</button><button class="opt">Plantes locales</button><button class="opt">Sommeil</button><button class="opt">Émotions</button><button class="opt">Souveraineté</button>
+  </div>
+  <div class="g3" style="gap:34px">
+   <div class="art"><span class="cat">Sommeil</span><h4>Pourquoi vous vous réveillez à trois heures du matin</h4><p>Ce n'est ni le stress, ni le hasard. Une explication hormonale, et quatre choses à tester cette semaine.</p><p class="mini" style="margin-top:12px">7 min · 12 septembre</p></div>
+   <div class="art"><span class="cat">Plantes locales</span><h4>L'atoumo, cette plante que tout le monde a dans son jardin</h4><p>Usage traditionnel, ce que dit la recherche, et comment la préparer sans se tromper de dosage.</p><p class="mini" style="margin-top:12px">9 min · 28 août</p></div>
+   <div class="art"><span class="cat">Ménopause</span><h4>Périménopause : les six signes qu'on attribue à autre chose</h4><p>Les douleurs articulaires, les acouphènes, la peau sèche. Ce que votre corps essaie de dire.</p><p class="mini" style="margin-top:12px">11 min · 14 août</p></div>
+   <div class="art"><span class="cat">Souveraineté</span><h4>« Je n'ai plus envie de faire semblant »</h4><p>Pourquoi tant de femmes changent de vie entre 45 et 55 ans, et pourquoi ce n'est pas une crise.</p><p class="mini" style="margin-top:12px">8 min · 2 août</p></div>
+   <div class="art"><span class="cat">Nutrition</span><h4>Le petit-déjeuner créole revisité pour l'énergie de 11 heures</h4><p>Garder le goût, changer l'ordre. Trois assemblages testés avec la cohorte pilote.</p><p class="mini" style="margin-top:12px">6 min · 19 juillet</p></div>
+   <div class="art"><span class="cat">Émotions</span><h4>L'irritabilité n'est pas un défaut de caractère</h4><p>Ce qui se passe dans le cerveau quand les œstrogènes baissent, expliqué simplement.</p><p class="mini" style="margin-top:12px">10 min · 5 juillet</p></div>
+  </div>
+ </div>
+</section>
+<section class="lin pad-s">
+ <div class="wrap g2" style="align-items:center">
+  <div><h2 class="dsp d3" style="margin-bottom:10px">Un article par quinzaine, dans votre boîte</h2><p class="prose" style="margin:0">Pas de promotion déguisée. Juste l'article, quand il sort.</p></div>
+  <div class="field" style="margin:0;display:flex;gap:10px"><input placeholder="votre@email.fr"><button class="btn" style="white-space:nowrap">S'abonner</button></div>
+ </div>
+</section>
+</div>
+
+<!-- ============ ERIKA ============ -->
+<div class="page" id="p-erika">
+<section class="olive" style="padding:88px 0 74px">
+ <div class="wrap g2" style="align-items:center">
+  <div>
+   <p class="kicker" style="margin-bottom:18px">Qui je suis</p>
+   <h1 class="dsp d1" style="margin-bottom:22px">Erika Jasor</h1>
+   <p class="prose big" style="color:#D8D2C3;max-width:44ch">Naturopathe, formatrice, et guadeloupéenne. J'ai construit RÉGÉNÈRE parce que je n'ai pas trouvé, pour moi-même, ce que je cherchais.</p>
+  </div>
+  <div style="aspect-ratio:4/5;background:linear-gradient(160deg,#6B6F58,#42452F);border-radius:3px;display:flex;align-items:flex-end;padding:22px"><span class="mini" style="color:#BDB7A8">Portrait — emplacement réservé au shooting</span></div>
+ </div>
+</section>
+<section>
+ <div class="wrap wrap-n">
+  <p class="prose big">À 46 ans, je me suis réveillée un matin sans reconnaître mon corps ni mon humeur. J'étais naturopathe depuis douze ans. Je savais quoi faire pour les autres.</p>
+  <p class="prose">J'ai consulté. On m'a parlé de compléments, puis de régime, puis de gestion du stress. Chacun avait une partie de la réponse, personne n'avait l'ensemble. Et aucun ne m'a parlé de ce qui se jouait vraiment : ce que je n'avais plus envie de porter.</p>
+  <p class="prose">J'ai passé trois ans à construire ce qui m'a manqué. J'ai relu ce que ma grand-mère savait des plantes d'ici à la lumière de ce que la recherche établit aujourd'hui. J'ai fait entrer dans un programme de santé la question que personne n'ose poser : qu'est-ce que vous voulez, maintenant ?</p>
+  <p class="prose">RÉGÉNÈRE est né de là. Il a été testé auprès d'une cohorte pilote de douze femmes, en Guadeloupe et en Martinique, avant d'être ouvert.</p>
+  <hr class="rule" style="margin:36px 0">
+  <div class="g2" style="gap:30px">
+   <div class="pil"><h3>Formation</h3><p>Naturopathe certifiée, spécialisation en santé hormonale féminine. Formatrice en entreprise depuis 2018.</p></div>
+   <div class="pil"><h3>Ancrage</h3><p>Née et installée en Guadeloupe. Les plantes du programme viennent d'ici, les femmes qui l'ont testé aussi.</p></div>
+  </div>
+ </div>
+</section>
+<section class="lin pad-s">
+ <div class="wrap">
+  <h2 class="dsp d3" style="margin-bottom:26px">Presse et interventions</h2>
+  <div class="item" style="grid-template-columns:120px 1fr"><div class="when">Juin 2026</div><div><h4>France-Antilles — « La santé des femmes de 45 ans, angle mort du système »</h4><p>Entretien.</p></div></div>
+  <div class="item" style="grid-template-columns:120px 1fr"><div class="when">Mars 2026</div><div><h4>Forum Entreprendre au Féminin, Pointe-à-Pitre</h4><p>Intervention sur la charge invisible des dirigeantes.</p></div></div>
+  <div class="item" style="grid-template-columns:120px 1fr;border-bottom:1px solid var(--lin)"><div class="when">Sur demande</div><div><h4>Dossier de presse et visuels haute définition</h4><p>Contactez-nous, nous vous les envoyons dans la journée.</p></div></div>
+ </div>
+</section>
+</div>
+
+<!-- ============ PROFIL (formulaire scoré) ============ -->
+<div class="page" id="p-profil">
+<section>
+ <div class="wrap" style="max-width:840px">
+  <p class="kicker" style="margin-bottom:16px">Profil Femme RÉGÉNÈRE</p>
+  <h1 class="dsp d2" style="margin-bottom:16px">Six questions, cinq minutes</h1>
+  <p class="prose" style="margin-bottom:40px">Vous recevez votre typologie par email, avec trois recommandations à appliquer dès cette semaine.</p>
+  <div class="mb" style="padding:34px">
+   <p class="mini" style="margin-bottom:6px">Question 3 sur 6</p>
+   <div class="prog"><i style="width:50%"></i></div>
+   <h3 class="dsp d3" style="margin-bottom:22px">Sur une journée ordinaire, à quel moment l'énergie vous lâche ?</h3>
+   <div class="opts" style="flex-direction:column;align-items:stretch;margin-bottom:30px">
+    <button class="opt">Elle ne me lâche pas vraiment</button>
+    <button class="opt sel">En milieu de matinée, vers 11 heures</button>
+    <button class="opt">Après le déjeuner</button>
+    <button class="opt">En fin d'après-midi, et je ne récupère pas le soir</button>
+   </div>
+   <div style="display:flex;justify-content:space-between;align-items:center">
+    <button class="opt">Revenir</button><button class="btn">Continuer</button>
+   </div>
+  </div>
+  <p class="mini" style="margin-top:20px">Vos réponses ne sont utilisées que pour établir votre typologie. Vous pouvez demander leur suppression à tout moment.</p>
+ </div>
+</section>
+</div>
+
+<!-- ============ CONTACT ============ -->
+<div class="page" id="p-contact">
+<section>
+ <div class="wrap g2">
+  <div>
+   <p class="kicker" style="margin-bottom:16px">Contact</p>
+   <h1 class="dsp d2" style="margin-bottom:18px">Parlons-en</h1>
+   <p class="prose">Une question sur le programme, une hésitation entre deux formules, une demande pour votre entreprise ou votre média. Nous répondons sous 48 heures ouvrées.</p>
+   <hr class="rule" style="margin:30px 0">
+   <div class="pil" style="margin-bottom:22px"><h3>Réserver un appel de 20 minutes</h3><p>Le plus simple si vous hésitez. Sans engagement, et sans script de vente.</p></div>
+   <a class="btn btn-h" style="margin-bottom:30px">Choisir un créneau</a>
+   <div class="pil"><h3>Écrire</h3><p>bonjour@aligne-bienetre.fr<br>SASU ALIGNÉ — Guadeloupe</p></div>
+  </div>
+  <div class="mb" style="padding:30px">
+   <div class="field"><label>Votre prénom</label><input placeholder="Marie-Line"></div>
+   <div class="field"><label>Votre email</label><input placeholder="votre@email.fr"></div>
+   <div class="field"><label>Votre demande porte sur</label><select><option>Le programme RÉGÉNÈRE</option><option>Un événement</option><option>La boutique</option><option>Une offre pour mon entreprise</option><option>Une demande presse</option></select></div>
+   <div class="field"><label>Votre message</label><textarea placeholder="Dites-nous où vous en êtes."></textarea></div>
+   <button class="btn" style="width:100%">Envoyer le message</button>
+  </div>
+ </div>
+</section>
+</div>
+
+<!-- ============ ESPACE MEMBRES ============ -->
+<div class="page" id="p-membres">
+<section style="padding-bottom:36px">
+ <div class="wrap">
+  <p class="kicker" style="margin-bottom:16px">Espace membres — aperçu</p>
+  <h1 class="dsp d2" style="max-width:22ch;margin-bottom:18px">Ce que voit une participante</h1>
+  <p class="prose">Tableau de bord, modules débloqués au rythme du parcours, ressources, factures. Accessible après paiement.</p>
+ </div>
+</section>
+<section style="padding-top:0">
+ <div class="wrap">
+  <div class="mb" style="padding:28px;margin-bottom:22px">
+   <div class="g2" style="gap:30px;align-items:center">
+    <div>
+     <h2 class="dsp d3" style="margin-bottom:6px">Bonjour Marie-Line</h2>
+     <p class="mini" style="margin:0">Cohorte de janvier 2027 · Formule Intégrale · Semaine 6 sur 12</p>
+     <div class="bar" style="max-width:340px"><i style="width:48%"></i></div>
+     <p class="mini" style="margin-top:8px">7 modules terminés sur 12 · Indice de régénération : 62 / 100 (+18 depuis le départ)</p>
+    </div>
+    <div>
+     <div class="pil" style="border-top-color:var(--olive-l)"><h3>Prochain rendez-vous</h3><p>Session collective — jeudi 20 février à 19 h. Thème : l'énergie de milieu de journée.</p></div>
+    </div>
+   </div>
+  </div>
+  <div class="g2" style="gap:22px">
+   <div class="mb">
+    <h3 class="dsp d3" style="margin-bottom:8px">Mon parcours</h3>
+    <div class="mod"><div><b style="font-weight:400">Module 5 — Les plantes du sommeil</b><p class="mini" style="margin:2px 0 0">18 min · vidéo + fiche protocole</p></div><span class="pill ok">Terminé</span></div>
+    <div class="mod"><div><b style="font-weight:400">Module 6 — Le repas du soir</b><p class="mini" style="margin:2px 0 0">22 min · vidéo + 4 recettes</p></div><span class="pill ok">Terminé</span></div>
+    <div class="mod"><div><b style="font-weight:400">Module 7 — L'énergie de 11 heures</b><p class="mini" style="margin:2px 0 0">16 min · vidéo + journal de bord</p></div><span class="pill now">En cours</span></div>
+    <div class="mod"><div><b style="font-weight:400">Module 8 — Bouffées de chaleur</b><p class="mini" style="margin:2px 0 0">Se débloque le 24 février</p></div><span class="pill">Verrouillé</span></div>
+   </div>
+   <div class="mb">
+    <h3 class="dsp d3" style="margin-bottom:8px">Mes ressources</h3>
+    <div class="mod"><div><b style="font-weight:400">Mon protocole plantes — révision de février</b><p class="mini" style="margin:2px 0 0">PDF · 4 pages · personnalisé</p></div><span class="pill">Télécharger</span></div>
+    <div class="mod"><div><b style="font-weight:400">Journal de bord — semaine 6</b><p class="mini" style="margin:2px 0 0">À remplir avant jeudi</p></div><span class="pill now">À faire</span></div>
+    <div class="mod"><div><b style="font-weight:400">Replay — session du 6 février</b><p class="mini" style="margin:2px 0 0">1 h 24 · disponible jusqu'en 2028</p></div><span class="pill">Regarder</span></div>
+    <div class="mod"><div><b style="font-weight:400">Mes factures</b><p class="mini" style="margin:2px 0 0">3 documents · échéance 2 sur 3 réglée</p></div><span class="pill">Ouvrir</span></div>
+   </div>
+  </div>
+ </div>
+</section>
+</div>
+
+<footer>
+ <div class="wrap">
+  <div class="g4" style="gap:36px">
+   <div>
+    <div class="mark" style="margin-bottom:14px"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAIAAACzY+a1AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAlqADAAQAAAABAAAAlgAAAAAXS0ggAAAmnUlEQVR4Ae3d+ZdcxZUn8KrKrMraS/u+lBAICbFI7JtBbIY5A+Pjbh/32HhOt+d/mjPzu4977AHbbcDQB8OMzY4QAqF9QUL7UirVvi85n3ghZScpFVIVytIDMk7qKV682N79xr1x48aNV9X/8uufTExMjI+PV1VV1dTUVFdXi+TzeddKSCEFJicnI0auMdSksJeVLk2LAhUIp0WuNGauQJhGVKbVpwqE0yJXGjNXIEwjKtPqUwXCaZErjZkrEKYRlWn1qQLhtMiVxswVCNOIyrT6VIFwWuRKY+YKhGlEZVp9qkA4LXKlMXMFwjSiMq0+VSCcFrnSmLkCYRpRmVafKhBOi1xpzFyBMI2oTKtPFQinRa40Zq5AmEZUptWnCoTTIlcaM1cgTCMq0+pTBcJpkSuNmSsQphGVafWpAuG0yJXGzBUI04jKtPpUgXBa5Epj5gqEaURlWn2qQDgtcqUxcwXCNKIyrT5VIJwWudKYOZvGTs20T/lwsC6E6h/S2brUcSEYrv0XAYvXklIx0esV3jBmiClTXYsrjPGxsbG6urra2loH+6Q40uc4ZjzkNzo6KiWbzcozNDQk3QHNy2sod8oNaPL6vlLJC0wmjAitklCcMi0ebWxsdH52eHjYsVkBWlDM5XKuHmUymfioublZ4sjISEm7s3CbOkE6LfpeTqCaq4lQrFRzCeDAVlcLUIEcwCKHYUclIv+JeIQLXcEMTkDOPoolg/hqL5TK54V3KMBfiBT6W5wSkbsW/CJIJCQIQeVaEKcNDQ2RKeXBfwCWrdDcbEZSx4Xf8uWLoSpAW1xnlKiT+TDjXjWoDXJVjrfn87WZjAoHR0aGx8YwXFdnZ1NTU319PfAmx8dlyE9MDPT1Zevqrlrt9c3w/YEQuQuoiF+OX3GGQs6rUhMwGI547O7unjNnzsqVKzGi24ULF545c2ZgYACEpKg5UoSYvZogv2qD087w/YHQqwPpigGcxWKzgN9U+YsrAU99XU7O+XPnPfbYY/feey/mk6Gzs/NPf/rT7t27AZzNZKoyYVI0zY4m3w4prqHc8csHa7lbvDH1e0+/a8Gs0L+YubG+YXBwEOfdeuut99xzT0tLC3a0hHjttdf27dsnMwjBjC/lGR8dm32Czn6LBRJdORK1O0sx2kHUF4xucWQSRFBKOs1CCPNQcus1sj6ak8/X19WNjYyIRO3DpBUrUVAIM1Y+r8jk+ERNWONVq5N6KYRbolj14xN+IurMJBn6unsee+TRn/6Xn0yMjo0ODbc0Nr3/zru7v9hZl8nOaWkdGRwSyWVrs9U16klauMLlym97PVLTKEjhh7IwQAlUtvCKiBa/LxTiLaUEkGgnT9VkHvXrskHvj8o9XTFiqR5Pcw31g6Mj9BLsogaJMFZQqVgbzBJkPanOVCcfUspXr1u3bs2aNVF+9vb2Hjhw4J133lEqjgY1hMqrqqQ0VleNTYSPMM1mqE7d158mJ4kmsgtFADN37txo+EAUJIvXwiB3Kxu8h7ECJMbG65saETQQF0dNTKAvLANL1dSMDY9kc3W1DfVDI8MYTv44ShSnbboCVU6lYkOWmKrSmdERqGeMhtiuDLpEF1WzauMQMc7I2L7+/lxzY/G8W8Aywly4nXEkjjzFVRhD6riwAA9KgXDDhg3otW3bNiQreW0vcJHWNTUYBdggpBN+9dVX3X2945NB5CKxlJtuWbN+/XqCripT0z889MEHH6jzYtmqqomxsbWr2+fPnx+bjsYBBTPJ58yibIxSAYrx1hKeCiroUoQwZti3f39Xf29JP8t9m0YIkQYFEQvJNm3aBMvt27fDo0CLOPrireGPoM8+++xtt64fGx3tHxj4zW9+c/rc2cbmpoTIQWAuWrTooYceqq+twzd9w4Mff/gh8DG16dMUODgxuXH9hi1btkQIpatZE2F2zNT09fW1trbCSX9iiyJqNjKULowh+Q0Ls/TH27cV+jk7kdRBiBZGNOqI3HTTTdZh4iLHjh0rUMSjQhzMFmfVk3myl8Srpdnn80G/qA1zFXKDDYowkG40WCFAPRYP+gt5OzoGpJCYaDqmTE81EQMg+/v7xZWFnEioqqpKIlGsiTi2IKobR44cKXRs1iKpgzAObaQhOe+77z4kE3/kkUdOnjyJKOIxxLirWQpx0VFOt4pHEkNUTjMZ4qpKnvxkqPN814WWpmajBMUpkwESNbBwYsjJfBg5YI1cmAyjqrqaMOeZFBubtGJMqN+4UaGaNSFRbeBsbmxatnTpua5OxWczpA5COih6IUpDrn7juvUj/YPid99x1x9f/kOgV3UgWSScSIFS8sCADkkfAarb+lwdjQai2OvgwYOZqururi5apYXIhQsXQKvseH6yriZbn2hP8FMKqLAfGB5SCs+ZUGEMKoABT7txhGla8MhVPTKD0MbF5zt2VNVmCr2anUjqIBwZG7WazlXXPHDPvS219ayOrY1Nwz39/+2ffvE//tf/bJ7bNpYYna0GGhOdEN8FTrICmZgkTrOZYG5GdMp9FHStzS2d5zr+3/ETEJJtmHpZF/iSXlrf2CDzyNAwvjPtjQ2NMaG99+EHb77114aWZiNAW4TvtJCorc7+h5SfVsmZZk4dhBhlsH9gQUvbyuUrLK5xSfVEvmYyv3De/Ns3bvx8187mOW34A0MEZSSbDewAgOT9oz1F1K4hFKWbviBkahRAKFBtOru7yEbZcLwRICewjQMhkhGijHCgs7yvzcy22Tr24dqvqYMQQcmlFRs2tre3DwwNNdaH1RiGaGtru//++0EIObvjwAjT0tTbAqFU+BcE3eLFi9tXrwY8uBsaGz/c+rF4QSTKUAAvxhM0zYlhUiSWXa89RNF67fm/fc7UQYgFGcnuuusuK+Wu850oODw4WN/Y6FXppetvWXf81MkscZlo+TbRa7JXJjGMoWf1XtfUdNtttz315JOqgs3hI0c+3/mFUZLJZmAsW9X4xe9al1AzAjn7kJR046q3ZFW6gslvzer2m2++2VxV11B/8vSpHTt3NjQ1joyPNTU0PvTgg9bv0doCEmw2Ve/NdjED7Z/YFMe1wpIlS8QjMLG4a0TrIvN9vUY5pxW+Xno27tIFod5Yz226404zIqWQSXPHnl0ffPJx3+BAIhQnGWsWL1qUZ+4eC9oKqTsVkeDkkSuFRcRcKEJ4wgnnqS2mq8Gj4npK4FRkWmGq/pQvPV0Qes+Vy5bDCbsg64Wurj1792LEz3Z8HsGgrJoRgSeDFOSeijQQElBfhshGiohHRUa6RLcR6UIlJRWW3BaypSqSOgiXLVu2aOFC5MaIx06eYCqrymY+3b6diojo0u/ZfHdzUxNxaiWXeDxcmZ6gkjmyVIGN4pIcbJHtoiCl2ghquSJg05KicVhcuUNlS71hEGKRKNDQF0EZGOMy7pGHH7Y2IN2sr7du+4QuWlef23/ooP1xJFaKmmP3HAyKRx6SHrFBQXGzoEfqlFiQmR5ZzmtFc5CTLqe4CkXI0iioI6iR2tJFCvBfY6RsSE1Z8Q2DEIEEGCAugsLPVhydc27bHAoIFmRRO3funGVDyFab/ezzzymfUQze1L5m4YIFFvL0minf7Afz4IZBCLw4rg38yAqk2Z133sniDCeIYjsQYiYoue7au+f4iRMYi3ikVW668y5KDbPZDwapKV/0hkEYWRB4gBQH29KlS60l9JTEY8bcs2ePp3hUwK2j42PvfvA+kxikx0dGH7zv/tamZgDesBeYkqSz/eBGUgB48IjsCCdbg1iQlZkU5Vl06tQp0x6es8UAY4k7d+7k94cR5WEnw4ijwzfAAX62IbpaezcSQiI0Bp20aX777beLmBcpHbt27cKCFBPQykOpsfweHh358KOPIFpTm+Vp8fCDD2LEq73g9//5DYMQNtAyyWFEUpSLH+daKbZsjh49ynmiuaGRkxJdEbPCQX6MaPveU5JWkTAjbtr0/Yfoam94wyDEWwUIWaxvam+vz9ZWj082tTQfP3mip6cHYHZlc7W1dgGDD0Syb3em4xz/FB632YacTXqOuZlJXrjBQbT4QMxF/5evv3zcxwjT59etcmHFOYVWVNj6iGS6YcT6+ouU3M1SrzRT8sN8GI4ZenR4eOWSZQ9svmdiaISG2Xnhwu79+6prs4yiVoRgHhkaYobBjBiRyc0+wymuMXNauwf7Fy5b8syTT+UHR8YGhxluwBz2coPozY+NBNdQ8Js78XFw0s1XwZtljpOanKHmkRHiWmbCIIyRS7YegAbweGDYx096HoZIkljyFvG2hKazfDurOxVxUEd/ePRCO3zG7fPee+6ZHBnL5qvrcrn3P/n43PkOj7IsoOhYc8mfk4NgfmLh/AVmxPfee691TltzW2tDfcPyJUuXLl5CzkbllvoDIpgJIJcIJ8Ml7P8lplHjhgLFLhAtCTwPtQVOTcWOFQAATyHERyUZCk9vbGRWISx+VSQ29vt6epxV4OiO1rWZrO3ZLw8domfW1mTELR64DXKgJuj4nw2PjWaag1lt767d3GrWtq8xZa5atWrd+lutOiAH76HR4OwEI5MoBwApGoUWL7fRbFBf6UraghlRHNguOZSkJ8V9K45fi+2gGOxryV9c/7eP3zAIkQ+VvcDatWu5gPKRAerp06e3bf2ES8vyZctaWluZ2ezQYqUxQm94eGBwsLenh1Gm49y5XTu+uG3draypPNKoQlwOA89VhW1e+OVrqmtzdXwvtEKDhb19j8GBAfh7Ghk00g4LxpSpSInz/AqTomzF8alKzWb6rEJYLIhMb2Evty63+c67cIapDjUt+J566qn5CxesXrmKXuOpK5IFGAaH7CCeOnHy2Inj+/fu27N7946bb7np5rUk57KVK0CFU6HICBclpKoI0OBiIzQ38eNuohBls2dPn5EB2+FFhFYcD7lekegRPzUX81lxzjTAOasQFr+8eDCKtq9hkeHrWVOXw0Itba1btmzhY4HKcDWN9fX0ojV0SULswgLHL/upJ5609g9z2OjYSH4EQvhUhVJI48DcE9jtoqs8FDUkP39R1Z47fcbUiBGJWRUqFcTpNYc0YFbS2VmCMM4QxWOZumh3997Nd9MYo6LBs6Vt3lzcgycibB5BBbkjYyG9xYYrPzNAcp6Aa1dPt1cyt8kmElFRvK2hFQ8ZB/29vTt3fHH40JcDvX3QWrF0GR2Kw5M8eDHUnCioJXSJtwDzU28BuUKkOP/sz3/Frc8ShMVNFuKQwFWQwDegEphj2NjYYjrOnuvoPN/f29fd22M7wloiW5O5c9NdMjS3tvCv4TMoPjA0qGxcHsADQkI4ppTPD/UP1NbnTH6kMVwxNDFLgJ44cYLi08ihdOTiZlMsXuhVSSSiGBMLQ/DGYlbSw7JDiBVQ2SoNQnjEkMculmvcA/kytSVGUbopEoOEDrJn394vDx/evWuXfQnciU1MYJQU1P/Lv7+xYvnyTZs3b1i/vqm+Obja88CvreVGXVsVzmC0trTYqHL+D+r1uRx7ON2noS5nRagqaow+4OzMZPDr1RwB29jcrHvi6KJjWFyFhtGoPGMhT1gaXjIFFCwA9Fw5rUFVaARwNzVKhGCLyOVKSFzu27JDaOx7Sa8aWQSKyMpnzPyzefPm+AhBkcPW0hc7d3700UejQecfb2huiowlHkSroZCpOXzs6JdHv7KtyEWfIjrfmduuEFjj0K63u0cRMyWXNcVxM+y1i7jgodmqCjdTeYBy7PTJN954o6unR+26R66GbjTW3XHHHStWrWydN9fgUzY/GrqKF90KEc2g4PATHx1x0NCmmETFpRDsoC03ZiX1lx3COE4DfmFPKYTJcWuE8XVrb165grMvIlVZxTv9/Pd33rHBNDA6LE+geFUejWJ3Ed2208TYqEqU3rl7FyPcAw888OD9DyxduIi8xY5mVrYejqN8GPnAjfHjTaBCUxUCGASmxsBV2QyHpxH9SDxLtYURI8yuTLVktWOIMDP+MhN5PcSIkQUlAkw8PEpc6NQ5Z9488JPqUuhTJSQu923Z20MggEUCxZcBqmPND9x/f2DQyTydH1R/+9vftm7daguivqHeTBPZgqMa6qMviiurHkX4U/hRUrdu2/bFF1/88y9/tWbValKP7mpzyloFTXPOdQ4NZ+rrtAunCJU4QuPC8VEKa9CSYseMF80JYXgBJnFMNUObbkMqG+xk+NrC5RAaCipUSRwEDYHVTRCzfcq3MEOXa6xE8FwRSPDCWjLSreiNbqQHkP2Hd999V564BYGlkAY1E+ycwA3+os75iZicxFUSq7Iz/Nvf/hZT5hobLEgCQZP9YTNiGB8JcQ2RoNdkmMYD83FJVYmqkJs6SvDqj8wqJAw1HVVit57GDM5g+BEV4afApaCUDptNlTILKg74ctFx6nrLzoWaDoMzfhyJ1JyYqKutu+WWW/j1IjH62jx6/bW/YIs58+cF99/kIFlEGh0VRxrEkhN7wS/oIwlveYSCp86e+fMrr+Cz++8NJ9noTTKf7Tj31//7dv/gQK6+3qToKS2UDqXaWpqUeQuEudqOjg4yMKhbiSspaMeHR3l47Nj5hW0Qkly3cw51XJoCtVjgRXFdOnL0qM4IwNZWENSzHsoOIaqhbBBIZGBtOMWCUjxFA6q4cGLCsemzZ8+ubF8dOS8eXDLQQ4bEVK0GpVBGonoEFSK6dIculi5fdvSro2+++aZJiIrLM0M6LofukaNfdff34U5FhjmmkgT5qlwmWYS4baxXjyacQtM06kPCkafz58/v3bt3ZGKcnDSeJke/pp5EpUZnDAvi2tXr6J7AzhDcsbJlF2wlg2Q2IETu+JIRS1r+KqeWUDOXO3ri+K49u1nIxiYnMA1yxP7JD90Er6ADKhjTY2KgdXLw09Do6rxgx98W1XsfvG+LkRuqM4I0Qyrr4PDQ/i8PhdZZuhNjt93HieFRi0JWUxZU7nHAE9RGnwkAZII4JS2dnwruAcbQFCdvqLm6F0ZZYlIQVzAOshISl/u27EMmWLysA00t2VpvSUd/9KGHbTsM9PUD7JNPtxFZg2Mjw+NjLW1tZK55Cbu4KkPDbGpoQPfmxkZlASbFLYNqmL5w5/iEqjCK0eC8yx///G80I6s6OsUdt2187NEfLV6w0EQFcqx5MVTnNRe2NRJQdcxTV8FMJm7Cs1UpA0SlAIZguPwHeCwIP+Dpi4GiBvFyA3Z5/WWHsPjFvKH5Iy69EYvi0NvXZ8pBRVfEQgvGFJtNhJJTvvab6Jk9Xd1+JrnLf3ajhpPpx+e0aByco956660Qz2SYs6F4/333KWUJz10KhNjR+jII5ctCXDlclvwdSCi7IL0IoQmsKsiouW1ttpZQk8yxFjTxwBXFJ8Ynw6CmLzCpTEz6iogtCwyEvZQysRn1yKm2SNRCJBhikiO7NBTfKmE1OHj4yx89/IhSivD7ZuXZvnOH4RI8OYYGtfsdgGU6XSw7hDoDpKDUJQIHfgL6ojubNY4BBgirgpVqAkRNuQYrDaerN9y63tpANqyJd8GpqgJyhYjMdgdtVsQT2M5k//53v4MTFGlJviT0Tz//eceFzgOHDi5YsrgYP2x3cTh8I72uyLLfWGK2H5ZdkEa6wy9CaKKia0DFLEIJxBxxOpFNBlcLLOk4Uh4BvwJPNtOS4FGMFK4mIdzGxqagtaNd++6enn979ZW9B/bbtKI0mYN/8vwL4irh2F9C4G94/4LyWVIkbbff8ArXp6tgiCAlIIa9CKwQ0fJIBAb4D1fJFpqsrmbfsjawRqRZ2KMQd53qZ81uTLS18KNhjMm2NbdYCBLRf371lQs93STwYF//zWvX/vd/+bVhEaWxZrDg9yaUjsrr/mJAgo1vGEYLcZCZiTyULm5FDEIsZhHGshVkKbW+qurA4S//9f/8Pk6ZrrJFgAvyM0YwGcvrnNa2Bx98MOZpbGhgRmeO+eroUSj+7Cc/ldOgYfh+/PHHKcBspFd9R/xHfl6LmL1qVbOQoewQYjVEBBh1pgCeSIQQcWEDORDGyCS3F19SGhrcc2C/lYNlvJ0EdmhVICsGklK4qqdmIo//HAzmymbyMyAwOplJBXUYitx+8Re/PHXmNHPrC//5eU7+XDcK4Hw/eDGRXeUcKvAwgUERl4AzTFeJnYxMsyTHiOSbqwkP9SNvOQETNBz7hHjUpwubmjiUMkUGFxi1kKk2bNmgg8htZRm3nGeO6b7Q5bNO+NL2U5hufTWmanLr9k/5nVqaqs8O0z+/+CtLTFGcHUW6LtniCDpREsLYukQN9ftdukvv/2WHEG9FbAKr1dRYosFJJGBRX+80EzVEHNJAFaYiFaIjt4KKx7lTBPAGxIIFCzShYMwQ4x5B2jh4+U9/PHnmtDw84NgZfvYP/2jhb9a0/DBlqsSo0pNQ/DuA1xXIU3YI0Qg8ke6IaxUBRVqGQW+pwPeJ0JMuD6LjD30Mq+zLrkGo+jgXzmAGS1ingWdNogetXr1a/Qq6tQEZjEEmvGTH0Sx7vrvrlVdesQDlIVBXk+F0Y7Eov3Y1yoZgvRjm4KJAYpP78VeUnNJo2SHEPVgHf6CaiKXe4cOHCboIGAhNVzgJeeTBDToU+1RyVVZKqCcxcwctKPlolynQ1xJJ41BD+AVzl7aiV6Mp1ibi0ePHXnrppagW+Upz+PLlhg1u2YkMI/UoklJ8rqFbkVDXkHGmWchGDIdGKIWyIo4JFua/FStWOJ0EV4hGQ8xV28Gp0FQDNnK94/bb+YNbDgZ9yXfU7O0nn1a2cHTmG3tpEYo2h9/4y+t4Lk6BTz/9dPyuhuaiVLhqu6nNUHYIEVHw/vBzBSQv+kOHDsXJjxDjP8FeA2YpkR2vSCyVyBPYKzmuFvFTcOOG2/gAeGSBSM5GW6samFi5H1pCgND4wPd2tT755BMRdgCa1PPPP6+4z5yS6vJcsdHvRGLZIURx9MU3EUg8BCfnWmgxETOM+Oijj6ImlpItEYZRJH7tSpkxvYEx/vg7zJ0/36xGkFJPcDDdNSiTQE52D+xgMI6T0gRmwD6bYSL469tvYUeAGQFr1qyxITVv3jx8CePvBFpX7GTZIYSThqMeL8KeaQ/ps11f+PSqL5Ezk6L5Y48+usiu0NAQ45sOXfFHkTG9hQUmnk42pFavXPnk41vwEOxdNRF5UURDfDLa29vV6ZElChnr2NSZs2fffvttlnS8eL6j4757733umR8zq1pzROqQxt+5UHYIIRQom5xHwUB2wx1hmqyvffm1P3f29SxYutiuEF3/17/81eMPPdLd0emIWpB+43YHbYBn/NzaMLJ6k43BM/gB56ue3PLEcz9+1kQ7ODJMfmI1bK0t+71hO3dygjcNR2+8i/uBimsvDPS1zp975MiR3//r/w7KLX4fm3jswYfv33Q377PQyeQPaAXvtOTLpVJMq1Evvfwa9KZLv/g0nKKqCSqboKpYoaZ1QMfKNzIymzav11icDLRU1sa8KsuIU5ciZ8+dsyBbd8stDjGdPnGSxn/b+g3emx8injCTueoW/HJ1dS3NzeK2D/v7+hYvXPT0k0/5nh67KHwaGxpNrtb7QZtNlpvbPv1UzdGiHdfphXat232g9vjx4zyhbr1lHfoSA+vX3WpN0zYn6D5qObD/wKHDX5LMZHJEJJKl5BoRAkyBYjES3AHs+ycTtjwC2sbZ5LqgqMLYUKE/swphtGwlODKF1rB2wax9dTuEwj5tTQ3//KXLltFxLnR2EnQOpHl/uiWDC4Yzb919990/fuaZTXfdBWBPwXbu7NkPP/xw0eLFZlNTGiuBb0ZRcW0fBlaIZIs8kFwtHAFz6MtDc+fPW758OYuPSljG0T3MiNVVBw4exKlGQ1iA8nxMTgUbKyU/0iQ4Gusfj8ZLEfHA8cm3/ZE44lduCMtuI51q6Bnmpkne0DwwfvbTf0DNc2fOSgQS/zaO3rbg4Ur3QQgEpX04DerjsDQRnmfWCeYzUKnh888/33T3ZiSTWc6oFk3VLunXMm/OhfOdL738sg8uaOvMqdNQtECMRea0tXHtURv3C9TXJUxMdJdcSfiYEgztyVODQwo/K0NTnwWVqDNiOVV/vn36DYMQuRHOe/IA5j/x3HPPrV61CiQIiprtq1bf1L7GDIc5jGtgiyMoWYpSdB90IfGsEw5+ecicBzkp5JVrLGVRX0IdhBaY+/oow7k6Q+H3f3j5xf/6CzIcDHhdZwhwn+nzh0uosmqTX22uU0EYYQs1J0CaR3/3h5ecLFBVFKc6/72FkMTDLlBEo22fbbfJYGnBaDJnXlhdwBJRgi5TUz02PNY30C/uRKCrU/ZDA4P81T58/4ML3V3QxY7IhNCwRzJwIt9U7hUqUTkvVi7hZ86dffX1v/z8H3+2YP582hB5aGCpcN6cufAzYvQtqFcxXJxXkxtxX3NPBHVsOnzJWx+qw9/Iu5g90Y881R+IXqykDP/NKhdGPohvwULGaB1olM06pcaj11b7jh07rPRJS3/wwRFtZ5e4U6Bpi69WVFdzGTtx/LjPeO3bu/fY8eMoaEcJHjI4wy0n7OPEI6WYVrHdiIWJCtJDg0NEMU6xtP/3v7757NPPSLTwADDJaaDomKqEXPLHC4tri3GPRC7idynCRBsluUriI4OpkOfySq5LyqxCWNzjKGq8npe0Ng8EpY7u3/fV8WPUmSULFy1ZvmzR/AU2b+0EsZ+dP3vO50nPnjrtC8H2GeYumO9vMJ3v7DQCUI0KioHIRgi5xdzRzFbcYoyTkCZCug/JaTaW31kqfMzXRgYaje5gZVVRuATcKd0eFqYruVrjxhTfWolPQWinLPZBWQVjbeLlY8Tqcv/ltDha0RR1jHq3EArkSz6lBsL4qpgAsdCOk4tdBR+RITytDtlckBJzWF2E5Xm2lg6Jq6SYh9QGYEysoBmosaVZbaiGXkHXuLQacx9yJgGDOvoUlM8kXOxY+MOHehS+7uZjG1jQkLKAkRZgoDfTPx2qGhnl6sg4zlWuMVcvxTLU0/gHvdj5LFKDnTZpSMEo1WND1wtCLxLfyzWGsi8qcAn5Jpj8eEUAD5WNUxFbtWCDqNeTIWKJn/SyLhf+pF1zS4viYAdSc0szO4tjm0KYieBkyeDUWX29JYdS6om6fchAm0j+cpqI2qSrHEItTU1OpMlAbeFHpULrQtvFinP76O3rzdAzfT1BbzjkE90T45g+V59jLtC0z70T1739fY5f9chsJ9nX4PzFy8T0o4i/Q0n+RrQuUThMpTElYvktr6pSs0oK9ZcdQk2CAR6hycTMbU09d84c3hJ9vX39A8HNMJg9zTr19T5UsmDhQp/kdlYw8QIPxwqdRkTTcx0d4WC8SdGKED1Norzr+aNmExephgbpKK8RzUFNcVdIB/Ds/luuoX5vr5aa/PWlsXHDon3NGusWUygXfU2gCh4FbfuadoAZXsG3kYu3j4glI4nEiB0IooP7cmDOYA3wlNucP9oW+pzIzGIUvyVmJcUvh7DsBjZkjShGIK3//lMSXnzxRW+LZGiELZAbzBZqGzduxC6KkEIekWwKUlvsLOKzCJJSEt3al7fzbhDgJ48Sfgs7HmpwVb86i+dI8tmJDlOXmhX3CTdGdtZUYwOl1GOEE4P6IN3SXSIe7enqMgU408aLxwEBhtze7m5XPXbc3KPB/n4uzuvXrQsnb4pCCfXLdFt2dQY1TTxGCm81TqAmNvx18Mh+R5nWrFkTP30f5prxcV9GIJEgJ7gVUAOWiPjCCy+QuocPH3799dctP0yc0umi8vhy1I9+9CODwAaWp3gLpYIsra6ipBgTMSeWwpFUTWip31T3xBNPqN/279mODouTMCkmnzFhq5u3YAHWZLcLVvh8FeB55UCa98bjjz3OsNDZcd6hcFqYcaBmbgN6qE76Lbc5Iyn23DXCpg+F+HUHsuxcqMeoVuA23OOj2y+//PLf//53p9qRFcYyAM97ygaeqPjgIZ3DXksWLcITH/juWmvrsiVLcJuhLptliYivmPobo6+++io2tQuoBhMbPHAnxxxe/Xie3Y6W5JF0qMuw8c472Hr279/vgBnLDhi05qneRlrje02EARcwz9rrp7PcvuE2EvjzT7fTXGg9GNrq0N+XvXPj7XSc9995VyuKF0IBv+sOW3GFZedCIgtpCD4IIQrOMHJB4syRV5UiPeqHIZsPwZh1HN2rbwC7TQkewCwyB/bt++zT7TiMFkqgResl/vBJKLiaz7CIskYDhIwSfICaB5Kg/vjCmqPi0mBxIVbGMT5gsnDxYtzsDKKjTIo7NqgG/GcnC/MNN4ZzrPAKUtpoa2ygc5493wFgdRLRzKMSaT2Hj3515NjRFatXSddQMYnLHS+7OoNeUKQXIhAdgQVk7c03r1y9iss21pFCl0Em36GQDcDgce6XxuGrGDJTLP0xQerolse3dHV3bf3445HREaoQ7YMi4yjaooWLTp89QzkFw8EDB/iA84fhhop5MFZkCH0QYExjBIa9X+sWZqDN99yj0a2fbGX5tmjxgbfA+ZN5A8LfpPGnDDvOnyfaLfUMQW358KL4kcNHLHVotlRTBlUtHjp4aPWadqeofMThxKlTcUo2dGLrEcLrhWusNg6UWH/Z14UFJohvUiK4g8JwpSCbR9/mOhXJzK6xweKmwyLyYnJpb8jqK/ZEPVdOLzMLxolWLy/iRwMv7XKZ74sJ9w1NxWzf5jpV5VfswFT4qWS6fZiq3fKll3BF+Rqq1FwuClQgLBdlZ63eCoSzRupyNVSBsFyUnbV6KxDOGqnL1VAFwnJRdtbqLfuiYqr12ay9YUlD16s/16ueku7N4LbChTMgWrqKVCBMFx4z6E0FwhkQLV1FKhCmC48Z9KYC4QyIlq4iFQjThccMelOBcAZES1eRCoTpwmMGvalAOAOipatIBcJ04TGD3lQgnAHR0lWkAmG68JhBbyoQzoBo6SpSgTBdeMygNxUIZ0C0dBWpQJguPGbQmwqEMyBauopUIEwXHjPoTQXCGRAtXUUqEKYLjxn0pgLhDIiWriIVCNOFxwx6U4FwBkRLV5FwIFZwCjAeBIzukYXbdHW20pvw/RNHiOPhU0cMUSTvYx6XPoibfJylAmHKx0k8O6yTkIpgVQRpyiEr7V6ErZDq9uL3dcLHlJLgsHlFihYIlOZI4MEkhK8VRdh0V0qMQ1E8zS/wg+1bMhf+hxQFU/g7VqZD35xAFPhF5ED4g6VR6l/84twHqRj+PzX0ubfNITSVAAAAAElFTkSuQmCC" alt="" style="width:44px;height:44px"></div>
+    <p class="mini" style="color:#A9A495;max-width:24ch">Bien-être ALIGNÉ — santé et vitalité des femmes de 45 ans et plus. Guadeloupe.</p>
+   </div>
+   <div><h5>Le programme</h5><a data-go="programme">RÉGÉNÈRE</a><a data-go="formules">Formules et tarifs</a><a data-go="cercle">Le Cercle</a><a data-go="profil">Connaître mon profil</a></div>
+   <div><h5>La marque</h5><a data-go="erika">Qui est Erika</a><a data-go="journal">Journal</a><a data-go="evenements">Événements</a><a data-go="boutique">Boutique</a><a data-go="contact">Contact</a></div>
+   <div><h5>Informations</h5><a>Mentions légales</a><a>Conditions générales de vente</a><a>Politique de confidentialité</a><a>Gestion des cookies</a><a data-go="membres">Espace membres</a></div>
+  </div>
+  <div class="foot-b"><span>© 2027 SASU ALIGNÉ</span><span>Maquette de présentation — Omega Investment</span></div>
+ </div>
+</footer>
+
+<script>
+function go(id){
+ document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+id));
+ document.querySelectorAll('.nav-links a').forEach(a=>a.classList.toggle('on',a.dataset.go===id));
+ document.querySelector('.nav-links').classList.remove('open');
+ window.scrollTo({top:0,behavior:'instant'});
+}
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-go]');
+ if(t){e.preventDefault();go(t.dataset.go);return}
+ const o=e.target.closest('.opt');
+ if(o&&o.parentElement.classList.contains('opts')){
+  o.parentElement.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));o.classList.add('sel');
+ }
+});
+go('accueil');
+</script>
+</body>
+</html>
