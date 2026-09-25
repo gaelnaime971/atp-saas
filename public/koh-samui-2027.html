@@ -342,6 +342,40 @@ footer{padding:36px var(--pad);border-top:1px solid var(--line);display:flex;jus
   .rv{opacity:1;transform:none}
   .xh{display:none}
 }
+
+/* ---------- BLOC RÉSUMÉ TARIF + MODAL PAIEMENT ---------- */
+.pay-summary{background:var(--ink-2);border:1px solid var(--line);padding:clamp(24px,3vw,36px);border-radius:2px}
+.pay-summary-total{font-family:var(--display);font-size:clamp(38px,4.4vw,56px);font-weight:300;color:var(--sand);line-height:1;letter-spacing:-0.01em}
+.pay-summary-detail{margin-top:14px;font-size:14px;color:var(--sand-dim);line-height:1.5}
+.pay-summary-options{margin-top:18px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--data);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+
+.pay-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.pay-modal.open{display:flex}
+.pay-modal-overlay{position:absolute;inset:0;background:rgba(5,7,6,.86);backdrop-filter:blur(10px);animation:payFade .25s ease-out}
+.pay-modal-content{position:relative;z-index:1;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;background:var(--ink-2);border:1px solid rgba(201,165,116,.24);border-radius:16px;padding:clamp(24px,3.6vw,40px);box-shadow:0 40px 100px -20px rgba(0,0,0,.8);animation:paySlide .35s cubic-bezier(.2,.7,.2,1)}
+.pay-modal-close{position:absolute;top:14px;right:14px;width:36px;height:36px;background:transparent;border:none;color:var(--sand-dim);font-size:24px;line-height:1;cursor:pointer;border-radius:8px;transition:background .2s,color .2s;padding:0}
+.pay-modal-close:hover{background:rgba(255,255,255,.05);color:var(--sand)}
+.pay-modal-header{margin-bottom:24px;padding-right:40px}
+.pay-modal-header .eyebrow{margin-bottom:8px}
+.pay-modal-header h3{font-family:var(--display);font-size:clamp(22px,2.6vw,28px);font-weight:400;color:var(--sand);margin:0;line-height:1.15;letter-spacing:-0.005em}
+.pay-modal-options{display:flex;flex-direction:column;gap:12px}
+.pay-option{display:block;padding:18px 20px;background:var(--ink-3);border:1px solid rgba(255,255,255,.06);border-radius:12px;text-decoration:none;color:inherit;transition:transform .3s cubic-bezier(.2,.7,.2,1),border-color .3s,background .3s}
+.pay-option:hover{transform:translateY(-2px);border-color:var(--gold);background:linear-gradient(135deg,var(--ink-3),rgba(201,165,116,.06))}
+.pay-option-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:6px}
+.pay-option-badge{font-family:var(--data);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);padding:4px 10px;border:1px solid rgba(201,165,116,.35);border-radius:100px;white-space:nowrap}
+.pay-option-total{font-family:var(--display);font-size:clamp(18px,2.2vw,22px);font-weight:400;color:var(--sand);text-align:right}
+.pay-option-detail{font-size:12px;color:var(--sand-dim);line-height:1.4;margin-bottom:12px}
+.pay-option-cta{font-family:var(--data);font-size:11px;letter-spacing:.08em;color:var(--gold);text-transform:uppercase}
+.pay-modal-footer{text-align:center;font-family:var(--data);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--sand-dim);margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.06)}
+@keyframes payFade{from{opacity:0}to{opacity:1}}
+@keyframes paySlide{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@media (max-width:600px){
+  .pay-option-head{flex-direction:column;align-items:flex-start;gap:6px}
+  .pay-option-total{text-align:left}
+}
+@media (prefers-reduced-motion:reduce){
+  .pay-modal-overlay,.pay-modal-content{animation:none}
+}
 </style>
 </head>
 <body>
@@ -536,25 +570,25 @@ footer{padding:36px var(--pad);border-top:1px solid var(--line);display:flex;jus
 <section class="pay" id="reserver">
   <div class="wrap">
     <div class="eyebrow rv">Le paiement</div>
-    <h2 class="rv" data-d="1">2 899 € — comptant, ou <em>jusqu'à huit fois</em></h2>
-    <p class="lead rv" data-d="2">Acompte de 499 € à la réservation, solde de 2 400 € réparti jusqu'en mars 2027. Deux raisons de ne pas attendre : la mensualité, et le temps qu'on aura pour te préparer.</p>
+    <h2 class="rv" data-d="1">2 899 € — comptant, ou <em>jusqu'à six fois</em></h2>
+    <p class="lead rv" data-d="2">Quatre formules au choix : comptant, en 2×, 4× ou 6× — toutes sans frais. Paiement sécurisé Stripe, ta place est bloquée dès validation.</p>
 
     <div class="grid">
-      <div class="slider-box rv" data-d="2">
-        <div class="slider-lbl">Je réserve en…</div>
-        <div class="pay-when" id="pWhen">Octobre – novembre 2026</div>
-        <input type="range" id="pRange" data-cur="Glisser" min="0" max="4" value="0" step="1" aria-label="Mois de réservation">
-        <div class="ticks"><span>OCT</span><span>DÉC</span><span>JAN</span><span>FÉV</span><span>MAR</span></div>
-        <div class="pay-out">
-          <div><div class="v" id="pMonth">300 €</div><div class="l">par mois × 8</div></div>
-          <div><div class="v" id="pPrep">6 mois</div><div class="l">de préparation</div></div>
+      <div class="rv" data-d="2">
+        <div class="pay-summary">
+          <div class="pay-summary-total">2 899 €</div>
+          <div class="pay-summary-detail">Tout compris — voir la liste « Ce qui est compris » ci-dessus. Aucun frais caché.</div>
+          <div class="pay-summary-options">4 formules : comptant · 2× · 4× · 6× — sans frais</div>
         </div>
+        <button type="button" class="cta" data-open-pay data-cur="Choisir ma formule" style="margin-top:28px;background:transparent;border:none;padding:0;cursor:pointer;font:inherit;color:inherit">
+          S'inscrire maintenant <span class="arw">→</span>
+        </button>
       </div>
       <div class="rv" data-d="3">
         <div class="steps" style="grid-template-columns:1fr;margin-top:0">
           <div class="step"><div class="n">01</div><h4>Tu réserves un appel</h4><p>30 minutes, en visio. On parle de ton trading, de là où tu en es, de ce que tu veux corriger.</p></div>
           <div class="step"><div class="n">02</div><h4>On valide ensemble</h4><p>Je te dis franchement si l'immersion est faite pour toi. Si oui, on définit ta préparation d'ici mai. Si non, je te le dis aussi.</p></div>
-          <div class="step"><div class="n">03</div><h4>Tu choisis ta formule</h4><p>Le lien de paiement t'est envoyé après l'appel. Ta place est bloquée à réception de l'acompte.</p></div>
+          <div class="step"><div class="n">03</div><h4>Tu choisis ta formule</h4><p>Le lien de paiement t'est envoyé après l'appel — ou tu passes directement par le bouton ci-contre si tu es déjà décidé.</p></div>
         </div>
       </div>
     </div>
@@ -700,25 +734,30 @@ const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 })();
 
 /* ---------- PAIEMENT ---------- */
+/* Slider paiement retiré — remplacé par le bloc résumé + bouton
+   'S'inscrire maintenant' qui ouvre la modal des 4 formules Stripe. */
+
+/* ---------- MODAL PAIEMENT ---------- */
 (function(){
-  const P=[
-    {w:"Octobre – novembre 2026",n:8,m:300, p:"6 mois"},
-    {w:"Décembre 2026",          n:6,m:400, p:"5 mois"},
-    {w:"Janvier 2027",           n:4,m:600, p:"4 mois"},
-    {w:"Février 2027",           n:2,m:1200,p:"3 mois"},
-    {w:"Mars 2027 et après",     n:0,m:2899,p:"2 mois"}
-  ];
-  const r=document.getElementById('pRange'),w=document.getElementById('pWhen'),
-        m=document.getElementById('pMonth'),pr=document.getElementById('pPrep'),
-        lbl=document.querySelector('#pMonth').nextElementSibling;
-  const eur=n=>n.toLocaleString('fr-FR')+' €';
-  function upd(){
-    const o=P[+r.value];
-    w.textContent=o.w;pr.textContent=o.p;
-    m.textContent=eur(o.m);
-    lbl.textContent=o.n?('par mois × '+o.n):'comptant, en une fois';
+  const modal=document.getElementById('payModal');
+  if(!modal)return;
+  const openers=document.querySelectorAll('[data-open-pay]');
+  const closers=modal.querySelectorAll('[data-close-pay]');
+  function open(){
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    document.body.style.overflow='hidden';
   }
-  r.addEventListener('input',upd);upd();
+  function close(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+    document.body.style.overflow='';
+  }
+  openers.forEach(b=>b.addEventListener('click',e=>{e.preventDefault();open()}));
+  closers.forEach(el=>el.addEventListener('click',close));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&modal.classList.contains('open'))close();
+  });
 })();
 
 /* ---------- FAQ ---------- */
@@ -730,5 +769,54 @@ document.querySelectorAll('#faq .q button').forEach(b=>{
   });
 });
 </script>
+
+<!-- MODAL PAIEMENT — 4 formules Stripe -->
+<div class="pay-modal" id="payModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
+  <div class="pay-modal-overlay" data-close-pay></div>
+  <div class="pay-modal-content">
+    <button type="button" class="pay-modal-close" data-close-pay aria-label="Fermer">×</button>
+    <div class="pay-modal-header">
+      <div class="eyebrow">Choisis ta formule</div>
+      <h3 id="payModalTitle">Ta place à Koh Samui — 2 899 €</h3>
+    </div>
+    <div class="pay-modal-options">
+      <a href="https://buy.stripe.com/6oU14nahL1UL00Sc1AdUY0k" target="_blank" rel="noopener noreferrer" class="pay-option">
+        <div class="pay-option-head">
+          <span class="pay-option-badge">Comptant</span>
+          <span class="pay-option-total">2 899 €</span>
+        </div>
+        <div class="pay-option-detail">Un seul paiement, dossier bouclé en une fois.</div>
+        <div class="pay-option-cta">Payer maintenant →</div>
+      </a>
+      <a href="https://buy.stripe.com/cNi7sL0HbgPFdRI6HgdUY0l" target="_blank" rel="noopener noreferrer" class="pay-option">
+        <div class="pay-option-head">
+          <span class="pay-option-badge">2× sans frais</span>
+          <span class="pay-option-total">2 × 1 449,50 €</span>
+        </div>
+        <div class="pay-option-detail">Deux mensualités égales, prélevées automatiquement.</div>
+        <div class="pay-option-cta">Choisir cette formule →</div>
+      </a>
+      <a href="https://buy.stripe.com/6oU9ATgG90QH6pg1mWdUY0m" target="_blank" rel="noopener noreferrer" class="pay-option">
+        <div class="pay-option-head">
+          <span class="pay-option-badge">4× sans frais</span>
+          <span class="pay-option-total">4 × 724,75 €</span>
+        </div>
+        <div class="pay-option-detail">Quatre mensualités égales, l'équilibre entre confort et échéance.</div>
+        <div class="pay-option-cta">Choisir cette formule →</div>
+      </a>
+      <a href="https://buy.stripe.com/cNiaEX89DeHx6pg6HgdUY0n" target="_blank" rel="noopener noreferrer" class="pay-option">
+        <div class="pay-option-head">
+          <span class="pay-option-badge">6× sans frais</span>
+          <span class="pay-option-total">6 × 483,17 €</span>
+        </div>
+        <div class="pay-option-detail">Six mensualités égales, la formule la plus étalée.</div>
+        <div class="pay-option-cta">Choisir cette formule →</div>
+      </a>
+    </div>
+    <div class="pay-modal-footer">
+      Paiement sécurisé via Stripe · Carte bancaire · Reçu envoyé par email
+    </div>
+  </div>
+</div>
 </body>
 </html>
