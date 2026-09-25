@@ -214,7 +214,10 @@ h1 em{font-style:italic;color:var(--gold);display:block}
   border:1px solid var(--line);display:flex;align-items:flex-end;padding:14px;
   font-family:var(--data);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--sand-dim);
   transition:transform .5s cubic-bezier(.2,.7,.2,1),border-color .4s;
+  position:relative;overflow:hidden;
 }
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.ph:hover img{transform:scale(1.04)}
 .ph:hover{transform:translateY(-8px);border-color:var(--gold)}
 .ph.wide{grid-column:span 2;aspect-ratio:3/2}
 .play{width:60px;height:60px;border:1px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .35s,transform .35s;background:rgba(5,7,6,.4)}
@@ -354,7 +357,7 @@ footer{padding:36px var(--pad);border-top:1px solid var(--line);display:flex;jus
 <section class="hero">
   <div class="topbar">
     <a href="/" class="logo" aria-label="Alpha Trading Pro — retour à l'accueil" style="display:inline-flex;align-items:center">
-      <img src="/logo-atp-white.png" alt="Alpha Trading Pro" style="display:block;height:64px;width:auto">
+      <img src="/logo-atp-white.png" alt="Alpha Trading Pro" style="display:block;height:45px;width:auto">
     </a>
     <div class="meta">ÉDITION KOH SAMUI · THAÏLANDE</div>
   </div>
@@ -473,12 +476,12 @@ footer{padding:36px var(--pad);border-top:1px solid var(--line);display:flex;jus
     <h2 class="rv" data-d="1">Une villa, dix personnes, <em>rien d'autre à faire</em></h2>
     <p class="lead rv" data-d="2">Koh Samui n'est pas un décor. C'est un endroit coupé de tout ce qui te déconcentre habituellement — les obligations, les notifications, les gens qui ne comprennent pas ce que tu fais. Villa privée, chambres individuelles, espace de travail commun, fibre.</p>
     <div class="gal rv" data-d="3">
-      <div class="ph wide" data-cur="Agrandir">Photo — espace de travail</div>
-      <div class="ph" data-cur="Agrandir">Photo — villa</div>
-      <div class="ph" data-cur="Agrandir">Photo — table du dîner</div>
-      <div class="ph" data-cur="Agrandir">Photo — île</div>
-      <div class="ph" data-cur="Agrandir">Photo — sortie bateau</div>
-      <div class="ph wide" data-cur="Agrandir">Photo — vue générale</div>
+      <div class="ph wide" data-cur="Agrandir"><img src="/kohsamui1.jpg" alt="Espace de travail — villa Koh Samui" loading="lazy"></div>
+      <div class="ph" data-cur="Agrandir"><img src="/kohsamui2.png" alt="Villa privée — extérieur" loading="lazy"></div>
+      <div class="ph" data-cur="Agrandir"><img src="/kohsamui3.avif" alt="Table du dîner" loading="lazy"></div>
+      <div class="ph" data-cur="Agrandir"><img src="/kohsamui4.jpg" alt="Île de Koh Samui" loading="lazy"></div>
+      <div class="ph" data-cur="Agrandir"><img src="/kohsamui5.jpg" alt="Sortie bateau — mer d'Andaman" loading="lazy"></div>
+      <div class="ph wide" data-cur="Agrandir"><img src="/kohsamui6.jpg" alt="Vue générale — villa et plage" loading="lazy"></div>
     </div>
   </div>
 </section>
