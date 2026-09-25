@@ -737,8 +737,12 @@ const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* Slider paiement retiré — remplacé par le bloc résumé + bouton
    'S'inscrire maintenant' qui ouvre la modal des 4 formules Stripe. */
 
-/* ---------- MODAL PAIEMENT ---------- */
-(function(){
+/* ---------- MODAL PAIEMENT ----------
+   DOMContentLoaded : le markup de la modal (#payModal) est déclaré
+   APRÈS ce bloc <script>. Sans l'attente du DOM ready, getElementById
+   renverrait null et aucun listener ne serait attaché — d'où le
+   bouton 'S'inscrire' qui restait sans effet au clic. */
+document.addEventListener('DOMContentLoaded',function(){
   const modal=document.getElementById('payModal');
   if(!modal)return;
   const openers=document.querySelectorAll('[data-open-pay]');
@@ -758,7 +762,7 @@ const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'&&modal.classList.contains('open'))close();
   });
-})();
+});
 
 /* ---------- FAQ ---------- */
 document.querySelectorAll('#faq .q button').forEach(b=>{
