@@ -22,6 +22,7 @@ export type DashboardPage =
   | 'progression'
   | 'recap-live'
   | 'classement'
+  | 'bilan-2027'
 
 
   | 'formation'

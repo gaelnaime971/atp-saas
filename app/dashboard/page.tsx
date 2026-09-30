@@ -27,6 +27,7 @@ import Contrat from '@/components/dashboard/pages/Contrat'
 import Compte from '@/components/dashboard/pages/Compte'
 import RecapTradeLive from '@/components/dashboard/pages/RecapTradeLive'
 import Classement from '@/components/dashboard/pages/Classement'
+import BilanPage from '@/components/bilan/BilanPage'
 
 import PreMarket from '@/components/dashboard/pages/PreMarket'
 import SessionLive from '@/components/dashboard/pages/SessionLive'
@@ -128,6 +129,7 @@ export default function TraderDashboard() {
       case 'pre-market': return <PreMarket />
       case 'coaching': return <Coaching />
       case 'recap-live': return <RecapTradeLive />
+      case 'bilan-2027': return <BilanPage />
       case 'progression': return <Progression />
       case 'classement': return <Classement />
       case 'formation': return <Formation />
