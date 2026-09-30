@@ -1,0 +1,2636 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bilan Trader 2027 — Alpha Trading Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ==============================
+   DESIGN SYSTEM — ATP DARK FINANCE
+   UI UX Pro Max · Bloomberg-inspired
+   ============================== */
+:root {
+  /* Core palette */
+  --bg0: #020704;
+  --bg1: #040a04;
+  --bg2: #060d06;
+  --bg3: #0a130a;
+  --bg4: #0f1a0f;
+  --bg5: #141f14;
+
+  /* Borders */
+  --b0: rgba(34,197,94,0.07);
+  --b1: rgba(34,197,94,0.13);
+  --b2: rgba(34,197,94,0.22);
+  --b3: rgba(34,197,94,0.35);
+
+  /* Brand */
+  --g: #22c55e;
+  --g-glow: rgba(34,197,94,0.3);
+
+  /* Accent = interaction gold */
+  --ac: #C9A574;
+  --ac2: #d4b080;
+  --ac-dim: rgba(201,165,116,0.10);
+  --ac-b: rgba(201,165,116,0.25);
+
+  /* Semantic */
+  --profit: #22c55e;
+  --pdim: rgba(34,197,94,0.10);
+  --danger: #ef4444;
+  --ddim: rgba(239,68,68,0.10);
+  --dborder: rgba(239,68,68,0.28);
+  --warn: #f59e0b;
+  --wdim: rgba(245,158,11,0.09);
+  --wborder: rgba(245,158,11,0.28);
+  --blue: #60a5fa;
+  --bdim: rgba(96,165,250,0.09);
+  --purple: #a78bfa;
+  --purdim: rgba(167,139,250,0.09);
+
+  /* Level colors */
+  --lm: #22c55e;
+  --ls: #60a5fa;
+  --lf: #f59e0b;
+  --lc: #ef4444;
+
+  /* Text */
+  --t1: #e8ede8;
+  --t2: #b0bdb0;
+  --t3: #6b7a6b;
+  --t4: #404840;
+
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; font-size:16px; }
+body {
+  background: var(--bg1);
+  color: var(--t1);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── SCANLINE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.06) 2px,
+      rgba(0,0,0,0.06) 4px
+    );
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+}
+
+/* ── GRID BG ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--b0) 1px, transparent 1px),
+    linear-gradient(90deg, var(--b0) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── LAYOUT ── */
+.shell {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ══════════════════════════════
+   SIDEBAR
+   ══════════════════════════════ */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--b1);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.3s ease;
+}
+.sidebar::-webkit-scrollbar { width: 2px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+
+/* Brand / Logo */
+.sb-logo {
+  padding: 16px 14px;
+  border-bottom: 1px solid var(--b1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg1);
+  position: relative;
+  overflow: hidden;
+}
+.sb-logo::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ac), transparent);
+  animation: shimmer-line 4s ease-in-out infinite;
+}
+@keyframes shimmer-line {
+  0%, 100% { opacity: 0.3; transform: scaleX(0.3); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+.sb-logo img {
+  height: 28px;
+  width: auto;
+  filter: brightness(1.1);
+  flex-shrink: 0;
+}
+.sb-logo-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--t3);
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+}
+.sb-logo-sub strong {
+  display: block;
+  color: var(--ac);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+/* Nav */
+.sb-nav { padding: 6px 0; flex: 1; }
+.nsec {
+  padding: 12px 14px 3px;
+  font-size: 9px;
+  color: var(--t4);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ni {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  font-size: 12.5px;
+  color: var(--t3);
+  transition: all 0.15s ease;
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ni::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  transition: background 0.15s;
+}
+.ni:hover { color: var(--t1); border-left-color: var(--b2); }
+.ni:hover::before { background: rgba(255,255,255,0.02); }
+.ni.active {
+  color: var(--ac);
+  border-left-color: var(--ac);
+  background: var(--ac-dim);
+}
+.ni.active::before { background: rgba(201,165,116,0.04); }
+.nchk {
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  border: 1px solid var(--b2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 8px;
+  color: transparent;
+  transition: all 0.25s ease;
+  background: var(--bg3);
+}
+.nchk.done {
+  background: var(--profit);
+  border-color: var(--profit);
+  color: #000;
+  font-size: 9px;
+  box-shadow: 0 0 8px var(--g-glow);
+  animation: check-pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes check-pop {
+  0% { transform: scale(0.6); }
+  100% { transform: scale(1); }
+}
+
+/* Progress */
+.sb-prog {
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--b1);
+  background: var(--bg1);
+}
+.pl {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--t3);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 6px;
+}
+.pbar {
+  height: 3px;
+  background: var(--b1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.pfill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ac), var(--g));
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+}
+.pfill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 20px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+  animation: shine-bar 1.5s ease-in-out infinite;
+}
+@keyframes shine-bar {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+/* ══════════════════════════════
+   MAIN
+   ══════════════════════════════ */
+.main { flex: 1; overflow-x: hidden; }
+.screen { display: none; }
+.screen.active { display: block; animation: fade-in 0.25s ease; }
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── PAGE HEADER ── */
+.ph {
+  padding: 22px 30px 0;
+  border-bottom: 1px solid var(--b1);
+  margin-bottom: 22px;
+  position: relative;
+}
+.ph::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 80px; height: 1px;
+  background: var(--ac);
+}
+.ph h1 {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--t1);
+  margin-bottom: 3px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.04em;
+}
+.ph p { font-size: 13px; color: var(--t3); max-width: 540px; }
+.phm {
+  display: flex; align-items: center;
+  gap: 8px; flex-wrap: wrap;
+  margin-top: 10px; padding-bottom: 12px;
+}
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px;
+  border-radius: 100px;
+  font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.04em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ba { background: var(--ac-dim); color: var(--ac); border: 1px solid var(--ac-b); }
+.bm { background: rgba(255,255,255,0.05); color: var(--t3); border: 1px solid var(--b1); }
+.bp2 { background: var(--pdim); color: var(--profit); border: 1px solid rgba(34,197,94,0.2); }
+.bd { background: var(--ddim); color: var(--danger); border: 1px solid var(--dborder); }
+.bw { background: var(--wdim); color: var(--warn); border: 1px solid var(--wborder); }
+.bb { background: var(--bdim); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+.bpur { background: var(--purdim); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: var(--b2); }
+.card-accent {
+  background: var(--ac-dim);
+  border: 1px solid var(--ac-b);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.card-danger {
+  background: var(--ddim);
+  border-left: 3px solid var(--danger);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 12px 14px;
+}
+.card-warn {
+  background: var(--wdim);
+  border-left: 3px solid var(--warn);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 12px 14px;
+}
+.card-profit {
+  background: var(--pdim);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+/* ── KPI GRID ── */
+.kg { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 8px; }
+.kc {
+  background: var(--bg2);
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+  padding: 13px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.kc::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ac-b), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.kc:hover { border-color: var(--b2); transform: translateY(-1px); }
+.kc:hover::before { opacity: 1; }
+.kl {
+  font-size: 9.5px; color: var(--t3);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 5px;
+}
+.kv {
+  font-size: 19px; font-weight: 700;
+  color: var(--t1);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1;
+}
+.kv.ac { color: var(--ac); }
+.kv.pr { color: var(--profit); text-shadow: 0 0 20px var(--g-glow); }
+.kv.da { color: var(--danger); }
+.kv.wa { color: var(--warn); }
+.kv.bl { color: var(--blue); }
+.ksub { font-size: 10px; color: var(--t3); margin-top: 3px; }
+
+/* ── CONTENT ── */
+.content { padding: 0 30px 40px; }
+.cn { max-width: 660px; }
+
+/* ════════════════════
+   INTRO
+   ════════════════════ */
+.ih {
+  padding: 36px 30px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ATP HERO */
+.atp-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  background: linear-gradient(135deg, rgba(201,165,116,0.06) 0%, rgba(34,197,94,0.04) 100%);
+  border: 1px solid var(--ac-b);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+.atp-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(201,165,116,0.04) 60deg, transparent 120deg);
+  animation: rotate-glow 12s linear infinite;
+}
+@keyframes rotate-glow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.atp-hero-logo {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.atp-hero-logo img {
+  height: 32px;
+  filter: brightness(1.1) drop-shadow(0 0 12px rgba(201,165,116,0.4));
+}
+.atp-hero-text {
+  position: relative;
+  z-index: 1;
+}
+.atp-hero-text h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  color: var(--ac);
+  letter-spacing: 0.2em;
+  margin-bottom: 3px;
+}
+.atp-hero-text p {
+  font-size: 12px;
+  color: var(--t2);
+}
+
+.ititle {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 560px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.02em;
+}
+.ititle em {
+  color: var(--ac);
+  font-style: normal;
+  position: relative;
+}
+.ititle em::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--ac), transparent);
+}
+.idesc {
+  font-size: 14px;
+  color: var(--t2);
+  max-width: 520px;
+  line-height: 1.75;
+}
+
+/* Prop firm box */
+.propbox {
+  background: linear-gradient(135deg, rgba(167,139,250,0.07), rgba(96,165,250,0.04));
+  border: 1px solid rgba(167,139,250,0.18);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.propbox::before {
+  content: '🏢 PROP FIRM';
+  position: absolute;
+  top: 8px; right: 12px;
+  font-size: 9px;
+  color: var(--purple);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.14em;
+  opacity: 0.7;
+}
+.propbox h3 {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--purple);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.propbox ul {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.propbox li {
+  font-size: 12px;
+  color: var(--t2);
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  line-height: 1.45;
+}
+.propbox li::before {
+  content: '→';
+  color: var(--ac);
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 1px;
+}
+
+/* Themes grid */
+.tgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 7px;
+}
+.tpill {
+  background: var(--bg2);
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+  padding: 10px 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+.tpill:hover {
+  border-color: var(--b2);
+  background: var(--bg3);
+  transform: translateX(2px);
+}
+.ticonw { font-size: 17px; flex-shrink: 0; }
+.tpname { font-size: 12.5px; font-weight: 500; color: var(--t1); }
+.tpcount { font-size: 10px; color: var(--t3); font-family: 'JetBrains Mono', monospace; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+  position: relative;
+  overflow: hidden;
+}
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  transition: background 0.18s;
+}
+.btn:active { transform: scale(0.97); }
+
+.bprim {
+  background: var(--ac);
+  color: #000;
+  font-weight: 600;
+  box-shadow: 0 0 20px rgba(201,165,116,0.2);
+}
+.bprim:hover {
+  background: var(--ac2);
+  box-shadow: 0 0 28px rgba(201,165,116,0.35);
+  transform: translateY(-1px);
+}
+
+.bsec {
+  background: transparent;
+  color: var(--t1);
+  border: 1px solid var(--b2);
+}
+.bsec:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--b3);
+}
+
+.bghost {
+  background: transparent;
+  color: var(--t3);
+}
+.bghost:hover { color: var(--t1); }
+
+/* ══════════════════════════════
+   PROFILE FORM
+   ══════════════════════════════ */
+.form-section { margin-bottom: 18px; }
+.form-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ac);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--b1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-section-title::before {
+  content: '';
+  width: 16px; height: 2px;
+  background: var(--ac);
+  border-radius: 1px;
+}
+.fg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ff { display: flex; flex-direction: column; gap: 5px; }
+.ff.full { grid-column: 1/-1; }
+.fl {
+  font-size: 11px;
+  color: var(--t3);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.fl span { color: var(--danger); margin-left: 2px; }
+.fi, .fse {
+  background: var(--bg3);
+  border: 1px solid var(--b1);
+  border-radius: 6px;
+  padding: 8px 11px;
+  color: var(--t1);
+  font-size: 13.5px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: all 0.18s ease;
+  width: 100%;
+}
+.fi:focus, .fse:focus {
+  border-color: var(--ac);
+  background: var(--bg4);
+  box-shadow: 0 0 0 3px rgba(201,165,116,0.08);
+}
+.fi::placeholder { color: var(--t4); }
+.fi.err { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.08); }
+.fse option { background: var(--bg2); color: var(--t1); }
+.fhint { font-size: 10.5px; color: var(--t3); line-height: 1.4; }
+.fhint.warn { color: var(--warn); }
+.fhint.ok { color: var(--profit); }
+.ipfx { position: relative; }
+.pfx {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  color: var(--t3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  pointer-events: none;
+}
+.ipfx .fi { padding-left: 22px; }
+
+/* Horizon btns */
+.hb-wrap { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 4px; }
+.hb {
+  padding: 7px 14px;
+  font-size: 12.5px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--b2);
+  background: transparent;
+  color: var(--t2);
+  transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+.hb:hover { border-color: var(--ac-b); color: var(--ac); }
+.hb.sel { background: var(--ac-dim); border-color: var(--ac); color: var(--ac); font-weight: 600; }
+
+/* Error box */
+#perr {
+  color: var(--danger);
+  font-size: 12px;
+  margin-bottom: 10px;
+  padding: 9px 13px;
+  background: var(--ddim);
+  border-radius: 6px;
+  border: 1px solid var(--dborder);
+  display: none;
+}
+
+/* ══════════════════════════════
+   QUESTIONS
+   ══════════════════════════════ */
+.qh {
+  padding: 18px 30px 14px;
+  border-bottom: 1px solid var(--b1);
+  background: var(--bg2);
+}
+.qtintro {
+  font-size: 12.5px;
+  color: var(--t2);
+  margin-top: 5px;
+  max-width: 560px;
+  line-height: 1.65;
+}
+.ql {
+  padding: 14px 30px 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Question item */
+.qi {
+  background: var(--bg2);
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+  padding: 13px 16px;
+  transition: all 0.2s ease;
+  animation: slide-in 0.25s ease both;
+}
+.qi:hover { border-color: var(--b2); }
+.qi.un { border-color: rgba(239,68,68,0.35); }
+.qi.answered { border-color: var(--b1); }
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.qnum {
+  font-size: 10px;
+  color: var(--t4);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 3px;
+  letter-spacing: 0.1em;
+}
+.qtxt {
+  font-size: 13.5px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+  color: var(--t1);
+}
+
+/* Likert */
+.lwrap { width: 100%; }
+.llabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--t4);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 5px;
+  letter-spacing: 0.06em;
+}
+.likert { display: flex; gap: 4px; }
+.lb {
+  flex: 1;
+  min-height: 36px;
+  border-radius: 5px;
+  border: 1px solid var(--b1);
+  background: var(--bg3);
+  color: var(--t3);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'JetBrains Mono', monospace;
+  position: relative;
+  overflow: hidden;
+}
+.lb:hover {
+  border-color: var(--ac-b);
+  color: var(--ac);
+  background: var(--ac-dim);
+  transform: translateY(-1px);
+}
+.lb.sel {
+  background: var(--ac);
+  border-color: var(--ac);
+  color: #000;
+  box-shadow: 0 2px 12px rgba(201,165,116,0.3);
+  transform: translateY(-1px);
+}
+
+/* Q nav */
+.qnav {
+  padding: 14px 30px;
+  border-top: 1px solid var(--b1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg2);
+  position: fixed;
+  bottom: 0;
+  width: calc(100% - 240px);
+  left: 240px;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+.qprog {
+  font-size: 11.5px;
+  color: var(--t3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ══════════════════════════════
+   RESULTS
+   ══════════════════════════════ */
+/* Hero band */
+.rh {
+  padding: 24px 30px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  align-items: center;
+  border-bottom: 1px solid var(--b1);
+  background: linear-gradient(135deg, var(--bg2) 0%, rgba(201,165,116,0.03) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.rh::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ac), transparent);
+  animation: shimmer-line 6s ease-in-out infinite;
+}
+
+/* Alpha ring */
+.aring {
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.aring svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  transform: rotate(-90deg);
+}
+.aring circle {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.aring circle.trk { stroke: rgba(255,255,255,0.04); }
+.anum {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--ac);
+  z-index: 1;
+  line-height: 1;
+  text-shadow: 0 0 24px rgba(201,165,116,0.4);
+}
+.albl {
+  font-size: 9px;
+  color: var(--t3);
+  z-index: 1;
+  margin-top: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.12em;
+}
+.ai h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.04em;
+}
+.ai .archdesc {
+  font-size: 12.5px;
+  color: var(--t2);
+  margin-bottom: 10px;
+  line-height: 1.55;
+  max-width: 520px;
+}
+.rh-right { text-align: right; }
+.rh-score-grid { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+
+/* ── SECTION DIVIDER ── */
+.sdiv {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 14px;
+}
+.sdiv-line { flex: 1; height: 1px; background: var(--b1); }
+.sdiv-label {
+  font-size: 9px;
+  color: var(--ac);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 3px 8px;
+  border: 1px solid var(--ac-b);
+  border-radius: 100px;
+  background: var(--ac-dim);
+}
+
+/* ── SECTION TITLE ── */
+.stitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t1);
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--b1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+}
+.stitle span { font-size: 10px; color: var(--t3); font-weight: 400; text-transform: none; }
+
+/* ── ANALYSIS GRID ── */
+.analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.analysis-block {
+  background: var(--bg2);
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+/* ── THEME BARS ── */
+.tbars { display: flex; flex-direction: column; gap: 8px; }
+.tbar-item { }
+.tbh {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.tbn { font-size: 12px; color: var(--t2); }
+.tbsc {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tbtr {
+  height: 5px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tbf {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+.tbf::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 50%, rgba(255,255,255,0.2) 100%);
+}
+.tbf.lm { background: var(--lm); box-shadow: 0 0 8px rgba(34,197,94,0.3); }
+.tbf.ls { background: var(--ls); }
+.tbf.lf { background: var(--lf); }
+.tbf.lc { background: var(--lc); box-shadow: 0 0 8px rgba(239,68,68,0.3); }
+
+/* ── PROP FIRM ANALYSIS ── */
+.pfanalysis {
+  background: linear-gradient(135deg, rgba(167,139,250,0.05), rgba(96,165,250,0.03));
+  border: 1px solid rgba(167,139,250,0.15);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+.pfanalysis h3 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--purple);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.pf-header-box {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.pf-header-text h4 {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--purple);
+  margin-bottom: 2px;
+}
+.pf-header-text p { font-size: 11.5px; color: var(--t2); }
+.pf-vital-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.pf-vital {
+  background: var(--bg3);
+  border: 1px solid var(--b1);
+  border-radius: 6px;
+  padding: 10px 11px;
+  transition: border-color 0.2s;
+}
+.pf-vital:hover { border-color: var(--b2); }
+.pf-vital-label {
+  font-size: 9.5px;
+  color: var(--t3);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.pf-vital-val {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+}
+.pf-vital-val.safe { color: var(--profit); text-shadow: 0 0 12px var(--g-glow); }
+.pf-vital-val.caution { color: var(--warn); }
+.pf-vital-val.danger { color: var(--danger); }
+.pf-vital-sub { font-size: 10px; color: var(--t3); margin-top: 2px; }
+
+.pf-rule {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--b1);
+  border-radius: 6px;
+  padding: 11px 13px;
+  margin-bottom: 7px;
+  transition: border-color 0.2s;
+}
+.pf-rule:hover { border-color: var(--b2); }
+.pf-rule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.pf-rule-name { font-size: 12px; font-weight: 600; color: var(--t1); }
+.pf-rule-status {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.06em;
+}
+.pf-rule-status.ok { background: var(--pdim); color: var(--profit); border: 1px solid rgba(34,197,94,0.2); }
+.pf-rule-status.risk { background: var(--ddim); color: var(--danger); border: 1px solid var(--dborder); }
+.pf-rule-status.warn { background: var(--wdim); color: var(--warn); border: 1px solid var(--wborder); }
+.pf-rule-desc { font-size: 11.5px; color: var(--t2); line-height: 1.5; }
+.pf-rule-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--b0);
+  color: var(--t3);
+}
+.pf-rule-value .your { color: var(--ac); }
+.pf-rule-value .limit { color: var(--t3); }
+
+/* ── RISK SCENARIOS ── */
+.sc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sc-table th {
+  text-align: left;
+  padding: 7px 10px;
+  font-size: 9.5px;
+  color: var(--t3);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--b1);
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+.sc-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  transition: background 0.15s;
+}
+.sc-table tr:hover td { background: rgba(255,255,255,0.01); }
+.sc-table tr:last-child td { border-bottom: none; }
+.sc-table td:not(:first-child) {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+}
+.sc-table .good { color: var(--profit); }
+.sc-table .warn { color: var(--warn); }
+.sc-table .bad { color: var(--danger); }
+.sc-table .hl { background: rgba(201,165,116,0.04) !important; }
+
+/* ── ALERTS ── */
+.alc {
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 11px 13px;
+  margin-bottom: 7px;
+  border-left: 3px solid;
+  transition: all 0.2s;
+}
+.alc:hover { transform: translateX(2px); }
+.alc.crit { background: var(--ddim); border-left-color: var(--danger); }
+.alc.vig { background: var(--wdim); border-left-color: var(--warn); }
+.alc.info { background: var(--bdim); border-left-color: var(--blue); }
+.altt {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.alc.crit .altt { color: var(--danger); }
+.alc.vig .altt { color: var(--warn); }
+.alc.info .altt { color: var(--blue); }
+.ald { font-size: 11.5px; color: var(--t2); line-height: 1.5; }
+.alaction {
+  font-size: 11px;
+  color: var(--ac);
+  margin-top: 5px;
+  font-style: italic;
+  padding-left: 10px;
+  border-left: 2px solid var(--ac-b);
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+/* ── PRIORITIES ── */
+.pris { display: flex; flex-direction: column; gap: 7px; }
+.pric {
+  background: var(--bg2);
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: all 0.2s ease;
+}
+.pric:hover { border-color: var(--b2); transform: translateX(2px); }
+.prin {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--ac-dim);
+  border: 1px solid var(--ac-b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ac);
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-family: 'Orbitron', sans-serif;
+}
+.pritm { font-size: 12.5px; font-weight: 600; color: var(--t1); margin-bottom: 2px; }
+.prisc {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+.priw { font-size: 11.5px; color: var(--t2); line-height: 1.5; }
+.priact {
+  font-size: 11px;
+  color: var(--ac);
+  margin-top: 5px;
+  padding-left: 9px;
+  border-left: 2px solid var(--ac-b);
+  font-style: italic;
+}
+
+/* ── METRICS TABLE ── */
+.mt { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.mt th {
+  text-align: left;
+  padding: 8px 11px;
+  font-size: 9.5px;
+  color: var(--t3);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--b1);
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+.mt td {
+  padding: 7px 11px;
+  border-bottom: 1px solid rgba(255,255,255,0.025);
+}
+.mt tr:hover td { background: rgba(255,255,255,0.01); }
+.mt tr:last-child td { border-bottom: none; }
+.mt td:not(:first-child) {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+}
+.mt .phase1 { color: var(--blue); }
+.mt .phase2 { color: var(--warn); }
+.mt .phase3 { color: var(--profit); }
+
+/* ── PLAN ── */
+.phases { display: flex; flex-direction: column; gap: 16px; }
+.phase-block {
+  border: 1px solid var(--b1);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.phase-block-hdr {
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--b1);
+}
+.phase-block-hdr.s1 { background: rgba(96,165,250,0.05); }
+.phase-block-hdr.s2 { background: rgba(245,158,11,0.05); }
+.phase-block-hdr.s3 { background: rgba(34,197,94,0.05); }
+.phname {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.06em;
+}
+.phname.s1 { color: var(--blue); }
+.phname.s2 { color: var(--warn); }
+.phname.s3 { color: var(--profit); }
+.phwks { font-size: 11px; color: var(--t3); font-family: 'JetBrains Mono', monospace; }
+.phprog {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ac);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.wklist { display: flex; flex-direction: column; }
+.wcard { border-bottom: 1px solid var(--b1); }
+.wcard:last-child { border-bottom: none; }
+.wh {
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--bg2);
+  transition: background 0.15s;
+}
+.wh:hover { background: var(--bg3); }
+.wchev {
+  font-size: 10px;
+  color: var(--t3);
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+.wcard.open .wchev { transform: rotate(180deg); }
+.wacts {
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: var(--bg0);
+}
+.wact {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.025);
+  transition: opacity 0.2s;
+}
+.wact:last-child { border-bottom: none; }
+.achk {
+  width: 15px; height: 15px;
+  border-radius: 3px;
+  border: 1px solid var(--b2);
+  flex-shrink: 0;
+  margin-top: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  transition: all 0.18s ease;
+  background: transparent;
+}
+.achk.done {
+  background: var(--profit);
+  border-color: var(--profit);
+  color: #000;
+  box-shadow: 0 0 8px var(--g-glow);
+}
+.atxt {
+  font-size: 12.5px;
+  color: var(--t2);
+  line-height: 1.5;
+  cursor: pointer;
+}
+.atxt.done { color: var(--t4); text-decoration: line-through; }
+.atag {
+  font-size: 9.5px;
+  color: var(--ac);
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+/* ── BEHAV GRID ── */
+.behav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.behav-card {
+  background: var(--bg2);
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+  padding: 13px;
+}
+.behav-title {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.behav-list { display: flex; flex-direction: column; gap: 5px; }
+.behav-item {
+  font-size: 11.5px;
+  color: var(--t2);
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  line-height: 1.45;
+}
+.behav-item .dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.dot-good { background: var(--profit); box-shadow: 0 0 5px var(--g-glow); }
+.dot-bad { background: var(--danger); }
+.dot-warn { background: var(--warn); }
+
+/* ── COPY BTN ── */
+.cpbtn {
+  background: var(--bg3);
+  border: 1px solid var(--b2);
+  color: var(--t3);
+  padding: 7px 13px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+.cpbtn:hover { color: var(--t1); border-color: var(--ac-b); background: var(--ac-dim); }
+.cpbtn.cp { color: var(--profit); border-color: rgba(34,197,94,0.3); }
+
+/* ── UTILS ── */
+.sep { height: 1px; background: var(--b1); margin: 18px 0; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.good { color: var(--profit); }
+.bad { color: var(--danger); }
+.warn { color: var(--warn); }
+.radarw { display: flex; align-items: center; justify-content: center; }
+
+/* ── PULSE DOT (sidebar live) ── */
+.pulse-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--profit);
+  flex-shrink: 0;
+  animation: pulse-anim 2s ease-in-out infinite;
+}
+@keyframes pulse-anim {
+  0%, 100% { box-shadow: 0 0 0 0 var(--g-glow); }
+  50% { box-shadow: 0 0 0 4px rgba(34,197,94,0); }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1000px) {
+  .rh { grid-template-columns: auto 1fr; }
+  .rh-right { display: none; }
+  .analysis-grid, .behav-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar { width: 52px; }
+  .sb-brand .sb-logo-sub, .ni span, .nsec { display: none; }
+  .ni { justify-content: center; padding: 9px; }
+  .content, .ih { padding: 14px 14px 40px; }
+  .ql, .qh { padding: 10px 14px; }
+  .rh { padding: 16px 14px; grid-template-columns: auto 1fr; }
+  .fg { grid-template-columns: 1fr; }
+  .ph { padding: 16px 14px 0; }
+  .qnav { width: calc(100% - 52px); left: 52px; padding: 12px 14px; }
+  .tgrid, .kg { grid-template-columns: 1fr 1fr; }
+  .pf-vital-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── STAGGERED ANIMATION HELPERS ── */
+.qi:nth-child(1) { animation-delay: 0.02s; }
+.qi:nth-child(2) { animation-delay: 0.04s; }
+.qi:nth-child(3) { animation-delay: 0.06s; }
+.qi:nth-child(4) { animation-delay: 0.08s; }
+.qi:nth-child(5) { animation-delay: 0.10s; }
+.qi:nth-child(6) { animation-delay: 0.12s; }
+.qi:nth-child(7) { animation-delay: 0.14s; }
+.qi:nth-child(8) { animation-delay: 0.16s; }
+.qi:nth-child(9) { animation-delay: 0.18s; }
+.qi:nth-child(10) { animation-delay: 0.20s; }
+.qi:nth-child(11) { animation-delay: 0.22s; }
+
+/* ── GLOW RING ANIMATION ── */
+@keyframes glow-ring {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(201,165,116,0.3)); }
+  50% { filter: drop-shadow(0 0 12px rgba(201,165,116,0.6)); }
+}
+.aring { animation: glow-ring 3s ease-in-out infinite; }
+
+/* TOOLTIP for risk hint */
+.risk-meter {
+  display: flex;
+  gap: 3px;
+  margin-top: 5px;
+}
+.risk-seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--b1);
+  transition: background 0.3s;
+}
+.risk-seg.active-safe { background: var(--profit); }
+.risk-seg.active-warn { background: var(--warn); }
+.risk-seg.active-danger { background: var(--danger); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ════════════ SIDEBAR ════════════ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <img src="data:image/webp;base64,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" alt="Alpha Trading Pro">
+  </div>
+  <nav class="sb-nav">
+    <div class="nsec">Parcours</div>
+    <div class="ni active" onclick="goTo('intro')" id="nav-intro">
+      <div class="nchk" id="ck-intro">1</div><span>Accueil</span>
+    </div>
+    <div class="ni" onclick="goTo('profil')" id="nav-profil">
+      <div class="nchk" id="ck-profil">2</div><span>Mon profil</span>
+    </div>
+    <div class="nsec">7 Dimensions</div>
+    <div class="ni" id="nav-q0" onclick="goToTheme(0)"><div class="nchk" id="ck-q0">A</div><span>Psychologie</span></div>
+    <div class="ni" id="nav-q1" onclick="goToTheme(1)"><div class="nchk" id="ck-q1">B</div><span>Exécution</span></div>
+    <div class="ni" id="nav-q2" onclick="goToTheme(2)"><div class="nchk" id="ck-q2">C</div><span>Discipline</span></div>
+    <div class="ni" id="nav-q3" onclick="goToTheme(3)"><div class="nchk" id="ck-q3">D</div><span>Risque</span></div>
+    <div class="ni" id="nav-q4" onclick="goToTheme(4)"><div class="nchk" id="ck-q4">E</div><span>FOMO</span></div>
+    <div class="ni" id="nav-q5" onclick="goToTheme(5)"><div class="nchk" id="ck-q5">F</div><span>Finances</span></div>
+    <div class="ni" id="nav-q6" onclick="goToTheme(6)"><div class="nchk" id="ck-q6">G</div><span>Hygiène</span></div>
+    <div class="nsec">Analyse</div>
+    <div class="ni" id="nav-results" onclick="goTo('results')">
+      <div class="nchk" id="ck-results">★</div><span>Mon bilan</span>
+    </div>
+  </nav>
+  <div class="sb-prog">
+    <div class="pl">
+      <span id="progLabel">0 / 71</span>
+      <span id="progPct">0%</span>
+    </div>
+    <div class="pbar"><div class="pfill" id="progFill" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<!-- ════════════ MAIN ════════════ -->
+<main class="main">
+
+<!-- ── INTRO ── -->
+<div class="screen active" id="screen-intro">
+  <div class="ih">
+    <div class="atp-hero">
+      <div class="atp-hero-logo">
+        <img src="data:image/webp;base64,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" alt="Alpha Trading Pro">
+      </div>
+      <div class="atp-hero-text">
+        <h3>BILAN TRADER 2027</h3>
+        <p>Outil d'analyse et de progression pour les traders prop firm ATP</p>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <span class="badge ba">Bilan annuel</span>
+      <span class="badge bm">71 questions · ~15 min</span>
+      <span class="badge bpur">Prop firm</span>
+      <span class="badge bp2"><span class="pulse-dot"></span> Live</span>
+    </div>
+
+    <h1 class="ititle">Mesure qui tu es<br>en tant que trader.<br><em>Pas juste ton PnL.</em></h1>
+
+    <p class="idesc">Ce bilan te donne une vision honnête sur 7 dimensions qui déterminent ta réussite en 2027. Alpha score, archétype, analyse prop firm complète, alertes personnalisées et plan hebdomadaire.</p>
+
+    <div class="propbox">
+      <h3>Conçu pour les traders prop firm</h3>
+      <ul>
+        <li>Analyse de ta compatibilité avec les règles firm (drawdown, consistency, daily loss)</li>
+        <li>Sizing optimal : 0.25% par trade idéalement, 0.5% maximum absolu — jamais plus</li>
+        <li>Détection des comportements qui font sauter les comptes en Challenge ou Funded</li>
+        <li>Plan de progression adapté aux objectifs de validation et de payout</li>
+      </ul>
+    </div>
+
+    <div class="tgrid">
+      <div class="tpill"><span class="ticonw">🧠</span><div><div class="tpname">Psychologie</div><div class="tpcount">10 questions</div></div></div>
+      <div class="tpill"><span class="ticonw">📈</span><div><div class="tpname">Trading &amp; Exécution</div><div class="tpcount">10 questions</div></div></div>
+      <div class="tpill"><span class="ticonw">📋</span><div><div class="tpname">Gestion &amp; Discipline</div><div class="tpcount">10 questions</div></div></div>
+      <div class="tpill"><span class="ticonw">🛡️</span><div><div class="tpname">Gestion du risque</div><div class="tpcount">11 questions</div></div></div>
+      <div class="tpill"><span class="ticonw">⚡</span><div><div class="tpname">FOMO &amp; Impulsivité</div><div class="tpcount">10 questions</div></div></div>
+      <div class="tpill"><span class="ticonw">💰</span><div><div class="tpname">Finances personnelles</div><div class="tpcount">10 questions</div></div></div>
+      <div class="tpill"><span class="ticonw">🌿</span><div><div class="tpname">Hygiène de vie</div><div class="tpcount">10 questions</div></div></div>
+    </div>
+
+    <div style="display:flex;gap:9px;flex-wrap:wrap">
+      <button class="btn bprim" onclick="goTo('profil')">Commencer →</button>
+      <button class="btn bsec" onclick="tryLoad()">Reprendre mon bilan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PROFIL ── -->
+<div class="screen" id="screen-profil">
+  <div class="ph">
+    <h1>Mon profil trader</h1>
+    <p>Ces données calculent ton analyse personnalisée. Tout s'affiche en $.</p>
+  </div>
+  <div class="content">
+    <div class="card cn">
+      <div class="form-section">
+        <div class="form-section-title">Identité</div>
+        <div class="fg">
+          <div class="ff"><label class="fl">Prénom / Pseudo <span>*</span></label><input class="fi" id="pn" type="text" placeholder="Ton prénom"></div>
+          <div class="ff"><label class="fl">Expérience <span>*</span></label><select class="fse" id="pe"><option value="">Sélectionner</option><option value="d">Moins de 6 mois</option><option value="i">6 mois – 2 ans</option><option value="c">2 – 5 ans</option><option value="e">Plus de 5 ans</option></select></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Prop Firm</div>
+        <div class="fg">
+          <div class="ff"><label class="fl">Firm principale</label><select class="fse" id="pfirm"><option value="">Sélectionner</option><option value="topstep">TopStep</option><option value="apex">Apex Trader Funding</option><option value="ftmo">FTMO</option><option value="e8">E8 Funding</option><option value="5ers">The5ers</option><option value="autre">Autre</option></select></div>
+          <div class="ff"><label class="fl">Phase actuelle</label><select class="fse" id="pphase"><option value="">Sélectionner</option><option value="challenge">Challenge / Evaluation</option><option value="funded">Funded (compte financé)</option><option value="les_deux">Les deux simultanément</option><option value="entre">Entre deux comptes</option></select></div>
+          <div class="ff"><label class="fl">Taille du compte ($) <span>*</span></label><div class="ipfx"><span class="pfx">$</span><input class="fi" id="pc" type="number" placeholder="50000" min="0"></div></div>
+          <div class="ff"><label class="fl">Drawdown max autorisé (%)</label><input class="fi" id="pdd" type="number" placeholder="10" min="0" max="30"><div class="fhint">Ex : 10% pour la plupart des firms</div></div>
+          <div class="ff"><label class="fl">Daily loss limit (%)</label><input class="fi" id="pdl" type="number" placeholder="5" min="0" max="20"><div class="fhint">Ex : 5% pour TopStep, Apex</div></div>
+          <div class="ff"><label class="fl">Consistency rule (%)</label><input class="fi" id="pcons" type="number" placeholder="30" min="0" max="60"><div class="fhint">0 si aucune règle de consistance.</div></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Performance</div>
+        <div class="fg">
+          <div class="ff"><label class="fl">Win rate actuel (%) <span>*</span></label><input class="fi" id="pw" type="number" placeholder="50" min="0" max="100"></div>
+          <div class="ff"><label class="fl">R moyen (ratio G/P) <span>*</span></label><input class="fi" id="pr" type="number" placeholder="1.5" min="0" step="0.1"><div class="fhint">Gain moyen ÷ Perte moyenne</div></div>
+          <div class="ff"><label class="fl">Trades / mois <span>*</span></label><input class="fi" id="ptr" type="number" placeholder="40" min="0"></div>
+          <div class="ff">
+            <label class="fl">Risque actuel / trade (%)</label>
+            <input class="fi" id="prisk" type="number" placeholder="1" min="0" max="5" step="0.1">
+            <div class="risk-meter">
+              <div class="risk-seg" id="rs1"></div>
+              <div class="risk-seg" id="rs2"></div>
+              <div class="risk-seg" id="rs3"></div>
+              <div class="risk-seg" id="rs4"></div>
+              <div class="risk-seg" id="rs5"></div>
+            </div>
+            <div class="fhint warn" id="risk-hint">Recommandé : 0.25% idéalement, 0.5% maximum absolu</div>
+          </div>
+          <div class="ff"><label class="fl">Instruments</label><select class="fse" id="pi"><option value="">Sélectionner</option><option value="indices">Indices (ES, NQ, DAX...)</option><option value="forex">Forex (EUR/USD...)</option><option value="crypto">Crypto</option><option value="actions">Actions / CFD</option><option value="mix">Mix</option></select></div>
+          <div class="ff"><label class="fl">Objectif payout ($)</label><div class="ipfx"><span class="pfx">$</span><input class="fi" id="pt" type="number" placeholder="1000" min="0"></div></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Horizon du plan</div>
+        <div class="hb-wrap">
+          <button class="hb" data-w="4" onclick="selH(4,this)">4 semaines</button>
+          <button class="hb sel" data-w="8" onclick="selH(8,this)">8 semaines</button>
+          <button class="hb" data-w="12" onclick="selH(12,this)">12 semaines</button>
+        </div>
+        <div class="fhint" id="hhint" style="margin-top:7px">Plan sur 8 semaines — le sweet spot entre profondeur et momentum. Recommandé.</div>
+      </div>
+      <div id="perr"></div>
+      <div style="display:flex;gap:9px">
+        <button class="btn bprim" onclick="valProfil()">Valider → Questions</button>
+        <button class="btn bghost" onclick="goTo('intro')">← Retour</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── QUESTIONS ── -->
+<div class="screen" id="screen-questions">
+  <div class="qh">
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:5px">
+      <span class="badge ba" id="qtbadge">A</span>
+      <span style="font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace" id="qtcount">0/10</span>
+    </div>
+    <h1 style="font-size:16px;font-weight:700;font-family:'Orbitron',sans-serif;letter-spacing:0.04em;color:var(--t1)" id="qtname"></h1>
+    <p class="qtintro" id="qtintro"></p>
+  </div>
+  <div class="ql" id="qlist"></div>
+  <div class="qnav">
+    <div class="qprog" id="qptext">—</div>
+    <div style="display:flex;gap:7px">
+      <button class="btn bghost" id="qprev" onclick="prevT()">← Précédent</button>
+      <button class="btn bprim" id="qnext" onclick="nextT()">Suivant →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESULTS ── -->
+<div class="screen" id="screen-results">
+  <div class="rh">
+    <div class="aring">
+      <svg viewBox="0 0 130 130">
+        <circle class="trk" cx="65" cy="65" r="56"/>
+        <circle id="acirc" cx="65" cy="65" r="56"
+          stroke-dasharray="352" stroke-dashoffset="352"
+          fill="none" stroke-width="7" stroke-linecap="round" stroke="var(--ac)"
+          style="transition:stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)"/>
+      </svg>
+      <div class="anum" id="anum">—</div>
+      <div class="albl">ALPHA SCORE</div>
+    </div>
+    <div class="ai">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px" id="alvlbadge"></div>
+      <h2 id="archname">—</h2>
+      <p class="archdesc" id="archdesc">—</p>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="cpbtn" id="cpbtn" onclick="copyD()">📋 Copier pour Discord</button>
+        <button class="btn bsec" style="font-size:11.5px;padding:6px 12px" onclick="resetB()">Nouveau bilan</button>
+      </div>
+    </div>
+    <div class="rh-right">
+      <div class="rh-score-grid" id="rh-scores"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-label">Métriques clés</div><div class="sdiv-line"></div></div>
+    <div class="kg" id="kpigrid"></div>
+
+    <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-label">Analyse Prop Firm</div><div class="sdiv-line"></div></div>
+    <div id="pfanalysis-container"></div>
+
+    <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-label">Scores par dimension</div><div class="sdiv-line"></div></div>
+    <div class="analysis-grid">
+      <div><div class="stitle">Thèmes <span>sur 100</span></div><div class="tbars" id="tbars"></div></div>
+      <div><div class="stitle">Radar</div><div class="radarw"><svg id="rsvg" width="260" height="260" viewBox="0 0 260 260"></svg></div></div>
+    </div>
+
+    <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-label">Analyse comportementale</div><div class="sdiv-line"></div></div>
+    <div class="behav-grid" id="behavgrid"></div>
+
+    <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-label">Scénarios de risque</div><div class="sdiv-line"></div></div>
+    <div id="risk-scenarios"></div>
+
+    <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-label">Alertes personnalisées</div><div class="sdiv-line"></div></div>
+    <div id="alertlist"></div>
+
+    <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-label">3 priorités pour 2027</div><div class="sdiv-line"></div></div>
+    <div class="pris" id="prilist"></div>
+
+    <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-label">Objectifs par phase</div><div class="sdiv-line"></div></div>
+    <div class="card" style="overflow-x:auto">
+      <table class="mt"><thead><tr><th>Métrique</th><th class="phase1">Phase 1 — Stabiliser</th><th class="phase2">Phase 2 — Consolider</th><th class="phase3">Phase 3 — Progresser</th></tr></thead><tbody id="mtbody"></tbody></table>
+    </div>
+
+    <div class="sdiv"><div class="sdiv-line"></div><div class="sdiv-label" id="plantitle">Plan de progression</div><div class="sdiv-line"></div></div>
+    <div class="phases" id="planph"></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+// Risk meter interactive
+document.getElementById('prisk').addEventListener('input', function() {
+  const v = parseFloat(this.value) || 0;
+  const segs = document.querySelectorAll('.risk-seg');
+  const h = document.getElementById('risk-hint');
+  segs.forEach(s => s.className = 'risk-seg');
+  if (v > 0 && v <= 0.25) {
+    segs[0].classList.add('active-safe');
+    h.textContent = '✓ Parfait — 0.25% est le sizing optimal prop firm ATP.';
+    h.className = 'fhint ok';
+  } else if (v > 0.25 && v <= 0.5) {
+    segs[0].classList.add('active-warn');
+    segs[1].classList.add('active-warn');
+    h.textContent = '⚡ Acceptable mais à la limite. Idéalement 0.25%.';
+    h.className = 'fhint warn';
+  } else if (v > 0.5 && v <= 1) {
+    segs[0].classList.add('active-danger');
+    segs[1].classList.add('active-danger');
+    segs[2].classList.add('active-danger');
+    h.textContent = '🔴 Trop élevé — risque de violation des règles firm.';
+    h.className = 'fhint warn';
+  } else if (v > 1) {
+    [0,1,2,3,4].forEach((i,j) => { if (v > 1 + j*0.5) segs[j].classList.add('active-danger'); });
+    h.textContent = '🚨 Incompatible prop firm — ce sizing fait sauter les comptes.';
+    h.className = 'fhint warn';
+  } else {
+    h.textContent = 'Recommandé : 0.25% idéalement, 0.5% maximum absolu.';
+    h.className = 'fhint warn';
+  }
+});
+
+// Horizon selector
+function selH(w, btn) {
+  S.hz = w;
+  document.querySelectorAll('.hb').forEach(b => b.className = 'hb');
+  btn.className = 'hb sel';
+  const hints = {
+    4: '4 semaines — idéal pour ancrer 1–2 habitudes clés immédiatement.',
+    8: '8 semaines — le sweet spot entre profondeur et momentum. Recommandé.',
+    12: '12 semaines — plan long terme pour une transformation complète.'
+  };
+  document.getElementById('hhint').textContent = hints[w];
+}
+
+
+/* ============================
+   DONNÉES — 7 THÈMES × 71 Q
+   ============================ */
+const TH=[
+ {id:'psycho',name:'Psychologie',icon:'🧠',l:'A',intro:'Évalue ta relation émotionnelle avec le trading. En prop firm, les émotions coûtent plus cher — elles font sauter les comptes, pas les marchés.',
+  qs:[
+   {t:'Je reste calme après une série de pertes et je continue à trader selon mon plan, sans augmenter mes sizes.',d:1},
+   {t:'Mes émotions (peur, euphorie, frustration) influencent directement mes décisions de trade.',d:-1},
+   {t:'Je fais confiance à mon processus même quand les résultats ne sont pas au rendez-vous sur 2–3 semaines.',d:1},
+   {t:'Je rejoue mentalement mes trades perdants en boucle, parfois des heures après la session.',d:-1},
+   {t:'J\'ai une routine mentale pré-session (respiration, checklist, objectif du jour) que je suis systématiquement.',d:1},
+   {t:'Je prends des décisions impulsives sous l\'effet du stress, de l\'impatience ou d\'une perte récente.',d:-1},
+   {t:'Je suis capable de reconnaître quand je ne suis pas dans le bon état pour trader et j\'arrête la session.',d:1},
+   {t:'La peur de rater une opportunité (FOMO) me pousse à entrer hors de mes critères.',d:-1},
+   {t:'Je note mes états émotionnels dans mon journal et j\'analyse leur impact sur mes résultats.',d:1},
+   {t:'Après une grosse perte, je ressens un besoin urgent de \"récupérer\" ce que j\'ai perdu sur les trades suivants.',d:-1},
+  ]},
+ {id:'exec',name:'Trading & Exécution',icon:'📈',l:'B',intro:'Évalue la qualité de ton exécution technique. En prop firm, chaque erreur d\'exécution a un coût direct sur ton compte — et sur ta consistance.',
+  qs:[
+   {t:'J\'entre et sors de mes positions exactement aux niveaux définis dans mon plan, sans modification émotionnelle.',d:1},
+   {t:'Je modifie mon take profit une fois dans le trade pour \"laisser courir plus longtemps\" sans critère objectif.',d:-1},
+   {t:'J\'attends systématiquement ma configuration idéale avant d\'entrer — même si le marché bouge fort.',d:1},
+   {t:'Il m\'arrive d\'ouvrir plusieurs positions simultanément sans analyse structurée de leur corrélation.',d:-1},
+   {t:'Mon timing d\'entrée est précis : je rate rarement le bon point d\'entrée par indécision.',d:1},
+   {t:'Je coupe mes trades gagnants trop tôt par peur de voir le profit disparaître.',d:-1},
+   {t:'Je suis capable d\'identifier précisément pourquoi chaque trade a fonctionné ou échoué (setup, timing, sizing).',d:1},
+   {t:'Je trade parfois sur des graphiques ou des instruments que je ne maîtrise pas encore bien.',d:-1},
+   {t:'Mon analyse pré-marché guide systématiquement mes décisions intraday — je ne trade pas \"à l\'improviste\".',d:1},
+   {t:'Il m\'arrive d\'oublier de placer mon stop-loss, ou de le déplacer en ma défaveur \"pour donner de l\'espace\" au trade.',d:-1},
+  ]},
+ {id:'disc',name:'Gestion & Discipline',icon:'📋',l:'C',intro:'Mesure ta capacité à respecter des règles strictes et à maintenir une routine. La discipline est l\'unique avantage sur lequel tu as un contrôle total.',
+  qs:[
+   {t:'Je tiens un journal de trading détaillé après chaque session — sans exception, même les mauvaises journées.',d:1},
+   {t:'Il m\'arrive de trader sans avoir défini de plan pour la journée (objectif, setups recherchés, stop de la journée).',d:-1},
+   {t:'Je respecte systématiquement ma limite de perte journalière, même quand je pense que \"ça va revenir\".',d:1},
+   {t:'Je trade le week-end, les jours fériés ou sur des marchés peu liquides hors de mon plan habituel.',d:-1},
+   {t:'J\'analyse mes performances chaque semaine : j\'identifie des patterns et j\'ajuste mon approche.',d:1},
+   {t:'Je saute des jours de review quand les résultats sont mauvais — c\'est justement quand je devrais analyser.',d:-1},
+   {t:'Mon plan de trading est écrit, daté, signé et révisé à intervalle fixe.',d:1},
+   {t:'Je change de stratégie ou de configuration après 2–3 mauvais trades consécutifs.',d:-1},
+   {t:'Je respecte un horaire fixe pour mes sessions de trading (début, fin, pauses).',d:1},
+   {t:'J\'augmente spontanément ma taille de position quand je me sens \"en forme\" ou après une bonne série.',d:-1},
+  ]},
+ {id:'risque',name:'Gestion du risque',icon:'🛡️',l:'D',intro:'En prop firm, le risque est le facteur numéro 1 de survie. Un compte sauté = des semaines ou mois de travail perdus. La règle ATP : 0.25% par trade idéalement, 0.5% maximum absolu.',
+  qs:[
+   {t:'Je risque un pourcentage fixe et défini de mon compte par trade — je ne varie pas selon \"l\'opportunité\".',d:1},
+   {t:'J\'ai déjà perdu plus de 10% de mon compte en une seule journée ou semaine de trading.',d:-1},
+   {t:'Mon ratio risque/récompense est calculé et validé avant chaque entrée en position.',d:1},
+   {t:'Je trade parfois sans stop-loss, ou je retire mon stop pour \"donner une chance au trade\".',d:-1},
+   {t:'Je connais précisément le montant exact de ma limite de perte journalière avant de commencer chaque session.',d:1},
+   {t:'En cas de série perdante, j\'augmente ma taille de position pour \"récupérer plus vite\".',d:-1},
+   {t:'J\'ai des règles écrites pour réduire mon sizing après une période difficile (ex : -50% après 5 pertes consécutives).',d:1},
+   {t:'J\'utilise un effet de levier supérieur à ce que mon plan autorise quand une opportunité me semble \"évidente\".',d:-1},
+   {t:'Mon risque par trade ne dépasse jamais 0.5% de mon capital — en règle absolue, pas négociable.',d:1},
+   {t:'Je suis capable de calculer instantanément la perte maximale en dollar de n\'importe quel trade ouvert.',d:1},
+   {t:'Ma gestion du risque change selon mon humeur, ma confiance du moment ou mes résultats récents.',d:-1},
+  ]},
+ {id:'fomo',name:'FOMO & Impulsivité',icon:'⚡',l:'E',intro:'Le FOMO est le tueur numéro 1 des comptes prop firm. Un trade impulsif en funded peut violer la daily loss en quelques minutes.',
+  qs:[
+   {t:'Je reste hors du marché sans stress ni frustration quand il n\'y a pas de configuration selon mes critères.',d:1},
+   {t:'Je me précipite sur un trade après avoir vu d\'autres membres partager des gains sur Discord ou les réseaux.',d:-1},
+   {t:'J\'attends la confirmation de ma configuration avant d\'entrer — même si le mouvement est déjà bien parti.',d:1},
+   {t:'Je prends des trades sur des nouvelles économiques (NFP, FOMC...) sans analyse technique préalable claire.',d:-1},
+   {t:'Je peux passer une journée entière sans trader et rester serein, sans sentiment de \"manquer quelque chose\".',d:1},
+   {t:'Je rejoins parfois des \"calls\" ou trades partagés dans des groupes sans avoir fait ma propre analyse.',d:-1},
+   {t:'Je reconnais quand un trade est pris par FOMO et je suis capable de l\'annuler ou de ne pas entrer.',d:1},
+   {t:'Quand j\'ai une mauvaise journée, je prends des trades supplémentaires le soir pour \"rattraper\".',d:-1},
+   {t:'Mon nombre de trades par semaine reste relativement stable — je ne trade pas plus parce que \"le marché bouge\".',d:1},
+   {t:'Je me sens coupable ou anxieux les jours où je ne trade pas, même quand il n\'y a pas de setup valide.',d:-1},
+  ]},
+ {id:'fin',name:'Finances personnelles',icon:'💰',l:'F',intro:'Trader sous pression financière personnelle, c\'est trader avec un pistolet sur la tempe. L\'argent prop firm que tu gères ne doit pas être confondu avec tes besoins personnels.',
+  qs:[
+   {t:'Mon capital de trading (fees firm, comptes) est clairement séparé de mon argent personnel et de mes dépenses.',d:1},
+   {t:'Je compte sur les gains ou payouts de trading pour payer mes charges fixes ce mois-ci.',d:-1},
+   {t:'J\'ai une épargne de sécurité personnelle couvrant au moins 3 mois de dépenses — indépendante du trading.',d:1},
+   {t:'La pression financière (loyer, dettes, dépenses) influence directement mes décisions de trading.',d:-1},
+   {t:'Mon objectif de payout est réaliste par rapport à la taille de mon compte et ma performance actuelle.',d:1},
+   {t:'J\'ai réinjecté de l\'argent personnel (fees ou reset) dans mes comptes prop firm à cause de pertes répétées.',d:-1},
+   {t:'Je peux absorber 6 mois consécutifs sans payout (ou avec des comptes sautés) sans modifier mon mode de vie.',d:1},
+   {t:'J\'ai un revenu alternatif ou une épargne suffisante pour trader sans pression de performance à court terme.',d:1},
+   {t:'Les fees de challenge ou de reset ont représenté une somme significative sur mes finances personnelles en 2024.',d:-1},
+   {t:'Mon niveau de vie actuel est adapté à mon niveau réel de revenus trading — pas à ce que j\'espère gagner.',d:1},
+  ]},
+ {id:'hyg',name:'Hygiène de vie',icon:'🌿',l:'G',intro:'Le trading est une performance cognitive de haute précision. Ton cerveau en mauvais état = décisions en mauvais état. L\'hygiène de vie n\'est pas un bonus, c\'est un edge.',
+  qs:[
+   {t:'Je dors en moyenne 7h ou plus les nuits avant mes sessions de trading.',d:1},
+   {t:'Je trade régulièrement après une nuit de 5h ou moins de sommeil.',d:-1},
+   {t:'J\'ai une activité physique régulière — au moins 3 fois par semaine.',d:1},
+   {t:'Je consomme régulièrement des substances qui affectent ma concentration (alcool excessif, etc.).',d:-1},
+   {t:'Je fais des pauses régulières pendant mes sessions de trading (toutes les 90 min environ).',d:1},
+   {t:'Je mange peu, mal ou trop vite les jours où je trade intensément.',d:-1},
+   {t:'J\'ai des activités de décompression régulières (sport, lecture, hobby, sortie) qui m\'aident à décrocher.',d:1},
+   {t:'Mon temps devant les écrans trading dépasse régulièrement 8 à 10 heures par jour.',d:-1},
+   {t:'Je pratique des techniques de récupération mentale : respiration, méditation, marche, etc.',d:1},
+   {t:'Mon environnement de travail (bureau, calme, écrans adaptés) est vraiment propice à la concentration.',d:1},
+  ]}
+];
+
+const TACTIONS={
+ psycho:['Écrire 3 \"règles émotionnelles personnelles\" et les coller sur ton bureau.','Noter ton état émotionnel (1/10) avant ET après chaque session dans ton journal.','Pratiquer 5 min de respiration cohérente cardiaque avant chaque ouverture de session.','Identifier et écrire les 3 déclencheurs émotionnels qui te font le plus de dégâts en trading.','Lire un chapitre de \"Trading in the Zone\" (Douglas) — minimum une fois par semaine.','Faire un debrief audio de 2 min après chaque journée (même les bonnes).\'Si j\'avais eu X état, j\'aurais fait Y différemment.\''],
+ exec:['Documenter par écrit tes 3 setups avec critères d\'entrée/sortie précis et une image exemple.','Backtester 20 trades sur ton meilleur setup du mois — mesure l\'écart entrée idéale vs exécution réelle.','Enregistrer tes entrées et comparer le prix réel au prix \"idéal\" chaque soir — tracker l\'écart.','Réduire ton nombre de trades de 30% cette semaine — l\'objectif est la qualité, pas la quantité.','Pour chaque trade coupé trop tôt : noter la raison exacte et si elle était \"basée sur le plan ou sur la peur\".','Simuler une session complète en paper une fois par semaine pour tester de nouveaux setups sans risque.'],
+ disc:['Remplir ton journal CHAQUE session — sans exception. Date, setup, émotion, résultat, leçon.','Écrire ton plan du jour (setups cherchés, stop journée, horaires) AVANT d\'ouvrir les graphiques.','Bloquer 45 min hebdo dans ton agenda pour la review des trades — traiter ça comme un rendez-vous client.','Fixer une heure d\'arrêt fixe et désactiver la plateforme après — pas de \"un dernier trade\".','Créer une checklist pré-marché de 5 points à valider AVANT d\'entrer le premier trade.','Relire et \"re-signer\" ton plan de trading au début de chaque mois — confirme que tu l\'adoptes toujours.'],
+ risque:['Calculer cette semaine TON risque optimal : avec ton compte et tes stats, combien de $ par trade à 0.25% et à 0.5%.','Inscrire en rouge et en grand sur ton bureau : ton daily loss max en DOLLARS (pas en %). Voir le montant rend ça réel.','Créer une règle \"circuit breaker\" : si tu perds [montant X] en une journée, plateforme fermée jusqu\'au lendemain, sans exception.','Vérifier le ratio R de chaque trade AVANT d\'entrer — si R < 1.5, pas de trade. Log les trades refusés.','Jamais déplacer un stop dans la direction perdante — créer une règle dure et se penaliser (noter) chaque violation.','Réduire ton sizing de 50% pendant 2 semaines. Objectif : sentir la différence psychologique entre 0.5% et 0.25%.'],
+ fomo:['Définir par écrit tes 3 critères \"Go\" et tes 3 critères \"No Go\" pour chaque setup. Si un No Go est présent → pas de trade.','Couper les notifications Discord et réseaux sociaux pendant toutes tes sessions de trading.','Implémenter une règle : 60 secondes de pause obligatoire après chaque impulsion d\'entrer hors-plan. Souvent ça suffit.','Tenir un \"log FOMO\" : noter chaque trade que tu voulais prendre hors-plan et as refusé. C\'est de l\'argent sauvé.','Calculer chaque mois le coût total de tes trades impulsifs (hors-plan). Voir le chiffre est dissuasif.','Une fois par semaine : session d\'observation pure sans trade. Regarder le marché, analyser, prendre des notes — sans entrer.'],
+ fin:['Ouvrir un compte bancaire séparé pour les fees/resets prop firm — jamais mélangé avec les finances perso.','Calculer ce mois-ci ton \"seuil de survie\" : charges fixes + variable minimum. Ton trading ne peut pas dépendre de ce montant.','Lister tous tes comptes prop firm actifs, leurs fees à date, et calculer le \"coût total 2024\" de ton activité firm.','Construire un budget mensuel en 3 colonnes : revenus certains / revenus trading espérés (0 si mauvais mois) / dépenses.','Règle \"no withdrawal pressure\" : ne pas retirer de payout si ça mettrait ton solde sous ton niveau de confort.','Constituer un fonds d\'urgence de 3 mois de dépenses fixes AVANT d\'augmenter la taille de tes comptes.'],
+ hyg:['Fixer une heure de coucher fixe les jours où tu traderas le lendemain — et la tenir même quand \"c\'est tentant de rester\".','Programmer 3 séances de sport dans ton agenda cette semaine — les traiter comme des sessions de trading importantes.','Préparer tes repas à l\'avance pour les jours de trading — manger du bon carburant, pas du fast food rapide.','Programmer une alarme toutes les 90 min pendant tes sessions : 10 min de pause obligatoire (lever, étirer, respirer).','Supprimer la caféine après 14h pendant 2 semaines — mesure l\'impact sur ton sommeil et ta clarté le lendemain.','Définir une \"activité de décompression\" post-session : marche, sport, lecture. Ne pas rester devant les écrans après la clôture.']
+};
+
+const ARCHETYPES=[
+ {n:'Le Stratège Discipliné',c:s=>s[0]>=70&&s[3]>=70&&s[2]>=65,d:'Tu combines psychologie solide, maîtrise du risque et discipline. Tu as les fondamentaux pour être régulier en prop firm. Tes prochains gains viendront de l\'optimisation fine de l\'exécution et de la consistance sur la durée.',pfcompat:'haute'},
+ {n:'Le Courageux Imprudent',c:s=>s[0]>=65&&s[3]<55,d:'Tu as le mental mais ton risque est trop élevé pour la prop firm. Tu peux générer de gros gains — et sauter ton compte dans la même semaine. La prop firm ne pardonne pas le sizing excessif. Règle le risque d\'abord, tout le reste suivra.',pfcompat:'faible'},
+ {n:'Le Technicien Prudent',c:s=>s[1]>=70&&s[4]>=65&&s[3]>=65,d:'Tu exécutes bien, résistes au FOMO et gères ton risque. Tu es fait pour survivre en prop firm. Le prochain niveau c\'est la régularité mois après mois — pas juste éviter les erreurs, mais construire une edge reproductible.',pfcompat:'haute'},
+ {n:'Le Fragile Émotionnel',c:s=>s[0]<50&&s[4]<50,d:'Tes émotions et le FOMO gouvernent tes décisions. En prop firm, ça se traduit par des violations de règles sous pression — daily loss atteinte dans la panique, trades de revanche. C\'est le chantier numéro 1 avant tout le reste.',pfcompat:'très faible'},
+ {n:'Le Potentiel à Structurer',c:s=>s[2]<55&&s[1]>=60,d:'Tu sais trader mais ta discipline structure est insuffisante. Pas de journal régulier, plan non suivi, sizing qui varie selon l\'humeur. En prop firm, c\'est la constistancy rule qui te tuera. Un framework rigide transformerait ta performance.',pfcompat:'moyenne'},
+ {n:'Le Sobre Rigoureux',c:s=>s[3]>=75&&s[2]>=70&&s[0]>=60,d:'Tu es discipliné et prudent — tu survives. Mais tu joues peut-être trop petit, trop prudemment. La prop firm récompense la régularité, pas juste la survie. Il est temps d\'optimiser ton edge et ton sizing dans les limites autorisées.',pfcompat:'haute'},
+ {n:'Le Trader en Construction',c:()=>true,d:'Tu es en phase d\'apprentissage simultané sur plusieurs dimensions. C\'est normal et temporaire. Focus sur un seul setup maîtrisé, risque à 0.25% sans négociation, et un journal quotidien. La complexité vient après les fondamentaux.',pfcompat:'faible'}
+];
+
+const TWHY=[
+ 'La psychologie détermine si tu respectes tes règles sous pression. En prop firm, ça décide si ton compte survit.',
+ 'L\'exécution transforme ton analyse en résultats réels. Une mauvaise entrée sur un bon setup reste un mauvais trade.',
+ 'La discipline crée la reproductibilité. Sans cohérence, tu ne peux pas mesurer ni améliorer quoi que ce soit.',
+ 'Le risque est le seul facteur que tu contrôles à 100%. En prop firm, le sizing tue plus de comptes que les mauvaises analyses.',
+ 'Le FOMO génère des trades hors-plan qui violent les règles firm et détruisent la consistency.',
+ 'La pression financière personnelle corrompt chaque décision. Tu ne peux pas trader sereinement si tu as besoin de l\'argent.',
+ 'Ton cerveau est ton seul outil. Sommeil, sport et récupération ne sont pas du confort — c\'est de la performance.',
+];
+
+const PRIACTIONS=[
+ 'Cette semaine : tenir ton journal émotionnel chaque jour + mettre en place ta routine pré-session.',
+ 'Cette semaine : backtester 20 trades et noter l\'écart entre l\'entrée idéale et l\'entrée réelle.',
+ 'Cette semaine : créer ta checklist pré-marché et l\'utiliser AVANT chaque session sans exception.',
+ 'Cette semaine : calculer ton risque optimal en $ à 0.25% et 0.5% de ton compte, et l\'appliquer DÈS DEMAIN.',
+ 'Cette semaine : activer le \"mode avion\" sur réseaux sociaux pendant tes sessions + créer tes 3 critères No-Go.',
+ 'Cette semaine : calculer le coût total de ton activité trading en 2024 (fees + resets + pertes) et séparer les comptes.',
+ 'Cette semaine : fixer ton heure de coucher et programmer 3 séances de sport dans ton agenda.',
+];
+
+let S={screen:'intro',ct:0,profile:{},hz:8,ans:{},res:null};
+
+function goTo(sc){
+ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+ document.getElementById('screen-'+sc).classList.add('active');
+ document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+ const el=document.getElementById('nav-'+sc);
+ if(el)el.classList.add('active');
+ S.screen=sc; window.scrollTo(0,0);
+}
+function goToTheme(i){
+ S.ct=i; renderQ(i); goTo('questions');
+ document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+ document.getElementById('nav-q'+i).classList.add('active');
+}
+function selH(w,btn){
+ S.hz=w;
+ document.querySelectorAll('.hb').forEach(b=>{b.className='btn bsec hb';});
+ btn.className='btn bprim hb';
+ const hints={4:'4 semaines — idéal pour ancrer 1–2 habitudes clés immédiatement.',8:'8 semaines — le sweet spot entre profondeur et momentum. Recommandé.',12:'12 semaines — plan long terme pour une transformation complète.'};
+ document.getElementById('hhint').textContent=hints[w];
+}
+function valProfil(){
+ const nm=document.getElementById('pn').value.trim();
+ const cap=parseFloat(document.getElementById('pc').value);
+ const wr=parseFloat(document.getElementById('pw').value);
+ const r=parseFloat(document.getElementById('pr').value);
+ const tr=parseFloat(document.getElementById('ptr').value);
+ const exp=document.getElementById('pe').value;
+ const risk=parseFloat(document.getElementById('prisk').value)||0.5;
+ const err=document.getElementById('perr');
+ if(!nm){showErr('Renseigne ton prénom ou pseudo.');return;}
+ if(!exp){showErr('Sélectionne ton niveau d\'expérience.');return;}
+ if(!cap||cap<=0){showErr('Taille du compte invalide.');return;}
+ if(!wr||wr<0||wr>100){showErr('Win rate entre 0 et 100%.');return;}
+ if(!r||r<=0){showErr('R moyen invalide (doit être > 0).');return;}
+ if(!tr||tr<=0){showErr('Nombre de trades invalide.');return;}
+ err.style.display='none';
+ S.profile={name:nm,capital:cap,target:parseFloat(document.getElementById('pt').value)||0,wr,r,trades:tr,exp,risk,
+   instrument:document.getElementById('pi').value,pfirm:document.getElementById('pfirm').value,
+   phase:document.getElementById('pphase').value,dd:parseFloat(document.getElementById('pdd').value)||10,
+   dl:parseFloat(document.getElementById('pdl').value)||5,cons:parseFloat(document.getElementById('pcons').value)||0};
+ markNav('profil');
+ goToTheme(0);
+}
+function showErr(msg){
+ const e=document.getElementById('perr');e.textContent=msg;e.style.display='block';
+}
+
+// Risk hint
+document.getElementById('prisk').addEventListener('input',function(){
+ const v=parseFloat(this.value)||0;
+ const h=document.getElementById('risk-hint');
+ if(v>0.5){h.textContent='⚠️ Trop élevé pour une prop firm — risque de violation des règles firm.';h.className='fhint warn';}
+ else if(v>0.25&&v<=0.5){h.textContent='Acceptable mais limite — 0.25% idéalement.';h.className='fhint warn';}
+ else if(v<=0.25&&v>0){h.textContent='✓ Parfait — 0.25% est le sizing optimal prop firm.';h.className='fhint';h.style.color='var(--profit)';}
+ else{h.textContent='Recommandé : 0.25% idéalement, 0.5% maximum absolu.';h.className='fhint warn';}
+});
+
+function renderQ(idx){
+ const th=TH[idx];
+ document.getElementById('qtbadge').textContent='Thème '+th.l;
+ document.getElementById('qtname').textContent=th.name;
+ document.getElementById('qtintro').textContent=th.intro;
+ if(!S.ans[idx])S.ans[idx]={};
+ const list=document.getElementById('qlist');
+ list.innerHTML=th.qs.map((q,qi)=>{
+  const sel=S.ans[idx][qi]||null;
+  return`<div class="qi${sel===null?' un':''}" id="qi${qi}">
+   <div class="qnum">Q${qi+1} / ${th.qs.length}</div>
+   <div class="qtxt">${q.t}</div>
+   <div class="lwrap">
+    <div class="llabels"><span>Pas du tout</span><span>Tout à fait</span></div>
+    <div class="likert">${[1,2,3,4,5].map(v=>`<button class="lb${sel===v?' sel':''}" onclick="ans(${idx},${qi},${v})">${v}</button>`).join('')}</div>
+   </div>
+  </div>`;
+ }).join('');
+ updQP(idx);
+ document.getElementById('qprev').style.visibility=idx===0?'hidden':'visible';
+ document.getElementById('qnext').textContent=idx===TH.length-1?'Voir mon bilan complet →':'Thème suivant →';
+}
+function ans(ti,qi,v){
+ if(!S.ans[ti])S.ans[ti]={};
+ S.ans[ti][qi]=v;
+ const qi_el=document.getElementById('qi'+qi);
+ qi_el.querySelectorAll('.lb').forEach((b,i)=>b.classList.toggle('sel',i+1===v));
+ qi_el.className='qi';
+ updQP(ti); updGP(); save();
+}
+function updQP(idx){
+ const done=Object.keys(S.ans[idx]||{}).length;
+ const tot=TH[idx].qs.length; const miss=tot-done;
+ document.getElementById('qtcount').textContent=done+'/'+tot;
+ document.getElementById('qptext').textContent=miss===0?'✓ Thème complété':miss+' réponse(s) manquante(s)';
+}
+function updGP(){
+ let done=0;
+ TH.forEach((_,i)=>{const a=S.ans[i]||{};done+=Object.keys(a).length;if(Object.keys(a).length===TH[i].qs.length)markNav('q'+i);});
+ const tot=TH.reduce((s,t)=>s+t.qs.length,0);
+ const pct=Math.round(done/tot*100);
+ document.getElementById('progLabel').textContent=done+' / '+tot;
+ document.getElementById('progPct').textContent=pct+'%';
+ document.getElementById('progFill').style.width=pct+'%';
+}
+function markNav(k){const el=document.getElementById('ck-'+k);if(el){el.className='nchk done';el.textContent='✓';}}
+function prevT(){if(S.ct>0)goToTheme(S.ct-1);else goTo('profil');}
+function nextT(){
+ const idx=S.ct;const a=S.ans[idx]||{};const tot=TH[idx].qs.length;
+ if(Object.keys(a).length<tot){
+  TH[idx].qs.forEach((_,qi)=>{const el=document.getElementById('qi'+qi);if(el&&!a[qi])el.classList.add('un');});
+  const pt=document.getElementById('qptext');pt.style.color='var(--danger)';
+  setTimeout(()=>pt.style.color='',2500);return;
+ }
+ if(idx<TH.length-1)goToTheme(idx+1);else calcResults();
+}
+
+/* ============================
+   SCORING
+   ============================ */
+function scoreT(ti){
+ const th=TH[ti];const a=S.ans[ti]||{};let tot=0;
+ th.qs.forEach((q,qi)=>{const v=a[qi]||3;const n=q.d===1?(v-1)/4*100:(5-v)/4*100;tot+=n;});
+ return Math.round(tot/th.qs.length);
+}
+function alphaScore(scores){
+ const ws=[1.2,1.0,1.0,1.3,1.0,1.0,1.0];
+ let w=0,tw=0;scores.forEach((s,i)=>{w+=s*ws[i];tw+=ws[i];});
+ return Math.round(w/tw);
+}
+function niv(s){
+ if(s<40)return{l:'Critique',c:'lc',col:'var(--lc)',badge:'bd'};
+ if(s<60)return{l:'Fragile',c:'lf',col:'var(--lf)',badge:'bw'};
+ if(s<80)return{l:'Solide',c:'ls',col:'var(--ls)',badge:'bb'};
+ return{l:'Maîtrisé',c:'lm',col:'var(--lm)',badge:'bp2'};
+}
+
+/* ============================
+   PROP FIRM ANALYSIS
+   ============================ */
+function pfAnalysis(scores,profile){
+ const p=profile;
+ const cap=p.capital||50000;
+ const dd=p.dd||10;const dl=p.dl||5;
+ const risk=p.risk||0.5;
+ const wr=p.wr||0;const r=p.r||1.5;
+ const trades=p.trades||40;
+ const cons=p.cons||0;
+
+ // Calculs clés
+ const riskPctOpt=0.25;const riskPctMax=0.5;
+ const riskDollarOpt=cap*riskPctOpt/100;
+ const riskDollarMax=cap*riskPctMax/100;
+ const riskDollarActuel=cap*risk/100;
+ const ddDollar=cap*dd/100;
+ const dlDollar=cap*dl/100;
+
+ // Trades max avant daily loss à différents risques
+ const tradesBeforeDL_actuel=risk>0?Math.floor(dl/risk):999;
+ const tradesBeforeDL_opt=Math.floor(dl/riskPctOpt);
+ const tradesBeforeDL_max=Math.floor(dl/riskPctMax);
+
+ // Espérance
+ const esp=(wr/100*r-(1-wr/100));
+ const espPct=esp*risk;
+ const espMensuel=espPct*trades;
+
+ // Consistency : quel % de mes gains peut venir d'un seul jour ?
+ // Si je trade ~2 trades/jour et esp positive, combien je gagne en 1 bonne journée ?
+ const tradesPerDay=Math.max(1,Math.round(trades/20));
+ const gainBonneJournee=tradesPerDay*r*riskDollarActuel; // en supposant 100% win sur la journée
+ const payoutEst=espMensuel/100*cap;
+
+ const riskStatus=risk<=0.25?'ok':risk<=0.5?'warn':'risk';
+ const psyStatus=scores[0]>=60?'ok':scores[0]>=45?'warn':'risk';
+ const discStatus=scores[2]>=60?'ok':scores[2]>=45?'warn':'risk';
+ const espStatus=esp>=0?'ok':esp>=-0.1?'warn':'risk';
+
+ const firmNames={topstep:'TopStep',apex:'Apex Trader Funding',ftmo:'FTMO',e8:'E8 Funding','5ers':'The5ers',tp:'True Forex Funds',ue:'UE Funded',autre:'Ta firm'};
+ const firmName=firmNames[p.pfirm]||'Ta firm';
+
+ return {cap,dd,dl,risk,riskDollarOpt,riskDollarMax,riskDollarActuel,ddDollar,dlDollar,
+         tradesBeforeDL_actuel,tradesBeforeDL_opt,tradesBeforeDL_max,
+         esp,espPct,espMensuel,payoutEst,riskStatus,psyStatus,discStatus,espStatus,
+         firmName,cons,tradesPerDay,gainBonneJournee,phase:p.phase};
+}
+
+function renderPFAnalysis(pf,scores){
+ const getRuleStatus=(s)=>({ok:'<span class="pf-rule-status ok">✓ OK</span>',warn:'<span class="pf-rule-status warn">⚡ Attention</span>',risk:'<span class="pf-rule-status risk">✗ Risque</span>'}[s]);
+
+ // Compatibilité globale
+ const badFlags=[pf.riskStatus==='risk',pf.psyStatus==='risk',pf.discStatus==='risk',pf.esp<-0.2,scores[4]<40].filter(Boolean).length;
+ const warnFlags=[pf.riskStatus==='warn',pf.psyStatus==='warn',pf.discStatus==='warn',pf.esp<0].filter(Boolean).length;
+ let compatLabel,compatColor,compatBadge;
+ if(badFlags>=2){compatLabel='Compatibilité faible';compatColor='var(--danger)';compatBadge='bd';}
+ else if(badFlags===1||warnFlags>=2){compatLabel='Compatibilité moyenne';compatColor='var(--warn)';compatBadge='bw';}
+ else{compatLabel='Bonne compatibilité';compatColor='var(--profit)';compatBadge='bp2';}
+
+ document.getElementById('pfanalysis-container').innerHTML=`
+  <div class="pfanalysis">
+   <h3>🏢 ${pf.firmName} — Analyse prop firm</h3>
+   <div class="pf-header-box">
+    <div class="pf-header-icon">🎯</div>
+    <div class="pf-header-text">
+     <h4>Compatibilité avec les règles firm</h4>
+     <p>Basée sur tes scores comportementaux, ton risque déclaré et tes statistiques de trading.</p>
+    </div>
+    <span class="badge ${compatBadge}" style="margin-left:auto;white-space:nowrap">${compatLabel}</span>
+   </div>
+
+   <div class="pf-vital-grid">
+    <div class="pf-vital"><div class="pf-vital-label">Risque / trade actuel</div>
+     <div class="pf-vital-val ${pf.riskStatus==='ok'?'safe':pf.riskStatus==='warn'?'caution':'danger'}">${pf.risk}%</div>
+     <div class="pf-vital-sub">= $${pf.riskDollarActuel.toFixed(0)} / trade</div></div>
+    <div class="pf-vital"><div class="pf-vital-label">Risque recommandé ATP</div>
+     <div class="pf-vital-val safe">0.25%</div>
+     <div class="pf-vital-sub">= $${pf.riskDollarOpt.toFixed(0)} / trade</div></div>
+    <div class="pf-vital"><div class="pf-vital-label">Daily loss limit</div>
+     <div class="pf-vital-val caution">${pf.dl}%</div>
+     <div class="pf-vital-sub">= $${pf.dlDollar.toFixed(0)} / jour</div></div>
+    <div class="pf-vital"><div class="pf-vital-label">Drawdown max</div>
+     <div class="pf-vital-val caution">${pf.dd}%</div>
+     <div class="pf-vital-sub">= $${pf.ddDollar.toFixed(0)} total</div></div>
+    <div class="pf-vital"><div class="pf-vital-label">Trades avant DD (0.25%)</div>
+     <div class="pf-vital-val safe">${Math.floor(pf.dd/0.25)} pertes</div>
+     <div class="pf-vital-sub">avant violation du DD</div></div>
+    <div class="pf-vital"><div class="pf-vital-label">Trades avant Daily Loss</div>
+     <div class="pf-vital-val ${pf.tradesBeforeDL_actuel<=3?'danger':pf.tradesBeforeDL_actuel<=6?'caution':'safe'}">${pf.tradesBeforeDL_actuel} trades</div>
+     <div class="pf-vital-sub">avec ton risque actuel (${pf.risk}%)</div></div>
+   </div>
+
+   <div class="pf-rule">
+    <div class="pf-rule-header"><span class="pf-rule-name">Sizing & Risque par trade</span>${getRuleStatus(pf.riskStatus)}</div>
+    <div class="pf-rule-desc">
+     ${pf.riskStatus==='ok'?`✅ Ton risque à ${pf.risk}% correspond au niveau optimal ATP pour une prop firm. À $${pf.riskDollarOpt.toFixed(0)} par trade, tu peux encaisser ${Math.floor(pf.dd/0.25)} pertes consécutives avant de violer le drawdown.`
+     :pf.riskStatus==='warn'?`⚡ Ton risque à ${pf.risk}% est à la limite. Avec ${pf.tradesBeforeDL_actuel} pertes consécutives tu touches la daily loss. Passer à 0.25% te donnerait ${pf.tradesBeforeDL_opt} pertes avant la limite — une marge de sécurité bien supérieure.`
+     :`🔴 Ton risque à ${pf.risk}% est trop élevé pour une prop firm. Avec seulement ${pf.tradesBeforeDL_actuel} pertes de suite tu violes la daily loss limit. Une mauvaise journée suffit à faire sauter le compte. Passe à 0.25% immédiatement.`}
+    </div>
+    <div class="pf-rule-value">Ton risque : <span class="your">${pf.risk}% ($${pf.riskDollarActuel.toFixed(0)})</span> | Recommandé ATP : <span class="limit">0.25% ($${pf.riskDollarOpt.toFixed(0)})</span> | Max absolu : <span class="limit">0.5% ($${pf.riskDollarMax.toFixed(0)})</span></div>
+   </div>
+
+   <div class="pf-rule">
+    <div class="pf-rule-header"><span class="pf-rule-name">Psychologie sous contrainte firm</span>${getRuleStatus(pf.psyStatus)}</div>
+    <div class="pf-rule-desc">
+     ${scores[0]>=70?'✅ Ta psychologie est solide. Tu es capable de respecter les règles firm sous pression. Continue à monitorer ton état émotionnel — en funded, la pression augmente avec les montants réels.'
+     :scores[0]>=50?'⚡ Ta psychologie est correcte mais fragile. Les règles firm (daily loss, drawdown) créent une pression supplémentaire qui révèle les failles émotionnelles. Travaille sur ta routine pré-session et tes règles de stop journalier.'
+     :'🔴 Ta fragilité psychologique est un risque direct pour tes comptes prop firm. La pression de \"ne pas sauter le compte\" génère exactement les comportements qui font sauter les comptes : FOMO, overtrading, revenge trading. C\'est le chantier prioritaire.'}
+    </div>
+   </div>
+
+   <div class="pf-rule">
+    <div class="pf-rule-header"><span class="pf-rule-name">Discipline & Consistency rule</span>${getRuleStatus(pf.discStatus)}</div>
+    <div class="pf-rule-desc">
+     ${pf.cons>0?`Ta firm impose une consistency rule de ${pf.cons}% — aucun jour ne peut représenter plus de ${pf.cons}% de ton profit total. `:''}
+     ${scores[2]>=70?'✅ Ta discipline est solide. Tu as les habitudes pour respecter les règles firm sur la durée.'
+     :scores[2]>=50?`⚡ Ta discipline est moyenne. En prop firm, l'inconsistance se paie : un jour où tu over-trades ou tu ignores ton plan peut violer la consistency rule ou déclencher ton drawdown.`
+     :'🔴 Ta discipline insuffisante est incompatible avec les exigences des prop firms. Les firms ne pardonnent pas les journées hors-plan. Sans journal, sans checklist, sans règle de stop — tu joues à la roulette avec ton compte.'}
+    </div>
+   </div>
+
+   <div class="pf-rule">
+    <div class="pf-rule-header"><span class="pf-rule-name">Espérance mathématique & Rentabilité</span>${getRuleStatus(pf.espStatus)}</div>
+    <div class="pf-rule-desc">
+     ${pf.esp>0.1?`✅ Ton espérance est positive à ${pf.esp.toFixed(3)}R. En théorie, avec ${pf.riskDollarOpt.toFixed(0)}$ de risque à 0.25%, tu génères ~$${Math.round(pf.esp*pf.riskDollarOpt)} d'espérance par trade, soit ~$${Math.round(pf.esp*pf.riskDollarOpt*pf.tradesBeforeDL_actuel*4)} sur ${pf.tradesBeforeDL_actuel*4} trades/mois. Reste à exécuter.`
+     :pf.esp>0?`⚡ Ton espérance est faiblement positive (${pf.esp.toFixed(3)}R). Ça peut fonctionner mais tu as peu de marge. Améliore ton WR ou ton R moyen — même +5% de WR change tout.`
+     :`🔴 Ton espérance est négative (${pf.esp.toFixed(3)}R). Ça veut dire qu'en théorie, plus tu trades, plus tu perds. La prop firm va simplement accélérer ce résultat. Avant de trader en firm, résous ton espérance.`}
+    </div>
+    <div class="pf-rule-value">Espérance : <span class="your">${pf.esp.toFixed(3)}R</span> | WR équilibre : <span class="limit">${Math.round(100/(1+(pf.r||1)))}%</span> | WR actuel : <span class="${(pf.wr||0)>=Math.round(100/(1+(pf.r||1)))?'your':'pf-rule-status risk'}">${pf.wr}%</span></div>
+   </div>
+
+  </div>`;
+}
+
+function renderScenarios(profile,scores){
+ const p=profile;const cap=p.capital||50000;const trades=p.trades||40;
+ const wr=p.wr||50;const r=p.r||1.5;
+ const risks=[{v:0.25,label:'0.25% (optimal ATP)'},{v:0.5,label:'0.5% (max absolu)'},{v:p.risk||1,label:`${p.risk||1}% (ton risque actuel)`}];
+ const scenarios=[{name:'Mois type (espérance)',wrs:wr,rs:r},{name:'Bonne période (+10% WR)',wrs:Math.min(wr+10,90),rs:r+0.2},{name:'Mauvaise période (-10% WR)',wrs:Math.max(wr-10,10),rs:Math.max(r-0.2,0.5)}];
+
+ let html='<div class="card"><table class="sc-table"><thead><tr><th>Scénario</th>';
+ risks.forEach(ri=>html+=`<th>${ri.label}</th>`);
+ html+='</tr></thead><tbody>';
+ scenarios.forEach((sc,si)=>{
+  html+=`<tr${si===0?' class="hl"':''}><td style="font-weight:600;color:var(--text)">${sc.name}</td>`;
+  risks.forEach(ri=>{
+   const esp=sc.wrs/100*sc.rs-(1-sc.wrs/100);
+   const pnl=esp*ri.v/100*cap*trades;
+   const cls=pnl>100?'good':pnl<-100?'bad':'warn';
+   html+=`<td class="${cls}">${pnl>=0?'+':''}\$${Math.abs(pnl).toFixed(0)}/mois</td>`;
+  });
+  html+='</tr>';
+ });
+ // Ligne max daily loss
+ html+='<tr style="border-top:1px solid var(--border)"><td style="font-size:11px;color:var(--muted)">Trades avant Daily Loss</td>';
+ risks.forEach(ri=>{
+  const t=Math.floor((p.dl||5)/ri.v);
+  const cls=t<=3?'bad':t<=6?'warn':'good';
+  html+=`<td class="${cls}">${t} pertes</td>`;
+ });
+ html+='</tr></tbody></table>';
+ html+='<div style="font-size:11px;color:var(--muted);margin-top:10px">Calculs basés sur ton WR actuel, R moyen et nombre de trades déclarés. L\'espérance suppose une exécution parfaite de ta stratégie.</div>';
+ html+='</div>';
+ document.getElementById('risk-scenarios').innerHTML=html;
+}
+
+function renderBehavAnalysis(scores,profile){
+ const p=profile;
+ const items=[
+  {title:'Forces identifiées',color:'var(--profit)',type:'good',
+   items:[
+    scores[0]>=70&&'Psychologie solide — tu gères la pression émotionnelle',
+    scores[1]>=70&&'Bonne exécution technique — tes entrées sont précises',
+    scores[2]>=70&&'Discipline structurée — tu suis ton plan régulièrement',
+    scores[3]>=70&&'Risque maîtrisé — tu protèges ton capital',
+    scores[4]>=70&&'Résistance au FOMO — tu ne chasses pas les trades',
+    scores[5]>=70&&'Finances saines — tu tradeas sans pression',
+    scores[6]>=70&&'Hygiène solide — ton cerveau est en condition',
+   ].filter(Boolean)},
+  {title:'Failles critiques',color:'var(--danger)',type:'bad',
+   items:[
+    scores[0]<50&&'Fragilité émotionnelle — tes émotions gouvernent tes décisions',
+    scores[1]<50&&'Exécution incohérente — le gap entre analyse et trade est trop grand',
+    scores[2]<50&&'Discipline insuffisante — tu ne suis pas ton plan régulièrement',
+    scores[3]<50&&'Risque trop élevé — ton sizing met ton compte en danger',
+    scores[4]<50&&'FOMO élevé — tu trades hors-plan trop souvent',
+    scores[5]<50&&'Pression financière — tu as besoin de l\'argent du trading',
+    scores[6]<50&&'Hygiène défaillante — ton cerveau n\'est pas en condition optimale',
+    (p.risk||1)>0.5&&'Sizing prop firm incompatible — risque/trade trop élevé',
+   ].filter(Boolean)},
+  {title:'Points de vigilance',color:'var(--warn)',type:'warn',
+   items:[
+    (scores[0]>=50&&scores[0]<65)&&'Psychologie fragile sous pression intense',
+    (scores[2]>=50&&scores[2]<65)&&'Discipline perfectible — les mauvaises journées te font dévier',
+    (scores[3]>=55&&scores[3]<70)&&'Risque correct mais non optimisé pour la prop firm',
+    (p.risk||1)>0.25&&(p.risk||1)<=0.5&&'Sizing à 0.5% — marge de sécurité réduite, surveille tes séries',
+    (p.wr||0)<40&&'Win rate sous le seuil de rentabilité — améliorer la sélection des trades',
+   ].filter(Boolean)},
+  {title:'Comportements prop firm à risque',color:'var(--purple)',type:'warn',
+   items:[
+    scores[4]<55&&'FOMO sous pression firm — tendance à rattraper les pertes rapidement',
+    scores[0]<60&&scores[2]<60&&'Double risque : psycho fragile + discipline insuffisante = cocktail explosif en funded',
+    (p.risk||1)>0.5&&'Chaque mauvaise journée peut violer la daily loss avec ce sizing',
+    scores[3]<60&&'Risque de revenge trading après pertes — comportement classique en firm',
+    scores[5]<55&&'Pression financière = biais sur les décisions de payout et de sizing',
+   ].filter(Boolean)}
+ ].filter(it=>it.items.length>0);
+
+ document.getElementById('behavgrid').innerHTML=items.map(blk=>`
+  <div class="behav-card">
+   <div class="behav-title" style="color:${blk.color}">${blk.title}</div>
+   <div class="behav-list">${blk.items.map(it=>`<div class="behav-item"><div class="dot dot-${blk.type}"></div><span>${it}</span></div>`).join('')}</div>
+  </div>`).join('');
+}
+
+function getAlerts(sc,p){
+ const a=[];
+ const risk=p.risk||0.5;
+ const esp=(p.wr||0)/100*(p.r||1)-((100-(p.wr||0))/100);
+
+ // CRITIQUES
+ if(sc[3]<40)a.push({lv:'crit',t:'Gestion du risque critique',d:'Ton score de gestion du risque est très faible. En prop firm, c\'est la cause numéro 1 des comptes sautés. Aucune stratégie ne compense une mauvaise gestion du risque.',act:'Action immédiate : calculer ton risque optimal en $ à 0.25% de ton compte et l\'appliquer dès demain sans exception.'});
+ if(sc[0]<40)a.push({lv:'crit',t:'Fragilité psychologique sévère',d:'Ton état mental est un danger direct pour tes comptes. En prop firm, les émotions font déclencher les règles de protection — daily loss atteinte sous pression, trades de revanche, overtrading.',act:'Action immédiate : implémenter une règle d\'arrêt automatique (limite en $ par jour) et consulter les ressources psychologie ATP.'});
+ if(risk>0.5)a.push({lv:'crit',t:`Sizing incompatible avec la prop firm (${risk}%/trade)`,d:`Avec ${risk}% de risque par trade, il suffit de ${Math.floor((p.dl||5)/risk)} pertes consécutives pour violer la daily loss. Une mauvaise matinée peut faire sauter ton compte. Ce n\'est pas du trading, c\'est du casino.`,act:`Action immédiate : réduire à 0.25% ($${((p.capital||50000)*0.25/100).toFixed(0)}) ou au maximum 0.5% ($${((p.capital||50000)*0.5/100).toFixed(0)}).`});
+ if(esp<-0.1)a.push({lv:'crit',t:'Espérance mathématique négative',d:`Avec WR=${p.wr}% et R=${p.r}, chaque trade te coûte de l\'espérance. La prop firm va juste accélérer ta perte de capital. Résous l\'espérance avant de risquer des fees.`,act:'Action : simuler sur 100 trades paper pour diagnostiquer si c\'est ton WR ou ton R qui est problématique.'});
+ if(p.capital&&p.capital<10000&&(p.target||0)>p.capital*0.1)a.push({lv:'crit',t:'Objectif de payout irréaliste',d:`Viser $${p.target}/mois sur un compte de $${p.capital} représente ${((p.target||0)/(p.capital)*100).toFixed(1)}% de rendement mensuel. C\'est mathématiquement insoutenable sans risque excessif.`,act:'Réduis ton objectif à maximum 5-8% du compte par mois, ou augmente la taille du compte.'});
+
+ // VIGILANCE
+ if(sc[4]<45)a.push({lv:'vig',t:'FOMO élevé — risque de violation des règles firm',d:'Tu trades souvent hors de tes critères. En prop firm, un trade impulsif peut déclencher la daily loss en quelques minutes si le sizing est élevé. Le FOMO + leverage = danger maximum.',act:'Définir par écrit 3 critères \"No Go\" et s\'interdire d\'entrer si l\'un est présent.'});
+ if(sc[2]<45)a.push({lv:'vig',t:'Discipline insuffisante pour la prop firm',d:'Sans journal régulier, sans plan quotidien et sans review hebdomadaire, tu ne peux pas identifier et corriger tes patterns perdants. En prop firm, les patterns perdants coûtent des fees de reset.',act:'Remplir le journal CHAQUE session — 5 minutes après la clôture, sans exception.'});
+ if(sc[5]<45)a.push({lv:'vig',t:'Pression financière personnelle',d:'Si tu as besoin des gains du trading pour payer tes charges, tu traderas avec un biais de peur/espoir permanent. Ce biais se manifeste par des sorties trop tôt, des tenues trop longues, ou des tailles trop grosses.',act:'Construire un fonds de sécurité de 3 mois de dépenses avant de te mettre en pression de performance.'});
+ if(risk>0.25&&risk<=0.5)a.push({lv:'vig',t:`Sizing à ${risk}% — limite haute recommandée`,d:`Tu es dans la zone acceptable mais sans filet. Avec ${Math.floor((p.dl||5)/risk)} pertes consécutives tu touches la daily loss. Le passage à 0.25% doublerait cette marge de sécurité sans changer significativement ton rendement espéré.`,act:'Tester 0.25% pendant 4 semaines — la sérénité mentale que ça apporte améliore souvent la performance.'});
+ if(sc[6]<45)a.push({lv:'vig',t:'Hygiène de vie impactant les décisions',d:'Manque de sommeil, pas d\'exercice, mauvaise alimentation pendant les sessions — ton cerveau en mauvais état prend de mauvaises décisions. C\'est aussi simple que ça.',act:'Règle 1 : no trading après une nuit < 6h. Règle 2 : pause obligatoire toutes les 90 min.'});
+
+ // INFOS
+ if(sc[0]>=75&&sc[3]>=75)a.push({lv:'info',t:'Profil compatible avec l\'augmentation de compte',d:'Psychologie et risque solides — tu as les fondamentaux pour gérer des comptes plus importants. Envisage de monter en taille de compte ou de multiplier les comptes funded simultanément.',act:''});
+ if(esp>0.2&&risk<=0.25)a.push({lv:'info',t:'Edge + sizing optimal — conditions idéales pour performer',d:'Ton espérance positive combinée à un sizing prudent crée les conditions les plus favorables pour performer durablement en prop firm.',act:''});
+
+ return a.sort((a2,b)=>a2.lv==='crit'&&b.lv!=='crit'?-1:b.lv==='crit'&&a2.lv!=='crit'?1:0);
+}
+
+function getPris(sc,alerts){
+ const hrc=alerts.some(a=>a.lv==='crit'&&(a.t.toLowerCase().includes('risque')||a.t.toLowerCase().includes('sizing')));
+ const idx=sc.map((s,i)=>({i,s})).sort((a,b)=>a.s-b.s);
+ let top=idx.slice(0,3).map(x=>x.i);
+ if((sc[3]<60||hrc)&&!top.includes(3))top=[3,...top.slice(0,2)];
+ return top.map(i=>({theme:TH[i].name,score:sc[i],why:TWHY[i],act:PRIACTIONS[i],tid:TH[i].id}));
+}
+
+function genPlan(pris,hz){
+ const pw=hz===4?[2,1,1]:hz===8?[3,3,2]:[4,4,4];
+ const pn=['Stabiliser','Consolider','Progresser'];
+ const pcl=['s1','s2','s3'];
+ let wn=1;
+ return pw.map((weeks,pi)=>{
+  const wks=[];
+  for(let w=0;w<weeks;w++){
+   const acts=[];
+   pris.forEach(p=>{
+    const pool=TACTIONS[p.tid]||[];
+    acts.push({tag:p.theme,text:pool[(pi*2+w)%pool.length]});
+   });
+   wks.push({week:wn++,acts});
+  }
+  return{name:pn[pi],cls:pcl[pi],weeks:wks};
+ });
+}
+
+function calcResults(){
+ const scores=TH.map((_,i)=>scoreT(i));
+ const alpha=alphaScore(scores);
+ const nv=niv(alpha);
+ const arch=ARCHETYPES.find(a=>a.c(scores))||ARCHETYPES[ARCHETYPES.length-1];
+ const alerts=getAlerts(scores,S.profile);
+ const pris=getPris(scores,alerts);
+ const pf=pfAnalysis(scores,S.profile);
+ const plan=genPlan(pris,S.hz);
+ S.res={scores,alpha,nv,arch,alerts,pris,pf,plan};
+ S.completedAt=new Date().toISOString();
+
+ // Ring
+ const C=2*Math.PI*56;
+ const circ=document.getElementById('acirc');
+ circ.style.stroke=nv.col;
+ setTimeout(()=>{circ.style.strokeDashoffset=C*(1-alpha/100);},80);
+
+ // Count-up
+ const ne=document.getElementById('anum');let cur=0;
+ const step=Math.max(1,Math.floor(alpha/50));
+ const iv=setInterval(()=>{cur=Math.min(cur+step,alpha);ne.textContent=cur;if(cur>=alpha)clearInterval(iv);},25);
+
+ // Badges hero
+ document.getElementById('alvlbadge').innerHTML=
+  `<span class="badge ${nv.badge}">${nv.l}</span>
+   <span class="badge bpur">Archétype prop firm : ${arch.pfcompat}</span>`;
+ document.getElementById('archname').textContent=arch.n;
+ document.getElementById('archdesc').textContent=arch.d;
+
+ // Right scores
+ document.getElementById('rh-scores').innerHTML=scores.map((s,i)=>{
+  const nv2=niv(s);
+  return`<div style="display:flex;align-items:center;gap:8px;font-size:11.5px">
+   <span style="color:var(--muted)">${TH[i].icon}</span>
+   <span style="color:var(--text2)">${TH[i].name.split('&')[0].trim()}</span>
+   <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${nv2.col}">${s}</span>
+  </div>`;
+ }).join('');
+
+ // KPIs
+ const p=S.profile;const wr=p.wr||0;const r=p.r||1;const cap=p.capital||50000;
+ const esp=(wr/100*r-(1-wr/100));
+ const wrEq=Math.round(100/(1+r));
+ const riskDollarOpt=(cap*0.25/100).toFixed(0);
+ const payoutEst=Math.round(esp*(p.risk||0.5)/100*cap*(p.trades||40));
+ document.getElementById('kpigrid').innerHTML=[
+  {l:'Alpha Score',v:alpha+'/100',c:alpha>=80?'pr':alpha>=60?'bl':alpha>=40?'wa':'da',sub:nv.l},
+  {l:'Espérance (R)',v:(esp>=0?'+':'')+(esp).toFixed(3)+'R',c:esp>0.1?'pr':esp>=0?'wa':'da',sub:esp>0?'Edge positif':'Edge négatif'},
+  {l:'Win rate équilibre',v:wrEq+'%',c:wr>=wrEq?'pr':'da',sub:'WR actuel : '+wr+'%'},
+  {l:'Risque optimal / trade',v:'$'+riskDollarOpt,c:'ac',sub:'0.25% — ATP standard'},
+  {l:'Payout estimé / mois',v:(payoutEst>0?'+':'')+'$'+Math.abs(payoutEst),c:payoutEst>0?'pr':'da',sub:'avec ton sizing actuel'},
+  {l:'Compat. prop firm',v:arch.pfcompat,c:arch.pfcompat==='haute'?'pr':arch.pfcompat==='moyenne'?'wa':'da',sub:arch.n.split(' ')[1]||''},
+ ].map(k=>`<div class="kc"><div class="kl">${k.l}</div><div class="kv ${k.c}">${k.v}</div><div class="ksub">${k.sub}</div></div>`).join('');
+
+ // PF Analysis
+ renderPFAnalysis(pf,scores);
+
+ // Bars
+ document.getElementById('tbars').innerHTML=scores.map((s,i)=>{
+  const nv2=niv(s);
+  return`<div class="tbar-item"><div class="tbh"><span class="tbn">${TH[i].icon} ${TH[i].name}</span><span class="tbsc" style="color:${nv2.col}">${s}/100 · ${nv2.l}</span></div><div class="tbtr"><div class="tbf ${nv2.c}" style="width:${s}%"></div></div></div>`;
+ }).join('');
+
+ // Radar
+ renderRadar(scores);
+
+ // Comportements
+ renderBehavAnalysis(scores,p);
+
+ // Risk scenarios
+ renderScenarios(p,scores);
+
+ // Alerts
+ const al=document.getElementById('alertlist');
+ al.innerHTML=alerts.length===0?'<div class="card-profit" style="font-size:13px">✅ Aucune alerte critique. Tu as un profil solide pour trader en prop firm. Continue sur cette trajectoire.</div>':
+  alerts.map(a=>`<div class="alc ${a.lv}">
+   <div class="altt">${a.lv==='crit'?'🔴':a.lv==='vig'?'🟡':'ℹ️'} ${a.t}</div>
+   <div class="ald">${a.d}</div>
+   ${a.act?`<div class="alaction">${a.act}</div>`:''}
+  </div>`).join('');
+
+ // Priorities
+ document.getElementById('prilist').innerHTML=pris.map((p2,i)=>`
+  <div class="pric">
+   <div class="prin">${i+1}</div>
+   <div>
+    <div class="pritm">${p2.theme} <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:400;color:var(--muted)">· ${p2.score}/100</span></div>
+    <div class="prisc" style="color:${niv(p2.score).col}">${niv(p2.score).l}</div>
+    <div class="priw">${p2.why}</div>
+    <div class="priact">${p2.act}</div>
+   </div>
+  </div>`).join('');
+
+ // Metrics table
+ const phases=['Stabiliser','Consolider','Progresser'];
+ const t=p.target||0;const riskOpt=0.25;const riskMax=0.5;
+ document.getElementById('mtbody').innerHTML=[
+  {m:'Risque / trade recommandé',cls:['phase1','phase1','phase1'],vs:['0.25% ($'+Math.round(cap*0.0025)+')','0.25% ($'+Math.round(cap*0.0025)+')','≤0.25–0.5% selon stats']},
+  {m:'Win rate cible',cls:['phase1','phase2','phase3'],vs:[Math.max(wrEq,wr)+'% (maintenir)',Math.min(wr+5,75)+'%',Math.min(wr+10,80)+'%']},
+  {m:'R moyen cible',cls:['phase1','phase2','phase3'],vs:[(r).toFixed(1)+'R',(r+0.2).toFixed(1)+'R',(r+0.4).toFixed(1)+'R']},
+  {m:'Max daily drawdown',cls:['phase1','phase1','phase1'],vs:['50% de la daily loss','40% de la daily loss','30% de la daily loss']},
+  {m:'Trades hors-plan',cls:['phase1','phase2','phase3'],vs:['<5/mois','<3/mois','<1/mois']},
+  {m:'Journal rempli',cls:['phase1','phase2','phase3'],vs:['3×/semaine','5×/semaine','7×/semaine']},
+  {m:'Payout objectif',cls:['phase1','phase2','phase3'],vs:['$'+Math.round(t*0.4||100)+'/mois','$'+Math.round(t*0.7||200)+'/mois','$'+(t||0)+'/mois']},
+  {m:'Review performance',cls:['phase2','phase2','phase3'],vs:['Hebdo (45 min)','Hebdo + mensuel','Hebdo + mensuel + trimestriel']},
+ ].map(row=>`<tr><td style="color:var(--text);font-weight:500">${row.m}</td>${row.vs.map((v,i)=>`<td class="${row.cls[i]||''}">${v}</td>`).join('')}</tr>`).join('');
+
+ // Plan
+ document.getElementById('plantitle').textContent=`Plan ${S.hz} semaines`;
+ document.getElementById('planph').innerHTML=plan.map((ph,pi)=>{
+  const tot=ph.weeks.reduce((s,w)=>s+w.acts.length,0);
+  return`<div class="phase-block">
+   <div class="phase-block-hdr ${ph.cls}">
+    <span class="phname ${ph.cls}">${ph.name}</span>
+    <span class="phwks">${ph.weeks.length} semaine${ph.weeks.length>1?'s':''}</span>
+    <span class="phprog" id="phpr${pi}">0/${tot} actions</span>
+   </div>
+   <div class="wklist">${ph.weeks.map((wk,wi)=>`
+    <div class="wcard" id="wk${pi}-${wi}">
+     <div class="wh" onclick="togWk(${pi},${wi})">
+      <span style="color:var(--text2)">Semaine ${wk.week}</span>
+      <span style="font-size:10.5px;color:var(--muted)">${wk.acts.length} actions</span>
+      <span class="wchev">▼</span>
+     </div>
+     <div class="wacts" style="display:none">${wk.acts.map((ac,ai)=>`
+      <div class="wact" onclick="togAct(${pi},${wi},${ai})">
+       <div class="achk" id="ac${pi}-${wi}-${ai}"></div>
+       <div class="atxt" id="at${pi}-${wi}-${ai}">
+        <div class="atag">${ac.tag}</div>${ac.text}
+       </div>
+      </div>`).join('')}</div>
+    </div>`).join('')}</div>
+  </div>`;
+ }).join('');
+
+ markNav('results');
+ goTo('results');
+}
+
+function renderRadar(sc){
+ const svg=document.getElementById('rsvg');
+ const cx=130,cy=130,r=100;const n=7;
+ function pt(i,pct){const a=(i/n)*2*Math.PI-Math.PI/2;return{x:cx+pct*r*Math.cos(a),y:cy+pct*r*Math.sin(a)};}
+ let h='';
+ [0.25,0.5,0.75,1].forEach(p=>{const pts=Array.from({length:n},(_,i)=>pt(i,p));h+=`<polygon points="${pts.map(q=>q.x+','+q.y).join(' ')}" fill="none" stroke="rgba(34,197,94,0.08)" stroke-width="1"/>`;});
+ for(let i=0;i<n;i++){const p=pt(i,1);h+=`<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="rgba(34,197,94,0.08)" stroke-width="1"/>`;}
+ const dp=sc.map((s,i)=>pt(i,s/100));
+ h+=`<polygon points="${dp.map(p=>p.x+','+p.y).join(' ')}" fill="rgba(201,165,116,0.12)" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+ dp.forEach((p,i)=>{const nv2=niv(sc[i]);h+=`<circle cx="${p.x}" cy="${p.y}" r="4" fill="${nv2.col}" stroke="var(--bg2)" stroke-width="2"/>`;});
+ sc.forEach((s,i)=>{const p=pt(i,1.22);const nv2=niv(s);h+=`<text x="${p.x}" y="${p.y}" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="${nv2.col}" font-family="Inter,sans-serif">${TH[i].name.split('&')[0].split(' ')[0]}</text>`;});
+ svg.innerHTML=h;
+}
+
+function togWk(pi,wi){
+ const c=document.getElementById(`wk${pi}-${wi}`);
+ const a=c.querySelector('.wacts');const open=a.style.display!=='none';
+ a.style.display=open?'none':'flex';c.classList.toggle('open',!open);
+}
+function togAct(pi,wi,ai){
+ const key=`${pi}-${wi}-${ai}`;
+ const ck=document.getElementById(`ac${pi}-${wi}-${ai}`);
+ const tx=document.getElementById(`at${pi}-${wi}-${ai}`);
+ const done=ck.classList.toggle('done');ck.textContent=done?'✓':'';tx.classList.toggle('done',done);
+ if(!S.checks)S.checks={};
+ S.checks[key]=done;
+ updPhProg(pi);save();
+}
+function updPhProg(pi){
+ if(!S.res)return;
+ const ph=S.res.plan[pi];let done=0,tot=0;
+ ph.weeks.forEach((wk,wi)=>{wk.acts.forEach((_,ai)=>{tot++;if(document.getElementById(`ac${pi}-${wi}-${ai}`)?.classList.contains('done'))done++;});});
+ const el=document.getElementById('phpr'+pi);if(el)el.textContent=done+'/'+tot+' actions';
+}
+function copyD(){
+ if(!S.res)return;
+ const r=S.res;const p=S.profile;
+ const txt=`🏆 **BILAN TRADER 2027 — ${p.name||'Trader'}**
+
+**Alpha Score : ${r.alpha}/100** — ${r.nv.l}
+**Archétype : ${r.arch.n}**
+**Compat. Prop Firm : ${r.arch.pfcompat}**
+
+📊 **Scores par thème :**
+${r.scores.map((s,i)=>TH[i].icon+' '+TH[i].name+' : '+s+'/100 ('+niv(s).l+')').join('\n')}
+
+⚠️ **Alertes (${r.alerts.filter(a=>a.lv==='crit').length} critiques) :**
+${r.alerts.filter(a=>a.lv==='crit').map(a=>'🔴 '+a.t).join('\n')||'Aucune alerte critique'}
+
+🎯 **3 priorités 2027 :**
+${r.pris.map((p2,i)=>(i+1)+'. '+p2.theme+' (score : '+p2.score+'/100)').join('\n')}
+
+💰 Compte : $${p.capital?.toLocaleString()||'—'} | Payout visé : $${p.target?.toLocaleString()||'—'}/mois
+📅 Plan sur ${S.hz} semaines | Risque : ${p.risk||'?'}%/trade
+
+---
+*Bilan Trader 2027 — Alpha Trading Pro*`;
+ navigator.clipboard.writeText(txt).then(()=>{
+  const btn=document.getElementById('cpbtn');btn.textContent='✓ Copié !';btn.classList.add('cp');
+  setTimeout(()=>{btn.textContent='📋 Copier pour Discord';btn.classList.remove('cp');},2500);
+ });
+}
+function save(){
+ try{localStorage.setItem('atp-bilan-2027',JSON.stringify(S));}catch(e){}
+ // Sync avec le parent React (Supabase) si embarqué en iframe.
+ // Silencieux si standalone (window.parent === window).
+ if(window.parent!==window){
+  try{window.parent.postMessage({type:'BILAN_STATE',payload:S},'*');}catch(e){}
+ }
+}
+
+// Listener BILAN_LOAD — hydrate S depuis la source de vérité (Supabase)
+// à l'ouverture initiale et après un reset côté React. Restaure l'UI
+// (inputs profile, horizon, cases plan cochées, progression) et navigue
+// vers 'results' si le bilan était déjà complété.
+window.addEventListener('message',function(e){
+ if(!e.data||typeof e.data!=='object')return;
+ if(e.data.type!=='BILAN_LOAD'||!e.data.payload)return;
+ var p=e.data.payload;
+ // Merge complet des clés critiques (permet aussi un reset propre : un
+ // payload vide replace bien à zéro chaque clé au lieu de garder l'ancienne).
+ S.profile=p.profile||{};
+ S.ans=p.ans||{};
+ S.hz=p.hz||8;
+ S.checks=p.checks||{};
+ S.completedAt=p.completedAt||null;
+ S.res=null;
+ // Restore inputs du profile
+ var IDMAP={pn:'name',pc:'capital',pt:'target',pw:'wr',pr:'r',ptr:'trades',prisk:'risk',pdd:'dd',pdl:'dl',pcons:'cons'};
+ Object.keys(IDMAP).forEach(function(id){
+  var k=IDMAP[id],el=document.getElementById(id);
+  if(el)el.value=(S.profile&&S.profile[k]!==undefined)?S.profile[k]:'';
+ });
+ var SELMAP={pe:'exp',pfirm:'pfirm',pphase:'phase',pi:'instrument'};
+ Object.keys(SELMAP).forEach(function(id){
+  var k=SELMAP[id],el=document.getElementById(id);
+  if(el)el.value=(S.profile&&S.profile[k])?S.profile[k]:'';
+ });
+ // Restore horizon
+ var hbtn=document.querySelector('[data-w="'+S.hz+'"]');
+ if(hbtn&&typeof selH==='function')selH(S.hz,hbtn);
+ // Restore cases plan cochées (needs .ac / .at éléments — présents seulement
+ // après goTo('results') qui rend le plan. Le try/catch reste silencieux si absent).
+ try{
+  Object.keys(S.checks||{}).forEach(function(key){
+   if(!S.checks[key])return;
+   var parts=key.split('-'),pi=parts[0],wi=parts[1],ai=parts[2];
+   var ck=document.getElementById('ac'+pi+'-'+wi+'-'+ai);
+   var tx=document.getElementById('at'+pi+'-'+wi+'-'+ai);
+   if(ck){ck.classList.add('done');ck.textContent='✓';}
+   if(tx)tx.classList.add('done');
+  });
+ }catch(e){}
+ // Update progression (barre + label + %)
+ if(typeof updGP==='function')updGP();
+ // Si bilan complété, recalcule S.res depuis S.ans et va sur results.
+ // calcResults() ré-écrit S.completedAt = now — on le rétablit ensuite pour
+ // conserver la valeur d'origine (celle qui est en base).
+ if(S.completedAt&&typeof calcResults==='function'){
+  var origCompletedAt=S.completedAt;
+  try{calcResults();}catch(err){}
+  S.completedAt=origCompletedAt;
+  if(typeof goTo==='function')goTo('results');
+ }
+});
+function tryLoad(){
+ try{
+  const raw=localStorage.getItem('atp-bilan-2027');
+  if(!raw){alert('Aucun bilan en cours trouvé.');return;}
+  const s=JSON.parse(raw);S={...S,...s};
+  if(s.profile){
+   const p=s.profile;
+   ['pn','pc','pt','pw','pr','ptr','prisk','pdd','pdl','pcons'].forEach(id=>{
+    const key={pn:'name',pc:'capital',pt:'target',pw:'wr',pr:'r',ptr:'trades',prisk:'risk',pdd:'dd',pdl:'dl',pcons:'cons'}[id];
+    if(p[key]!==undefined)document.getElementById(id).value=p[key];
+   });
+   ['pe','pfirm','pphase','pi'].forEach(id=>{
+    const key={pe:'exp',pfirm:'pfirm',pphase:'phase',pi:'instrument'}[id];
+    if(p[key])document.getElementById(id).value=p[key];
+   });
+  }
+  const hbtn=document.querySelector(`[data-w="${S.hz}"]`);if(hbtn)selH(S.hz,hbtn);
+  updGP();
+  let last=0;TH.forEach((_,i)=>{if(Object.keys(S.ans[i]||{}).length>0)last=i;});
+  goToTheme(last);
+ }catch(e){alert('Erreur lors du chargement du bilan.');}
+}
+function resetB(){
+ if(!confirm('Recommencer un nouveau bilan ? Toutes les réponses seront perdues.'))return;
+ S={screen:'intro',ct:0,profile:{},hz:8,ans:{},res:null};
+ localStorage.removeItem('atp-bilan-2027');
+ document.querySelectorAll('.nchk').forEach(el=>el.className='nchk');
+ document.getElementById('progFill').style.width='0%';
+ document.getElementById('progLabel').textContent='0 / 71';
+ document.getElementById('progPct').textContent='0%';
+ goTo('intro');
+}
+// Init
+document.querySelector('[data-w="8"]').className='btn bprim hb';
+
+</script>
+</body>
+</html>
