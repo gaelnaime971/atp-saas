@@ -49,6 +49,7 @@ const pageTitles: Record<DashboardPage, string> = {
   'stock-analysis': 'Analyse d\'action',
   coaching: 'Sessions coaching',
   'recap-live': 'Trades Live Coach',
+  'bilan-2027': 'Bilan Trader 2027',
   progression: 'Ma progression',
   classement: 'Achievements',
   formation: 'Formation',
