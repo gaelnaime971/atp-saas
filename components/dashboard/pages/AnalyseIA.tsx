@@ -429,9 +429,41 @@ export default function AnalyseIA() {
       const firstBrace = raw.indexOf('{')
       const lastBrace = raw.lastIndexOf('}')
       if (firstBrace !== -1 && lastBrace > firstBrace) raw = raw.substring(firstBrace, lastBrace + 1)
+      // Defaults sécurisés — gpt-oss-120b (et plus largement n'importe quel LLM)
+      // peut occasionnellement omettre une clé du schema demandé dans le prompt.
+      // Sans ces defaults, parsed.instruments_analysis[0] (ou .faiblesses[0], etc.)
+      // crash "Cannot read properties of undefined (reading '0')" au lieu de dégrader
+      // proprement vers un tableau vide. Shallow merge → les clés présentes dans
+      // la réponse LLM gagnent sur les defaults, les absentes prennent le safe fallback.
+      const ANALYSIS_DEFAULTS: Partial<Analysis> = {
+        verdict_general: '',
+        trend_global: 'STAGNATION',
+        trend_explanation: '',
+        forces: [],
+        faiblesses: [],
+        patterns_detectes: [],
+        alertes: [],
+        actions_semaine: [],
+        instruments_analysis: [],
+        plan_jour_type: { matin: '', session: '', post_session: '' },
+        objectifs_realistes: { court_terme: '', moyen_terme: '', long_terme: '' },
+        stop_doing: [],
+        keep_doing: [],
+        discipline_note_sur_10: 0,
+        psychologie_note_sur_10: 0,
+        methode_note_sur_10: 0,
+        gestion_risque_note_sur_10: 0,
+        consistance_note_sur_10: 0,
+        force_mentale_note_sur_10: 0,
+        message_motivant: '',
+      }
       let parsed: Analysis | null = null
       try {
-        parsed = JSON.parse(raw) as Analysis
+        const rawParsed = JSON.parse(raw)
+        if (!rawParsed || typeof rawParsed !== 'object' || Array.isArray(rawParsed)) {
+          throw new Error('Réponse LLM n\'est pas un objet JSON')
+        }
+        parsed = { ...ANALYSIS_DEFAULTS, ...rawParsed } as Analysis
       } catch {
         setError('Réponse de l\'IA invalide. Réessaie.')
         setLoading(false)
