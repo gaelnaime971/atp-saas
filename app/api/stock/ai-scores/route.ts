@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 
 interface ScoresBody {
   symbol: string
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_TEXT_MODEL,
         max_tokens: 1200,
         temperature: 0.1,
         response_format: { type: 'json_object' },

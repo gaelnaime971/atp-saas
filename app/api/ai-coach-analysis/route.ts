@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { computeStats, compactContext, type SessionRow, type BacktestRow, type MetricsOptions } from '@/lib/trader-metrics'
 
@@ -135,7 +136,7 @@ IMPORTANT: réponds UNIQUEMENT le JSON, rien d'autre.`
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_TEXT_MODEL,
         max_tokens: 4000,
         response_format: { type: 'json_object' },
         messages: [{ role: 'user', content: prompt }],

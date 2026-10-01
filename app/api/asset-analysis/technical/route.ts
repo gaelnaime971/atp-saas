@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { GROQ_VISION_MODEL } from '@/lib/ai/groq-models'
 
 interface ChartInput {
   slot: 'HTF' | 'MTF' | 'LTF' | 'Exec'
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+        model: GROQ_VISION_MODEL,
         max_tokens: 3500,
         temperature: 0.2,
         response_format: { type: 'json_object' },

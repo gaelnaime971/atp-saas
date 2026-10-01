@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_TEXT_MODEL,
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }],
       }),
