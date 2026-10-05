@@ -15,15 +15,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { buildAuthorizeUrl, generatePkcePair, generateState } from '@/lib/whop/client'
+import { buildAuthorizeUrl, generatePkcePair, generateState, generateNonce } from '@/lib/whop/client'
 
 const PKCE_COOKIE = 'whop_pkce_verifier'
 const STATE_COOKIE = 'whop_oauth_state'
+const NONCE_COOKIE = 'whop_oidc_nonce'            // OIDC nonce, vérifié au callback
 const COOKIE_MAX_AGE_SEC = 10 * 60   // 10 minutes
 
 export async function GET(request: NextRequest) {
   const { verifier, challenge } = generatePkcePair()
   const state = generateState()
+  const nonce = generateNonce()
 
   // L'origin de la requête (http://localhost:3000 en dev, https://alphatradingpro-coaching.fr
   // en prod) donne la bonne redirect URI — doit matcher l'une des URI
@@ -34,6 +36,7 @@ export async function GET(request: NextRequest) {
     state,
     codeChallenge: challenge,
     redirectUri,
+    nonce,
   })
 
   const response = NextResponse.redirect(authorizeUrl)
@@ -47,6 +50,7 @@ export async function GET(request: NextRequest) {
   }
   response.cookies.set(PKCE_COOKIE, verifier, cookieOpts)
   response.cookies.set(STATE_COOKIE, state, cookieOpts)
+  response.cookies.set(NONCE_COOKIE, nonce, cookieOpts)
 
   return response
 }

@@ -95,12 +95,39 @@ export function generateState(): string {
   return crypto.randomBytes(16).toString('hex')
 }
 
+/** Nonce OIDC — OBLIGATOIRE dès qu'on demande le scope "openid" (Whop le
+ *  rejette avec invalid_request / "nonce is required for openid scope"
+ *  sinon). Vérifié au callback contre le claim "nonce" de l'id_token
+ *  (anti-replay). Même entropie que state : 16 octets hex = 128 bits. */
+export function generateNonce(): string {
+  return crypto.randomBytes(16).toString('hex')
+}
+
+/** Décode le payload (2ᵉ partie) d'un JWT SANS vérifier la signature.
+ *  Safe ici car l'id_token vient d'être récupéré via le flow OAuth sur TLS
+ *  avec client_secret/PKCE — la source est trusted. Utilisé uniquement
+ *  pour lire le claim "nonce" et le comparer au cookie posé à /start. */
+export function decodeJwtPayload(jwt: string): Record<string, unknown> | null {
+  try {
+    const parts = jwt.split('.')
+    if (parts.length !== 3) return null
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4)
+    const json = Buffer.from(padded, 'base64').toString('utf-8')
+    const parsed = JSON.parse(json)
+    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : null
+  } catch {
+    return null
+  }
+}
+
 // ─── OAuth : URL d'autorisation ─────────────────────────────────────
 
 export function buildAuthorizeUrl(opts: {
   state: string
   codeChallenge: string
   redirectUri: string
+  nonce: string                      // OBLIGATOIRE pour scope openid (OIDC)
 }): string {
   const clientId = requireEnv('NEXT_PUBLIC_WHOP_APP_ID')
   const params = new URLSearchParams({
@@ -109,6 +136,7 @@ export function buildAuthorizeUrl(opts: {
     response_type: 'code',
     scope: 'openid profile email',
     state: opts.state,
+    nonce: opts.nonce,               // ← Whop le rejetait sans
     code_challenge: opts.codeChallenge,
     code_challenge_method: 'S256',
   })
@@ -124,20 +152,17 @@ export async function exchangeCodeForToken(opts: {
 }): Promise<WhopTokenResponse> {
   const clientId = requireEnv('NEXT_PUBLIC_WHOP_APP_ID')
 
-  // Flow PKCE public : le code_verifier remplace le client_secret. Si l'app
-  // Whop est en mode "confidentiel", elle peut exiger le secret en plus — on
-  // l'inclut si WHOP_CLIENT_SECRET est présent. Inoffensif sur app publique
-  // (le secret est simplement ignoré par le serveur Whop).
-  const body: Record<string, string> = {
+  // App Whop en mode PUBLIC : PKCE strict, le code_verifier remplace le
+  // client_secret. L'envoyer en plus ferait échouer la requête (le mode
+  // public l'exclut explicitement, contrairement à ce qu'on avait supposé
+  // initialement). Un re-passage éventuel en mode confidentiel exigerait
+  // l'auth en Basic Auth header, pas dans le body — pattern différent.
+  const body = {
     grant_type: 'authorization_code',
     code: opts.code,
     redirect_uri: opts.redirectUri,
     client_id: clientId,
     code_verifier: opts.codeVerifier,
-  }
-  const clientSecret = process.env.WHOP_CLIENT_SECRET
-  if (clientSecret && clientSecret.length > 0) {
-    body.client_secret = clientSecret
   }
 
   const r = await fetch(WHOP_TOKEN_URL, {
@@ -146,7 +171,9 @@ export async function exchangeCodeForToken(opts: {
     body: JSON.stringify(body),
     cache: 'no-store',
   })
-  if (!r.ok) throw new Error(`[Whop] Token exchange échec HTTP ${r.status}`)
+  if (!r.ok) {
+    throw new Error(`[Whop] Token exchange échec HTTP ${r.status}`)
+  }
   return (await r.json()) as WhopTokenResponse
 }
 
@@ -221,12 +248,11 @@ export async function hasActiveEliteProMembership(whopUserId: string): Promise<b
 
 export async function revokeWhopToken(accessToken: string): Promise<void> {
   const clientId = requireEnv('NEXT_PUBLIC_WHOP_APP_ID')
-  const body: Record<string, string> = {
+  // Mode PUBLIC (voir exchangeCodeForToken) : pas de client_secret.
+  const body = {
     token: accessToken,
     client_id: clientId,
   }
-  const clientSecret = process.env.WHOP_CLIENT_SECRET
-  if (clientSecret) body.client_secret = clientSecret
   // Best effort — pas de throw. Le user doit pouvoir se déconnecter côté
   // Supabase même si Whop ne révoque pas (ex. Whop down temporairement).
   try {
