@@ -34,12 +34,52 @@ interface WhopWebhookPayload {
   event?: string
   type?: string
   data?: {
-    product?: string
-    user?: string
-    email?: string
-    valid?: boolean
-    status?: string
+    // Format webhook (vérifié sur payload réel) : objets enrichis, PAS des strings
+    // comme sur l'API v2/memberships. Différence volontaire côté Whop pour éviter
+    // au consommateur un re-fetch à chaque event.
+    product?: {
+      id?: string
+      title?: string
+      metadata?: Record<string, unknown>
+    }
+    user?: {
+      id?: string
+      email?: string
+      name?: string
+      username?: string
+    }
+    status?: string                // "active" | "trialing" | "completed" | "canceling" | "canceled" | "expired" | "past_due" | "unresolved" | "drafted"
+    cancel_at_period_end?: boolean // info annexe, pas utilisé pour l'accès
+    plan?: unknown
+    member?: unknown
   }
+}
+
+// Allowlist statuts "actifs" (user a accès dashboard). Fail-closed :
+// tout statut hors allowlist = inactif. Choix produit — voir ADR étape 5.
+//   - active     : paiement OK, en cours
+//   - trialing   : essai en cours (décision validée étape 3)
+//   - completed  : paiement one-shot/lifetime achevé
+//   - canceling  : annulation prévue mais accès maintenu jusqu'à fin de période
+//   - past_due   : grâce — presque toujours carte expirée/découvert, Whop
+//                  redébite auto. Couper au 1er échec braquerait de bons
+//                  clients. Quand les retries échouent vraiment, Whop passe
+//                  à "canceled" et le webhook coupe proprement à ce moment-là.
+// Exclus (= inactif) :
+//   - canceled, expired : accès terminé proprement
+//   - unresolved        : état indéterminé, fail-closed
+//   - drafted           : pas encore effectif
+const ACTIVE_STATUSES: ReadonlySet<string> = new Set([
+  'active',
+  'trialing',
+  'completed',
+  'canceling',
+  'past_due',
+])
+
+function isMembershipActive(status: string | undefined): boolean {
+  if (typeof status !== 'string') return false
+  return ACTIVE_STATUSES.has(status.toLowerCase())
 }
 
 function requireEnv(name: string): string {
@@ -140,17 +180,26 @@ export async function POST(request: NextRequest) {
     return new NextResponse('Invalid JSON', { status: 400 })
   }
 
-  // === DEBUG TEMPORAIRE — à retirer après validation du format payload ===
+  // === DEBUG TEMPORAIRE — à retirer après revalidation du format corrigé ===
   console.log('[WEBHOOK DEBUG] ─────────────────────────────────')
   console.log(
     '[WEBHOOK DEBUG] event/action:',
     payload?.action ?? payload?.event ?? payload?.type ?? 'UNKNOWN',
   )
-  console.log('[WEBHOOK DEBUG] data.product:', payload?.data?.product)
-  console.log('[WEBHOOK DEBUG] data.user:', payload?.data?.user)
-  console.log('[WEBHOOK DEBUG] data.valid:', payload?.data?.valid)
-  console.log('[WEBHOOK DEBUG] data.email:', payload?.data?.email)
+  console.log('[WEBHOOK DEBUG] data.product.id:', payload?.data?.product?.id)
+  console.log('[WEBHOOK DEBUG] data.product.title:', payload?.data?.product?.title)
+  console.log('[WEBHOOK DEBUG] data.user.id:', payload?.data?.user?.id)
+  console.log('[WEBHOOK DEBUG] data.user.email:', payload?.data?.user?.email)
+  console.log('[WEBHOOK DEBUG] data.user.name:', payload?.data?.user?.name)
   console.log('[WEBHOOK DEBUG] data.status:', payload?.data?.status)
+  console.log(
+    '[WEBHOOK DEBUG] data.cancel_at_period_end:',
+    payload?.data?.cancel_at_period_end,
+  )
+  console.log(
+    '[WEBHOOK DEBUG] isMembershipActive(status):',
+    isMembershipActive(payload?.data?.status),
+  )
   console.log(
     '[WEBHOOK DEBUG] payload top-level keys:',
     Object.keys(payload ?? {}),
@@ -160,7 +209,7 @@ export async function POST(request: NextRequest) {
     payload?.data ? Object.keys(payload.data) : null,
   )
   console.log('[WEBHOOK DEBUG] ─────────────────────────────────')
-  // === FIN DEBUG =========================================================
+  // === FIN DEBUG ===========================================================
 
   // 6. Extract event + data (défensif sur plusieurs noms de champs possibles)
   const eventName = String(
@@ -168,15 +217,17 @@ export async function POST(request: NextRequest) {
   ).toLowerCase()
   const data = payload?.data ?? {}
 
-  // 7. Filtre strict produit ÉLITE PRO — tout autre produit = skip silencieux
-  if (data.product !== productId) {
+  // 7. Filtre strict produit ÉLITE PRO — tout autre produit = skip silencieux.
+  //    data.product est un OBJET { id, title, metadata } dans les webhooks
+  //    (contrairement à /v2/memberships où c'est une string). Vérifié payload réel.
+  if (data.product?.id !== productId) {
     return NextResponse.json({ received: true, skipped: 'other_product' })
   }
 
   // 8. Détermine le nouveau flag selon event name (défensif multi-noms).
   //    activated / went_valid / created → true
   //    deactivated / went_invalid / canceled / cancelled / expired → false
-  //    updated / changed → suit data.valid tel que Whop le fournit
+  //    updated / changed → lit data.status via isMembershipActive (allowlist)
   //    autre → ignore + 200
   let nextActive: boolean | null = null
   if (
@@ -197,7 +248,8 @@ export async function POST(request: NextRequest) {
     eventName.includes('updated') ||
     eventName.includes('changed')
   ) {
-    nextActive = data.valid === true
+    // Lit le status Whop (data.valid n'existe PAS dans le payload webhook).
+    nextActive = isMembershipActive(data.status)
   }
 
   if (nextActive === null) {
@@ -218,23 +270,28 @@ export async function POST(request: NextRequest) {
   }
   const admin = createAdminClient(supabaseUrl, serviceKey)
 
-  // 10. Lookup profile : whop_user_id en priorité, email .ilike en fallback
+  // 10. Lookup profile : whop_user_id en priorité, email .ilike en fallback.
+  //     data.user est un OBJET { id, email, name, username } — l'id est le
+  //     whopUserId, l'email est à data.user.email (PAS data.email qui est undefined).
+  const whopUserId = data.user?.id
+  const whopEmail = data.user?.email
+
   let profileId: string | null = null
 
-  if (data.user) {
+  if (whopUserId) {
     const { data: byWhop } = await admin
       .from('profiles')
       .select('id')
-      .eq('whop_user_id', data.user)
+      .eq('whop_user_id', whopUserId)
       .maybeSingle()
     if (byWhop?.id) profileId = byWhop.id
   }
 
-  if (!profileId && data.email) {
+  if (!profileId && whopEmail) {
     const { data: byEmail } = await admin
       .from('profiles')
       .select('id')
-      .ilike('email', data.email)
+      .ilike('email', whopEmail)
       .maybeSingle()
     if (byEmail?.id) profileId = byEmail.id
   }
@@ -249,8 +306,8 @@ export async function POST(request: NextRequest) {
   const updateData: Record<string, unknown> = {
     whop_subscription_active: nextActive,
   }
-  if (nextActive && data.user) {
-    updateData.whop_user_id = data.user
+  if (nextActive && whopUserId) {
+    updateData.whop_user_id = whopUserId
   }
 
   const { error: updateError } = await admin
