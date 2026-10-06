@@ -13,7 +13,7 @@
  *   - Secret : WHOP_WEBHOOK_SECRET (ws_...) tel quel — pas de strip de préfixe
  *   - Raw body lu AVANT tout parse JSON (sinon la sig ne matcherait plus)
  *
- * TRAITEMENT (défensif multi-noms d'events, à resserrer après 1er payload réel) :
+ * TRAITEMENT (défensif multi-noms d'events, validé contre payload réel Whop) :
  *   - Filtre strict sur WHOP_PRODUCT_ID (ÉLITE PRO prod_JkPZ6NZeqULBR)
  *   - Lookup profile par whop_user_id, fallback .ilike email
  *   - Pas de création auto depuis webhook (uniquement au login OAuth)
@@ -179,37 +179,6 @@ export async function POST(request: NextRequest) {
   } catch {
     return new NextResponse('Invalid JSON', { status: 400 })
   }
-
-  // === DEBUG TEMPORAIRE — à retirer après revalidation du format corrigé ===
-  console.log('[WEBHOOK DEBUG] ─────────────────────────────────')
-  console.log(
-    '[WEBHOOK DEBUG] event/action:',
-    payload?.action ?? payload?.event ?? payload?.type ?? 'UNKNOWN',
-  )
-  console.log('[WEBHOOK DEBUG] data.product.id:', payload?.data?.product?.id)
-  console.log('[WEBHOOK DEBUG] data.product.title:', payload?.data?.product?.title)
-  console.log('[WEBHOOK DEBUG] data.user.id:', payload?.data?.user?.id)
-  console.log('[WEBHOOK DEBUG] data.user.email:', payload?.data?.user?.email)
-  console.log('[WEBHOOK DEBUG] data.user.name:', payload?.data?.user?.name)
-  console.log('[WEBHOOK DEBUG] data.status:', payload?.data?.status)
-  console.log(
-    '[WEBHOOK DEBUG] data.cancel_at_period_end:',
-    payload?.data?.cancel_at_period_end,
-  )
-  console.log(
-    '[WEBHOOK DEBUG] isMembershipActive(status):',
-    isMembershipActive(payload?.data?.status),
-  )
-  console.log(
-    '[WEBHOOK DEBUG] payload top-level keys:',
-    Object.keys(payload ?? {}),
-  )
-  console.log(
-    '[WEBHOOK DEBUG] data keys:',
-    payload?.data ? Object.keys(payload.data) : null,
-  )
-  console.log('[WEBHOOK DEBUG] ─────────────────────────────────')
-  // === FIN DEBUG ===========================================================
 
   // 6. Extract event + data (défensif sur plusieurs noms de champs possibles)
   const eventName = String(
