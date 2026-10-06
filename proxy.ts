@@ -42,9 +42,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user) {
+    // SELECT étendu : email + whop_subscription_active lus en une seule
+    // requête (déjà faite aujourd'hui pour role). Zéro impact perf.
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, email, whop_subscription_active')
       .eq('id', user.id)
       .single()
 
@@ -65,6 +67,48 @@ export async function proxy(request: NextRequest) {
     // Trader trying to access admin area
     if (pathname.startsWith('/admin') && !isAdmin) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    // ─── GATE WHOP (étape 6) ────────────────────────────────────────
+    // Filtre d'accès dashboard sur whop_subscription_active, désactivé
+    // par défaut via interrupteur WHOP_GATE_ENABLED. 3 garde-fous :
+    //
+    //   1. Interrupteur STRICT : seule la valeur littérale "true" active
+    //      le gate. undefined / "false" / "1" / "True" → gate OFF.
+    //      Défaut sûr : rien de configuré sur Vercel = aucun blocage.
+    //
+    //   2. Bypass admin + whitelist email (WHOP_BYPASS_EMAILS, séparé
+    //      par virgules, case-insensitive). Sortie de secours blindée
+    //      pour l'admin et le compte test — jamais enfermés dehors.
+    //      L'admin passe DEUX fois : d'abord via les redirects au-dessus
+    //      (/dashboard → /admin/dashboard), puis via isAdmin ici.
+    //
+    //   3. Fail-open naturel : si profile == null (erreur de lecture
+    //      DB, timeout), on NE REDIRIGE PAS. Mieux vaut laisser passer
+    //      2s à tort que bloquer des payeurs sur un glitch réseau.
+    //      Inverse du webhook (fail-closed car il écrit) — ici on gère
+    //      l'accès de gens, donc fail-open.
+    const gateEnabled = process.env.WHOP_GATE_ENABLED === 'true'
+
+    if (gateEnabled && pathname.startsWith('/dashboard')) {
+      const bypassEmails = (process.env.WHOP_BYPASS_EMAILS ?? '')
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+      const email = profile?.email?.toLowerCase()
+      const isBypassed =
+        isAdmin ||
+        (email !== undefined && bypassEmails.includes(email))
+
+      if (
+        !isBypassed &&
+        profile &&
+        profile.whop_subscription_active !== true
+      ) {
+        return NextResponse.redirect(
+          new URL('/whop/subscription-required', request.url)
+        )
+      }
     }
   }
 
