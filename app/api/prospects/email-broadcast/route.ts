@@ -79,7 +79,13 @@ export async function POST(request: Request) {
 
     const recipients = (prospects || []) as Recipient[]
     const excluded = recipientIds.length - recipients.length
-    const origin = new URL(request.url).origin
+    // Domaine CANONIQUE forcé (www.alphatradingpro-coaching.fr côté Vercel
+    // d'après le curl -I). Sans ça, request.url retourne l'origine courante
+    // (parfois sans www selon où l'admin appelle), le lien de désabonnement
+    // dans l'email fait un 307 www→redirect, et Outlook strict casse le lien.
+    // Fallback sur request.url en dev local (NEXT_PUBLIC_SITE_URL absent).
+    const origin =
+      process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
     let sent = 0
     let errors = 0
     const failedEmails: Array<{ email: string; reason: string }> = []
