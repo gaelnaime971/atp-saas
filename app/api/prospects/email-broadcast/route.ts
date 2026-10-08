@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
+import { buildUnsubscribeUrl } from '@/lib/email/unsubscribe'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,12 +68,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Maximum 1000 destinataires par broadcast' }, { status: 400 })
     }
 
+    // Filtre serveur : exclut les désabonnés même s'ils sont dans recipientIds
+    // (ex: l'admin a sélectionné "tous" sans voir le flag). Non-négociable
+    // pour la conformité RGPD + la réputation Resend.
     const { data: prospects } = await supabase
       .from('prospects')
       .select('id, email, prenom, nom')
       .in('id', recipientIds)
+      .eq('unsubscribed', false)
 
     const recipients = (prospects || []) as Recipient[]
+    const excluded = recipientIds.length - recipients.length
+    const origin = new URL(request.url).origin
     let sent = 0
     let errors = 0
     const failedEmails: Array<{ email: string; reason: string }> = []
@@ -80,16 +87,24 @@ export async function POST(request: Request) {
     // Send sequentially with throttle to respect Resend free tier (2 req/sec)
     for (let i = 0; i < recipients.length; i++) {
       const r = recipients[i]
+      const unsubUrl = buildUnsubscribeUrl(r.email, origin)
       const personalizedHtml = html
         .replace(/\{\{prenom\}\}/gi, r.prenom || '')
         .replace(/\{\{nom\}\}/gi, r.nom || '')
         .replace(/\{\{email\}\}/gi, r.email)
+        .replace(/\{\{unsubscribe_url\}\}/gi, unsubUrl)
       try {
         const res = await resend.emails.send({
           from,
           to: r.email,
           subject,
           html: personalizedHtml,
+          headers: {
+            // RFC 8058 — Gmail/Outlook afficheront un bouton "Se désabonner" natif.
+            // Un clic = POST sur /api/unsubscribe = désinscription immédiate.
+            'List-Unsubscribe': `<${unsubUrl}>, <mailto:unsubscribe@alphatradingpro-coaching.fr>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
         })
         if (res.error) {
           errors++
@@ -125,7 +140,13 @@ export async function POST(request: Request) {
       test_mode: false,
     })
 
-    return NextResponse.json({ success: true, sent, errors, total: recipients.length })
+    return NextResponse.json({
+      success: true,
+      sent,
+      errors,
+      total: recipients.length,
+      excluded, // nb de désabonnés silencieusement filtrés
+    })
   } catch (err) {
     console.error('Broadcast error:', err)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
