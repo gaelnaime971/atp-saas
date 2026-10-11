@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Card from '@/components/ui/Card'
 import PageHeader from '@/components/ui/PageHeader'
+import { useRoutineForToday } from '@/lib/hooks/useRoutineForToday'
 
 /* ─── Constants ─── */
 
@@ -49,34 +49,6 @@ const SECTIONS: SectionDef[] = [
 
 const ALL_CHECKS = SECTIONS.flatMap(s => s.checks)
 const TOTAL_CHECKABLE = ALL_CHECKS.length // 13 checklist items
-
-/* ─── Data shape ─── */
-
-interface PreMarketData {
-  confidence: number
-  mentalNote: string
-  bias: string
-  news: string
-  support: string
-  resistance: string
-  pivot: string
-  checks: Record<string, boolean>
-}
-
-const emptyData: PreMarketData = {
-  confidence: 5,
-  mentalNote: '',
-  bias: '',
-  news: '',
-  support: '',
-  resistance: '',
-  pivot: '',
-  checks: Object.fromEntries(ALL_CHECKS.map(c => [c, false])),
-}
-
-function todayKey() {
-  return `premarket_${new Date().toISOString().split('T')[0]}`
-}
 
 /* ─── CSS keyframes injected once ─── */
 
@@ -159,26 +131,7 @@ function SectionCard({ section, done, total, children }: { section: SectionDef; 
 }
 
 export default function PreMarket() {
-  const [data, setData] = useState<PreMarketData>(emptyData)
-  const [mounted, setMounted] = useState(false)
-
-  // Load
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(todayKey())
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        // Merge with empty to handle schema changes
-        setData({ ...emptyData, ...parsed, checks: { ...emptyData.checks, ...(parsed.checks ?? {}) } })
-      }
-    } catch { /* ignore */ }
-    setMounted(true)
-  }, [])
-
-  // Persist
-  useEffect(() => {
-    if (mounted) localStorage.setItem(todayKey(), JSON.stringify(data))
-  }, [data, mounted])
+  const { data, update, reset, saveStatus, loading } = useRoutineForToday(ALL_CHECKS)
 
   /* ─── Derived state ─── */
 
@@ -190,6 +143,11 @@ export default function PreMarket() {
   const progress = Math.round((completedCount / totalTrackable) * 100)
   const isReady = progress === 100
 
+  // confidence est null en base jusqu'à interaction — l'UI continue
+  // d'afficher "5/10" visuellement pour cohérence avec le slider.
+  const confidenceDisplay = data.confidence ?? 5
+  const confidenceSet = data.confidence !== null
+
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   function sectionProgress(section: SectionDef): number {
@@ -197,11 +155,7 @@ export default function PreMarket() {
   }
 
   function toggleCheck(label: string) {
-    setData(d => ({ ...d, checks: { ...d.checks, [label]: !d.checks[label] } }))
-  }
-
-  function reset() {
-    setData(emptyData)
+    update({ checks: { [label]: !data.checks[label] } })
   }
 
   /* ─── Shared styles ─── */
@@ -222,7 +176,7 @@ export default function PreMarket() {
 
   /* ─── Render ─── */
 
-  if (!mounted) return null
+  if (loading) return null
 
   return (
     <>
@@ -236,6 +190,24 @@ export default function PreMarket() {
           subtitle={<span style={{ textTransform: 'capitalize' }}>{today}</span>}
           actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Indicateur de sauvegarde discret — fade naturel 2s après 'saved' */}
+            {saveStatus !== 'idle' && (
+              <span style={{
+                fontSize: 11,
+                fontWeight: 500,
+                color: saveStatus === 'error' ? 'var(--color-loss)'
+                  : saveStatus === 'saved' ? 'var(--color-accent)'
+                  : 'var(--color-text-3)',
+                opacity: saveStatus === 'saving' ? 0.6 : 1,
+                transition: 'opacity 0.3s ease',
+                fontFamily: 'var(--font-data)',
+                letterSpacing: '0.02em',
+              }}>
+                {saveStatus === 'saving' && '• Enregistrement…'}
+                {saveStatus === 'saved' && '✓ Enregistré'}
+                {saveStatus === 'error' && '⚠ Erreur de sauvegarde'}
+              </span>
+            )}
             {isReady && (
               <span style={{
                 padding: '8px 18px',
@@ -336,9 +308,12 @@ export default function PreMarket() {
                       fontSize: 18,
                       fontWeight: 800,
                       fontFamily: 'monospace',
-                      color: data.confidence >= 7 ? 'var(--color-profit)' : data.confidence >= 4 ? 'var(--color-warn)' : 'var(--color-loss)',
+                      color: !confidenceSet ? 'var(--color-text-3)'
+                        : confidenceDisplay >= 7 ? 'var(--color-profit)'
+                        : confidenceDisplay >= 4 ? 'var(--color-warn)'
+                        : 'var(--color-loss)',
                     }}>
-                      {data.confidence}/10
+                      {confidenceSet ? `${confidenceDisplay}/10` : '— / 10'}
                     </span>
                   </div>
                   {/* Visual scale */}
@@ -346,26 +321,31 @@ export default function PreMarket() {
                     {Array.from({ length: 10 }, (_, i) => (
                       <div
                         key={i}
-                        onClick={() => setData(d => ({ ...d, confidence: i + 1 }))}
+                        onClick={() => update({ confidence: i + 1 })}
                         style={{
                           flex: 1,
                           height: 8,
                           borderRadius: 4,
                           cursor: 'pointer',
                           transition: 'all 0.2s',
-                          background: i < data.confidence
-                            ? data.confidence >= 7 ? 'var(--color-profit)' : data.confidence >= 4 ? 'var(--color-warn)' : 'var(--color-loss)'
-                            : 'rgba(255,255,255,0.06)',
+                          background: !confidenceSet
+                            ? 'rgba(255,255,255,0.06)'
+                            : i < confidenceDisplay
+                              ? confidenceDisplay >= 7 ? 'var(--color-profit)' : confidenceDisplay >= 4 ? 'var(--color-warn)' : 'var(--color-loss)'
+                              : 'rgba(255,255,255,0.06)',
                         }}
                       />
                     ))}
                   </div>
                   <input
-                    type="range" min={1} max={10} value={data.confidence}
-                    onChange={e => setData(d => ({ ...d, confidence: Number(e.target.value) }))}
+                    type="range" min={1} max={10} value={confidenceDisplay}
+                    onChange={e => update({ confidence: Number(e.target.value) })}
                     style={{
                       width: '100%',
-                      accentColor: data.confidence >= 7 ? 'var(--color-profit)' : data.confidence >= 4 ? 'var(--color-warn)' : 'var(--color-loss)',
+                      accentColor: !confidenceSet ? 'var(--color-text-3)'
+                        : confidenceDisplay >= 7 ? 'var(--color-profit)'
+                        : confidenceDisplay >= 4 ? 'var(--color-warn)'
+                        : 'var(--color-loss)',
                     }}
                   />
                 </div>
@@ -375,7 +355,7 @@ export default function PreMarket() {
                   <label style={{ fontSize: 12, fontWeight: 600, color: '#8892a4', display: 'block', marginBottom: 6 }}>Note mentale</label>
                   <textarea
                     value={data.mentalNote}
-                    onChange={e => setData(d => ({ ...d, mentalNote: e.target.value }))}
+                    onChange={e => update({ mentalNote: e.target.value })}
                     placeholder="Aujourd'hui je me concentre sur..."
                     rows={3}
                     style={{ ...inputStyle, resize: 'vertical' }}
@@ -399,7 +379,7 @@ export default function PreMarket() {
                     <input
                       type="number"
                       value={data.support}
-                      onChange={e => setData(d => ({ ...d, support: e.target.value }))}
+                      onChange={e => update({ support: e.target.value })}
                       placeholder="5420"
                       style={{ ...inputStyle, textAlign: 'center', borderColor: data.support ? 'rgba(var(--color-profit-rgb), 0.3)' : undefined }}
                     />
@@ -409,7 +389,7 @@ export default function PreMarket() {
                     <input
                       type="number"
                       value={data.resistance}
-                      onChange={e => setData(d => ({ ...d, resistance: e.target.value }))}
+                      onChange={e => update({ resistance: e.target.value })}
                       placeholder="5480"
                       style={{ ...inputStyle, textAlign: 'center', borderColor: data.resistance ? 'rgba(var(--color-loss-rgb), 0.3)' : undefined }}
                     />
@@ -439,7 +419,7 @@ export default function PreMarket() {
                       return (
                         <button
                           key={b.id}
-                          onClick={() => setData(d => ({ ...d, bias: b.id }))}
+                          onClick={() => update({ bias: b.id })}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -466,7 +446,7 @@ export default function PreMarket() {
                   <label style={{ fontSize: 12, fontWeight: 600, color: '#8892a4', display: 'block', marginBottom: 6 }}>News éco du jour</label>
                   <textarea
                     value={data.news}
-                    onChange={e => setData(d => ({ ...d, news: e.target.value }))}
+                    onChange={e => update({ news: e.target.value })}
                     placeholder="CPI 14h30, FOMC minutes 20h..."
                     rows={3}
                     style={{ ...inputStyle, resize: 'vertical' }}
