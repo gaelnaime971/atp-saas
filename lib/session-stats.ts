@@ -44,10 +44,10 @@ export function groupByDay(sessions: TradingSession[]): Map<string, DayStats> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ATP Score — 6 axes normalisés 0-100 + score global
+// ATP Score — 7 axes normalisés 0-100 + score global
 // ═══════════════════════════════════════════════════════════════
 
-export type AtpAxisKey = 'winrate' | 'pf' | 'plan' | 'consistency' | 'rr' | 'risk'
+export type AtpAxisKey = 'winrate' | 'pf' | 'plan' | 'consistency' | 'rr' | 'risk' | 'prep'
 
 export interface AtpAxis {
   key: AtpAxisKey
@@ -62,7 +62,7 @@ export interface AtpScore {
   score: number | null    // moyenne arrondie des axes valides, null si <3 valides
   label: string           // "À travailler" / "Correct" / "Solide" / "Excellent" / "Insuffisant"
   tone: AtpTone
-  axes: AtpAxis[]         // toujours 6, ordre stable
+  axes: AtpAxis[]         // toujours 7, ordre stable
   validCount: number      // combien d'axes ont un score non-null
 }
 
@@ -87,15 +87,23 @@ function num(v: unknown): number | null {
 }
 
 /**
- * Calcule l'ATP Score à partir des sessions brutes. Aucune dépendance
- * à une analyse IA — le score est toujours disponible dès que le
- * trader a suffisamment de sessions (minimum 3 axes valides).
+ * Calcule l'ATP Score à partir des sessions brutes + routines pré-marché
+ * optionnelles. Aucune dépendance à une analyse IA — le score est toujours
+ * disponible dès que le trader a suffisamment de sessions (minimum 3 axes
+ * valides).
  *
  * Formules détaillées dans les commentaires de chaque axe. Chaque axe
  * qui n'a pas assez de data renvoie null (exclu de la moyenne globale
  * mais rendu comme "N/A" dans le radar).
+ *
+ * Paramètre `routines` OPTIONNEL : si absent, l'axe "Préparation" (axe 7)
+ * renvoie null et les 6 autres restent intacts. Rétrocompatible avec les
+ * anciens call-sites qui passaient juste sessions.
  */
-export function atpScore(sessions: TradingSession[]): AtpScore {
+export function atpScore(
+  sessions: TradingSession[],
+  routines?: readonly { routine_date: string }[],
+): AtpScore {
   // ─── Axe 1 : Win Rate (linéaire direct 0-100) ───
   const wins = sessions.filter(s => s.result === 'win').length
   const wrScore = sessions.length > 0 ? (wins / sessions.length) * 100 : null
@@ -159,6 +167,47 @@ export function atpScore(sessions: TradingSession[]): AtpScore {
     }
   }
 
+  // ─── Axe 7 : Préparation (régularité pure de la routine pré-marché) ───
+  // Règle "C intelligent" : on ne note QUE l'existence d'une routine à la
+  // date d'un jour de trading, JAMAIS son contenu (checks, confidence, bias).
+  // → Impossible de tricher pour gratter du score en remplissant bidon.
+  // → Impossible d'être pénalisé pour avoir déclaré "stressé" / "pas reposé".
+  // L'état réel déclaré ne sert qu'à l'IA Mental et aux corrélations futures.
+  //
+  // Fenêtre : 30 derniers jours calendaires (fixe, pas 30 jours de trading).
+  // Seuil : minimum 3 jours de trading dans la fenêtre, sinon axe = null
+  // (même seuil que les 5 autres axes qui ont besoin de 3 données).
+  //
+  // Distincte de l'axe "Régularité" (consistency) qui mesure la constance
+  // des RÉSULTATS pnl, pas de la préparation.
+  let prepScore: number | null = null
+  if (routines) {
+    const windowStartMs = Date.now() - 30 * 86400000
+    const tradingDaysInWindow = new Set(
+      sessions
+        .filter(s => {
+          const t = new Date(s.session_date + 'T00:00:00').getTime()
+          return t >= windowStartMs
+        })
+        .map(s => s.session_date),
+    )
+    const routineDatesInWindow = new Set(
+      routines
+        .filter(r => {
+          const t = new Date(r.routine_date + 'T00:00:00').getTime()
+          return t >= windowStartMs
+        })
+        .map(r => r.routine_date),
+    )
+    if (tradingDaysInWindow.size >= 3) {
+      let covered = 0
+      for (const d of tradingDaysInWindow) {
+        if (routineDatesInWindow.has(d)) covered++
+      }
+      prepScore = (covered / tradingDaysInWindow.size) * 100
+    }
+  }
+
   const axes: AtpAxis[] = [
     { key: 'winrate',     label: 'Win Rate',        score: wrScore != null ? Math.round(wrScore) : null,
       explain: 'Pourcentage de sessions gagnantes. Direct : 55% WR → 55/100.' },
@@ -172,6 +221,8 @@ export function atpScore(sessions: TradingSession[]): AtpScore {
       explain: 'Moyenne de tes r_value. R=1 → 50, R=2 → 75, R≥3 → 100. Minimum 3 sessions avec r_value renseigné.' },
     { key: 'risk',        label: 'Gestion risque',  score: riskScore != null ? Math.round(riskScore) : null,
       explain: 'Cohérence de la taille de tes pertes : plus grosse perte ÷ perte moyenne. Ratio proche de 1 → 100. Minimum 3 pertes.' },
+    { key: 'prep',        label: 'Préparation',     score: prepScore != null ? Math.round(prepScore) : null,
+      explain: '% des jours de trading (30 derniers) où tu as enregistré ta routine pré-marché. Note la régularité, jamais le contenu — ton honnêteté ne baisse jamais ton score.' },
   ]
 
   const valid = axes.filter(a => a.score !== null)

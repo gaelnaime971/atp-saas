@@ -170,3 +170,24 @@ export interface Message {
   is_read: boolean
   created_at: string
 }
+
+/**
+ * Routine pré-marché quotidienne — persistée dans pre_market_routines.
+ * 1 row max par user par jour (UNIQUE user_id+routine_date).
+ * Alimente l'axe ATP Score "Préparation" (régularité pure, ignore le
+ * contenu pour préserver l'honnêteté) et le payload IA Mental (étape 5).
+ */
+export interface PreMarketRoutine {
+  id: string
+  user_id: string
+  routine_date: string              // YYYY-MM-DD
+  confidence: number | null         // 1-10, NULL si jamais touché
+  mental_note: string | null
+  bias: string | null               // 'haussier' | 'baissier' | 'neutre' | 'none' | ''
+  news: string | null
+  support: string | null
+  resistance: string | null
+  checks: Record<string, boolean>
+  created_at: string
+  updated_at: string
+}

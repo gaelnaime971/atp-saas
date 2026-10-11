@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import Card from '@/components/ui/Card'
 import { atpScore, type AtpTone } from '@/lib/session-stats'
-import type { TradingSession } from '@/lib/types'
+import type { TradingSession, PreMarketRoutine } from '@/lib/types'
 import { prefersReducedMotion } from '@/lib/motion'
 
 /**
@@ -37,6 +37,12 @@ import { prefersReducedMotion } from '@/lib/motion'
 
 interface Props {
   sessions: TradingSession[]
+  /**
+   * Routines pré-marché pour alimenter l'axe "Préparation" (axe 7).
+   * Prop optionnelle — si absente, l'axe renvoie null et le radar
+   * affiche les 6 autres axes normalement (rétrocompat).
+   */
+  routines?: PreMarketRoutine[]
   /**
    * Sous-titre de périmètre — ex "Profil global · tous comptes" ou
    * "Profil global · 2 comptes". Affiché sous le titre pour éviter la
@@ -64,8 +70,8 @@ const TONE_RGB: Record<AtpTone, string> = {
   neutral: '148, 148, 148',
 }
 
-export default function AtpScoreCard({ sessions, scopeLabel }: Props) {
-  const result = useMemo(() => atpScore(sessions), [sessions])
+export default function AtpScoreCard({ sessions, routines, scopeLabel }: Props) {
+  const result = useMemo(() => atpScore(sessions, routines), [sessions, routines])
 
   // Data pour Recharts : chaque axe null → 0 sur le radar (visuellement
   // honnête : "pas mesuré = zéro contribution") + suffixe "·" sur le

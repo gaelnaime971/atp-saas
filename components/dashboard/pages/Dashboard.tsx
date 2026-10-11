@@ -22,7 +22,7 @@ import BestWorstDay from '@/components/dashboard/BestWorstDay'
 import InstrumentDonut from '@/components/dashboard/InstrumentDonut'
 import AtpScoreCard from '@/components/dashboard/AtpScoreCard'
 import PropFirmSummary from '@/components/dashboard/PropFirmSummary'
-import type { TradingSession, Profile, TraderAccount } from '@/lib/types'
+import type { TradingSession, Profile, TraderAccount, PreMarketRoutine } from '@/lib/types'
 import WelcomeModal from '@/components/dashboard/WelcomeModal'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Filler, Tooltip } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
@@ -65,6 +65,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
   const [loading, setLoading] = useState(true)
   const [showWelcome, setShowWelcome] = useState(false)
   const [accounts, setAccounts] = useState<TraderAccount[]>([])
+  const [routines, setRoutines] = useState<PreMarketRoutine[]>([])
   const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set(['all']))
   const supabase = createClient()
 
@@ -115,6 +116,21 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
 
         const sess = (allSessions ?? []) as TradingSession[]
         setSessions(sess)
+
+        // Fetch routines pré-marché des 30 derniers jours — alimente
+        // l'axe ATP Score "Préparation". On ne sélectionne que
+        // routine_date pour l'instant (axe = régularité pure, binaire
+        // existe/pas), les autres champs seront lus server-side par
+        // la route IA Mental (étape 5).
+        const since = new Date(Date.now() - 30 * 86400000)
+          .toISOString()
+          .slice(0, 10)
+        const { data: routineRows } = await supabase
+          .from('pre_market_routines')
+          .select('id, user_id, routine_date, confidence, mental_note, bias, news, support, resistance, checks, created_at, updated_at')
+          .eq('user_id', user.id)
+          .gte('routine_date', since)
+        setRoutines((routineRows ?? []) as PreMarketRoutine[])
       } catch (err) {
         console.error('Dashboard fetch error:', err)
       } finally {
@@ -434,7 +450,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
       <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'stretch' }}>
         <CalendarPnl sessions={filtered} totalCapital={totalCapital} />
         <div style={{ display: 'grid', gridTemplateRows: 'auto auto 1fr', gap: 16, minWidth: 0, minHeight: 0 }}>
-          <AtpScoreCard sessions={filtered} scopeLabel={scopeLabelAtp} />
+          <AtpScoreCard sessions={filtered} routines={routines} scopeLabel={scopeLabelAtp} />
           <PropFirmSummary
             accounts={scopedAccounts}
             totalCapital={totalCapital}
