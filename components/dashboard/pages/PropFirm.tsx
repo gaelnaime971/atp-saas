@@ -47,6 +47,7 @@ export default function PropFirm() {
   const [payoutAccountId, setPayoutAccountId] = useState('')
   const [payoutNotes, setPayoutNotes] = useState('')
   const [savingPayout, setSavingPayout] = useState(false)
+  const [payoutError, setPayoutError] = useState<string | null>(null)
 
   // P&L per account computed from sessions
   const [accountPnl, setAccountPnl] = useState<Record<string, number>>({})
@@ -124,50 +125,90 @@ export default function PropFirm() {
       account_type: formType,
     }
 
-    if (editingId) {
-      await supabase.from('trader_accounts').update(payload).eq('id', editingId)
-    } else {
-      await supabase.from('trader_accounts').insert(payload)
-    }
+    const { error } = editingId
+      ? await supabase.from('trader_accounts').update(payload).eq('id', editingId)
+      : await supabase.from('trader_accounts').insert(payload)
 
     setSaving(false)
+    if (error) {
+      // Erreur serveur (RLS, contrainte, réseau) — affichée en banner formulaire
+      setErrors(prev => ({ ...prev, _general: `Enregistrement impossible — ${error.message}` }))
+      return
+    }
+
     resetForm()
     await fetchData(userId)
   }
 
   async function deleteAccount(id: string) {
     if (!userId || !confirm('Supprimer ce compte ?')) return
-    await supabase.from('trader_accounts').delete().eq('id', id)
+    const { error } = await supabase.from('trader_accounts').delete().eq('id', id)
+    if (error) {
+      alert(`Suppression impossible — ${error.message}`)
+      return
+    }
     await fetchData(userId)
   }
 
   async function updateAccountStatus(id: string, status: string) {
-    await supabase.from('trader_accounts').update({ account_status: status }).eq('id', id)
+    // Optimistic update d'abord pour UX réactive, rollback si erreur serveur
+    const prevSnapshot = accounts
     setAccounts(prev => prev.map(a => a.id === id ? { ...a, account_status: status } as TraderAccount : a))
+    const { error } = await supabase.from('trader_accounts').update({ account_status: status }).eq('id', id)
+    if (error) {
+      setAccounts(prevSnapshot)
+      alert(`Mise à jour impossible — ${error.message}`)
+    }
   }
 
   async function handleAddPayout() {
-    if (!userId || !payoutAmount) return
+    setPayoutError(null)
+
+    if (!userId) {
+      setPayoutError('Session invalide, reconnecte-toi.')
+      return
+    }
+    // Validation stricte amount (accepte virgule française 500,50)
+    const amountN = Number((payoutAmount ?? '').toString().trim().replace(',', '.'))
+    if (!isFinite(amountN) || amountN <= 0) {
+      setPayoutError('Montant invalide — entre un nombre positif (ex: 500 ou 500.50).')
+      return
+    }
+    if (!payoutDate) {
+      setPayoutError('Date de payout requise.')
+      return
+    }
+
     setSavingPayout(true)
     const acc = accounts.find(a => a.id === payoutAccountId)
-    await supabase.from('payouts').insert({
+    const { error } = await supabase.from('payouts').insert({
       trader_id: userId,
-      amount: parseFloat(payoutAmount),
+      amount: amountN,
       payout_date: payoutDate,
       propfirm_name: acc?.propfirm_name ?? null,
       account_label: acc?.label ?? null,
       notes: payoutNotes || null,
     })
+    setSavingPayout(false)
+    if (error) {
+      setPayoutError(`Enregistrement impossible — ${error.message}`)
+      return
+    }
+
     await fetchData(userId)
     setPayoutAmount('')
     setPayoutNotes('')
     setShowPayoutForm(false)
-    setSavingPayout(false)
   }
 
   async function deletePayout(id: string) {
     if (!userId) return
-    await supabase.from('payouts').delete().eq('id', id)
+    if (!confirm('Supprimer ce payout ?')) return
+    const { error } = await supabase.from('payouts').delete().eq('id', id)
+    if (error) {
+      alert(`Suppression impossible — ${error.message}`)
+      return
+    }
     await fetchData(userId)
   }
 
@@ -292,6 +333,16 @@ export default function PropFirm() {
               ))}
             </div>
           </div>
+          {errors._general && (
+            <div style={{
+              fontSize: 12, color: 'var(--color-loss)',
+              background: 'rgba(var(--color-loss-rgb), 0.08)',
+              border: '1px solid rgba(var(--color-loss-rgb), 0.2)',
+              borderRadius: 8, padding: '8px 10px', marginBottom: 10,
+            }}>
+              {errors._general}
+            </div>
+          )}
           <div className="flex gap-2">
             <button
               onClick={handleSave} disabled={saving || !formCapital}
@@ -437,7 +488,7 @@ export default function PropFirm() {
             )}
           </div>
           <button
-            onClick={() => { setShowPayoutForm(!showPayoutForm); if (accounts.length > 0) setPayoutAccountId(accounts[0].id) }}
+            onClick={() => { setShowPayoutForm(!showPayoutForm); setPayoutError(null); if (accounts.length > 0) setPayoutAccountId(accounts[0].id) }}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-[var(--color-accent-strong)]"
             style={{ background: 'var(--color-accent)', color: 'var(--color-surface-0)' }}
           >
@@ -450,6 +501,16 @@ export default function PropFirm() {
 
         {showPayoutForm && (
           <div className="rounded-xl p-4 mb-5 border" style={{ background: 'var(--bg3)', borderColor: 'rgba(var(--color-profit-rgb), 0.15)' }}>
+            {payoutError && (
+              <div style={{
+                fontSize: 12, color: 'var(--color-loss)',
+                background: 'rgba(var(--color-loss-rgb), 0.08)',
+                border: '1px solid rgba(var(--color-loss-rgb), 0.2)',
+                borderRadius: 8, padding: '8px 10px', marginBottom: 10,
+              }}>
+                {payoutError}
+              </div>
+            )}
             <div className="grid grid-cols-4 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>Montant ($)</label>
@@ -473,7 +534,7 @@ export default function PropFirm() {
               </div>
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="secondary" size="sm" onClick={() => setShowPayoutForm(false)}>Annuler</Button>
+              <Button variant="secondary" size="sm" onClick={() => { setShowPayoutForm(false); setPayoutError(null) }}>Annuler</Button>
               <Button size="sm" onClick={handleAddPayout} loading={savingPayout} disabled={!payoutAmount || accounts.length === 0}>Ajouter</Button>
             </div>
           </div>
