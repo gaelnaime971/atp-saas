@@ -25,6 +25,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+export type BilanSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
+const SAVED_FADE_MS = 2000
+
 // ═════════════════════════════════════════════════════════════════════
 // Types (exportés)
 // ═════════════════════════════════════════════════════════════════════
@@ -119,68 +123,101 @@ function stateToUpdate(s: BilanState) {
 export function useBilan() {
   const [bilan, setBilan] = useState<BilanState | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [saveStatus, setSaveStatus] = useState<BilanSaveStatus>('idle')
 
   const supabase = createClient()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedFadeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   /** Dernier snapshot en attente d'écriture — permet au flush de toujours écrire l'état courant. */
   const pendingRef = useRef<BilanState | null>(null)
   const mountedRef = useRef(true)
 
   // ─── Flush write (utilisé par debounce + completeBilan) ──────────────
+  // Erreurs plus silencieuses : destructurées + loggées + remontées via
+  // saveStatus pour l'indicateur UI. Un trader ne doit JAMAIS croire que
+  // ses réponses sont sauvegardées alors qu'elles ne le sont pas.
   const flush = useCallback(async () => {
     const s = pendingRef.current
     if (!s?.id) return
-    try {
-      await supabase
-        .from('bilans')
-        .update(stateToUpdate(s))
-        .eq('id', s.id)
-    } catch {
-      /* silent — le HTML garde son localStorage en fallback */
+    setSaveStatus('saving')
+    if (savedFadeRef.current) clearTimeout(savedFadeRef.current)
+    const { error } = await supabase
+      .from('bilans')
+      .update(stateToUpdate(s))
+      .eq('id', s.id)
+    if (error) {
+      console.warn('[useBilan] flush error:', error)
+      setSaveStatus('error')
+      return
     }
+    setSaveStatus('saved')
+    savedFadeRef.current = setTimeout(() => setSaveStatus('idle'), SAVED_FADE_MS)
   }, [supabase])
 
-  // ─── Load initial : bilan en cours OU création automatique ───────────
+  // ─── Load initial : bilan le plus récent OU création automatique ─────
+  //
+  // Fix du bug "plan 12 semaines disparait au reload" : on charge le bilan
+  // le plus récent du user, COMPLÉTÉ OU NON. L'iframe HTML distingue les
+  // 2 modes via S.completedAt (ligne 2592-2596 de bilan_trader_2027.html) :
+  //   - completedAt null → mode questionnaire (71 questions)
+  //   - completedAt posé → mode results (plan 12 semaines + checklists)
+  //
+  // Reset explicite reste disponible via resetBilan (bouton "Recommencer").
   useEffect(() => {
     mountedRef.current = true
     ;(async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user || !mountedRef.current) {
-          if (mountedRef.current) setIsLoading(false)
-          return
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) {
+        console.warn('[useBilan] auth error:', authError)
+        if (mountedRef.current) {
+          setSaveStatus('error')
+          setIsLoading(false)
         }
-
-        // Bilan en cours = plus récent avec completed_at IS NULL.
-        const { data: existing } = await supabase
-          .from('bilans')
-          .select('*')
-          .eq('user_id', user.id)
-          .is('completed_at', null)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        if (!mountedRef.current) return
-
-        if (existing) {
-          setBilan(rowToState(existing as unknown as BilanRow))
-        } else {
-          // Aucun bilan en cours → création automatique d'un vide.
-          const { data: created } = await supabase
-            .from('bilans')
-            .insert({ user_id: user.id })
-            .select('*')
-            .single()
-          if (mountedRef.current && created) {
-            setBilan(rowToState(created as unknown as BilanRow))
-          }
-        }
-      } catch {
-        /* silent */
-      } finally {
-        if (mountedRef.current) setIsLoading(false)
+        return
       }
+      if (!user || !mountedRef.current) {
+        if (mountedRef.current) setIsLoading(false)
+        return
+      }
+
+      // Bilan le plus récent (completé OU non) — le filtre completed_at IS NULL
+      // précédent cachait le plan 12 semaines au reload d'un bilan complété.
+      const { data: existing, error: selectError } = await supabase
+        .from('bilans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (!mountedRef.current) return
+
+      if (selectError) {
+        console.warn('[useBilan] load select error:', selectError)
+        setSaveStatus('error')
+        setIsLoading(false)
+        return
+      }
+
+      if (existing) {
+        setBilan(rowToState(existing as unknown as BilanRow))
+        setIsLoading(false)
+        return
+      }
+
+      // Aucun bilan → création automatique d'un vide
+      const { data: created, error: insertError } = await supabase
+        .from('bilans')
+        .insert({ user_id: user.id })
+        .select('*')
+        .single()
+      if (insertError) {
+        console.warn('[useBilan] load insert error:', insertError)
+        setSaveStatus('error')
+      } else if (mountedRef.current && created) {
+        setBilan(rowToState(created as unknown as BilanRow))
+      }
+      if (mountedRef.current) setIsLoading(false)
     })()
 
     return () => {
@@ -188,6 +225,10 @@ export function useBilan() {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current)
         debounceRef.current = null
+      }
+      if (savedFadeRef.current) {
+        clearTimeout(savedFadeRef.current)
+        savedFadeRef.current = null
       }
     }
   }, [supabase])
@@ -229,30 +270,39 @@ export function useBilan() {
       clearTimeout(debounceRef.current)
       debounceRef.current = null
     }
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      console.warn('[useBilan] reset auth error:', authError)
+      setSaveStatus('error')
+      return
+    }
 
-      // Si l'utilisateur reset SANS avoir complété, on supprime son brouillon
-      // pour éviter la pollution DB (bilans vides orphelins). Si complété,
-      // on le laisse pour l'historique.
-      if (bilan?.id && !bilan.completed_at) {
-        await supabase.from('bilans').delete().eq('id', bilan.id)
+    // Brouillon non complété = supprimé (évite pollution DB), complété = archivé
+    if (bilan?.id && !bilan.completed_at) {
+      const { error: delError } = await supabase.from('bilans').delete().eq('id', bilan.id)
+      if (delError) {
+        console.warn('[useBilan] reset delete error:', delError)
+        setSaveStatus('error')
+        return
       }
+    }
 
-      const { data: created } = await supabase
-        .from('bilans')
-        .insert({ user_id: user.id })
-        .select('*')
-        .single()
+    const { data: created, error: insertError } = await supabase
+      .from('bilans')
+      .insert({ user_id: user.id })
+      .select('*')
+      .single()
+    if (insertError) {
+      console.warn('[useBilan] reset insert error:', insertError)
+      setSaveStatus('error')
+      return
+    }
 
-      if (mountedRef.current && created) {
-        setBilan(rowToState(created as unknown as BilanRow))
-      }
-    } catch {
-      /* silent */
+    if (mountedRef.current && created) {
+      setBilan(rowToState(created as unknown as BilanRow))
+      setSaveStatus('idle')
     }
   }, [supabase, bilan])
 
-  return { bilan, isLoading, saveBilan, completeBilan, resetBilan }
+  return { bilan, isLoading, saveStatus, saveBilan, completeBilan, resetBilan }
 }

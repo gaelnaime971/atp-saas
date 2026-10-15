@@ -87,7 +87,7 @@ function countAnswers(answers: Record<number, Record<number, number>> | undefine
 // ─────────────────────────────────────────────────────────────────────
 
 export default function BilanPage() {
-  const { bilan, isLoading, saveBilan, resetBilan } = useBilan()
+  const { bilan, isLoading, saveStatus, saveBilan, resetBilan } = useBilan()
   const iframeRef = useRef<HTMLIFrameElement>(null)
   /** Empêche de re-émettre BILAN_LOAD à chaque render — remis à false après reset. */
   const hasLoadedRef = useRef(false)
@@ -169,27 +169,49 @@ export default function BilanPage() {
           </span>
         }
         actions={
-          isCompleted ? (
-            <button
-              type="button"
-              onClick={handleReset}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-accent)',
-                color: 'var(--color-surface-0)',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: 700,
-                transition: 'background var(--motion-fast, 120ms) var(--motion-ease-out, ease-out)',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-accent-strong)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-accent)' }}
-            >
-              Nouveau bilan 2027
-            </button>
-          ) : undefined
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {saveStatus !== 'idle' && (
+              <span style={{
+                fontSize: 11,
+                fontWeight: 500,
+                fontFamily: 'var(--font-data)',
+                letterSpacing: '0.02em',
+                color: saveStatus === 'error' ? 'var(--color-loss)'
+                  : saveStatus === 'saved' ? 'var(--color-accent)'
+                  : 'var(--color-text-3)',
+                opacity: saveStatus === 'saving' ? 0.6 : 1,
+                transition: 'opacity 0.3s ease',
+                // L'erreur reste permanente (pas de fade) tant que la sauvegarde
+                // n'est pas rétablie — un trader ne doit JAMAIS croire que c'est
+                // sauvé alors que ça ne l'est pas.
+              }}>
+                {saveStatus === 'saving' && '• Enregistrement…'}
+                {saveStatus === 'saved' && '✓ Enregistré'}
+                {saveStatus === 'error' && '⚠ Sauvegarde impossible — tes réponses ne sont PAS enregistrées'}
+              </span>
+            )}
+            {isCompleted && (
+              <button
+                type="button"
+                onClick={handleReset}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-accent)',
+                  color: 'var(--color-surface-0)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  transition: 'background var(--motion-fast, 120ms) var(--motion-ease-out, ease-out)',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-accent-strong)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-accent)' }}
+              >
+                Nouveau bilan 2027
+              </button>
+            )}
+          </div>
         }
       />
 
