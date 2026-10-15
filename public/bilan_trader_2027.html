@@ -1925,7 +1925,7 @@ const PRIACTIONS=[
  'Cette semaine : fixer ton heure de coucher et programmer 3 séances de sport dans ton agenda.',
 ];
 
-let S={screen:'intro',ct:0,profile:{},hz:8,ans:{},res:null};
+let S={screen:'intro',ct:0,profile:{},hz:8,ans:{},res:null,completedAt:null,checks:{}};
 
 function goTo(sc){
  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -2038,7 +2038,8 @@ function nextT(){
   const pt=document.getElementById('qptext');pt.style.color='var(--danger)';
   setTimeout(()=>pt.style.color='',2500);return;
  }
- if(idx<TH.length-1)goToTheme(idx+1);else calcResults();
+ if(idx<TH.length-1)goToTheme(idx+1);
+ else{calcResults();save();}
 }
 
 /* ============================
@@ -2494,6 +2495,7 @@ function togAct(pi,wi,ai){
  const key=`${pi}-${wi}-${ai}`;
  const ck=document.getElementById(`ac${pi}-${wi}-${ai}`);
  const tx=document.getElementById(`at${pi}-${wi}-${ai}`);
+ if(!ck)return;
  const done=ck.classList.toggle('done');ck.textContent=done?'✓':'';tx.classList.toggle('done',done);
  if(!S.checks)S.checks={};
  S.checks[key]=done;
@@ -2538,7 +2540,14 @@ function save(){
  // Sync avec le parent React (Supabase) si embarqué en iframe.
  // Silencieux si standalone (window.parent === window).
  if(window.parent!==window){
-  try{window.parent.postMessage({type:'BILAN_STATE',payload:S},'*');}catch(e){}
+  try{
+   // JSON.parse(JSON.stringify()) strip toute fonction du payload — fix
+   // DataCloneError causé par S.res.arch.c (prédicat (scores)=>bool des
+   // ARCHETYPES). Le mapping React ne lit que arch.n (string), pas arch.c,
+   // zéro régression. Même strip appliqué par localStorage.setItem.
+   const safePayload=JSON.parse(JSON.stringify(S));
+   window.parent.postMessage({type:'BILAN_STATE',payload:safePayload},'*');
+  }catch(e){}
  }
 }
 
@@ -2572,18 +2581,6 @@ window.addEventListener('message',function(e){
  // Restore horizon
  var hbtn=document.querySelector('[data-w="'+S.hz+'"]');
  if(hbtn&&typeof selH==='function')selH(S.hz,hbtn);
- // Restore cases plan cochées (needs .ac / .at éléments — présents seulement
- // après goTo('results') qui rend le plan. Le try/catch reste silencieux si absent).
- try{
-  Object.keys(S.checks||{}).forEach(function(key){
-   if(!S.checks[key])return;
-   var parts=key.split('-'),pi=parts[0],wi=parts[1],ai=parts[2];
-   var ck=document.getElementById('ac'+pi+'-'+wi+'-'+ai);
-   var tx=document.getElementById('at'+pi+'-'+wi+'-'+ai);
-   if(ck){ck.classList.add('done');ck.textContent='✓';}
-   if(tx)tx.classList.add('done');
-  });
- }catch(e){}
  // Update progression (barre + label + %)
  if(typeof updGP==='function')updGP();
  // Si bilan complété, recalcule S.res depuis S.ans et va sur results.
@@ -2594,6 +2591,24 @@ window.addEventListener('message',function(e){
   try{calcResults();}catch(err){}
   S.completedAt=origCompletedAt;
   if(typeof goTo==='function')goTo('results');
+  // Restore cases plan cochées APRÈS calcResults — les éléments DOM
+  // ac/at viennent d'être créés par innerHTML du plan. Faire ça AVANT
+  // calcResults ne marche pas (cases pas encore rendues → classList.add
+  // skipped silencieusement).
+  try{
+   Object.keys(S.checks||{}).forEach(function(key){
+    if(!S.checks[key])return;
+    var parts=key.split('-'),pi=parts[0],wi=parts[1],ai=parts[2];
+    var ck=document.getElementById('ac'+pi+'-'+wi+'-'+ai);
+    var tx=document.getElementById('at'+pi+'-'+wi+'-'+ai);
+    if(ck){ck.classList.add('done');ck.textContent='✓';}
+    if(tx)tx.classList.add('done');
+   });
+   // Compteurs "X/Y actions" par phase à jour avec les coches restaurées
+   if(S.res&&S.res.plan&&typeof updPhProg==='function'){
+    S.res.plan.forEach(function(_,pi){updPhProg(pi);});
+   }
+  }catch(e){}
  }
 });
 function tryLoad(){
