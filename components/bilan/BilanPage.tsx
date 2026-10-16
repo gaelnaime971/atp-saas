@@ -22,7 +22,13 @@ import PageHeader from '@/components/ui/PageHeader'
 import Badge from '@/components/ui/Badge'
 import { useBilan, type BilanState } from '@/lib/bilan/useBilan'
 
-const IFRAME_SRC = '/bilan_trader_2027.html'
+// Cache-busting : query param ?v=<short SHA> change à chaque deploy Vercel
+// → force le navigateur à refetch l'iframe quand le HTML est modifié,
+// même si l'ancienne version est en cache (navigateur/proxy/CDN).
+// En dev local, BUILD_ID = 'dev' (constant) — reload manuel avec DevTools
+// "Disable cache" quand tu modifies bilan_trader_2027.html.
+const BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID ?? 'dev'
+const IFRAME_SRC = `/bilan_trader_2027.html?v=${BUILD_ID}`
 const TOTAL_QUESTIONS = 71
 
 // ─────────────────────────────────────────────────────────────────────

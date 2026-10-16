@@ -4,6 +4,14 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: '/Users/gaelnaime/DEV/ATP Dashboard coaching',
   },
+  // Expose le SHA du commit au client pour cache-busting d'assets statiques
+  // (ex: query param ?v=BUILD_ID sur l'iframe du Bilan Trader 2027).
+  // Vercel fournit VERCEL_GIT_COMMIT_SHA au build ; en dev local on tombe
+  // sur 'dev' et le fichier HTML est servi tel quel sans invalidation.
+  env: {
+    NEXT_PUBLIC_BUILD_ID:
+      process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'dev',
+  },
   // URL propre → fichier statique versionné par année dans /public.
   // Prochaine édition : dupliquer le fichier en koh-samui-2028.html et
   // basculer la destination ici — l'URL /koh-samui reste stable.
