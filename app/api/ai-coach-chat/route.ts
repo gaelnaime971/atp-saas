@@ -2,7 +2,7 @@ import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { computeStats, compactContext, type SessionRow, type BacktestRow, type MetricsOptions } from '@/lib/trader-metrics'
-import { checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -37,9 +37,10 @@ export async function POST(request: Request) {
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'No API key' }, { status: 500 })
 
+    const auth = await requireUser()
+    if (auth instanceof Response) return auth
+    const { user, isAdmin } = auth
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = (await request.json()) as RequestBody
     if (!Array.isArray(body.messages) || body.messages.length === 0) {
@@ -59,10 +60,7 @@ export async function POST(request: Request) {
       direction: null,
     }
 
-    // Fetch sessions, backtests ET profile.role en parallèle — le role est
-    // utilisé par le quota IA pour bypasser la limite si admin. Pas de
-    // round-trip supplémentaire : s'exécute en concurrence avec sessions.
-    const [sessionsRes, backtestsRes, profileRes] = await Promise.all([
+    const [sessionsRes, backtestsRes] = await Promise.all([
       supabase.from('trading_sessions')
         .select('session_date,pnl,result,trades_count,instrument,setup,notes')
         .eq('trader_id', user.id)
@@ -74,12 +72,10 @@ export async function POST(request: Request) {
         .eq('trader_id', user.id)
         .gte('date', opts.from)
         .lte('date', opts.to),
-      supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
     ])
 
     const sessions = (sessionsRes.data || []) as SessionRow[]
     const backtests = (backtestsRes.data || []) as BacktestRow[]
-    const isAdmin = (profileRes.data as { role?: string } | null)?.role === 'admin'
     const stats = computeStats(sessions, backtests, opts)
     const context = compactContext(stats)
 

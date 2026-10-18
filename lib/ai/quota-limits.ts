@@ -60,7 +60,7 @@ export const AI_LIMITS: Record<AiFeature, AiFeatureConfig> = {
   'asset-synthesis': { daily: 20,  label: 'Synthèse actif',          triggeredBy: 'trader', route: '/api/asset-analysis/synthesis',  failMode: 'open' },
   'asset-technical': { daily: 20,  label: 'Analyse technique actif', triggeredBy: 'trader', route: '/api/asset-analysis/technical',  failMode: 'open' },
   'stock-verdict':   { daily: 50,  label: 'Verdict stock',           triggeredBy: 'trader', route: '/api/stock/ai-verdict',          failMode: 'open' },
-  'stock-ai-scores': { daily: 200, label: 'Scores stocks',           triggeredBy: 'trader (cache partagé)', route: '/api/stock/ai-scores', failMode: 'open' },
+  'stock-ai-scores': { daily: 200, label: 'Scores stocks',           triggeredBy: 'trader', route: '/api/stock/ai-scores',           failMode: 'open' },
   'jarvis':          { daily: 20,  label: 'Jarvis vocal',            triggeredBy: 'trader', route: '/api/jarvis/chat',               failMode: 'closed' },
 }
 

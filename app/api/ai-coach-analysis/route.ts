@@ -2,7 +2,7 @@ import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { computeStats, compactContext, type SessionRow, type BacktestRow, type MetricsOptions } from '@/lib/trader-metrics'
-import { checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
 
 interface RequestBody {
   from?: string
@@ -132,9 +132,10 @@ export async function POST(request: Request) {
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'No API key' }, { status: 500 })
 
+    const auth = await requireUser()
+    if (auth instanceof Response) return auth
+    const { user, isAdmin } = auth
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Defaults to last 60 days for backwards compatibility
     let body: RequestBody = {}
@@ -163,8 +164,7 @@ export async function POST(request: Request) {
     routinesFromDate.setDate(routinesFromDate.getDate() - 30)
     const routinesFrom = routinesFromDate.toISOString().slice(0, 10)
 
-    // 4e query parallèle : profile.role pour le bypass admin du quota IA.
-    const [sessionsRes, backtestsRes, routinesRes, profileRes] = await Promise.all([
+    const [sessionsRes, backtestsRes, routinesRes] = await Promise.all([
       supabase.from('trading_sessions')
         .select('session_date,pnl,result,trades_count,instrument,setup,notes')
         .eq('trader_id', user.id)
@@ -181,13 +181,11 @@ export async function POST(request: Request) {
         .eq('user_id', user.id)
         .gte('routine_date', routinesFrom)
         .order('routine_date', { ascending: false }),
-      supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
     ])
 
     const sessions = (sessionsRes.data || []) as SessionRow[]
     const backtests = (backtestsRes.data || []) as BacktestRow[]
     const routines = (routinesRes.data || []) as RoutineRow[]
-    const isAdmin = (profileRes.data as { role?: string } | null)?.role === 'admin'
 
     if (sessions.length === 0 && backtests.length === 0) {
       return NextResponse.json({ error: 'Pas assez de données sur cette période. Enregistre au moins 1 session ou 1 backtest dans la plage choisie.' }, { status: 400 })

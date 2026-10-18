@@ -34,6 +34,7 @@
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createSsrClient } from '@/lib/supabase/server'
 import {
   AI_LIMITS,
   getQuotaMode,
@@ -41,6 +42,43 @@ import {
   GROQ_WHISPER_USD_PER_HOUR,
   type AiFeature,
 } from './quota-limits'
+
+// ─── requireUser : auth + role en 1 helper ──────────────────────────────
+
+export interface AuthedUser {
+  user: { id: string }
+  isAdmin: boolean
+}
+
+/**
+ * À appeler en TÊTE de toute route AI qui doit être protégée.
+ * Retourne { user, isAdmin } si authentifié, ou une Response 401 prête
+ * à retourner directement par le caller.
+ *
+ * Pattern dans une route :
+ *     const auth = await requireUser()
+ *     if (auth instanceof Response) return auth
+ *     const { user, isAdmin } = auth
+ *     // ...
+ *
+ * Fait 1 fetch Supabase auth (getUser) + 1 SELECT profiles(role). Dans les
+ * routes qui ont déjà un Promise.all avec sessions/backtests, le coût est
+ * négligeable (SELECT role tourne en parallèle sur la connexion dédiée).
+ */
+export async function requireUser(): Promise<AuthedUser | Response> {
+  const supabase = await createSsrClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  const isAdmin = (profile as { role?: string } | null)?.role === 'admin'
+  return { user: { id: user.id }, isAdmin }
+}
 
 export interface QuotaResult {
   allowed: boolean

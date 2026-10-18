@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
 
 interface ScoresBody {
   symbol: string
@@ -96,11 +97,18 @@ Règle : si une donnée est N/A sur un axe entier, mets le score à null (pas 0)
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireUser()
+    if (auth instanceof Response) return auth
+    const { user, isAdmin } = auth
+
     const body = (await request.json()) as ScoresBody
     if (!body?.symbol) return NextResponse.json({ error: 'symbol requis' }, { status: 400 })
 
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'GROQ_API_KEY non configurée' }, { status: 500 })
+
+    const quota = await checkAndCount(user.id, 'stock-ai-scores', isAdmin)
+    if (!quota.allowed) return buildQuotaResponse(quota)
 
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -127,6 +135,17 @@ export async function POST(request: Request) {
       scores = m ? JSON.parse(m[0]) : null
     }
     if (!scores) return NextResponse.json({ error: 'Réponse IA invalide', raw }, { status: 500 })
+
+    const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+    if (usage) {
+      after(async () => {
+        await recordUsage(user.id, 'stock-ai-scores', {
+          tokensIn: usage.prompt_tokens ?? 0,
+          tokensOut: usage.completion_tokens ?? 0,
+          model: GROQ_TEXT_MODEL,
+        })
+      })
+    }
 
     return NextResponse.json({ scores })
   } catch (err) {

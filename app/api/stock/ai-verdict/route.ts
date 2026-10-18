@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
 
 interface VerdictBody {
   symbol: string
@@ -117,11 +118,18 @@ Sois factuel, cite des chiffres précis quand tu as les données. N'invente RIEN
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireUser()
+    if (auth instanceof Response) return auth
+    const { user, isAdmin } = auth
+
     const body = (await request.json()) as VerdictBody
     if (!body?.symbol) return NextResponse.json({ error: 'symbol requis' }, { status: 400 })
 
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'GROQ_API_KEY non configurée' }, { status: 500 })
+
+    const quota = await checkAndCount(user.id, 'stock-verdict', isAdmin)
+    if (!quota.allowed) return buildQuotaResponse(quota)
 
     const prompt = buildPrompt(body)
 
@@ -159,6 +167,17 @@ export async function POST(request: Request) {
       verdict = match ? JSON.parse(match[0]) : null
     }
     if (!verdict) return NextResponse.json({ error: 'Réponse IA invalide', raw }, { status: 500 })
+
+    const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+    if (usage) {
+      after(async () => {
+        await recordUsage(user.id, 'stock-verdict', {
+          tokensIn: usage.prompt_tokens ?? 0,
+          tokensOut: usage.completion_tokens ?? 0,
+          model: GROQ_TEXT_MODEL,
+        })
+      })
+    }
 
     return NextResponse.json({ verdict })
   } catch (err) {

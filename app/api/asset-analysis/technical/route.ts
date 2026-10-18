@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { GROQ_VISION_MODEL } from '@/lib/ai/groq-models'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
 
 interface ChartInput {
   slot: 'HTF' | 'MTF' | 'LTF' | 'Exec'
@@ -83,6 +84,10 @@ Ne mets QUE les TFs présents (ne mets pas Exec si pas uploadé). Si une donnée
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireUser()
+    if (auth instanceof Response) return auth
+    const { user, isAdmin } = auth
+
     const body = (await request.json()) as Body
     if (!body?.symbol || !Array.isArray(body.charts) || body.charts.length === 0) {
       return NextResponse.json({ error: 'symbol et charts requis' }, { status: 400 })
@@ -90,6 +95,9 @@ export async function POST(request: Request) {
 
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'GROQ_API_KEY non configurée' }, { status: 500 })
+
+    const quota = await checkAndCount(user.id, 'asset-technical', isAdmin)
+    if (!quota.allowed) return buildQuotaResponse(quota)
 
     // Build multi-modal content: text + each chart image
     const userContent: Array<Record<string, unknown>> = [{ type: 'text', text: buildPrompt(body) }]
@@ -125,6 +133,17 @@ export async function POST(request: Request) {
       result = m ? JSON.parse(m[0]) : null
     }
     if (!result) return NextResponse.json({ error: 'Réponse IA invalide', raw }, { status: 500 })
+
+    const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+    if (usage) {
+      after(async () => {
+        await recordUsage(user.id, 'asset-technical', {
+          tokensIn: usage.prompt_tokens ?? 0,
+          tokensOut: usage.completion_tokens ?? 0,
+          model: GROQ_VISION_MODEL,
+        })
+      })
+    }
 
     return NextResponse.json({ technical: result })
   } catch (err) {
