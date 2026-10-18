@@ -2,159 +2,260 @@
 -- Script de test — à exécuter dans Supabase Dashboard → SQL Editor
 -- APRÈS avoir run la migration 20261019000001_ai_usage.sql.
 -- ============================================================================
+-- 100% SQL pur (pas de \echo ni autre commande psql). L'affichage final est
+-- UNE table avec 4 colonnes : test, attendu, obtenu, ok (true/false).
+--
 -- Prouve les 4 invariants du socle quota IA :
---   (a) limite 2 → allowed true, true, false — le compteur reste à 2
+--   (a) limite 2 → allowed true, true, false, false — compteur reste à 2
 --   (b) admin → toujours allowed, compteur incrémenté sans plafond
 --   (c) authenticated et anon → EXECUTE refusé sur les 2 fonctions
---   (d) usage_date = date de Paris (pas UTC)
+--   (d) usage_date = date Europe/Paris (pas UTC)
+--   (e) record_ai_tokens applique bien tokens + cost sur la row du jour
 --
--- Le test crée un user bidon dans auth.users puis clean à la fin — il peut
--- être relancé sans effet de bord.
+-- Feature de test '__test_a__' et '__test_b__' isolées de tout usage réel.
+-- Nettoyage avant ET à la fin : zéro trace dans ai_usage à la sortie.
+-- Relançable sans effet de bord.
 -- ============================================================================
 
--- ───────────────────────────────────────────────────────────────────────────
--- Setup : un user de test (bypasse les contraintes profiles via RLS off)
--- ───────────────────────────────────────────────────────────────────────────
-begin;
+-- ─── 0. Table temporaire pour collecter tous les résultats ─────────────────
+drop table if exists pg_temp.test_results;
+create temp table test_results (
+  seq     int generated always as identity,
+  test    text,
+  attendu text,
+  obtenu  text,
+  ok      boolean
+);
 
--- Génère un uuid stable pour tout le test
+-- ─── 1. Clean résidus d'un run précédent (idempotence) ────────────────────
+delete from public.ai_usage where feature like '__test_%';
+
+-- ─── 2. Tests (a), (b), (d), (e) via un bloc PL/pgSQL ─────────────────────
 do $$
 declare
-  v_user_id uuid := '00000000-0000-0000-0000-000000000001';
+  v_user_id uuid;
+  v_r       record;
+  v_calls   int;
+  v_tok_in  bigint;
+  v_tok_out bigint;
+  v_cost    numeric;
+  v_stored  date;
+  v_paris   date := public._atp_today_paris();
 begin
-  -- Clean résidus d'un test précédent
-  delete from public.ai_usage where user_id = v_user_id;
+  -- Setup : prendre le 1er user existant (évite de créer un profile de test
+  -- qui violerait la FK vers auth.users). Si zéro user → test impossible.
+  select id into v_user_id
+    from public.profiles
+    order by created_at asc
+    limit 1;
 
-  -- Un profile minimal (role trader) — bypasse la FK auth.users via la cascade
-  insert into public.profiles (id, email, role, full_name)
-    values (v_user_id, '[email protected]', 'trader', 'Test')
-    on conflict (id) do update set role = 'trader';
+  if v_user_id is null then
+    insert into test_results (test, attendu, obtenu, ok)
+      values ('setup', 'au moins 1 user dans profiles',
+              'aucun user — test impossible', false);
+    return;
+  end if;
+
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('setup', 'user de test trouvé',
+            'user_id=' || v_user_id::text, true);
+
+  -- ─── (a) Limite 2 : true, true, false, false, compteur plafonne ─────
+  select * into v_r
+    from public.check_and_count_ai_usage(v_user_id, '__test_a__', 2, false, true);
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(a1) limite 2, appel 1',
+            'allowed=true, calls_today=1',
+            format('allowed=%s, calls_today=%s', v_r.allowed, v_r.calls_today),
+            v_r.allowed = true and v_r.calls_today = 1);
+
+  select * into v_r
+    from public.check_and_count_ai_usage(v_user_id, '__test_a__', 2, false, true);
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(a2) limite 2, appel 2',
+            'allowed=true, calls_today=2',
+            format('allowed=%s, calls_today=%s', v_r.allowed, v_r.calls_today),
+            v_r.allowed = true and v_r.calls_today = 2);
+
+  select * into v_r
+    from public.check_and_count_ai_usage(v_user_id, '__test_a__', 2, false, true);
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(a3) limite 2, appel 3 (dépasse)',
+            'allowed=false, calls_today=2 (plafonné)',
+            format('allowed=%s, calls_today=%s', v_r.allowed, v_r.calls_today),
+            v_r.allowed = false and v_r.calls_today = 2);
+
+  select * into v_r
+    from public.check_and_count_ai_usage(v_user_id, '__test_a__', 2, false, true);
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(a4) limite 2, appel 4 (toujours plafonné)',
+            'allowed=false, calls_today=2',
+            format('allowed=%s, calls_today=%s', v_r.allowed, v_r.calls_today),
+            v_r.allowed = false and v_r.calls_today = 2);
+
+  select calls_count into v_calls
+    from public.ai_usage
+    where user_id = v_user_id and feature = '__test_a__' and usage_date = v_paris;
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(a5) row ai_usage finale',
+            'calls_count=2',
+            format('calls_count=%s', v_calls),
+            v_calls = 2);
+
+  -- ─── (b) Admin : toujours allowed, limite dépassée sans problème ────
+  select * into v_r
+    from public.check_and_count_ai_usage(v_user_id, '__test_b__', 1, true, true);
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(b1) admin appel 1 (limite serveur=1)',
+            'allowed=true, calls_today=1, calls_limit=-1',
+            format('allowed=%s, calls_today=%s, calls_limit=%s',
+                   v_r.allowed, v_r.calls_today, v_r.calls_limit),
+            v_r.allowed = true and v_r.calls_today = 1 and v_r.calls_limit = -1);
+
+  select * into v_r
+    from public.check_and_count_ai_usage(v_user_id, '__test_b__', 1, true, true);
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(b2) admin appel 2 (dépasse limite non-admin)',
+            'allowed=true, calls_today=2, calls_limit=-1',
+            format('allowed=%s, calls_today=%s, calls_limit=%s',
+                   v_r.allowed, v_r.calls_today, v_r.calls_limit),
+            v_r.allowed = true and v_r.calls_today = 2 and v_r.calls_limit = -1);
+
+  select * into v_r
+    from public.check_and_count_ai_usage(v_user_id, '__test_b__', 1, true, true);
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(b3) admin appel 3',
+            'allowed=true, calls_today=3, calls_limit=-1',
+            format('allowed=%s, calls_today=%s, calls_limit=%s',
+                   v_r.allowed, v_r.calls_today, v_r.calls_limit),
+            v_r.allowed = true and v_r.calls_today = 3 and v_r.calls_limit = -1);
+
+  -- ─── (e) record_ai_tokens ajoute tokens + cost sur la row du jour ───
+  perform public.record_ai_tokens(v_user_id, '__test_a__',
+                                  1500, 400, 0.000525::numeric, 0, 0);
+  select tokens_in, tokens_out, cost_usd
+    into v_tok_in, v_tok_out, v_cost
+    from public.ai_usage
+    where user_id = v_user_id and feature = '__test_a__' and usage_date = v_paris;
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(e) record_ai_tokens applique tokens + cost',
+            'tokens_in=1500, tokens_out=400, cost_usd=0.000525',
+            format('tokens_in=%s, tokens_out=%s, cost_usd=%s',
+                   v_tok_in, v_tok_out, v_cost),
+            v_tok_in = 1500 and v_tok_out = 400 and v_cost = 0.000525);
+
+  -- ─── (d) usage_date = date Paris, pas UTC ───────────────────────────
+  select usage_date into v_stored
+    from public.ai_usage
+    where user_id = v_user_id and feature = '__test_a__' and usage_date = v_paris;
+  insert into test_results (test, attendu, obtenu, ok)
+    values ('(d) usage_date = date Paris',
+            format('usage_date = %s (Paris)', v_paris),
+            format('stored=%s, paris=%s, utc=%s',
+                   v_stored, v_paris, (now() at time zone 'UTC')::date),
+            v_stored = v_paris);
+
+  -- ─── Cleanup final : zéro trace dans ai_usage ───────────────────────
+  delete from public.ai_usage
+    where user_id = v_user_id and feature like '__test_%';
 end $$;
 
--- ───────────────────────────────────────────────────────────────────────────
--- (a) Limite 2 : true, true, false — compteur plafonne à 2
--- ───────────────────────────────────────────────────────────────────────────
-\echo '=== TEST (a) — limite 2 : true, true, false, compteur reste à 2 ==='
+-- ─── 3. Tests (c) permissions — indépendants du user, pur has_function_privilege
+insert into test_results (test, attendu, obtenu, ok) values
+  ('(c1) check_and_count_ai_usage.EXECUTE pour authenticated',
+   'false',
+   has_function_privilege('authenticated',
+     'public.check_and_count_ai_usage(uuid, text, int, boolean, boolean)',
+     'EXECUTE')::text,
+   has_function_privilege('authenticated',
+     'public.check_and_count_ai_usage(uuid, text, int, boolean, boolean)',
+     'EXECUTE') = false),
 
-select 'appel 1' as step, * from public.check_and_count_ai_usage(
-  '00000000-0000-0000-0000-000000000001'::uuid, 'test-feature-a', 2, false, true
-);
--- Attendu : allowed=true, calls_today=1, calls_limit=2
+  ('(c2) check_and_count_ai_usage.EXECUTE pour anon',
+   'false',
+   has_function_privilege('anon',
+     'public.check_and_count_ai_usage(uuid, text, int, boolean, boolean)',
+     'EXECUTE')::text,
+   has_function_privilege('anon',
+     'public.check_and_count_ai_usage(uuid, text, int, boolean, boolean)',
+     'EXECUTE') = false),
 
-select 'appel 2' as step, * from public.check_and_count_ai_usage(
-  '00000000-0000-0000-0000-000000000001'::uuid, 'test-feature-a', 2, false, true
-);
--- Attendu : allowed=true, calls_today=2, calls_limit=2
+  ('(c3) check_and_count_ai_usage.EXECUTE pour service_role',
+   'true',
+   has_function_privilege('service_role',
+     'public.check_and_count_ai_usage(uuid, text, int, boolean, boolean)',
+     'EXECUTE')::text,
+   has_function_privilege('service_role',
+     'public.check_and_count_ai_usage(uuid, text, int, boolean, boolean)',
+     'EXECUTE') = true),
 
-select 'appel 3' as step, * from public.check_and_count_ai_usage(
-  '00000000-0000-0000-0000-000000000001'::uuid, 'test-feature-a', 2, false, true
-);
--- Attendu : allowed=false, calls_today=2 (plafonné), calls_limit=2
+  ('(c4) record_ai_tokens.EXECUTE pour authenticated',
+   'false',
+   has_function_privilege('authenticated',
+     'public.record_ai_tokens(uuid, text, int, int, numeric, int, int)',
+     'EXECUTE')::text,
+   has_function_privilege('authenticated',
+     'public.record_ai_tokens(uuid, text, int, int, numeric, int, int)',
+     'EXECUTE') = false),
 
-select 'appel 4' as step, * from public.check_and_count_ai_usage(
-  '00000000-0000-0000-0000-000000000001'::uuid, 'test-feature-a', 2, false, true
-);
--- Attendu : allowed=false, calls_today=2 (toujours plafonné)
+  ('(c5) record_ai_tokens.EXECUTE pour anon',
+   'false',
+   has_function_privilege('anon',
+     'public.record_ai_tokens(uuid, text, int, int, numeric, int, int)',
+     'EXECUTE')::text,
+   has_function_privilege('anon',
+     'public.record_ai_tokens(uuid, text, int, int, numeric, int, int)',
+     'EXECUTE') = false),
 
-select 'row finale' as step, calls_count, usage_date
+  ('(c6) record_ai_tokens.EXECUTE pour service_role',
+   'true',
+   has_function_privilege('service_role',
+     'public.record_ai_tokens(uuid, text, int, int, numeric, int, int)',
+     'EXECUTE')::text,
+   has_function_privilege('service_role',
+     'public.record_ai_tokens(uuid, text, int, int, numeric, int, int)',
+     'EXECUTE') = true),
+
+  ('(c7) _atp_today_paris.EXECUTE pour authenticated (helper pur)',
+   'true',
+   has_function_privilege('authenticated',
+     'public._atp_today_paris()', 'EXECUTE')::text,
+   has_function_privilege('authenticated',
+     'public._atp_today_paris()', 'EXECUTE') = true),
+
+  ('(c8) _atp_today_paris.EXECUTE pour anon (helper pur)',
+   'true',
+   has_function_privilege('anon',
+     'public._atp_today_paris()', 'EXECUTE')::text,
+   has_function_privilege('anon',
+     'public._atp_today_paris()', 'EXECUTE') = true);
+
+-- ─── 4. Résumé synthèse ────────────────────────────────────────────────────
+insert into test_results (test, attendu, obtenu, ok)
+  select
+    '>>> RÉSUMÉ GLOBAL',
+    'tous les tests ok=true',
+    format('%s/%s passés', count(*) filter (where ok), count(*)),
+    count(*) filter (where ok) = count(*)
+  from test_results
+  where test not like '>>>%';
+
+-- ─── 5. Vérif anti-pollution : zéro row __test_ dans ai_usage ──────────────
+insert into test_results (test, attendu, obtenu, ok)
+  select
+    '>>> ANTI-POLLUTION ai_usage',
+    'zéro row __test_* en base',
+    format('%s rows restantes', count(*)),
+    count(*) = 0
   from public.ai_usage
-  where user_id = '00000000-0000-0000-0000-000000000001'::uuid
-    and feature = 'test-feature-a';
--- Attendu : calls_count=2, usage_date = (now() at time zone 'Europe/Paris')::date
+  where feature like '__test_%';
 
--- ───────────────────────────────────────────────────────────────────────────
--- (b) Admin : toujours allowed, compteur incrémenté sans plafond
--- ───────────────────────────────────────────────────────────────────────────
-\echo ''
-\echo '=== TEST (b) — admin : toujours true, compteur incrémenté ==='
-
-select 'admin appel 1' as step, * from public.check_and_count_ai_usage(
-  '00000000-0000-0000-0000-000000000001'::uuid, 'test-feature-b', 1, true, true
-);
--- Attendu : allowed=true, calls_today=1, calls_limit=-1 (illimité)
-
-select 'admin appel 2' as step, * from public.check_and_count_ai_usage(
-  '00000000-0000-0000-0000-000000000001'::uuid, 'test-feature-b', 1, true, true
-);
--- Attendu : allowed=true, calls_today=2, calls_limit=-1 (dépasse limite 1 mais admin)
-
-select 'admin appel 3' as step, * from public.check_and_count_ai_usage(
-  '00000000-0000-0000-0000-000000000001'::uuid, 'test-feature-b', 1, true, true
-);
--- Attendu : allowed=true, calls_today=3, calls_limit=-1
-
--- ───────────────────────────────────────────────────────────────────────────
--- (c) Permissions : authenticated/anon refusés, service_role autorisé
--- ───────────────────────────────────────────────────────────────────────────
-\echo ''
-\echo '=== TEST (c) — permissions EXECUTE sur les 2 fonctions ==='
-
+-- ─── 6. AFFICHAGE FINAL (unique SELECT que le SQL Editor rend tabulairement)
 select
-  'check_and_count_ai_usage'                                        as function_name,
-  has_function_privilege('authenticated', 'public.check_and_count_ai_usage(uuid, text, int, boolean, boolean)', 'EXECUTE') as auth_execute,
-  has_function_privilege('anon',          'public.check_and_count_ai_usage(uuid, text, int, boolean, boolean)', 'EXECUTE') as anon_execute,
-  has_function_privilege('service_role',  'public.check_and_count_ai_usage(uuid, text, int, boolean, boolean)', 'EXECUTE') as svc_execute;
--- Attendu : auth_execute=false, anon_execute=false, svc_execute=true
-
-select
-  'record_ai_tokens'                                                 as function_name,
-  has_function_privilege('authenticated', 'public.record_ai_tokens(uuid, text, int, int, numeric, int, int)', 'EXECUTE') as auth_execute,
-  has_function_privilege('anon',          'public.record_ai_tokens(uuid, text, int, int, numeric, int, int)', 'EXECUTE') as anon_execute,
-  has_function_privilege('service_role',  'public.record_ai_tokens(uuid, text, int, int, numeric, int, int)', 'EXECUTE') as svc_execute;
--- Attendu : auth_execute=false, anon_execute=false, svc_execute=true
-
--- Bonus : _atp_today_paris doit rester accessible à tous (helper pur)
-select
-  '_atp_today_paris'                                                 as function_name,
-  has_function_privilege('authenticated', 'public._atp_today_paris()', 'EXECUTE') as auth_execute,
-  has_function_privilege('anon',          'public._atp_today_paris()', 'EXECUTE') as anon_execute,
-  has_function_privilege('service_role',  'public._atp_today_paris()', 'EXECUTE') as svc_execute;
--- Attendu : les 3 à true
-
--- ───────────────────────────────────────────────────────────────────────────
--- (d) usage_date = date de Paris (pas UTC)
--- ───────────────────────────────────────────────────────────────────────────
-\echo ''
-\echo '=== TEST (d) — usage_date reflète Europe/Paris ==='
-
-select
-  usage_date                                                   as stored_date,
-  public._atp_today_paris()                                    as helper_paris,
-  (now() at time zone 'Europe/Paris')::date                    as inline_paris,
-  (now() at time zone 'UTC')::date                             as inline_utc,
-  usage_date = (now() at time zone 'Europe/Paris')::date       as matches_paris,
-  usage_date = (now() at time zone 'UTC')::date                as matches_utc
-from public.ai_usage
-where user_id = '00000000-0000-0000-0000-000000000001'::uuid
-order by usage_date desc
-limit 1;
--- Attendu :
---   matches_paris=true
---   matches_utc=true quand les 2 dates coïncident (jour), false entre 00h00
---   et 01h00/02h00 Paris où UTC est encore la veille → la différence prouve
---   que c'est bien Paris qui est stocké, pas UTC (surtout tester ce cas en
---   début de nuit si tu veux la preuve absolue).
-
--- ───────────────────────────────────────────────────────────────────────────
--- (e) Bonus : record_ai_tokens ajoute bien tokens/cost sur la row du jour
--- ───────────────────────────────────────────────────────────────────────────
-\echo ''
-\echo '=== TEST (e) BONUS — record_ai_tokens met à jour tokens + cost ==='
-
-select public.record_ai_tokens(
-  '00000000-0000-0000-0000-000000000001'::uuid,
-  'test-feature-a',
-  1500, 400, 0.000525, 0, 0
-);
-select 'après record' as step, tokens_in, tokens_out, cost_usd
-  from public.ai_usage
-  where user_id = '00000000-0000-0000-0000-000000000001'::uuid
-    and feature = 'test-feature-a';
--- Attendu : tokens_in=1500, tokens_out=400, cost_usd=0.000525
-
--- ───────────────────────────────────────────────────────────────────────────
--- Cleanup
--- ───────────────────────────────────────────────────────────────────────────
-rollback;
-\echo ''
-\echo '✓ Tests terminés. ROLLBACK → aucune row persistée dans ai_usage.'
+  seq      as "#",
+  test     as "test",
+  attendu  as "attendu",
+  obtenu   as "obtenu",
+  case when ok then '✓ OK' else '✗ FAIL' end as "résultat"
+from test_results
+order by seq;
