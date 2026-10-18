@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { computeStats, compactContext, type SessionRow, type BacktestRow, type MetricsOptions } from '@/lib/trader-metrics'
+import { checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
 
 interface RequestBody {
   from?: string
@@ -162,7 +163,8 @@ export async function POST(request: Request) {
     routinesFromDate.setDate(routinesFromDate.getDate() - 30)
     const routinesFrom = routinesFromDate.toISOString().slice(0, 10)
 
-    const [sessionsRes, backtestsRes, routinesRes] = await Promise.all([
+    // 4e query parallèle : profile.role pour le bypass admin du quota IA.
+    const [sessionsRes, backtestsRes, routinesRes, profileRes] = await Promise.all([
       supabase.from('trading_sessions')
         .select('session_date,pnl,result,trades_count,instrument,setup,notes')
         .eq('trader_id', user.id)
@@ -179,11 +181,13 @@ export async function POST(request: Request) {
         .eq('user_id', user.id)
         .gte('routine_date', routinesFrom)
         .order('routine_date', { ascending: false }),
+      supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
     ])
 
     const sessions = (sessionsRes.data || []) as SessionRow[]
     const backtests = (backtestsRes.data || []) as BacktestRow[]
     const routines = (routinesRes.data || []) as RoutineRow[]
+    const isAdmin = (profileRes.data as { role?: string } | null)?.role === 'admin'
 
     if (sessions.length === 0 && backtests.length === 0) {
       return NextResponse.json({ error: 'Pas assez de données sur cette période. Enregistre au moins 1 session ou 1 backtest dans la plage choisie.' }, { status: 400 })
@@ -272,6 +276,11 @@ Réponds UNIQUEMENT en JSON valide avec EXACTEMENT cette structure:
 Donne 3 à 5 forces, 3 à 5 faiblesses, 2 à 4 patterns, 0 à 3 alertes, 3 à 5 actions_semaine.
 IMPORTANT: réponds UNIQUEMENT le JSON, rien d'autre.`
 
+    // ─── Quota IA : check + increment atomique AVANT fetch Groq ───
+    // Comportement selon AI_QUOTA_MODE (défaut 'off' = bypass total).
+    const quota = await checkAndCount(user.id, 'coach-analysis', isAdmin)
+    if (!quota.allowed) return buildQuotaResponse(quota)
+
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -287,6 +296,18 @@ IMPORTANT: réponds UNIQUEMENT le JSON, rien d'autre.`
     if (data.error) {
       console.error('Groq error:', data.error)
       return NextResponse.json({ error: typeof data.error === 'string' ? data.error : data.error.message || 'Erreur API' }, { status: 500 })
+    }
+
+    // ─── Record usage réel APRÈS retour Groq, via after() ───
+    const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+    if (usage) {
+      after(async () => {
+        await recordUsage(user.id, 'coach-analysis', {
+          tokensIn: usage.prompt_tokens ?? 0,
+          tokensOut: usage.completion_tokens ?? 0,
+          model: GROQ_TEXT_MODEL,
+        })
+      })
     }
 
     const text = data.choices?.[0]?.message?.content || ''

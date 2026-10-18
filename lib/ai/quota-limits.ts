@@ -11,21 +11,28 @@
  * (gpt-oss-120b déprécié demain, maverick aussi) impactera davantage.
  */
 
+// Features effectivement branchées sur le socle quota (route avec auth user +
+// appel Groq réel). Les routes sans auth user (ai-chart, ai-news, asset-*,
+// stock-ai-*) seront ajoutées à l'étape 1C quand on aura décidé du modèle
+// d'identification pour ces appels publics/cache partagé. Voir le rapport
+// de branchement étape 1B pour la liste détaillée.
+//
+// Features retirées (pas d'appel Groq, aucune raison d'être dans un quota IA) :
+// - 'coach-metrics' : juste computeStats() en TS, zéro fetch IA
+// - 'asset-sentiment' : fetch Fear & Greed API
+// - 'asset-macro' : fetch Yahoo Finance
+// - 'asset-correlations' : fetch Yahoo Finance
+// - 'asset-news' : fetch forexfactory
 export type AiFeature =
   | 'coach-chat'
   | 'coach-analysis'
-  | 'coach-metrics'
-  | 'chart'
-  | 'news'
-  | 'asset-synthesis'
-  | 'asset-technical'
-  | 'asset-sentiment'
-  | 'asset-macro'
-  | 'asset-correlations'
-  | 'asset-news'
-  | 'stock-verdict'
-  | 'stock-ai-scores'
-  | 'jarvis'
+  | 'chart'               // branchement différé étape 1C (route sans auth)
+  | 'news'                // branchement différé étape 1C (route sans auth)
+  | 'asset-synthesis'     // branchement différé étape 1C (route sans auth)
+  | 'asset-technical'     // branchement différé étape 1C (route sans auth)
+  | 'stock-verdict'       // branchement différé étape 1C (route sans auth)
+  | 'stock-ai-scores'     // branchement différé étape 1C (route sans auth)
+  | 'jarvis'              // à venir — pas encore de route
 
 export interface AiFeatureConfig {
   /** Limite quotidienne (appels/jour, reset à minuit heure de Paris). */
@@ -46,20 +53,15 @@ export interface AiFeatureConfig {
 }
 
 export const AI_LIMITS: Record<AiFeature, AiFeatureConfig> = {
-  'coach-chat':         { daily: 60,  label: 'Assistant chat',          triggeredBy: 'trader', route: '/api/ai-coach-chat',           failMode: 'open' },
-  'coach-analysis':     { daily: 10,  label: 'Analyse IA complète',     triggeredBy: 'trader', route: '/api/ai-coach-analysis',       failMode: 'open' },
-  'coach-metrics':      { daily: 100, label: 'Métriques IA',            triggeredBy: 'trader', route: '/api/ai-coach-metrics',        failMode: 'open' },
-  'chart':              { daily: 30,  label: 'Analyse graphique',       triggeredBy: 'trader', route: '/api/ai-chart',                failMode: 'open' },
-  'news':               { daily: 30,  label: 'Résumé news',             triggeredBy: 'trader', route: '/api/ai-news',                 failMode: 'open' },
-  'asset-synthesis':    { daily: 20,  label: 'Synthèse actif',          triggeredBy: 'trader', route: '/api/asset-analysis/synthesis',   failMode: 'open' },
-  'asset-technical':    { daily: 20,  label: 'Analyse technique actif', triggeredBy: 'trader', route: '/api/asset-analysis/technical',   failMode: 'open' },
-  'asset-sentiment':    { daily: 20,  label: 'Sentiment actif',         triggeredBy: 'trader', route: '/api/asset-analysis/sentiment',   failMode: 'open' },
-  'asset-macro':        { daily: 20,  label: 'Macro actif',             triggeredBy: 'trader', route: '/api/asset-analysis/macro',       failMode: 'open' },
-  'asset-correlations': { daily: 20,  label: 'Corrélations actif',      triggeredBy: 'trader', route: '/api/asset-analysis/correlations', failMode: 'open' },
-  'asset-news':         { daily: 30,  label: 'News actif',              triggeredBy: 'trader', route: '/api/asset-analysis/news',        failMode: 'open' },
-  'stock-verdict':      { daily: 50,  label: 'Verdict stock',           triggeredBy: 'trader', route: '/api/stock/ai-verdict',           failMode: 'open' },
-  'stock-ai-scores':    { daily: 200, label: 'Scores stocks',           triggeredBy: 'trader (cache partagé)', route: '/api/stock/ai-scores', failMode: 'open' },
-  'jarvis':             { daily: 20,  label: 'Jarvis vocal',            triggeredBy: 'trader', route: '/api/jarvis/chat',              failMode: 'closed' },
+  'coach-chat':      { daily: 60,  label: 'Assistant chat',          triggeredBy: 'trader', route: '/api/ai-coach-chat',             failMode: 'open' },
+  'coach-analysis':  { daily: 10,  label: 'Analyse IA complète',     triggeredBy: 'trader', route: '/api/ai-coach-analysis',         failMode: 'open' },
+  'chart':           { daily: 30,  label: 'Analyse graphique',       triggeredBy: 'trader', route: '/api/ai-chart',                  failMode: 'open' },
+  'news':            { daily: 30,  label: 'Résumé news',             triggeredBy: 'trader', route: '/api/ai-news',                   failMode: 'open' },
+  'asset-synthesis': { daily: 20,  label: 'Synthèse actif',          triggeredBy: 'trader', route: '/api/asset-analysis/synthesis',  failMode: 'open' },
+  'asset-technical': { daily: 20,  label: 'Analyse technique actif', triggeredBy: 'trader', route: '/api/asset-analysis/technical',  failMode: 'open' },
+  'stock-verdict':   { daily: 50,  label: 'Verdict stock',           triggeredBy: 'trader', route: '/api/stock/ai-verdict',          failMode: 'open' },
+  'stock-ai-scores': { daily: 200, label: 'Scores stocks',           triggeredBy: 'trader (cache partagé)', route: '/api/stock/ai-scores', failMode: 'open' },
+  'jarvis':          { daily: 20,  label: 'Jarvis vocal',            triggeredBy: 'trader', route: '/api/jarvis/chat',               failMode: 'closed' },
 }
 
 /**

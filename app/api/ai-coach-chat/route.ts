@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { computeStats, compactContext, type SessionRow, type BacktestRow, type MetricsOptions } from '@/lib/trader-metrics'
+import { checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -58,7 +59,10 @@ export async function POST(request: Request) {
       direction: null,
     }
 
-    const [sessionsRes, backtestsRes] = await Promise.all([
+    // Fetch sessions, backtests ET profile.role en parallèle — le role est
+    // utilisé par le quota IA pour bypasser la limite si admin. Pas de
+    // round-trip supplémentaire : s'exécute en concurrence avec sessions.
+    const [sessionsRes, backtestsRes, profileRes] = await Promise.all([
       supabase.from('trading_sessions')
         .select('session_date,pnl,result,trades_count,instrument,setup,notes')
         .eq('trader_id', user.id)
@@ -70,10 +74,12 @@ export async function POST(request: Request) {
         .eq('trader_id', user.id)
         .gte('date', opts.from)
         .lte('date', opts.to),
+      supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
     ])
 
     const sessions = (sessionsRes.data || []) as SessionRow[]
     const backtests = (backtestsRes.data || []) as BacktestRow[]
+    const isAdmin = (profileRes.data as { role?: string } | null)?.role === 'admin'
     const stats = computeStats(sessions, backtests, opts)
     const context = compactContext(stats)
 
@@ -91,6 +97,12 @@ ${JSON.stringify(context, null, 2)}`,
       ...trimmed.map(m => ({ role: m.role, content: m.content })),
     ]
 
+    // ─── Quota IA : check + increment atomique AVANT fetch Groq ───
+    // Comportement selon AI_QUOTA_MODE (défaut 'off' = bypass total).
+    // Zéro impact tant que l'env var n'est pas posée en prod.
+    const quota = await checkAndCount(user.id, 'coach-chat', isAdmin)
+    if (!quota.allowed) return buildQuotaResponse(quota)
+
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -106,6 +118,19 @@ ${JSON.stringify(context, null, 2)}`,
     if (data.error) {
       console.error('Coach chat error:', data.error)
       return NextResponse.json({ error: typeof data.error === 'string' ? data.error : data.error.message || 'Erreur API' }, { status: 500 })
+    }
+
+    // ─── Record usage réel APRÈS retour Groq, via after() → ne rallonge
+    // pas la réponse client. Pricing calculé depuis le modèle Groq utilisé.
+    const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+    if (usage) {
+      after(async () => {
+        await recordUsage(user.id, 'coach-chat', {
+          tokensIn: usage.prompt_tokens ?? 0,
+          tokensOut: usage.completion_tokens ?? 0,
+          model: GROQ_TEXT_MODEL,
+        })
+      })
     }
 
     const reply = data.choices?.[0]?.message?.content || ''
