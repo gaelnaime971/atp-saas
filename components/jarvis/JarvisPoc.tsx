@@ -165,6 +165,23 @@ export default function JarvisPoc({ email }: { email: string }) {
     if (currentAudioUrlRef.current) URL.revokeObjectURL(currentAudioUrlRef.current)
   }, [])
 
+  // ─── Préchauffage ───
+  // À l'ouverture + toutes les 4 min tant que la page est ouverte,
+  // un ping léger qui réveille la fonction Vercel et pré-remplit les
+  // caches contexte (stats 30 min, routine 5 min, profile 30 min).
+  // Zéro appel IA, zéro consommation de quota.
+  useEffect(() => {
+    const warm = () => {
+      fetch('/api/jarvis/warm', { method: 'POST', keepalive: true })
+        .then(r => r.ok && r.json())
+        .then(d => d && console.debug('[jarvis-warm]', d))
+        .catch(() => { /* silencieux : le préchauffage est best-effort */ })
+    }
+    warm()
+    const id = setInterval(warm, 4 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
+
   // ─── Chat texte ───
   const send = async () => {
     const text = input.trim()

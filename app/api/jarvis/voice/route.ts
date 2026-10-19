@@ -112,26 +112,24 @@ export async function POST(request: Request) {
     const ctx = await prepareContext(userId, email)
     timings.context = Math.round(performance.now() - t_ctxStart)
 
-    // ─── Phase 2 : transcription Whisper + quota en parallèle ───
-    // UN échange vocal = UN appel compté. Si quota refuse, on jette
-    // la transcription (déjà payée côté Groq) et on renvoie 429.
-    const t_phase2Start = performance.now()
+    // ─── Phase 2 : quota lancé en parallèle de TOUT le chemin critique ───
+    // On n'attend sa réponse qu'avant la synthèse vocale (étape coûteuse).
+    // Si refus : on jette transcription + brain (déjà payés) et on
+    // renvoie 429 avant d'appeler ElevenLabs. En contrepartie d'une
+    // latence très inférieure quand le quota passe.
     const quotaStart = performance.now()
-    const sttStart = performance.now()
-    const quotaPromise = checkAndCount(userId, 'jarvis', ctx.isAdmin).then(q => ({ q, ms: Math.round(performance.now() - quotaStart) }))
-    const sttPromise = transcribeAudio(audio, apiKey).then(w => ({ w, ms: Math.round(performance.now() - sttStart) }))
-    const [{ q: quota, ms: quotaMs }, { w: whisper, ms: sttWallMs }] = await Promise.all([quotaPromise, sttPromise])
-    timings.quota = quotaMs
-    timings.stt = 'ms' in whisper ? whisper.ms : sttWallMs
-    timings.phase2 = Math.round(performance.now() - t_phase2Start)
+    const quotaPromise = checkAndCount(userId, 'jarvis', ctx.isAdmin)
+      .then(q => { timings.quota = Math.round(performance.now() - quotaStart); return q })
+
+    // ─── Phase 3 : transcription Whisper ───
+    const t_sttStart = performance.now()
+    const whisper = await transcribeAudio(audio, apiKey)
+    timings.stt = Math.round(performance.now() - t_sttStart)
     if ('attempts' in whisper) retries.whisper = whisper.attempts
 
-    if (!quota.allowed) {
-      console.warn('[jarvis-voice-perf]', { userId, event: 'quota_refused', timings, retries })
-      return buildQuotaResponse(quota)
-    }
-
     if ('error' in whisper) {
+      // on a quand même déclenché le quota — laisser filer en background
+      quotaPromise.catch(() => {})
       console.error('[jarvis-voice-perf]', { userId, event: 'whisper_error', status: whisper.status, timings, retries })
       return buildProviderErrorResponse({
         route: '/api/jarvis/voice', model: WHISPER_MODEL,
@@ -140,22 +138,31 @@ export async function POST(request: Request) {
     }
     const transcription = whisper.text
     if (!transcription) {
+      quotaPromise.catch(() => {})
       console.warn('[jarvis-voice-perf]', { userId, event: 'empty_transcription', timings, retries })
       return NextResponse.json({ error: 'transcription vide', timings }, { status: 422 })
     }
 
-    // ─── Phase 3 : cerveau Groq ───
+    // ─── Phase 4 : cerveau Groq ───
     const t_brainStart = performance.now()
     const messages: ChatMessage[] = [...history, { role: 'user', content: transcription }]
     const brainOutcome = await runBrain(ctx, messages, { format: 'voice', maxChars: 200 })
     timings.brain = Math.round(performance.now() - t_brainStart)
     if (!brainOutcome.ok) {
+      quotaPromise.catch(() => {})
       console.error('[jarvis-voice-perf]', { userId, event: 'brain_error', timings, retries })
       return brainOutcome.response
     }
     retries.brain = brainOutcome.attempts
 
-    // ─── Phase 4 : ElevenLabs TTS streaming ───
+    // ─── Barrière quota AVANT TTS (étape coûteuse). Si refus → jeté. ───
+    const quota = await quotaPromise
+    if (!quota.allowed) {
+      console.warn('[jarvis-voice-perf]', { userId, event: 'quota_refused_pre_tts', timings, retries })
+      return buildQuotaResponse(quota)
+    }
+
+    // ─── Phase 5 : ElevenLabs TTS streaming ───
     // pronounceForVoice uniquement sur le texte TTS, pas sur reply.
     const spokenText = pronounceForVoice(brainOutcome.reply)
     const t_ttsStart = performance.now()

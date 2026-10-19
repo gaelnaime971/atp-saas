@@ -59,14 +59,47 @@ async function loadBible(): Promise<string> {
   return bibleCache
 }
 
-const USER_CACHE_TTL_MS = 5 * 60 * 1000
-interface UserCacheEntry {
-  at: number
-  routine: RoutineRow | null
-  statsCompact: Record<string, unknown>
-  isAdmin: boolean
+// ─── Caches séparés par type de donnée ──────────────────────────────
+//
+// TTL calibrés sur la vraie fraîcheur nécessaire :
+//   - stats 30j : 30 min — n'évoluent qu'à l'enregistrement d'une
+//     nouvelle session. Trader actif = quelques sessions/jour, donc
+//     30 min couvrent largement un échange vocal.
+//   - routine du jour : 5 min — pouvant être remplie en plusieurs
+//     fois le matin, on reste réactif.
+//   - profile.role : 30 min — change extrêmement rarement.
+//
+// Caches module-level, partagés entre invocations warm d'une même
+// instance Vercel. Multi-instances : chaque instance a son cache
+// propre → si Vercel scale (plusieurs lambdas chaudes en parallèle),
+// cache miss plus fréquent qu'attendu. Pour un POC gated à 1 user,
+// Vercel garde 1 instance chaude. Si on observe des miss trop
+// fréquents en prod → prochaine étape : cache Redis Upstash ou
+// Supabase edge cache (partagé entre toutes les instances).
+const STATS_TTL_MS   = 30 * 60 * 1000
+const ROUTINE_TTL_MS =  5 * 60 * 1000
+const PROFILE_TTL_MS = 30 * 60 * 1000
+
+interface StatsCacheEntry   { at: number; data: Record<string, unknown> }
+interface RoutineCacheEntry { at: number; data: RoutineRow | null }
+interface ProfileCacheEntry { at: number; isAdmin: boolean }
+
+const statsCache   = new Map<string, StatsCacheEntry>()
+const routineCache = new Map<string, RoutineCacheEntry>()
+const profileCache = new Map<string, ProfileCacheEntry>()
+
+function freshStats(userId: string, now: number): StatsCacheEntry | null {
+  const e = statsCache.get(userId)
+  return e && (now - e.at) < STATS_TTL_MS ? e : null
 }
-const userCache = new Map<string, UserCacheEntry>()
+function freshRoutine(userId: string, now: number): RoutineCacheEntry | null {
+  const e = routineCache.get(userId)
+  return e && (now - e.at) < ROUTINE_TTL_MS ? e : null
+}
+function freshProfile(userId: string, now: number): ProfileCacheEntry | null {
+  const e = profileCache.get(userId)
+  return e && (now - e.at) < PROFILE_TTL_MS ? e : null
+}
 
 /**
  * Récupère routine + stats + isAdmin pour un user, depuis le cache
@@ -75,61 +108,78 @@ const userCache = new Map<string, UserCacheEntry>()
  * casquette (CPU seul).
  */
 export async function prepareContext(userId: string, email: string, now: Date = new Date()): Promise<JarvisContext> {
+  const nowMs = now.getTime()
   const cacheHits: string[] = []
   const todayISO = now.toISOString().slice(0, 10)
-  const from = new Date(now.getTime() - 30 * 86400_000).toISOString().slice(0, 10)
+  const from = new Date(nowMs - 30 * 86400_000).toISOString().slice(0, 10)
 
-  const cached = userCache.get(userId)
-  const cacheFresh = cached && (now.getTime() - cached.at) < USER_CACHE_TTL_MS
+  const sHit = freshStats(userId, nowMs)
+  const rHit = freshRoutine(userId, nowMs)
+  const pHit = freshProfile(userId, nowMs)
+  if (sHit) cacheHits.push('stats')
+  if (rHit) cacheHits.push('routine')
+  if (pHit) cacheHits.push('profile')
 
-  let routine: RoutineRow | null
+  // Bail-out rapide : tout en cache → zéro appel Supabase.
+  if (sHit && rHit && pHit) {
+    const bibleTxt = await loadBible()
+    return {
+      userId, email, isAdmin: pHit.isAdmin,
+      routine: rHit.data, statsCompact: sHit.data,
+      casquette: getCasquette(now),
+      bibleTxt, now, cacheHits,
+    }
+  }
+
+  // Au moins un miss → 1 round-trip Supabase. Les queries manquantes
+  // partent en parallèle ; les hits renvoient une Promise résolue
+  // immédiatement pour ne pas trouer le Promise.all.
+  const [bibleTxt, supabase] = await Promise.all([loadBible(), createSsrClient()])
+
+  const noResult = Promise.resolve({ data: null } as const)
+  const [profileRes, routineRes, sessionsRes, backtestsRes] = await Promise.all([
+    pHit ? noResult : supabase.from('profiles').select('role').eq('id', userId).maybeSingle(),
+    rHit ? noResult : supabase.from('pre_market_routines')
+      .select('confidence,mental_note,bias,news,support,resistance,checks')
+      .eq('user_id', userId)
+      .eq('routine_date', todayISO)
+      .maybeSingle(),
+    sHit ? noResult : supabase.from('trading_sessions')
+      .select('session_date,pnl,result,trades_count,instrument,setup,notes')
+      .eq('trader_id', userId)
+      .gte('session_date', from)
+      .lte('session_date', todayISO)
+      .order('session_date', { ascending: false }),
+    sHit ? noResult : supabase.from('backtests')
+      .select('date,instrument,direction,setup_types,signals,has_confluence,r_result,result,notes')
+      .eq('trader_id', userId)
+      .gte('date', from)
+      .lte('date', todayISO),
+  ])
+
+  const isAdmin: boolean = pHit
+    ? pHit.isAdmin
+    : ((profileRes.data as { role?: string } | null)?.role === 'admin')
+  const routine: RoutineRow | null = rHit
+    ? rHit.data
+    : (routineRes.data as RoutineRow | null)
   let statsCompact: Record<string, unknown>
-  let isAdmin: boolean
-  let bibleTxt: string
-
-  if (cacheFresh) {
-    cacheHits.push('routine', 'stats', 'profile')
-    bibleTxt = await loadBible()
-    routine = cached!.routine
-    statsCompact = cached!.statsCompact
-    isAdmin = cached!.isAdmin
+  if (sHit) {
+    statsCompact = sHit.data
   } else {
-    const supabase = await createSsrClient()
-    const [profileRes, routineRes, sessionsRes, backtestsRes, loadedBible] = await Promise.all([
-      supabase.from('profiles').select('role').eq('id', userId).maybeSingle(),
-      supabase.from('pre_market_routines')
-        .select('confidence,mental_note,bias,news,support,resistance,checks')
-        .eq('user_id', userId)
-        .eq('routine_date', todayISO)
-        .maybeSingle(),
-      supabase.from('trading_sessions')
-        .select('session_date,pnl,result,trades_count,instrument,setup,notes')
-        .eq('trader_id', userId)
-        .gte('session_date', from)
-        .lte('session_date', todayISO)
-        .order('session_date', { ascending: false }),
-      supabase.from('backtests')
-        .select('date,instrument,direction,setup_types,signals,has_confluence,r_result,result,notes')
-        .eq('trader_id', userId)
-        .gte('date', from)
-        .lte('date', todayISO),
-      loadBible(),
-    ])
-
-    const sessions = (sessionsRes.data || []) as SessionRow[]
-    const backtests = (backtestsRes.data || []) as BacktestRow[]
+    const sessions = (sessionsRes.data as SessionRow[] | null) || []
+    const backtests = (backtestsRes.data as BacktestRow[] | null) || []
     const opts: MetricsOptions = {
       from, to: todayISO, periodLabel: '30 derniers jours',
       instrument: null, accountId: null, direction: null,
     }
     const stats = computeStats(sessions, backtests, opts)
     statsCompact = compactContext(stats)
-    routine = routineRes.data as RoutineRow | null
-    isAdmin = (profileRes.data as { role?: string } | null)?.role === 'admin'
-    bibleTxt = loadedBible
-
-    userCache.set(userId, { at: now.getTime(), routine, statsCompact, isAdmin })
   }
+
+  if (!sHit) statsCache.set(userId, { at: nowMs, data: statsCompact })
+  if (!rHit) routineCache.set(userId, { at: nowMs, data: routine })
+  if (!pHit) profileCache.set(userId, { at: nowMs, isAdmin })
 
   return {
     userId, email, isAdmin,
