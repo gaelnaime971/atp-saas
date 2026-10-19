@@ -220,6 +220,23 @@ describe('rules-engine — trade_after_stop', () => {
     expect(r.find(x => x.key === 'trade_after_stop')!.message).toBe(RULE_MESSAGES.trade_after_stop)
   })
 
+  // RATTRAPAGE 3F-bis : non-régression du bug "annonce qui revient à
+  // chaque message". Après un stop annoncé, une question hors trading
+  // (donc tradeJustAdded=false → priorStopAnnounced=false transmis
+  // par snapshotSession dans brain.ts) NE doit PAS déclencher
+  // trade_after_stop. Ici on simule la couche brain.ts : les trades
+  // existent, mais priorStopAnnounced=false → aucune annonce fantôme.
+  it('trade_after_stop ne se déclenche PAS quand priorStopAnnounced=false (question hors trade)', () => {
+    const trades = [
+      trade({ result_r: 1, result_usd: 200 }),      // 1er trade gagnant → first_win annoncé
+      trade({ result_r: -0.5, result_usd: -100 }),  // 2e trade jamais déclaré en voix ensuite
+    ]
+    const state = computeSessionState(trades, RULES)
+    // Pas de trade frais dans ce message → brain.ts passe false
+    const r = evaluateRules(state, RULES, /* priorStopAnnounced */ false)
+    expect(keys(r)).not.toContain('trade_after_stop')
+  })
+
   it('wasAlreadyAnnounced retourne TOUJOURS false pour trade_after_stop', () => {
     const r = { key: 'trade_after_stop' as const, message: '', blocking: true }
     expect(wasAlreadyAnnounced(r, [{ key: 'trade_after_stop' }])).toBe(false)
