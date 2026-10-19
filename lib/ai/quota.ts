@@ -204,6 +204,47 @@ function buildQuotaMessage(feature: AiFeature, limit: number): string {
 }
 
 /**
+ * Lecture SEULE du compteur quota du jour pour un user — jamais
+ * d'incrément. Utilisé par /api/jarvis/warm pour afficher le
+ * compteur dès l'ouverture de la page.
+ *
+ * Comportement selon AI_QUOTA_MODE :
+ *   - 'off'                 : retourne { 0, limit } sans toucher la DB
+ *   - 'observe' / 'enforce' : SELECT seulement, retourne la valeur réelle
+ *
+ * admin : callsLimit = -1 (illimité).
+ * Erreur Supabase : log + fallback { 0, limit } (fail-open pour l'UI).
+ */
+export async function peekQuota(
+  userId: string,
+  feature: AiFeature,
+  isAdmin: boolean,
+): Promise<{ callsToday: number; callsLimit: number }> {
+  const config = AI_LIMITS[feature]
+  const limit = isAdmin ? -1 : config.daily
+
+  if (getQuotaMode() === 'off') {
+    return { callsToday: 0, callsLimit: limit }
+  }
+
+  try {
+    const supabase = serviceRoleClient()
+    const todayParis = new Date().toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' })
+    const { data } = await supabase.from('ai_usage')
+      .select('calls_count')
+      .eq('user_id', userId)
+      .eq('feature', feature)
+      .eq('usage_date', todayParis)
+      .maybeSingle()
+    const callsToday = ((data as { calls_count?: number } | null)?.calls_count) ?? 0
+    return { callsToday, callsLimit: limit }
+  } catch (err) {
+    console.error('[ai-quota] peekQuota failed', { feature, userId, err })
+    return { callsToday: 0, callsLimit: limit }
+  }
+}
+
+/**
  * Construit la Response 429 à retourner depuis une route API quand
  * checkAndCount renvoie allowed=false. Centralisé ici pour cohérence.
  */

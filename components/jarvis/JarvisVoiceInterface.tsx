@@ -1,10 +1,23 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import Image from 'next/image'
 import { readAiError, networkAiError, type AiErrorInfo } from '@/lib/ai/client-errors'
 import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
 import { JarvisOrb, type OrbState } from './JarvisOrb'
+
+/** Casquette serveur → libellé minuscules initiales pour l'UI. */
+const CASQUETTE_LABEL: Record<string, string> = {
+  'marché-fermé': 'Marché fermé',
+  'hors-session': 'Hors session',
+  'MANAGER':      'Manager',
+  'ANALYSTE':     'Analyste',
+  'TRADER':       'Trader',
+  'COMPTABLE':    'Comptable',
+}
+function labelFor(raw: string | undefined): string {
+  if (!raw) return '—'
+  return CASQUETTE_LABEL[raw] ?? raw
+}
 
 /**
  * Interface Jarvis beta (étape 3D). L'orbe lumineuse remplace l'UI
@@ -103,11 +116,19 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   }, [])
 
   // ─── Préchauffage ───
+  // Au mount + toutes les 4 min. Récupère aussi le compteur du jour
+  // (lecture sans incrément, cf. peekQuota serveur) → affiché avant
+  // même le premier échange.
   useEffect(() => {
     const warm = () => {
       fetch('/api/jarvis/warm', { method: 'POST', keepalive: true })
-        .then(r => r.ok && r.json())
-        .then(d => d && console.debug('[jarvis-warm]', d))
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d) return
+          console.debug('[jarvis-warm]', d)
+          if (typeof d.callsToday === 'number') setCurrentCallsToday(d.callsToday)
+          if (typeof d.callsLimit === 'number') setCurrentCallsLimit(d.callsLimit)
+        })
         .catch(() => { /* silencieux */ })
     }
     warm()
@@ -291,14 +312,18 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const remaining = computeRemaining(currentCallsToday, currentCallsLimit)
 
   const lastExchange = exchanges[exchanges.length - 1]
-  const casquetteText = lastExchange?.casquette || casquetteInfo?.casquette || '—'
+  const casquetteRaw = lastExchange?.casquette || casquetteInfo?.casquette
+  const casquetteText = labelFor(casquetteRaw)
   const openCue = formatOpenCue(casquetteInfo)
 
   return (
     <div className="jv-root">
       <header className="jv-header">
         <div className="jv-brand">
-          <Image src="/logo-atp-white.png" alt="ATP" width={28} height={28} priority />
+          {/* Symbol seul teinté en doré via mask-image. Si
+              /logo-atp-symbol.png n'existe pas, le span reste vide
+              mais la mise en page tient. */}
+          <span className="jv-logo" aria-label="ATP" role="img" />
           <span className="jv-brand-name">Jarvis</span>
         </div>
         <div className="jv-header-right">
@@ -330,7 +355,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           )}
         </section>
 
-        <div className={`jv-counter ${remaining.cls}`}>{remaining.label}</div>
+        <div className={`jv-counter ${remaining.cls}`}>{remaining.label || '—'}</div>
 
         {error && <div className="jv-error-wrap"><AiErrorBanner error={error} compact /></div>}
 
@@ -414,6 +439,19 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           border-bottom: 1px solid rgba(159, 176, 166, 0.12);
         }
         .jv-brand { display: flex; align-items: center; gap: 10px; }
+        .jv-logo {
+          display: inline-block;
+          width: 28px; height: 22px;
+          background-color: #C9A46A;
+          mask-image: url('/logo-atp-symbol.png');
+          mask-size: contain;
+          mask-repeat: no-repeat;
+          mask-position: center;
+          -webkit-mask-image: url('/logo-atp-symbol.png');
+          -webkit-mask-size: contain;
+          -webkit-mask-repeat: no-repeat;
+          -webkit-mask-position: center;
+        }
         .jv-brand-name {
           font-family: var(--font-oxanium), system-ui, sans-serif;
           font-weight: 600; letter-spacing: 0.08em;
@@ -424,36 +462,41 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           font-family: var(--font-oxanium), system-ui, sans-serif;
         }
         .jv-casquette {
-          font-size: 12px; font-weight: 600;
-          color: #DDB977; letter-spacing: 0.06em;
-          text-transform: uppercase;
+          font-size: 13px; font-weight: 500;
+          color: #DDB977; letter-spacing: 0.02em;
         }
         .jv-open-cue { font-size: 11px; color: #9FB0A6; }
         .jv-main {
           width: 100%; max-width: 420px;
           display: flex; flex-direction: column; align-items: center;
           padding-top: 24px;
-          gap: 16px;
+          gap: 14px;
         }
         .jv-orb-wrap { padding: 8px; }
         .jv-status {
           font-family: var(--font-oxanium), system-ui, sans-serif;
-          font-size: 14px; font-weight: 500;
-          color: #9FB0A6; letter-spacing: 0.1em;
-          text-transform: uppercase;
-          min-height: 20px;
+          font-size: 15px; font-weight: 500;
+          color: #9FB0A6; letter-spacing: 0.02em;
+          min-height: 22px;
         }
+        /* Zone fixe — le bouton Parler ne doit JAMAIS bouger quand
+           la réponse change de longueur. Hauteur = 4 lignes de reply
+           + 1 ligne d'écho + marges. */
         .jv-exchange {
-          text-align: center; width: 100%; min-height: 60px;
+          width: 100%; max-width: 340px;
+          height: 140px;
           display: flex; flex-direction: column; gap: 6px; align-items: center;
+          overflow-y: auto;
+          text-align: center;
+          padding: 0 4px;
         }
         .jv-jarvis-reply {
           font-size: 15px; line-height: 1.5; color: #E9EEEA;
-          max-width: 340px;
+          max-width: 100%;
         }
         .jv-trader-echo {
           font-size: 12px; color: #9FB0A6; font-style: italic;
-          max-width: 340px;
+          max-width: 100%;
         }
         .jv-warn { font-size: 11px; color: #F2994A; }
         .jv-counter {
@@ -570,10 +613,10 @@ function computeCasquetteLocal(): CasquetteInfo {
   const diffMin = Math.round((openUtc.getTime() - now.getTime()) / 60000)
   let casquette: string
   if (diffMin > 45) casquette = 'hors-session'
-  else if (diffMin > 30) casquette = 'Manager'
-  else if (diffMin > 0) casquette = 'Analyste'
-  else if (diffMin > -90) casquette = 'Trader'
-  else casquette = 'Comptable'
+  else if (diffMin > 30) casquette = 'MANAGER'
+  else if (diffMin > 0) casquette = 'ANALYSTE'
+  else if (diffMin > -90) casquette = 'TRADER'
+  else casquette = 'COMPTABLE'
   const parisLabel = new Intl.DateTimeFormat('fr-FR', {
     timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(openUtc)

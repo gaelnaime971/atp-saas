@@ -136,10 +136,10 @@ export function JarvisOrb({
               <g
                 className="orb-ring-flip"
                 style={{
-                  animationDuration: `${r.flipDur}s`,
+                  ['--flip-dur' as string]: `${r.flipDur}s`,
                   animationDelay: `${r.flipDelay}s`,
                   transformOrigin: '110px 110px',
-                }}
+                } as CSSProperties}
               >
                 <circle
                   cx="110" cy="110" r={r.radius}
@@ -150,7 +150,7 @@ export function JarvisOrb({
                   strokeDasharray={`${r.dash} ${r.gap}`}
                   className="orb-ring-run"
                   style={{
-                    animationDuration: `${r.runDur}s`,
+                    ['--run-dur' as string]: `${r.runDur}s`,
                     animationDelay: `${r.runDelay}s`,
                     ['--run-end' as string]: -r.perimeter,
                   } as CSSProperties}
@@ -165,9 +165,10 @@ export function JarvisOrb({
               key={i} cx={p.x} cy={p.y} r={p.r}
               fill={color}
               style={{
-                animationDuration: `${p.twinkleDur}s`,
+                ['--twinkle-base' as string]: `${p.twinkleDur}s`,
+                ['--twinkle-scale' as string]: `${p.twinkleDur}s`,
                 animationDelay: `${p.twinkleDelay}s`,
-              }}
+              } as CSSProperties}
             />
           ))}
         </g>
@@ -192,7 +193,7 @@ export function JarvisOrb({
         .orb-svg { width: 100%; height: 100%; display: block; }
         .orb-rotation {
           transform-origin: 110px 110px;
-          animation: orbRotate 24s linear infinite;
+          animation: orbRotate var(--rotate-dur, 24s) linear infinite;
         }
         @keyframes orbRotate {
           from { transform: rotate(0deg); }
@@ -202,6 +203,7 @@ export function JarvisOrb({
           animation-name: orbFlip;
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
+          animation-duration: calc(var(--flip-dur) * var(--anim-scale, 1));
         }
         @keyframes orbFlip {
           0%, 100% { transform: scaleY(1); }
@@ -211,6 +213,7 @@ export function JarvisOrb({
           animation-name: orbRun;
           animation-timing-function: linear;
           animation-iteration-count: infinite;
+          animation-duration: calc(var(--run-dur) * var(--anim-scale, 1));
         }
         @keyframes orbRun {
           from { stroke-dashoffset: 0; }
@@ -220,18 +223,22 @@ export function JarvisOrb({
           animation-name: orbTwinkle;
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
+          animation-duration: var(--twinkle-scale, 1s);
           opacity: calc(0.15 + var(--level) * 0.85);
         }
         @keyframes orbTwinkle {
           0%, 100% { opacity: 0.15; }
           50%      { opacity: 1; }
         }
-        /* Veille : tout figé, pas de halo */
-        .jarvis-orb[data-state="veille"] .orb-rotation,
-        .jarvis-orb[data-state="veille"] .orb-ring-flip,
-        .jarvis-orb[data-state="veille"] .orb-ring-run,
-        .jarvis-orb[data-state="veille"] circle {
-          animation: none !important;
+        /* Veille : forme de sphère conservée via phases variées des
+           délais aléatoires, mais tout 6× plus lent. Aucun halo
+           (--orb-active = 0, cf. filter plus haut). */
+        .jarvis-orb[data-state="veille"] {
+          --anim-scale: 6;
+          --rotate-dur: 144s;
+        }
+        .jarvis-orb[data-state="veille"] .orb-particles circle {
+          animation-duration: calc(var(--twinkle-base, 1s) * 6) !important;
         }
         /* Réflexion : éclats plus rapides */
         .jarvis-orb[data-state="reflexion"] .orb-ring-run {

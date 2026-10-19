@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireJarvisAccessFast } from '@/lib/jarvis/access'
 import { prepareContext } from '@/lib/jarvis/brain'
+import { peekQuota } from '@/lib/ai/quota'
 
 export const runtime = 'nodejs'
 
@@ -29,12 +30,22 @@ export async function POST(request: Request) {
     if (auth instanceof Response) return auth
     const { userId, email } = auth
 
-    const ctx = await prepareContext(userId, email)
+    // Préchauffe le cache contexte + lit le compteur du jour en //
+    const [ctx, counter] = await Promise.all([
+      prepareContext(userId, email),
+      // isAdmin pas encore connu : passe false (peekQuota ne décide
+      // rien, elle lit) ; on surclasse après avec le vrai isAdmin.
+      peekQuota(userId, 'jarvis', false),
+    ])
+    const callsLimit = ctx.isAdmin ? -1 : counter.callsLimit
     const total = Math.round(performance.now() - t_start)
 
     return NextResponse.json({
       ok: true,
       cacheHits: ctx.cacheHits,
+      callsToday: counter.callsToday,
+      callsLimit,
+      casquette: ctx.casquette.casquette,
       ms: total,
     })
   } catch (err) {

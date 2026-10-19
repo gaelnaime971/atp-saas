@@ -200,16 +200,17 @@ export const FORMAT_TEXT = `FORMAT DE SORTIE (TEXTE)
 - Écris UNE SEULE réponse finale. Ne la révise pas, ne la reformule pas.`
 
 export const FORMAT_VOICE = `FORMAT DE SORTIE (VOIX)
-Ta réponse sera lue à voix haute. Écris exactement comme on parle.
+Ta réponse sera lue à voix haute ET affichée telle quelle à l'écran.
+Écris naturellement, comme un texte propre : les chiffres et symboles
+courants ($, %, +, R) sont AUTORISÉS — une couche serveur les
+convertit en mots avant la synthèse ("0,2 %" devient "zéro virgule
+deux pour cent" seulement dans l'audio).
 
 RÈGLES ABSOLUES :
 - 2 phrases courtes, 200 caractères MAX.
-- AUCUN symbole : jamais de ≥, +, /, $, %, &, ×. Écris en toutes lettres :
-  "au moins 2", "0,2 à 0,4 pour cent", "plus 2 R", "200 dollars",
-  "sur le dollar/yen" devient "sur le dollar yen".
-- Nombres : écrits comme on les dit ("deux R", "deux pour cent"
-  si ça sonne mieux). Pour les ratios courants, "R" seul se dit "R".
-- AUCUN markdown, aucune liste, aucun titre.
+- Chiffres et symboles : "0,2 à 0,4 %", "+2 R", "900 $" — c'est OK.
+- AUCUN markdown, aucune liste, aucun titre, aucune apostrophe
+  typographique. Texte brut sur une ligne.
 - Pas d'abréviations lues bizarrement : écris "Order Block" plutôt
   que "OB" quand c'est la 1re mention.
 - Français, tutoiement, calme et posé.

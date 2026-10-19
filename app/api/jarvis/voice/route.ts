@@ -10,6 +10,7 @@ import { requireJarvisAccessFast } from '@/lib/jarvis/access'
 import { prepareContext, runBrain, type ChatMessage } from '@/lib/jarvis/brain'
 import { synthesizeSpeech } from '@/lib/jarvis/elevenlabs'
 import { pronounceForVoice } from '@/lib/jarvis/pronunciation'
+import { numbersToWords } from '@/lib/jarvis/voice-numbers'
 
 export const runtime = 'nodejs'
 
@@ -163,8 +164,14 @@ export async function POST(request: Request) {
     }
 
     // ─── Phase 5 : ElevenLabs TTS streaming ───
-    // pronounceForVoice uniquement sur le texte TTS, pas sur reply.
-    const spokenText = pronounceForVoice(brainOutcome.reply)
+    // Pipeline texte visuel → texte parlé :
+    //   1. numbersToWords : "0,2 à 0,4 %" → "zéro virgule deux à
+    //      zéro virgule quatre pour cent", "+2 R" → "plus deux R",
+    //      "900 $" → "neuf cents dollars".
+    //   2. pronounceForVoice : "flux" → "flu", "CHoCH" → "choche".
+    // Les headers X-Jarvis-Reply et l'affichage conservent le texte
+    // original avec chiffres et symboles.
+    const spokenText = pronounceForVoice(numbersToWords(brainOutcome.reply))
     const t_ttsStart = performance.now()
     const tts = await synthesizeSpeech(spokenText)
     timings.tts = Math.round(performance.now() - t_ttsStart)
