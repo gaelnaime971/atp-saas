@@ -124,6 +124,20 @@ describe('joker — annulation + timeout', () => {
   })
 })
 
+describe('joker — séquence complète (non-régression retard d\'un message)', () => {
+  it('armé → M1 → M5 → prêt : chaque transition retourne le NOUVEL état, pas l\'ancien', () => {
+    let r = advanceJokerState(ctx('armed'), 'CHoCH M1 validé')
+    expect(r.next).toBe('choch_m1') // M1 validé → state = choch_m1
+
+    r = advanceJokerState(ctx('choch_m1'), 'CHoCH M5 cassé')
+    expect(r.next).toBe('choch_m5') // M5 validé → state = choch_m5
+
+    r = advanceJokerState(ctx('choch_m5'), 'retracement sur mon OB avec hammer')
+    expect(r.next).toBe('ready')
+    expect(r.reachedReady).toBe(true)
+  })
+})
+
 describe('joker — getCurrentJokerContext', () => {
   it('aucun event → inactive', () => {
     expect(getCurrentJokerContext([])).toEqual({ step: 'inactive' })

@@ -154,47 +154,163 @@ const AMBER_RULES = new Set([
 ])
 function isAmberRule(key: string): boolean { return AMBER_RULES.has(key) }
 function JokerStepper({ step }: { step: JokerStep }) {
-  // Les 3 étapes du suivi : CHoCH M1 → CHoCH M5 → Prêt
+  // Les 3 étapes du suivi
   const stages: Array<{ key: JokerStep; label: string }> = [
     { key: 'choch_m1', label: 'CHoCH M1' },
     { key: 'choch_m5', label: 'CHoCH M5' },
-    { key: 'ready',    label: 'Prêt' },
+    { key: 'ready',    label: 'Retracement et signal' },
   ]
-  // Logique d'état par étape :
-  // armed    → M1 attend  (pulse), M5 vide, ready vide
-  // choch_m1 → M1 validé, M5 attend (pulse), ready vide
-  // choch_m5 → M1 validé, M5 validé, ready attend (pulse)
-  // ready    → tous validés
+
+  // Mapping correct :
+  //   armed    → M1 awaiting · M5 pending · ready pending
+  //   choch_m1 → M1 done ✓   · M5 awaiting · ready pending
+  //   choch_m5 → M1 done ✓   · M5 done ✓   · ready awaiting
+  //   ready    → M1 done ✓   · M5 done ✓   · ready done ✓
   const statusOf = (stageKey: JokerStep): 'done' | 'awaiting' | 'pending' => {
-    const order: JokerStep[] = ['armed', 'choch_m1', 'choch_m5', 'ready']
-    const currentIdx = order.indexOf(step)
-    const stageIdx = order.indexOf(stageKey)
-    if (currentIdx > stageIdx) return 'done'       // M1 est "done" quand step = choch_m1+
-    if (currentIdx === stageIdx) return 'awaiting' // l'étape courante est "awaiting"
-    // Cas particulier : ready affiche "done" pour tout
-    if (step === 'ready') return 'done'
+    if (step === 'armed')    return stageKey === 'choch_m1' ? 'awaiting' : 'pending'
+    if (step === 'choch_m1') return stageKey === 'choch_m1' ? 'done' : stageKey === 'choch_m5' ? 'awaiting' : 'pending'
+    if (step === 'choch_m5') return stageKey === 'ready' ? 'awaiting' : 'done'
+    if (step === 'ready')    return 'done'
     return 'pending'
   }
 
+  const headTitle =
+    step === 'armed'    ? 'Mode Joker armé'
+  : step === 'choch_m1' ? 'Mode Joker en cours'
+  : step === 'choch_m5' ? 'Mode Joker en cours'
+  : step === 'ready'    ? 'Mode Joker prêt'
+  : 'Mode Joker'
+
+  // Rappel à droite : "En attente du CHoCH M1/M5" ou "Checklist complète"
+  const awaitingStage = stages.find(s => statusOf(s.key) === 'awaiting')
+  const headRight = awaitingStage
+    ? (awaitingStage.key === 'ready' ? 'En attente du retracement' : `En attente du ${awaitingStage.label}`)
+    : (step === 'ready' ? 'Checklist complète' : '')
+
   return (
-    <div className="jv-joker" role="group" aria-label="Mode Joker en cours">
-      <div className="jv-joker-head">
-        <span className="jv-joker-dot" aria-hidden /> Mode Joker — {step === 'armed' ? 'armé' : step === 'ready' ? 'prêt' : 'en cours'}
+    <div className="jj-root" role="group" aria-label="Mode Joker en cours">
+      <div className="jj-head">
+        <span className="jj-title">{headTitle}</span>
+        {headRight && <span className="jj-await">{headRight}</span>}
       </div>
-      <ol className="jv-joker-steps">
+      <ol className="jj-steps">
         {stages.map((s, i) => {
           const st = statusOf(s.key)
+          const linkDone = st === 'done'
+          const linkActive = !linkDone && i + 1 < stages.length && statusOf(stages[i + 1].key) === 'awaiting'
           return (
-            <li key={s.key} className={`jv-joker-step is-${st}`}>
-              <span className="jv-joker-circle" aria-hidden>{st === 'done' ? '✓' : ''}</span>
-              <span className="jv-joker-label">{s.label}</span>
+            <li key={s.key} className={`jj-step is-${st}`}>
+              <div className="jj-circle" aria-hidden>
+                {st === 'done' && (
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="#060807" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3.5 8.5L6.5 11.5L12.5 5" />
+                  </svg>
+                )}
+              </div>
+              <div className="jj-label">{s.label}</div>
               {i < stages.length - 1 && (
-                <span className={`jv-joker-link ${st === 'done' ? 'is-done' : (statusOf(stages[i + 1].key) === 'awaiting' ? 'is-active' : '')}`} aria-hidden />
+                <span className={`jj-link ${linkDone ? 'is-done' : linkActive ? 'is-active' : ''}`} aria-hidden />
               )}
             </li>
           )
         })}
       </ol>
+      <style jsx>{`
+        .jj-root {
+          max-width: 340px; width: 100%;
+          padding: 12px 14px 14px;
+          border-radius: 12px;
+          background: rgba(42, 58, 49, 0.35);
+          border: 1px solid #2A3A31;
+          font-family: var(--font-oxanium), system-ui, sans-serif;
+        }
+        .jj-head {
+          display: flex; align-items: baseline; justify-content: space-between;
+          gap: 10px; margin-bottom: 14px;
+        }
+        .jj-title {
+          font-size: 12px; font-weight: 600;
+          color: #C9A46A;
+          text-transform: uppercase; letter-spacing: 0.14em;
+        }
+        .jj-await {
+          font-size: 10px; color: #9FB0A6;
+          letter-spacing: 0.04em;
+          text-align: right;
+        }
+        .jj-steps {
+          list-style: none; margin: 0; padding: 0;
+          display: flex; align-items: flex-start;
+        }
+        .jj-step {
+          flex: 1 1 0;
+          display: flex; flex-direction: column; align-items: center;
+          position: relative;
+          min-width: 0;
+        }
+        .jj-circle {
+          width: 24px; height: 24px; border-radius: 50%;
+          background: #2A3A31;
+          border: 2px solid #2A3A31;
+          display: flex; align-items: center; justify-content: center;
+          position: relative; z-index: 1;
+          transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .jj-step.is-done .jj-circle {
+          background: #45D486;
+          border-color: #45D486;
+        }
+        .jj-step.is-awaiting .jj-circle {
+          background: transparent;
+          border-color: #45D486;
+          animation: jjPulseCircle 1.4s ease-in-out infinite;
+        }
+        @keyframes jjPulseCircle {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(69, 212, 134, 0.55); }
+          50%      { box-shadow: 0 0 0 8px rgba(69, 212, 134, 0); }
+        }
+        .jj-label {
+          margin-top: 8px;
+          font-size: 10px;
+          color: #9FB0A6;
+          text-align: center;
+          letter-spacing: 0.02em;
+          line-height: 1.3;
+          padding: 0 4px;
+          white-space: nowrap;
+        }
+        .jj-step.is-done .jj-label { color: #E9EEEA; }
+        .jj-step.is-awaiting .jj-label { color: #45D486; }
+        /* Trait entre deux cercles. Positionné au niveau du cercle (12 px du haut),
+           part du bord droit de ce cercle et file jusqu'au centre du suivant. */
+        .jj-link {
+          position: absolute;
+          top: 11px;
+          left: calc(50% + 12px);
+          right: calc(-50% + 12px);
+          height: 2px;
+          background: #2A3A31;
+          z-index: 0;
+          overflow: hidden;
+        }
+        .jj-link.is-done { background: #45D486; }
+        .jj-link.is-active {
+          background: #2A3A31;
+          position: relative;
+        }
+        .jj-link.is-active::after {
+          content: '';
+          position: absolute; top: 0; left: 0;
+          height: 100%; width: 40%;
+          background: linear-gradient(90deg, rgba(69, 212, 134, 0), #45D486);
+          animation: jjFlow 1.6s ease-in-out infinite;
+        }
+        @keyframes jjFlow {
+          0%   { transform: translateX(-20%); opacity: 0.0; }
+          50%  { opacity: 1; }
+          100% { transform: translateX(260%); opacity: 0.0; }
+        }
+      `}</style>
     </div>
   )
 }
@@ -984,82 +1100,8 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           font-size: 11px; color: #DDB977;
           font-family: var(--font-oxanium), system-ui, sans-serif;
         }
-        /* ─── Stepper Joker (3F.5) ───────────────────────────── */
-        .jv-joker {
-          max-width: 340px; width: 100%;
-          padding: 10px 12px; border-radius: 10px;
-          background: rgba(69, 212, 134, 0.06);
-          border: 1px solid rgba(69, 212, 134, 0.3);
-          font-family: var(--font-oxanium), system-ui, sans-serif;
-          font-size: 11px;
-        }
-        .jv-joker-head {
-          display: flex; align-items: center; gap: 6px;
-          color: #45D486; font-size: 11px;
-          text-transform: uppercase; letter-spacing: 0.08em;
-          margin-bottom: 10px;
-        }
-        .jv-joker-dot {
-          width: 7px; height: 7px; border-radius: 50%;
-          background: #45D486;
-          animation: jvJokerPulseDot 1.4s ease-in-out infinite;
-        }
-        @keyframes jvJokerPulseDot {
-          0%, 100% { transform: scale(1); opacity: 0.6; }
-          50%      { transform: scale(1.3); opacity: 1; }
-        }
-        .jv-joker-steps {
-          list-style: none; margin: 0; padding: 0;
-          display: flex; align-items: center; gap: 0; width: 100%;
-        }
-        .jv-joker-step {
-          flex: 1 1 0;
-          display: flex; align-items: center;
-          position: relative;
-          font-size: 11px;
-        }
-        .jv-joker-circle {
-          width: 20px; height: 20px; border-radius: 50%;
-          border: 1px solid rgba(159, 176, 166, 0.4);
-          display: inline-flex; align-items: center; justify-content: center;
-          font-size: 11px; font-weight: 700;
-          color: transparent;
-          flex-shrink: 0;
-        }
-        .jv-joker-label {
-          margin-left: 6px;
-          color: #9FB0A6;
-          white-space: nowrap;
-        }
-        .jv-joker-link {
-          flex: 1 1 0;
-          height: 2px;
-          background: rgba(159, 176, 166, 0.25);
-          margin: 0 6px;
-        }
-        .jv-joker-step.is-done .jv-joker-circle {
-          background: #45D486; border-color: #45D486; color: #0B100E;
-        }
-        .jv-joker-step.is-done .jv-joker-label { color: #E9EEEA; }
-        .jv-joker-link.is-done { background: #45D486; }
-        .jv-joker-link.is-active {
-          background: linear-gradient(90deg, #45D486, rgba(69, 212, 134, 0.25));
-          animation: jvJokerLinkPulse 1.6s ease-in-out infinite;
-        }
-        @keyframes jvJokerLinkPulse {
-          0%, 100% { opacity: 0.5; }
-          50%      { opacity: 1; }
-        }
-        .jv-joker-step.is-awaiting .jv-joker-circle {
-          border-color: #45D486;
-          box-shadow: 0 0 0 0 rgba(69, 212, 134, 0.5);
-          animation: jvJokerPulseCircle 1.4s ease-in-out infinite;
-        }
-        @keyframes jvJokerPulseCircle {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(69, 212, 134, 0.5); }
-          50%      { box-shadow: 0 0 0 6px rgba(69, 212, 134, 0.0); }
-        }
-        .jv-joker-step.is-awaiting .jv-joker-label { color: #45D486; }
+        /* Stepper Joker : styles portés par le composant JokerStepper
+           (styled-jsx est scopé par composant). */
         .jv-error-wrap { width: 100%; max-width: 340px; }
         .jv-actions { padding: 4px 0; }
         .jv-btn {
