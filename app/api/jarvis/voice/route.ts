@@ -9,6 +9,7 @@ import {
 import { requireJarvisAccessFast } from '@/lib/jarvis/access'
 import { prepareContext, runBrain, type ChatMessage } from '@/lib/jarvis/brain'
 import { synthesizeSpeech } from '@/lib/jarvis/elevenlabs'
+import { pronounceForVoice } from '@/lib/jarvis/pronunciation'
 
 export const runtime = 'nodejs'
 
@@ -118,8 +119,14 @@ export async function POST(request: Request) {
     timings.brain = Math.round(performance.now() - t_brainStart)
 
     // ─── Phase 3 : ElevenLabs TTS streaming ───
+    // Le texte "parlé" peut différer du texte "visuel" : certains
+    // mots du jargon ATP ne se prononcent pas comme ils s'écrivent
+    // (ex. "flux" → "flu", "CHoCH" → "choche"). On n'applique le
+    // dictionnaire QU'ICI : les headers X-Jarvis-Reply et l'affichage
+    // conservent l'orthographe correcte.
+    const spokenText = pronounceForVoice(brainOutcome.reply)
     const t_ttsStart = performance.now()
-    const tts = await synthesizeSpeech(brainOutcome.reply)
+    const tts = await synthesizeSpeech(spokenText)
     timings.tts = Math.round(performance.now() - t_ttsStart)
 
     // recordUsage via after() — jamais sur le chemin critique
