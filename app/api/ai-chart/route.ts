@@ -27,6 +27,8 @@ export async function POST(request: Request) {
         model: GROQ_VISION_MODEL,
         max_tokens: 3000,
         response_format: { type: 'json_object' },
+        // Qwen 3.6 mode thinking — masque le raisonnement côté API
+        reasoning_format: 'hidden',
         messages: [
           {
             role: 'user',
@@ -85,7 +87,10 @@ Réponds UNIQUEMENT en JSON valide avec cette structure exacte:
       })
     }
 
-    const text = data.choices?.[0]?.message?.content || ''
+    // Filet anti-thinking Qwen : strip tout bloc <think>...</think> au cas où
+    // reasoning_format n'aurait pas été respecté (nouveau modèle, variations).
+    const rawText = data.choices?.[0]?.message?.content || ''
+    const text = rawText.replace(/<think>[\s\S]*?<\/think>\s*/gi, '').trim()
     return NextResponse.json({ text })
   } catch {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

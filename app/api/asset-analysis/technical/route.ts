@@ -113,6 +113,8 @@ export async function POST(request: Request) {
         max_tokens: 3500,
         temperature: 0.2,
         response_format: { type: 'json_object' },
+        // Qwen 3.6 mode thinking — masque le raisonnement côté API
+        reasoning_format: 'hidden',
         messages: [
           { role: 'system', content: SYSTEM },
           { role: 'user', content: userContent },
@@ -126,7 +128,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: data.error?.message || 'Erreur IA vision' }, { status: 500 })
     }
 
-    const raw = data.choices?.[0]?.message?.content || '{}'
+    // Filet anti-thinking Qwen : strip tout bloc <think>...</think> AVANT parse
+    const raw = (data.choices?.[0]?.message?.content || '{}')
+      .replace(/<think>[\s\S]*?<\/think>\s*/gi, '')
+      .trim()
     let result: unknown
     try { result = JSON.parse(raw) } catch {
       const m = raw.match(/\{[\s\S]*\}/)
