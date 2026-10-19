@@ -1,9 +1,83 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { readAiError, networkAiError, type AiErrorInfo } from '@/lib/ai/client-errors'
 import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
 import { JarvisOrb, type OrbState } from './JarvisOrb'
+
+// ─── Document Picture-in-Picture typing (API encore non standard) ───
+declare global {
+  interface Window {
+    documentPictureInPicture?: {
+      requestWindow: (opts?: { width?: number; height?: number }) => Promise<Window>
+      window: Window | null
+    }
+  }
+}
+
+const PIP_SIZE_FULL = { width: 380, height: 640 }
+const PIP_SIZE_COMPACT = { width: 260, height: 320 }
+
+/**
+ * Clone toutes les feuilles de style du document principal vers la
+ * fenêtre PiP cible. Nécessaire pour que styled-jsx (JarvisOrb +
+ * JarvisVoiceInterface) et next/font (variables --font-oxanium /
+ * --font-manrope + @font-face) soient reproduits dans la fenêtre.
+ *
+ * - Les sheets inline (styled-jsx, next/font css inline) sont
+ *   sérialisées via cssRules puis injectées en <style>.
+ *   Les sheets externes (CORS inaccessible) sont clonées en <link>.
+ * - Un MutationObserver attaché au head principal clone à la volée
+ *   les nouveaux <style>/<link> ajoutés après l'ouverture de la PiP
+ *   (ex: styled-jsx qui injecte au mount d'un sous-composant).
+ */
+function clonePageStyles(target: Window): () => void {
+  const copyStyleSheet = (sheet: CSSStyleSheet | StyleSheet) => {
+    try {
+      const css = sheet as CSSStyleSheet
+      if (css.href) {
+        const link = target.document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = css.href
+        target.document.head.appendChild(link)
+        return
+      }
+      const rules = Array.from(css.cssRules).map(r => r.cssText).join('\n')
+      if (!rules) return
+      const style = target.document.createElement('style')
+      style.textContent = rules
+      target.document.head.appendChild(style)
+    } catch {
+      const href = (sheet as CSSStyleSheet).href
+      if (href) {
+        const link = target.document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = href
+        target.document.head.appendChild(link)
+      }
+    }
+  }
+  // Initial clone
+  for (const sheet of Array.from(document.styleSheets)) copyStyleSheet(sheet)
+  // Et les <style>/<link> bruts (certains frameworks ne passent pas par styleSheets avant insertion)
+  for (const node of Array.from(document.head.querySelectorAll('style, link[rel="stylesheet"]'))) {
+    target.document.head.appendChild(node.cloneNode(true))
+  }
+  // Suit les nouvelles injections pendant la vie de la PiP
+  const mo = new MutationObserver(muts => {
+    for (const m of muts) {
+      for (const n of Array.from(m.addedNodes)) {
+        if (!(n instanceof HTMLElement)) continue
+        if (n.tagName === 'STYLE' || (n.tagName === 'LINK' && (n as HTMLLinkElement).rel === 'stylesheet')) {
+          target.document.head.appendChild(n.cloneNode(true))
+        }
+      }
+    }
+  })
+  mo.observe(document.head, { childList: true })
+  return () => mo.disconnect()
+}
 
 /** Casquette serveur → libellé minuscules initiales pour l'UI. */
 const CASQUETTE_LABEL: Record<string, string> = {
@@ -70,6 +144,19 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const [casquetteInfo, setCasquetteInfo] = useState<CasquetteInfo | null>(null)
   const [currentCallsToday, setCurrentCallsToday] = useState<number | null>(null)
   const [currentCallsLimit, setCurrentCallsLimit] = useState<number | null>(null)
+
+  // PiP state
+  const [pipWindow, setPipWindow] = useState<Window | null>(null)
+  const [compact, setCompact] = useState(false)
+  const [pipMessage, setPipMessage] = useState<string | null>(null)
+  const pipCleanupRef = useRef<(() => void) | null>(null)
+
+  // Lecture ?compact=1 à l'ouverture (fallback popup Safari/Firefox)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sp = new URLSearchParams(window.location.search)
+    if (sp.get('compact') === '1') setCompact(true)
+  }, [])
 
   const levelRef = useRef(0) // 0..1 — pilote --level côté SVG
   const recorderRef = useRef<MediaRecorder | null>(null)
@@ -142,7 +229,66 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
     cancelAnimationFrame(rafRef.current)
     audioCtxRef.current?.close().catch(() => { /* ignore */ })
     if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current)
+    if (pipCleanupRef.current) pipCleanupRef.current()
+    pipWindow?.close()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ─── Fenêtre flottante (Document Picture-in-Picture) ───
+  const openPip = useCallback(async () => {
+    setPipMessage(null)
+    const dpip = window.documentPictureInPicture
+    if (!dpip) {
+      // Fallback : popup classique sur /jarvis?compact=1 — session
+      // séparée (son propre micro, son propre compteur, mais ça
+      // garde Jarvis au-dessus de la plateforme).
+      const pop = window.open(
+        '/jarvis?compact=1',
+        'JarvisFloating',
+        `width=${PIP_SIZE_FULL.width},height=${PIP_SIZE_FULL.height},menubar=0,toolbar=0,location=0,status=0`,
+      )
+      if (!pop) {
+        setPipMessage('Les popups sont bloqués par ton navigateur. Autorise-les pour ce site.')
+      } else {
+        pop.focus()
+        setPipMessage('Pour garder Jarvis au premier plan façon Picture-in-Picture, utilise Chrome ou Edge. Une fenêtre classique a été ouverte à la place.')
+      }
+      return
+    }
+    try {
+      const size = compact ? PIP_SIZE_COMPACT : PIP_SIZE_FULL
+      const pw = await dpip.requestWindow(size)
+      pw.document.title = 'Jarvis'
+      pw.document.documentElement.lang = 'fr'
+      pw.document.body.style.margin = '0'
+      pw.document.body.style.background = '#060807'
+      pipCleanupRef.current = clonePageStyles(pw)
+      pw.addEventListener('pagehide', () => {
+        pipCleanupRef.current?.()
+        pipCleanupRef.current = null
+        setPipWindow(null)
+      })
+      setPipWindow(pw)
+    } catch (err) {
+      console.error('[jarvis-pip] open failed', err)
+      setPipMessage('Impossible d\'ouvrir la fenêtre flottante.')
+    }
+  }, [compact])
+
+  const closePip = useCallback(() => {
+    pipWindow?.close()
+  }, [pipWindow])
+
+  const toggleCompact = useCallback(() => {
+    setCompact(prev => {
+      const next = !prev
+      if (pipWindow) {
+        const s = next ? PIP_SIZE_COMPACT : PIP_SIZE_FULL
+        try { pipWindow.resizeTo(s.width, s.height) } catch { /* resizeTo peut être refusé */ }
+      }
+      return next
+    })
+  }, [pipWindow])
 
   // ─── Chat texte ───
   const send = async () => {
@@ -316,13 +462,11 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const casquetteText = labelFor(casquetteRaw)
   const openCue = formatOpenCue(casquetteInfo)
 
-  return (
-    <div className="jv-root">
+  const ui = (
+    <div className="jv-root" data-compact={compact || undefined}>
       <header className="jv-header">
         <div className="jv-brand">
-          {/* Symbol seul teinté en doré via mask-image. Si
-              /logo-atp-symbol.png n'existe pas, le span reste vide
-              mais la mise en page tient. */}
+          {/* Symbol seul teinté en doré via mask-image. */}
           <span className="jv-logo" aria-label="ATP" role="img" />
           <span className="jv-brand-name">Jarvis</span>
         </div>
@@ -390,6 +534,25 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
             </button>
           </div>
         )}
+
+        <div className="jv-pip-row">
+          {pipWindow ? (
+            <>
+              <button type="button" className="jv-link" onClick={toggleCompact}>
+                {compact ? 'Mode complet' : 'Mode compact'}
+              </button>
+              <span className="jv-pip-sep" aria-hidden>·</span>
+              <button type="button" className="jv-link" onClick={closePip}>
+                Ramener dans l&apos;onglet
+              </button>
+            </>
+          ) : (
+            <button type="button" className="jv-link" onClick={openPip}>
+              Fenêtre flottante
+            </button>
+          )}
+        </div>
+        {pipMessage && <div className="jv-pip-msg">{pipMessage}</div>}
 
         {lastExchange?.server && (
           <details className="jv-details">
@@ -574,9 +737,111 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           margin-top: 20px;
           font-family: ui-monospace, monospace;
         }
+        .jv-pip-row {
+          display: flex; align-items: center; gap: 6px;
+          font-size: 12px;
+        }
+        .jv-pip-sep { color: #4A5852; }
+        .jv-pip-msg {
+          max-width: 340px; text-align: center;
+          font-size: 11px; color: #9FB0A6;
+          padding: 6px 10px;
+          border: 1px solid rgba(159, 176, 166, 0.15);
+          border-radius: 6px;
+          background: rgba(221, 185, 119, 0.05);
+        }
+        /* ─── Mode compact (PiP small) ─────────────────────── */
+        .jv-root[data-compact] { padding: 10px 12px 16px; min-height: 100vh; }
+        .jv-root[data-compact] .jv-header { padding: 2px 0 8px; }
+        .jv-root[data-compact] .jv-brand-name { font-size: 14px; }
+        .jv-root[data-compact] .jv-casquette { font-size: 11px; }
+        .jv-root[data-compact] .jv-open-cue { font-size: 10px; }
+        .jv-root[data-compact] .jv-main { padding-top: 8px; gap: 8px; }
+        .jv-root[data-compact] .jv-orb-wrap { padding: 0; }
+        .jv-root[data-compact] .jv-status { font-size: 12px; min-height: 16px; }
+        .jv-root[data-compact] .jv-exchange {
+          height: 36px;                /* 1 ligne de reply */
+          overflow: hidden;
+        }
+        .jv-root[data-compact] .jv-jarvis-reply {
+          font-size: 12px; line-height: 1.3;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          max-width: 240px;
+        }
+        .jv-root[data-compact] .jv-trader-echo,
+        .jv-root[data-compact] .jv-details,
+        .jv-root[data-compact] .jv-account,
+        .jv-root[data-compact] .jv-text-row,
+        .jv-root[data-compact] .jv-link { display: none; }
+        .jv-root[data-compact] .jv-pip-row { display: flex; }
+        .jv-root[data-compact] .jv-pip-row .jv-link { display: inline-block; font-size: 11px; }
+        .jv-root[data-compact] .jv-counter { font-size: 10px; }
+        .jv-root[data-compact] .jv-btn-mic {
+          width: 160px; height: 36px; font-size: 11px;
+        }
       `}</style>
     </div>
   )
+
+  // ─── Stub affiché dans l'onglet pendant que la PiP est active ───
+  const stub = (
+    <div className="jv-stub-root">
+      <div className="jv-stub-inner">
+        <span className="jv-stub-logo" aria-hidden />
+        <h2 className="jv-stub-title">Jarvis est dans la fenêtre flottante</h2>
+        <p className="jv-stub-tip">
+          Garde cet onglet ouvert — <strong>le fermer ferme aussi Jarvis</strong>.
+        </p>
+        <button type="button" className="jv-stub-btn" onClick={closePip}>
+          Le ramener ici
+        </button>
+      </div>
+      <style jsx>{`
+        .jv-stub-root {
+          min-height: 100vh;
+          background: #060807; color: #E9EEEA;
+          display: flex; align-items: center; justify-content: center;
+          font-family: var(--font-manrope), system-ui, sans-serif;
+          padding: 24px;
+        }
+        .jv-stub-inner {
+          max-width: 420px; text-align: center;
+          display: flex; flex-direction: column; align-items: center; gap: 14px;
+        }
+        .jv-stub-logo {
+          width: 56px; height: 44px;
+          background-color: #C9A46A;
+          -webkit-mask-image: url('/logo-atp-symbol.png');
+          mask-image: url('/logo-atp-symbol.png');
+          -webkit-mask-size: contain; mask-size: contain;
+          -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+          -webkit-mask-position: center; mask-position: center;
+        }
+        .jv-stub-title {
+          font-family: var(--font-oxanium), system-ui, sans-serif;
+          font-size: 18px; font-weight: 500; margin: 0; color: #E9EEEA;
+        }
+        .jv-stub-tip { font-size: 13px; color: #9FB0A6; margin: 0; line-height: 1.5; }
+        .jv-stub-btn {
+          font-family: var(--font-oxanium), system-ui, sans-serif;
+          padding: 10px 24px; font-size: 13px; font-weight: 600;
+          background: linear-gradient(180deg, #E6C487, #C8A75F);
+          color: #0B100E; border: none; border-radius: 999px;
+          cursor: pointer; letter-spacing: 0.08em;
+        }
+      `}</style>
+    </div>
+  )
+
+  if (pipWindow) {
+    return (
+      <>
+        {stub}
+        {createPortal(ui, pipWindow.document.body)}
+      </>
+    )
+  }
+  return ui
 }
 
 // ─── Compute casquette locale ─────────────────────────────────────
