@@ -315,10 +315,28 @@ function rowToRules(row: Partial<TraderRules> | null): TraderRules {
 
 type FormatMode = 'text' | 'voice'
 
-export function computeMaxChars(casquette: Casquette, detailRequested: boolean): number {
-  if (detailRequested) return 900
-  if (casquette === 'TRADER') return 250
-  return 600
+/**
+ * Longueur maximale selon mode (voix ≠ texte) + casquette + demande
+ * explicite d'élaboration.
+ *
+ * voix :
+ *   TRADER (session) : 250 car
+ *   hors session     : 900 car
+ *   "développe"      : max du mode = 900
+ * texte (mode Écrire) :
+ *   TRADER (session) : 400 car
+ *   hors session     : 2 000 car
+ *   "développe"      : max du mode = 2 000
+ */
+export function computeMaxChars(mode: FormatMode, casquette: Casquette, detailRequested: boolean): number {
+  if (mode === 'voice') {
+    if (detailRequested) return 900
+    if (casquette === 'TRADER') return 250
+    return 900
+  }
+  if (detailRequested) return 2000
+  if (casquette === 'TRADER') return 400
+  return 2000
 }
 
 export function detectDetailRequested(text: string): boolean {
@@ -328,15 +346,23 @@ export function detectDetailRequested(text: string): boolean {
   return /\b(d[ée]veloppe|d[ée]taille|explique)\b/i.test(text)
 }
 
-function phraseAllowance(casquette: Casquette, detailRequested: boolean): string {
-  if (detailRequested) return '4 à 8 phrases, UNE réponse longue cette fois'
-  if (casquette === 'TRADER') return '1 à 3 phrases COURTES — le trader regarde son graphique'
-  return 'jusqu\'à 5 phrases'
+function phraseAllowance(mode: FormatMode, casquette: Casquette, detailRequested: boolean): string {
+  if (detailRequested) {
+    return mode === 'voice'
+      ? '4 à 8 phrases, UNE réponse longue cette fois'
+      : 'plusieurs paragraphes autorisés, UNE réponse développée cette fois'
+  }
+  if (casquette === 'TRADER') {
+    return mode === 'voice'
+      ? '1 à 3 phrases COURTES — le trader regarde son graphique'
+      : '2 à 5 phrases courtes'
+  }
+  return mode === 'voice' ? 'jusqu\'à 6 phrases' : 'plusieurs phrases, paragraphes OK si besoin'
 }
 
 export function buildFormatPrompt(mode: FormatMode, casquette: Casquette, detailRequested: boolean): string {
-  const maxChars = computeMaxChars(casquette, detailRequested)
-  const phrases = phraseAllowance(casquette, detailRequested)
+  const maxChars = computeMaxChars(mode, casquette, detailRequested)
+  const phrases = phraseAllowance(mode, casquette, detailRequested)
 
   const voiceExtras = mode === 'voice' ? `
 
@@ -522,12 +548,23 @@ Puis au plus UNE phrase courte (empathique ou de contexte), sans contredire la r
 /**
  * Calcule l'état + les règles à annoncer MAINTENANT (celles qui
  * ne l'ont pas déjà été). Entrée = events bruts du jour.
+ *
+ * ⚠ trade_after_stop N'EST ÉMISE que si un trade vient d'être
+ * déclaré DANS CE message (option.tradeJustAdded=true). Sans ce
+ * flag, les questions hors trading (ex: "Explique-moi la Fed")
+ * ne doivent déclencher aucune règle, même si la session est
+ * déjà stoppée.
  */
-export function snapshotSession(events: SessionEventRow[], rules: TraderRules): SessionSnapshot {
+export function snapshotSession(
+  events: SessionEventRow[],
+  rules: TraderRules,
+  options?: { tradeJustAdded?: boolean },
+): SessionSnapshot {
   const trades = eventsToTrades(events)
   const announced = eventsToAnnounced(events)
   const state = computeSessionState(trades, rules)
-  const priorStop = hasPriorStopAnnounced(announced)
+  // priorStop → trade_after_stop seulement si un trade vient d'être posé
+  const priorStop = (options?.tradeJustAdded ?? false) && hasPriorStopAnnounced(announced)
   const all = evaluateRules(state, rules, priorStop)
   const freshTriggers = all.filter(t => !wasAlreadyAnnounced(t, announced))
   return { state, freshTriggers, alreadyAnnounced: announced }
@@ -667,7 +704,7 @@ export async function runBrain(
 
   const contextMsg = buildContextMessage(ctx, messages)
   const formatMsg = buildFormatPrompt(cfg.format, cfg.casquette, cfg.detailRequested)
-  const maxChars = computeMaxChars(cfg.casquette, cfg.detailRequested)
+  const maxChars = computeMaxChars(cfg.format, cfg.casquette, cfg.detailRequested)
   // ~2.5 chars par token (FR, ponctuation), + marge pour que le modèle
   // termine proprement avant le clamp. Jamais inférieur à 150.
   const maxTokens = Math.max(150, Math.ceil(maxChars / 2.3) + 50)

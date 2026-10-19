@@ -14,6 +14,7 @@ import {
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
 import { insertTrade, insertRuleTriggered } from '@/lib/jarvis/session-write'
+import { getMarketBlock, needsMarketContext } from '@/lib/jarvis/market-context'
 
 export const runtime = 'nodejs'
 
@@ -51,7 +52,8 @@ export async function POST(request: Request) {
         console.error('[jarvis-chat] insertTrade failed', err)
       }
     }
-    const snapshot = snapshotSession(ctx.events, ctx.rules)
+    const tradeJustAdded = notedEvent !== null
+    const snapshot = snapshotSession(ctx.events, ctx.rules, { tradeJustAdded })
     const riskAlreadyAsked = body.messages.some(m =>
       m.role === 'assistant' && /risque\s+par\s+trade/i.test(m.content))
     const tradeUsdOnly = detection.kind === 'trade'
@@ -70,6 +72,14 @@ export async function POST(request: Request) {
       })
     }
 
+    // 3F-bis : bloc marché seulement si question macro/actualité
+    let marketBlock: string | null = null
+    if (needsMarketContext(lastUser)) {
+      try { marketBlock = await getMarketBlock() } catch { marketBlock = null }
+    }
+    const extraParts = [directive.systemAddendum, marketBlock].filter(Boolean) as string[]
+    const extraSystem = extraParts.length > 0 ? extraParts.join('\n\n') : undefined
+
     // Quota en parallèle de l'appel Groq cerveau. Si refus, on jette
     // le résultat Groq et on retourne 429.
     const t_runStart = performance.now()
@@ -78,7 +88,7 @@ export async function POST(request: Request) {
       format: 'text',
       casquette: ctx.casquette.casquette,
       detailRequested,
-      extraSystem: directive.systemAddendum || undefined,
+      extraSystem,
     })
     const [quota, brainOutcome] = await Promise.all([quotaPromise, brainPromise])
 

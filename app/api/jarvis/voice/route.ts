@@ -14,6 +14,7 @@ import {
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
 import { insertTrade, insertRuleTriggered } from '@/lib/jarvis/session-write'
+import { getMarketBlock, needsMarketContext } from '@/lib/jarvis/market-context'
 import { synthesizeSpeech } from '@/lib/jarvis/elevenlabs'
 import { pronounceForVoice } from '@/lib/jarvis/pronunciation'
 import { numbersToWords } from '@/lib/jarvis/voice-numbers'
@@ -167,10 +168,12 @@ export async function POST(request: Request) {
       }
     }
 
-    const snapshot = snapshotSession(ctx.events, ctx.rules)
+    // 3F-bis : trade_after_stop UNIQUEMENT si un trade frais vient
+    // d'être posé dans ce message. Évite l'annonce fantôme sur une
+    // question hors trading après un stop.
+    const tradeJustAdded = notedEvent !== null
+    const snapshot = snapshotSession(ctx.events, ctx.rules, { tradeJustAdded })
 
-    // Risque demandé déjà aujourd'hui ? (approximation : l'historique
-    // contient-il une question "risque par trade" posée par Jarvis ?)
     const riskAlreadyAsked = history.some(m =>
       m.role === 'assistant' && /risque\s+par\s+trade/i.test(m.content))
     const tradeUsdOnly = detection.kind === 'trade'
@@ -181,7 +184,6 @@ export async function POST(request: Request) {
       detection.kind, snapshot, ctx.rules, tradeUsdOnly, riskAlreadyAsked,
     )
 
-    // Enregistre les rule_triggered via after() (anti-répétition)
     if (directive.triggered.length > 0) {
       after(async () => {
         for (const t of directive.triggered) {
@@ -192,6 +194,15 @@ export async function POST(request: Request) {
       })
     }
 
+    // 3F-bis : bloc MARCHÉ injecté uniquement si le message parle de
+    // macro/actualité/marchés (coût ~400 tokens → éviter sinon).
+    let marketBlock: string | null = null
+    if (needsMarketContext(transcription)) {
+      try { marketBlock = await getMarketBlock() } catch { marketBlock = null }
+    }
+    const extraParts = [directive.systemAddendum, marketBlock].filter(Boolean) as string[]
+    const extraSystem = extraParts.length > 0 ? extraParts.join('\n\n') : undefined
+
     // ─── Phase 4 : cerveau Groq ───
     const t_brainStart = performance.now()
     const messages: ChatMessage[] = [...history, { role: 'user', content: transcription }]
@@ -200,7 +211,7 @@ export async function POST(request: Request) {
       format: 'voice',
       casquette: ctx.casquette.casquette,
       detailRequested,
-      extraSystem: directive.systemAddendum || undefined,
+      extraSystem,
     })
     timings.brain = Math.round(performance.now() - t_brainStart)
     if (!brainOutcome.ok) {
