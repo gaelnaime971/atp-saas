@@ -32,7 +32,7 @@
  *     }
  */
 
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
 import {
@@ -42,6 +42,7 @@ import {
   GROQ_WHISPER_USD_PER_HOUR,
   type AiFeature,
 } from './quota-limits'
+import { maybeAlertProviderFailure } from './provider-alerts'
 
 // ─── requireUser : auth + role en 1 helper ──────────────────────────────
 
@@ -237,6 +238,10 @@ export function buildProviderErrorResponse(ctx: {
     status: ctx.status,
     detail: ctx.detail,
   })
+  // Fire-and-forget : alerte email aux admins si panne durable
+  // (model_not_found, decommissioned, auth, billing). Anti-spam 24 h
+  // côté RPC. Après() → zéro impact sur la latence perçue par le trader.
+  after(() => maybeAlertProviderFailure(ctx))
   return NextResponse.json({ error: 'ai_unavailable' }, { status: 502 })
 }
 
