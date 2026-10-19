@@ -25,6 +25,18 @@ import { createClient as createSsrClient } from '@/lib/supabase/server'
 import { computeStats, compactContext, type SessionRow, type BacktestRow, type MetricsOptions } from '@/lib/trader-metrics'
 import { buildProviderErrorResponse } from '@/lib/ai/quota'
 import { getCasquette, type Casquette } from './casquette'
+import {
+  DEFAULT_RULES,
+  computeSessionState,
+  evaluateRules,
+  wasAlreadyAnnounced,
+  type TraderRules,
+  type TradeEvent,
+  type RuleKey,
+  type SessionState,
+  type TriggeredRule,
+  type AnnouncedRuleRecord,
+} from './rules-engine'
 
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }
 
@@ -38,16 +50,78 @@ export interface RoutineRow {
   checks: Record<string, boolean> | null
 }
 
+/**
+ * Événement brut tel que lu de jarvis_session_events. On garde la
+ * discrimination par type dans le payload — les helpers ci-dessous
+ * convertissent vers les types forts (TradeEvent, AnnouncedRuleRecord).
+ */
+export interface SessionEventRow {
+  id: string
+  type: 'trade' | 'joker_state' | 'rule_triggered' | 'session_end'
+  payload: Record<string, unknown>
+  created_at: string
+}
+
 export interface JarvisContext {
   userId: string
   email: string
   isAdmin: boolean
   routine: RoutineRow | null
   statsCompact: Record<string, unknown>
+  rules: TraderRules
+  events: SessionEventRow[]
   casquette: ReturnType<typeof getCasquette>
   bibleTxt: string
   now: Date
   cacheHits: string[]
+}
+
+// ─── Helpers de conversion événements → types rules-engine ──────────
+export function eventsToTrades(events: SessionEventRow[]): TradeEvent[] {
+  return events
+    .filter(e => e.type === 'trade')
+    .map(e => {
+      const p = e.payload as {
+        result_r?: number | null
+        result_usd?: number | null
+        instrument?: string
+        side?: 'long' | 'short'
+        config?: string | null
+        pending?: boolean
+      }
+      return {
+        id: e.id,
+        at: new Date(e.created_at),
+        result_r:   typeof p.result_r   === 'number' ? p.result_r   : null,
+        result_usd: typeof p.result_usd === 'number' ? p.result_usd : null,
+        instrument: p.instrument,
+        side:       p.side,
+        config:     p.config ?? null,
+        pending:    Boolean(p.pending),
+      }
+    })
+}
+
+export function eventsToAnnounced(events: SessionEventRow[]): AnnouncedRuleRecord[] {
+  return events
+    .filter(e => e.type === 'rule_triggered')
+    .map(e => {
+      const p = e.payload as { key?: RuleKey; config?: string }
+      return { key: p.key as RuleKey, config: p.config }
+    })
+    .filter(r => Boolean(r.key))
+}
+
+/**
+ * Au moins une règle de type "stop" a-t-elle déjà été annoncée aujourd'hui ?
+ * Pilote la détection trade_after_stop dans evaluateRules.
+ */
+const STOP_RULE_KEYS: ReadonlySet<RuleKey> = new Set<RuleKey>([
+  'first_win', 'loss_then_win', 'three_losses',
+  'target_reached', 'max_trades', 'same_config_hard_stop',
+])
+export function hasPriorStopAnnounced(announced: AnnouncedRuleRecord[]): boolean {
+  return announced.some(a => STOP_RULE_KEYS.has(a.key))
 }
 
 // ─── Caches module-level ─────────────────────────────────────────────
@@ -79,14 +153,17 @@ async function loadBible(): Promise<string> {
 const STATS_TTL_MS   = 30 * 60 * 1000
 const ROUTINE_TTL_MS =  5 * 60 * 1000
 const PROFILE_TTL_MS = 30 * 60 * 1000
+const RULES_TTL_MS   = 30 * 60 * 1000
 
 interface StatsCacheEntry   { at: number; data: Record<string, unknown> }
 interface RoutineCacheEntry { at: number; data: RoutineRow | null }
 interface ProfileCacheEntry { at: number; isAdmin: boolean }
+interface RulesCacheEntry   { at: number; data: TraderRules }
 
 const statsCache   = new Map<string, StatsCacheEntry>()
 const routineCache = new Map<string, RoutineCacheEntry>()
 const profileCache = new Map<string, ProfileCacheEntry>()
+const rulesCache   = new Map<string, RulesCacheEntry>()
 
 function freshStats(userId: string, now: number): StatsCacheEntry | null {
   const e = statsCache.get(userId)
@@ -99,6 +176,15 @@ function freshRoutine(userId: string, now: number): RoutineCacheEntry | null {
 function freshProfile(userId: string, now: number): ProfileCacheEntry | null {
   const e = profileCache.get(userId)
   return e && (now - e.at) < PROFILE_TTL_MS ? e : null
+}
+function freshRules(userId: string, now: number): RulesCacheEntry | null {
+  const e = rulesCache.get(userId)
+  return e && (now - e.at) < RULES_TTL_MS ? e : null
+}
+
+/** À appeler après chaque UPDATE côté serveur (RPC update_trader_rules). */
+export function invalidateRulesCache(userId: string): void {
+  rulesCache.delete(userId)
 }
 
 /**
@@ -113,31 +199,24 @@ export async function prepareContext(userId: string, email: string, now: Date = 
   const todayISO = now.toISOString().slice(0, 10)
   const from = new Date(nowMs - 30 * 86400_000).toISOString().slice(0, 10)
 
-  const sHit = freshStats(userId, nowMs)
-  const rHit = freshRoutine(userId, nowMs)
-  const pHit = freshProfile(userId, nowMs)
-  if (sHit) cacheHits.push('stats')
-  if (rHit) cacheHits.push('routine')
-  if (pHit) cacheHits.push('profile')
+  const sHit  = freshStats(userId, nowMs)
+  const rHit  = freshRoutine(userId, nowMs)
+  const pHit  = freshProfile(userId, nowMs)
+  const trHit = freshRules(userId, nowMs)
+  if (sHit)  cacheHits.push('stats')
+  if (rHit)  cacheHits.push('routine')
+  if (pHit)  cacheHits.push('profile')
+  if (trHit) cacheHits.push('rules')
+  // events = PAS DE CACHE : ils doivent être frais à chaque échange.
 
-  // Bail-out rapide : tout en cache → zéro appel Supabase.
-  if (sHit && rHit && pHit) {
-    const bibleTxt = await loadBible()
-    return {
-      userId, email, isAdmin: pHit.isAdmin,
-      routine: rHit.data, statsCompact: sHit.data,
-      casquette: getCasquette(now),
-      bibleTxt, now, cacheHits,
-    }
-  }
-
-  // Au moins un miss → 1 round-trip Supabase. Les queries manquantes
-  // partent en parallèle ; les hits renvoient une Promise résolue
-  // immédiatement pour ne pas trouer le Promise.all.
+  // Toutes les sources vivent dans Supabase sauf la bible — un seul
+  // round-trip DB en Promise.all. Les hits renvoient une Promise
+  // résolue immédiatement pour ne pas trouer le Promise.all.
   const [bibleTxt, supabase] = await Promise.all([loadBible(), createSsrClient()])
-
   const noResult = Promise.resolve({ data: null } as const)
-  const [profileRes, routineRes, sessionsRes, backtestsRes] = await Promise.all([
+  const emptyList = Promise.resolve({ data: [] } as const)
+
+  const [profileRes, routineRes, sessionsRes, backtestsRes, rulesRes, eventsRes] = await Promise.all([
     pHit ? noResult : supabase.from('profiles').select('role').eq('id', userId).maybeSingle(),
     rHit ? noResult : supabase.from('pre_market_routines')
       .select('confidence,mental_note,bias,news,support,resistance,checks')
@@ -155,6 +234,23 @@ export async function prepareContext(userId: string, email: string, now: Date = 
       .eq('trader_id', userId)
       .gte('date', from)
       .lte('date', todayISO),
+    trHit ? noResult : supabase.from('trader_personal_rules')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle(),
+    // Events du jour : TOUJOURS frais. On lit par ordre chronologique
+    // d'insertion. todayISO est la date UTC ; côté Supabase, la table
+    // utilise _atp_today_paris() en défaut → on filtre par la date
+    // Paris calculée serveur (todayParis).
+    (async () => {
+      const todayParis = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }))
+        .toISOString().slice(0, 10)
+      return supabase.from('jarvis_session_events')
+        .select('id, type, payload, created_at')
+        .eq('user_id', userId)
+        .eq('session_date', todayParis)
+        .order('created_at', { ascending: true })
+    })(),
   ])
 
   const isAdmin: boolean = pHit
@@ -176,16 +272,36 @@ export async function prepareContext(userId: string, email: string, now: Date = 
     const stats = computeStats(sessions, backtests, opts)
     statsCompact = compactContext(stats)
   }
+  const rules: TraderRules = trHit
+    ? trHit.data
+    : rowToRules(rulesRes.data as Partial<TraderRules> | null)
+  const events: SessionEventRow[] = (eventsRes.data as SessionEventRow[] | null) || []
 
-  if (!sHit) statsCache.set(userId, { at: nowMs, data: statsCompact })
-  if (!rHit) routineCache.set(userId, { at: nowMs, data: routine })
-  if (!pHit) profileCache.set(userId, { at: nowMs, isAdmin })
+  if (!sHit)  statsCache.set(userId,   { at: nowMs, data: statsCompact })
+  if (!rHit)  routineCache.set(userId, { at: nowMs, data: routine })
+  if (!pHit)  profileCache.set(userId, { at: nowMs, isAdmin })
+  if (!trHit) rulesCache.set(userId,   { at: nowMs, data: rules })
 
   return {
     userId, email, isAdmin,
-    routine, statsCompact,
+    routine, statsCompact, rules, events,
     casquette: getCasquette(now),
     bibleTxt, now, cacheHits,
+  }
+}
+
+/** Convertit la ligne trader_personal_rules en TraderRules (défauts si absente). */
+function rowToRules(row: Partial<TraderRules> | null): TraderRules {
+  if (!row) return DEFAULT_RULES
+  return {
+    risk_per_trade_usd:          Number(row.risk_per_trade_usd ?? DEFAULT_RULES.risk_per_trade_usd),
+    max_trades:                  Number(row.max_trades ?? DEFAULT_RULES.max_trades),
+    stop_after_losses:           Number(row.stop_after_losses ?? DEFAULT_RULES.stop_after_losses),
+    target_r:                    Number(row.target_r ?? DEFAULT_RULES.target_r),
+    stop_after_first_win:        row.stop_after_first_win ?? DEFAULT_RULES.stop_after_first_win,
+    stop_after_loss_win:         row.stop_after_loss_win ?? DEFAULT_RULES.stop_after_loss_win,
+    same_config_hard_stop_after: Number(row.same_config_hard_stop_after ?? DEFAULT_RULES.same_config_hard_stop_after),
+    min_ratio:                   Number(row.min_ratio ?? DEFAULT_RULES.min_ratio),
   }
 }
 
@@ -282,6 +398,45 @@ Minutes jusqu'à l'Open : ${ctx.casquette.minutesToOpen} (négatif = déjà pass
       ? `AUCUNE routine pré-marché aujourd'hui. L'absence a déjà été signalée au trader plus tôt dans la conversation — NE la re-signale pas, concentre-toi sur sa question actuelle.`
       : `AUCUNE routine pré-marché aujourd'hui. Si c'est pertinent pour sa question, signale-le UNE SEULE fois, puis réponds.`
 
+  // Règles perso du trader
+  const r = ctx.rules
+  const riskLine = r.risk_per_trade_usd > 0
+    ? `${r.risk_per_trade_usd} $/trade`
+    : 'non renseigné (demande-le une seule fois si pertinent)'
+  const accountLine = (r as unknown as { account_size_usd?: number }).account_size_usd && (r as unknown as { account_size_usd?: number }).account_size_usd! > 0
+    ? `${(r as unknown as { account_size_usd?: number }).account_size_usd} $`
+    : 'non renseigné'
+  const rulesBlock = `RÈGLES PERSO DU TRADER (figées pour aujourd'hui) :
+- Capital compte : ${accountLine}
+- Risque par trade : ${riskLine}
+- Max trades/session : ${r.max_trades}
+- Stop après ${r.stop_after_losses} pertes d'affilée
+- Objectif : +${r.target_r} R
+- Stop après 1er trade gagnant : ${r.stop_after_first_win ? 'oui' : 'non'}
+- Stop après "perdant puis gagnant" : ${r.stop_after_loss_win ? 'oui' : 'non'}
+- Frein à main après ${r.same_config_hard_stop_after} échecs sur la même config
+- Ratio minimum : ${r.min_ratio}
+Ces règles sont du CODE : c'est le serveur qui décide ce qui les
+déclenche. Toi, tu annonces quand on te le dit, pas de ta propre
+initiative.`
+
+  // État de session (calculé par le moteur de règles pur)
+  const trades = eventsToTrades(ctx.events)
+  const state = computeSessionState(trades, ctx.rules)
+  const announced = eventsToAnnounced(ctx.events)
+  const stateBlock = state.tradesCount === 0
+    ? `ÉTAT DE SESSION : aucun trade déclaré aujourd'hui.`
+    : `ÉTAT DE SESSION :
+- Trades joués : ${state.tradesCount}
+- R du jour : ${state.rSum != null ? state.rSum.toFixed(2) : 'non calculable (pas de risque renseigné)'}
+- $ du jour : ${state.usdSum.toFixed(2)}
+- Pertes consécutives : ${state.consecutiveLosses}
+- 1er trade gagnant : ${state.firstTradeWin ? 'oui' : 'non'}
+- Perdant puis gagnant observé : ${state.lossThenWinSeen ? 'oui' : 'non'}
+- Échecs par config : ${JSON.stringify(state.sameConfigFails)}
+- Règles DÉJÀ annoncées aujourd'hui (ne pas répéter sauf
+  trade_after_stop) : ${announced.length ? announced.map(a => a.key + (a.config ? `(${a.config})` : '')).join(', ') : 'aucune'}`
+
   return `CONTEXTE INSTANT
 Heure actuelle (Paris) : ${nowParis}
 Compte : ${ctx.email}
@@ -289,10 +444,34 @@ ${casquetteBlock}
 
 ${routineBlock}
 
+${rulesBlock}
+
+${stateBlock}
+
 Statistiques du trader (30 derniers jours) :
 ${JSON.stringify(ctx.statsCompact, null, 2)}
 
 Règle absolue : si une info ci-dessus manque, dis-le, n'invente rien.`
+}
+
+// ─── Helper evaluate (utilisé par les routes voice/chat en 3F.4) ────
+export interface SessionSnapshot {
+  state: SessionState
+  freshTriggers: TriggeredRule[]
+  alreadyAnnounced: AnnouncedRuleRecord[]
+}
+/**
+ * Calcule l'état + les règles à annoncer MAINTENANT (celles qui
+ * ne l'ont pas déjà été). Entrée = events bruts du jour.
+ */
+export function snapshotSession(events: SessionEventRow[], rules: TraderRules): SessionSnapshot {
+  const trades = eventsToTrades(events)
+  const announced = eventsToAnnounced(events)
+  const state = computeSessionState(trades, rules)
+  const priorStop = hasPriorStopAnnounced(announced)
+  const all = evaluateRules(state, rules, priorStop)
+  const freshTriggers = all.filter(t => !wasAlreadyAnnounced(t, announced))
+  return { state, freshTriggers, alreadyAnnounced: announced }
 }
 
 // ─── Clamp réponse (reasoning strip + anti-doublon intelligent) ─────
