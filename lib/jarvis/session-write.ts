@@ -17,6 +17,7 @@ import {
   eventsToTrades,
   type SessionEventRow,
 } from './brain'
+import type { JokerStep } from './joker'
 
 function serviceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -50,6 +51,28 @@ export async function insertTrade(userId: string, trade: DetectedTrade): Promise
   if (error || !data) {
     console.error('[jarvis-session-write] insertTrade failed', { userId, error })
     throw new Error('insertTrade failed')
+  }
+  return data as SessionEventRow
+}
+
+/**
+ * Insère un marqueur de transition d'état Joker (type='joker_state'
+ * payload={step}). Appelé par les routes voice/chat quand
+ * advanceJokerState a renvoyé un next ≠ courant.
+ */
+export async function insertJokerState(
+  userId: string,
+  step: JokerStep,
+): Promise<SessionEventRow> {
+  const supabase = serviceClient()
+  const { data, error } = await supabase
+    .from('jarvis_session_events')
+    .insert({ user_id: userId, type: 'joker_state', payload: { step } })
+    .select('id, type, payload, created_at')
+    .single()
+  if (error || !data) {
+    console.error('[jarvis-session-write] insertJokerState failed', { userId, step, error })
+    throw new Error('insertJokerState failed')
   }
   return data as SessionEventRow
 }

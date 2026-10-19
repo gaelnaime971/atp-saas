@@ -122,11 +122,15 @@ interface TriggeredRule {
   message: string
   config?: string
 }
+type JokerStep = 'inactive' | 'armed' | 'choch_m1' | 'choch_m5' | 'ready'
+interface JokerStatus { step: JokerStep; outOfOrder?: boolean }
+
 interface SessionPayload {
   state: { tradesCount: number; rSum: number | null; usdSum: number }
   notedEvent: NotedEvent | null
   triggered: TriggeredRule[]
   detection: 'trade' | 'ambiguous' | 'none'
+  joker?: JokerStatus
 }
 
 interface Exchange {
@@ -149,6 +153,52 @@ const AMBER_RULES = new Set([
   'three_losses', 'max_trades', 'same_config_hard_stop', 'trade_after_stop',
 ])
 function isAmberRule(key: string): boolean { return AMBER_RULES.has(key) }
+function JokerStepper({ step }: { step: JokerStep }) {
+  // Les 3 étapes du suivi : CHoCH M1 → CHoCH M5 → Prêt
+  const stages: Array<{ key: JokerStep; label: string }> = [
+    { key: 'choch_m1', label: 'CHoCH M1' },
+    { key: 'choch_m5', label: 'CHoCH M5' },
+    { key: 'ready',    label: 'Prêt' },
+  ]
+  // Logique d'état par étape :
+  // armed    → M1 attend  (pulse), M5 vide, ready vide
+  // choch_m1 → M1 validé, M5 attend (pulse), ready vide
+  // choch_m5 → M1 validé, M5 validé, ready attend (pulse)
+  // ready    → tous validés
+  const statusOf = (stageKey: JokerStep): 'done' | 'awaiting' | 'pending' => {
+    const order: JokerStep[] = ['armed', 'choch_m1', 'choch_m5', 'ready']
+    const currentIdx = order.indexOf(step)
+    const stageIdx = order.indexOf(stageKey)
+    if (currentIdx > stageIdx) return 'done'       // M1 est "done" quand step = choch_m1+
+    if (currentIdx === stageIdx) return 'awaiting' // l'étape courante est "awaiting"
+    // Cas particulier : ready affiche "done" pour tout
+    if (step === 'ready') return 'done'
+    return 'pending'
+  }
+
+  return (
+    <div className="jv-joker" role="group" aria-label="Mode Joker en cours">
+      <div className="jv-joker-head">
+        <span className="jv-joker-dot" aria-hidden /> Mode Joker — {step === 'armed' ? 'armé' : step === 'ready' ? 'prêt' : 'en cours'}
+      </div>
+      <ol className="jv-joker-steps">
+        {stages.map((s, i) => {
+          const st = statusOf(s.key)
+          return (
+            <li key={s.key} className={`jv-joker-step is-${st}`}>
+              <span className="jv-joker-circle" aria-hidden>{st === 'done' ? '✓' : ''}</span>
+              <span className="jv-joker-label">{s.label}</span>
+              {i < stages.length - 1 && (
+                <span className={`jv-joker-link ${st === 'done' ? 'is-done' : (statusOf(stages[i + 1].key) === 'awaiting' ? 'is-active' : '')}`} aria-hidden />
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </div>
+  )
+}
+
 function formatNoted(ev: NotedEvent): string {
   const p = ev.payload
   const parts: string[] = []
@@ -683,6 +733,10 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           </div>
         )}
 
+        {lastExchange?.session?.joker && lastExchange.session.joker.step !== 'inactive' && (
+          <JokerStepper step={lastExchange.session.joker.step} />
+        )}
+
         <div className={`jv-counter ${remaining.cls}`}>{remaining.label || '—'}</div>
 
         {error && <div className="jv-error-wrap"><AiErrorBanner error={error} compact /></div>}
@@ -903,6 +957,82 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           font-size: 11px; color: #9FB0A6;
           letter-spacing: 0.02em;
         }
+        /* ─── Stepper Joker (3F.5) ───────────────────────────── */
+        .jv-joker {
+          max-width: 340px; width: 100%;
+          padding: 10px 12px; border-radius: 10px;
+          background: rgba(69, 212, 134, 0.06);
+          border: 1px solid rgba(69, 212, 134, 0.3);
+          font-family: var(--font-oxanium), system-ui, sans-serif;
+          font-size: 11px;
+        }
+        .jv-joker-head {
+          display: flex; align-items: center; gap: 6px;
+          color: #45D486; font-size: 11px;
+          text-transform: uppercase; letter-spacing: 0.08em;
+          margin-bottom: 10px;
+        }
+        .jv-joker-dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #45D486;
+          animation: jvJokerPulseDot 1.4s ease-in-out infinite;
+        }
+        @keyframes jvJokerPulseDot {
+          0%, 100% { transform: scale(1); opacity: 0.6; }
+          50%      { transform: scale(1.3); opacity: 1; }
+        }
+        .jv-joker-steps {
+          list-style: none; margin: 0; padding: 0;
+          display: flex; align-items: center; gap: 0; width: 100%;
+        }
+        .jv-joker-step {
+          flex: 1 1 0;
+          display: flex; align-items: center;
+          position: relative;
+          font-size: 11px;
+        }
+        .jv-joker-circle {
+          width: 20px; height: 20px; border-radius: 50%;
+          border: 1px solid rgba(159, 176, 166, 0.4);
+          display: inline-flex; align-items: center; justify-content: center;
+          font-size: 11px; font-weight: 700;
+          color: transparent;
+          flex-shrink: 0;
+        }
+        .jv-joker-label {
+          margin-left: 6px;
+          color: #9FB0A6;
+          white-space: nowrap;
+        }
+        .jv-joker-link {
+          flex: 1 1 0;
+          height: 2px;
+          background: rgba(159, 176, 166, 0.25);
+          margin: 0 6px;
+        }
+        .jv-joker-step.is-done .jv-joker-circle {
+          background: #45D486; border-color: #45D486; color: #0B100E;
+        }
+        .jv-joker-step.is-done .jv-joker-label { color: #E9EEEA; }
+        .jv-joker-link.is-done { background: #45D486; }
+        .jv-joker-link.is-active {
+          background: linear-gradient(90deg, #45D486, rgba(69, 212, 134, 0.25));
+          animation: jvJokerLinkPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes jvJokerLinkPulse {
+          0%, 100% { opacity: 0.5; }
+          50%      { opacity: 1; }
+        }
+        .jv-joker-step.is-awaiting .jv-joker-circle {
+          border-color: #45D486;
+          box-shadow: 0 0 0 0 rgba(69, 212, 134, 0.5);
+          animation: jvJokerPulseCircle 1.4s ease-in-out infinite;
+        }
+        @keyframes jvJokerPulseCircle {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(69, 212, 134, 0.5); }
+          50%      { box-shadow: 0 0 0 6px rgba(69, 212, 134, 0.0); }
+        }
+        .jv-joker-step.is-awaiting .jv-joker-label { color: #45D486; }
         .jv-error-wrap { width: 100%; max-width: 340px; }
         .jv-actions { padding: 4px 0; }
         .jv-btn {

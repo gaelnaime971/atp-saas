@@ -13,8 +13,9 @@ import {
   type ChatMessage, type SessionEventRow,
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
-import { insertTrade, insertRuleTriggered } from '@/lib/jarvis/session-write'
+import { insertTrade, insertRuleTriggered, insertJokerState } from '@/lib/jarvis/session-write'
 import { getMarketBlock, needsMarketContext } from '@/lib/jarvis/market-context'
+import { advanceJokerState, getCurrentJokerContext, READY_MESSAGE } from '@/lib/jarvis/joker'
 import { synthesizeSpeech } from '@/lib/jarvis/elevenlabs'
 import { pronounceForVoice } from '@/lib/jarvis/pronunciation'
 import { numbersToWords } from '@/lib/jarvis/voice-numbers'
@@ -194,13 +195,41 @@ export async function POST(request: Request) {
       })
     }
 
+    // 3F.5 — Mode Joker : transitions pilotées par le CODE
+    const jokerCtxBefore = getCurrentJokerContext(ctx.events)
+    // Trade déclaré → reset Joker à inactive (auto)
+    let jokerTransition = (notedEvent && jokerCtxBefore.step !== 'inactive')
+      ? { next: 'inactive' as const, cancelled: true }
+      : advanceJokerState(jokerCtxBefore, transcription)
+    let jokerAnnounce: string | null = null
+    let jokerOutOfOrder = false
+    if (jokerTransition.next !== jokerCtxBefore.step) {
+      try {
+        const inserted = await insertJokerState(userId, jokerTransition.next)
+        ctx.events.push(inserted)
+      } catch (err) {
+        console.error('[jarvis-voice] insertJokerState failed', err)
+      }
+      if (jokerTransition.reachedReady) jokerAnnounce = READY_MESSAGE
+    }
+    if (jokerTransition.outOfOrder) jokerOutOfOrder = true
+
     // 3F-bis : bloc MARCHÉ injecté uniquement si le message parle de
     // macro/actualité/marchés (coût ~400 tokens → éviter sinon).
     let marketBlock: string | null = null
     if (needsMarketContext(transcription)) {
       try { marketBlock = await getMarketBlock() } catch { marketBlock = null }
     }
-    const extraParts = [directive.systemAddendum, marketBlock].filter(Boolean) as string[]
+
+    // Addendum Joker injecté dans extraSystem si pertinent
+    let jokerAddendum: string | null = null
+    if (jokerAnnounce) {
+      jokerAddendum = `MODE JOKER — Checklist complète. Commence ta réponse par EXACTEMENT cette phrase, sans la modifier :\n\n${READY_MESSAGE}\n\nPuis au plus UNE phrase courte, sans donner de signal ni de niveau.`
+    } else if (jokerOutOfOrder) {
+      jokerAddendum = `MODE JOKER — Le trader a mentionné une étape plus avancée que l'étape courante. Relève-le avec douceur en UNE phrase : rappelle qu'il faut d'abord valider le CHoCH M1 avant le M5.`
+    }
+
+    const extraParts = [jokerAddendum, directive.systemAddendum, marketBlock].filter(Boolean) as string[]
     const extraSystem = extraParts.length > 0 ? extraParts.join('\n\n') : undefined
 
     // ─── Phase 4 : cerveau Groq ───
@@ -273,6 +302,7 @@ export async function POST(request: Request) {
       notedEvent,
       triggered: directive.triggered.map(t => ({ key: t.key, message: t.message, config: t.config })),
       detection: detection.kind,
+      joker: { step: jokerTransition.next, outOfOrder: jokerOutOfOrder },
     }
     const metaHeaders: Record<string, string> = {
       'X-Jarvis-Transcription': b64url(transcription),

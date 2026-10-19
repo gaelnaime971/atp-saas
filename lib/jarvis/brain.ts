@@ -37,6 +37,7 @@ import {
   type TriggeredRule,
   type AnnouncedRuleRecord,
 } from './rules-engine'
+import { getCurrentJokerContext, JOKER_STEP_LABEL, type JokerContext } from './joker'
 
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }
 
@@ -463,6 +464,12 @@ initiative.`
 - Règles DÉJÀ annoncées aujourd'hui (ne pas répéter sauf
   trade_after_stop) : ${announced.length ? announced.map(a => a.key + (a.config ? `(${a.config})` : '')).join(', ') : 'aucune'}`
 
+  // Mode Joker — bloc injecté uniquement si actif
+  const joker = getCurrentJokerContext(ctx.events, ctx.now)
+  const jokerBlock = joker.step === 'inactive'
+    ? ''
+    : `\nMODE JOKER ACTIF : étape "${JOKER_STEP_LABEL[joker.step]}". C'est le CODE qui pilote cet état ; toi tu rappelles sobrement où on en est, pas de signal. Si l'étape est "ready", l'annonce officielle a déjà été faite dans l'extraSystem, ne la répète pas.\n`
+
   return `CONTEXTE INSTANT
 Heure actuelle (Paris) : ${nowParis}
 Compte : ${ctx.email}
@@ -473,7 +480,7 @@ ${routineBlock}
 ${rulesBlock}
 
 ${stateBlock}
-
+${jokerBlock}
 Statistiques du trader (30 derniers jours) :
 ${JSON.stringify(ctx.statsCompact, null, 2)}
 
