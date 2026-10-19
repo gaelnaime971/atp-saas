@@ -10,7 +10,7 @@ import {
   buildQuotaResponse,
   buildProviderErrorResponse,
 } from '@/lib/ai/quota'
-import { requireJarvisAccess } from '@/lib/jarvis/access'
+import { requireJarvisAccessFast } from '@/lib/jarvis/access'
 import { getCasquette } from '@/lib/jarvis/casquette'
 
 export const runtime = 'nodejs'
@@ -27,10 +27,7 @@ const FORMAT = `FORMAT DE SORTIE
 - Ne donne jamais de signal : pas de "prends le trade", pas de niveau d'entrée/TP/SL. Celui qui clique assume.
 - Écris UNE SEULE réponse finale. Ne la révise pas, ne la reformule pas, ne la répète pas sous une autre forme.`
 
-/** Cache module-level — la bible ne change jamais entre requêtes.
- *  Première requête (cold start) : readFile ~5-20ms.
- *  Suivantes : 0ms. Placée en 1er dans messages → bénéficie du
- *  cache de prompt de Groq. */
+// ─── Cache bible (ne change jamais entre requêtes) ───
 let bibleCache: string | null = null
 async function loadBible(): Promise<string> {
   if (bibleCache !== null) return bibleCache
@@ -39,18 +36,42 @@ async function loadBible(): Promise<string> {
   return bibleCache
 }
 
+// ─── Cache 5 min par user : routine + stats + isAdmin ───
+//
+// Les 3 ne changent pas pendant une conversation :
+//   - routine pré-marché du jour : écrite 1x le matin
+//   - stats 30 jours : agrégats stables sur quelques minutes
+//   - isAdmin : stable à l'échelle d'une session
+//
+// Clé = user_id. TTL = 5 min. Partagé entre invocations warm d'une
+// instance Vercel. Si l'instance se recycle (idle > ~10 min), cache
+// perdu — pas grave, 1 miss côté 1re requête.
+const CACHE_TTL_MS = 5 * 60 * 1000
+interface JarvisCacheEntry {
+  at: number
+  routine: RoutineRow | null
+  statsCompact: Record<string, unknown>
+  isAdmin: boolean
+}
+const userCache = new Map<string, JarvisCacheEntry>()
+
+interface RoutineRow {
+  confidence: number | null
+  mental_note: string | null
+  bias: string | null
+  news: string | null
+  support: string | null
+  resistance: string | null
+  checks: Record<string, boolean> | null
+}
+
 /**
- * Nettoie la réponse Groq :
- *  - tags Harmony (<|channel|>, <|message|>, <|end|>…) au cas où ils
- *    fuitent dans content malgré reasoning_format: 'parsed' ;
- *  - blocs <think>...</think> ;
- *  - fences ```...``` ;
- *  - puces en début de ligne ;
- *  - détection de doublon "point/majuscule sans espace" : si on
- *    trouve ".P" (point + majuscule sans espace séparateur), c'est
- *    typiquement 2 réponses collées par gpt-oss — on garde la
- *    première phrase.
- * Puis clamp à 300 car. en coupant à la fin d'une phrase si possible.
+ * Nettoie la réponse Groq.
+ *  - strip tags Harmony/think/fences/bullets
+ *  - Doublon : si point/! /? collé à une majuscule, teste si c'est
+ *    un VRAI doublon (répétition) ou juste une abréviation (U.S.,
+ *    Dr., etc., i.e., P.M., ...).
+ *  - Log [jarvis] doublon-coupé quand le filet se déclenche.
  */
 function clampResponse(raw: string): string {
   const MAX = 300
@@ -61,11 +82,33 @@ function clampResponse(raw: string): string {
     .replace(/^\s*[-*•]\s+/gm, '')
     .trim()
 
-  // Doublon : point + majuscule accolée (sans espace) → 2 réponses
-  // concaténées. Patch côté serveur en gardant la 1re phrase complète.
-  const dupMatch = s.match(/^([\s\S]{20,}?[.!?…])([A-ZÉÈÀÇÎÔÛ])/)
-  if (dupMatch) s = dupMatch[1]
-  s = s.trim()
+  // ─── Détection de doublons intelligente ───
+  // Cherche TOUS les "point/! /? suivi d'une majuscule sans espace"
+  // et teste chaque position comme un split potentiel. On garde la
+  // 1re partie seulement si c'est un VRAI doublon (répétition).
+  const boundaryRe = /([.!?…])([A-ZÉÈÀÇÎÔÛ])/g
+  let m: RegExpExecArray | null
+  const splits: number[] = []
+  while ((m = boundaryRe.exec(s)) !== null) splits.push(m.index + 1)
+
+  for (const pos of splits) {
+    const left = s.slice(0, pos)
+    const right = s.slice(pos)
+    if (right.length < 40) continue             // trop court pour être un doublon
+    if (isAbbreviationBoundary(left)) continue  // U.S., Dr., etc.
+    const sim = jaccardWords(left, right)
+    if (sim >= 0.5) {
+      console.warn('[jarvis] doublon-coupé', {
+        sim: Number(sim.toFixed(2)),
+        leftLen: left.length,
+        rightLen: right.length,
+        leftTail: left.slice(-40),
+        rightHead: right.slice(0, 40),
+      })
+      s = left.trim()
+      break
+    }
+  }
 
   if (s.length <= MAX) return s
   const slice = s.slice(0, MAX)
@@ -79,52 +122,69 @@ function clampResponse(raw: string): string {
   return slice.trim() + '…'
 }
 
+/** La fin de `left` est-elle une abréviation plutôt qu'une vraie
+ *  fin de phrase ? U., U.S., U.S.A., Dr., Mr., Mrs., Ms., St., Jr.,
+ *  Prof., etc., cf., ex., i.e., e.g., p.ex., chap., éd., vol. */
+function isAbbreviationBoundary(left: string): boolean {
+  if (/(?:^|[\s(])(?:[A-Z]\.){1,}$/.test(left)) return true
+  if (/\b(?:Dr|Mr|Mrs|Ms|St|Jr|Sr|Prof|M|Mme|Mlle)\.$/.test(left)) return true
+  if (/\b(?:etc|cf|ex|p\.ex|i\.e|e\.g|chap|éd|ed|ill|vol|réf|ref)\.$/i.test(left)) return true
+  return false
+}
+
+/** Similarité Jaccard sur les mots (lettres uniquement, lowercase). */
+function jaccardWords(a: string, b: string): number {
+  const words = (s: string): Set<string> => {
+    const matches = s.toLowerCase().match(/\p{L}+/gu) || []
+    return new Set(matches.filter(w => w.length >= 3))
+  }
+  const wa = words(a), wb = words(b)
+  if (wa.size === 0 || wb.size === 0) return 0
+  let inter = 0
+  for (const w of wa) if (wb.has(w)) inter++
+  return inter / (wa.size + wb.size - inter)
+}
+
 /**
- * Fetch Groq avec timeout ferme + 1 retry rapide sur 429/5xx seulement.
- *  - 7 000 ms max par essai (AbortSignal.timeout)
- *  - 300 ms de pause avant le retry (laisse Groq souffler sans
- *    bloquer le trader, qui attend sa réponse)
- *  - Jamais plus de 2 essais au total → latence worst-case ~14,3 s
- *    au lieu d'attendre 11+ s sur un seul call bloqué par rate limit.
- * Explication du 11s observé : Groq laisse la connexion ouverte en
- * cas de rate limit en attendant le reset de la fenêtre tokens/minute,
- * on n'avait ni timeout ni retry → on subissait toute l'attente.
+ * Appel Groq avec budget TOTAL ≤ 6 s (retry inclus).
+ *   - Essai 1 : AbortSignal.timeout(2800 ms)
+ *   - Pause 300 ms sur 429/5xx ou timeout
+ *   - Essai 2 : AbortSignal.timeout(2800 ms)
+ *   - Total max : 2800 + 300 + 2800 = 5900 ms ≤ 6000 ms.
+ * Au-delà, buildProviderErrorResponse (502) → le client voit une
+ * erreur propre immédiate.
  */
-async function fetchGroqWithRetry(payload: unknown, apiKey: string): Promise<Response> {
+async function fetchGroqBudgeted(payload: unknown, apiKey: string): Promise<Response> {
+  const PER = 2800
+  const PAUSE = 300
   const makeAttempt = () => fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(7000),
+    signal: AbortSignal.timeout(PER),
   })
 
-  let r: Response
+  let r1: Response
   try {
-    r = await makeAttempt()
+    r1 = await makeAttempt()
   } catch (err) {
-    // Timeout ou réseau — 1 retry rapide
-    await new Promise(res => setTimeout(res, 300))
-    return makeAttempt().catch(() => {
-      throw err
-    })
+    await new Promise(res => setTimeout(res, PAUSE))
+    return makeAttempt().catch(() => { throw err })
   }
-  if (r.ok) return r
-  if (r.status === 429 || r.status >= 500) {
-    await new Promise(res => setTimeout(res, 300))
-    try {
-      return await makeAttempt()
-    } catch { return r }
-  }
-  return r
+  if (r1.ok) return r1
+  if (r1.status !== 429 && r1.status < 500) return r1
+  await new Promise(res => setTimeout(res, PAUSE))
+  try { return await makeAttempt() } catch { return r1 }
 }
 
 export async function POST(request: Request) {
   const t_start = performance.now()
   const timings: Record<string, number> = {}
+  const cacheHits: string[] = []
   try {
-    const auth = await requireJarvisAccess()
+    const auth = await requireJarvisAccessFast()
     if (auth instanceof Response) return auth
-    const { user, isAdmin } = auth
+    const { userId, email } = auth
     timings.auth = Math.round(performance.now() - t_start)
 
     const apiKey = process.env.GROQ_API_KEY
@@ -135,56 +195,76 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'messages requis' }, { status: 400 })
     }
 
-    // ─── Parallélisation : quota + routine + stats data en un seul Promise.all ───
-    // Gain : 4 round-trips Supabase (~100-300ms chacun) → 1 seul temps
-    // de la plus lente. ~300-900ms économisés en moyenne.
-    const supabase = await createSsrClient()
     const now = new Date()
     const todayISO = now.toISOString().slice(0, 10)
     const from = new Date(now.getTime() - 30 * 86400_000).toISOString().slice(0, 10)
 
+    // ─── Cache 5 min par user : routine + stats + isAdmin ───
     const t_dataStart = performance.now()
-    const [quotaResult, routineRes, sessionsRes, backtestsRes, bibleTxt] = await Promise.all([
-      checkAndCount(user.id, 'jarvis', isAdmin),
-      supabase.from('pre_market_routines')
-        .select('confidence,mental_note,bias,news,support,resistance,checks')
-        .eq('user_id', user.id)
-        .eq('routine_date', todayISO)
-        .maybeSingle(),
-      supabase.from('trading_sessions')
-        .select('session_date,pnl,result,trades_count,instrument,setup,notes')
-        .eq('trader_id', user.id)
-        .gte('session_date', from)
-        .lte('session_date', todayISO)
-        .order('session_date', { ascending: false }),
-      supabase.from('backtests')
-        .select('date,instrument,direction,setup_types,signals,has_confluence,r_result,result,notes')
-        .eq('trader_id', user.id)
-        .gte('date', from)
-        .lte('date', todayISO),
-      loadBible(),
-    ])
+    const cached = userCache.get(userId)
+    const cacheFresh = cached && (now.getTime() - cached.at) < CACHE_TTL_MS
+
+    let routine: RoutineRow | null
+    let statsCompact: Record<string, unknown>
+    let isAdmin: boolean
+    let bibleTxt: string
+
+    if (cacheFresh) {
+      // Cache hit : on ne refetch QUE la bible (cheap, elle-même cachée) et on
+      // relance checkAndCount en parallèle.
+      cacheHits.push('routine', 'stats', 'profile')
+      ;[bibleTxt] = await Promise.all([loadBible()])
+      routine = cached!.routine
+      statsCompact = cached!.statsCompact
+      isAdmin = cached!.isAdmin
+    } else {
+      // Cache miss : Promise.all massif.
+      const supabase = await createSsrClient()
+      const [profileRes, routineRes, sessionsRes, backtestsRes, loadedBible] = await Promise.all([
+        supabase.from('profiles').select('role').eq('id', userId).maybeSingle(),
+        supabase.from('pre_market_routines')
+          .select('confidence,mental_note,bias,news,support,resistance,checks')
+          .eq('user_id', userId)
+          .eq('routine_date', todayISO)
+          .maybeSingle(),
+        supabase.from('trading_sessions')
+          .select('session_date,pnl,result,trades_count,instrument,setup,notes')
+          .eq('trader_id', userId)
+          .gte('session_date', from)
+          .lte('session_date', todayISO)
+          .order('session_date', { ascending: false }),
+        supabase.from('backtests')
+          .select('date,instrument,direction,setup_types,signals,has_confluence,r_result,result,notes')
+          .eq('trader_id', userId)
+          .gte('date', from)
+          .lte('date', todayISO),
+        loadBible(),
+      ])
+
+      const sessions = (sessionsRes.data || []) as SessionRow[]
+      const backtests = (backtestsRes.data || []) as BacktestRow[]
+      const opts: MetricsOptions = {
+        from, to: todayISO, periodLabel: '30 derniers jours',
+        instrument: null, accountId: null, direction: null,
+      }
+      const stats = computeStats(sessions, backtests, opts)
+      statsCompact = compactContext(stats)
+      routine = routineRes.data as RoutineRow | null
+      isAdmin = (profileRes.data as { role?: string } | null)?.role === 'admin'
+      bibleTxt = loadedBible
+
+      userCache.set(userId, { at: now.getTime(), routine, statsCompact, isAdmin })
+    }
     timings.context = Math.round(performance.now() - t_dataStart)
 
-    // Quota refusé → 429 avec compteur, pas d'appel Groq
+    // ─── Quota (toujours en live, jamais caché) ───
+    const t_quotaStart = performance.now()
+    const quotaResult = await checkAndCount(userId, 'jarvis', isAdmin)
+    timings.quota = Math.round(performance.now() - t_quotaStart)
+
     if (!quotaResult.allowed) return buildQuotaResponse(quotaResult)
 
     // ─── Build context ───
-    const sessions = (sessionsRes.data || []) as SessionRow[]
-    const backtests = (backtestsRes.data || []) as BacktestRow[]
-    const opts: MetricsOptions = {
-      from, to: todayISO, periodLabel: '30 derniers jours',
-      instrument: null, accountId: null, direction: null,
-    }
-    const stats = computeStats(sessions, backtests, opts)
-    const statsCompact = compactContext(stats)
-
-    const routine = routineRes.data as {
-      confidence: number | null; mental_note: string | null; bias: string | null;
-      news: string | null; support: string | null; resistance: string | null;
-      checks: Record<string, boolean> | null;
-    } | null
-
     const casquette = getCasquette(now)
     const nowParis = new Intl.DateTimeFormat('fr-FR', {
       timeZone: 'Europe/Paris', dateStyle: 'full', timeStyle: 'short',
@@ -209,17 +289,16 @@ Minutes jusqu'à l'Open : ${casquette.minutesToOpen} (négatif = déjà passé)`
 
     const contextMsg = `CONTEXTE INSTANT
 Heure actuelle (Paris) : ${nowParis}
+Compte : ${email}
 ${casquetteBlock}
 
 ${routineBlock}
 
-Statistiques du trader (30 derniers jours — ${stats.period_from} → ${stats.period_to}) :
+Statistiques du trader (30 derniers jours) :
 ${JSON.stringify(statsCompact, null, 2)}
 
 Règle absolue : si une info ci-dessus manque ou dit "vide/non renseigné/aucune", tu le signales au trader, tu n'inventes rien.`
 
-    // Bible en 1re position → cache de prompt Groq honoré sur les
-    // requêtes successives de la même conversation.
     const trimmed = body.messages.slice(-10)
     const messages = [
       { role: 'system' as const, content: bibleTxt },
@@ -228,17 +307,13 @@ Règle absolue : si une info ci-dessus manque ou dit "vide/non renseigné/aucune
       ...trimmed.map(m => ({ role: m.role, content: m.content })),
     ]
 
-    // ─── Appel Groq avec timeout + 1 retry rapide ───
+    // ─── Groq avec budget 6s total ───
     const t_groqStart = performance.now()
-    const r = await fetchGroqWithRetry({
+    const r = await fetchGroqBudgeted({
       model: GROQ_TEXT_MODEL,
       max_tokens: 300,
       temperature: 0.2,
       reasoning_effort: 'low',
-      // 'parsed' met le CoT dans message.reasoning (champ séparé),
-      // content ne contient QUE la réponse finale. 'hidden' peut
-      // fuiter l'analysis dans content sur gpt-oss et créer des
-      // doublons type "fin analysis.début final" (sans espace).
       reasoning_format: 'parsed',
       messages,
     }, apiKey)
@@ -257,7 +332,7 @@ Règle absolue : si une info ci-dessus manque ou dit "vide/non renseigné/aucune
     const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
     if (usage) {
       after(async () => {
-        await recordUsage(user.id, 'jarvis', {
+        await recordUsage(userId, 'jarvis', {
           tokensIn: usage.prompt_tokens ?? 0,
           tokensOut: usage.completion_tokens ?? 0,
           model: GROQ_TEXT_MODEL,
@@ -273,6 +348,7 @@ Règle absolue : si une info ci-dessus manque ou dit "vide/non renseigné/aucune
       callsToday: quotaResult.callsToday,
       callsLimit: quotaResult.callsLimit,
       timings,
+      cacheHits,
     })
   } catch (err) {
     return buildProviderErrorResponse({ route: '/api/jarvis/chat', model: GROQ_TEXT_MODEL, detail: err })

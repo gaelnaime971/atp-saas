@@ -12,6 +12,7 @@ import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
 interface ServerTimings {
   auth?: number
   context?: number
+  quota?: number
   groq?: number
   total?: number
 }
@@ -24,6 +25,7 @@ interface Msg {
   callsLimit?: number
   casquette?: string
   server?: ServerTimings  // décomposition serveur
+  cacheHits?: string[]    // tags "routine", "stats", "profile" quand le cache a servi
 }
 
 export default function JarvisPoc({ email }: { email: string }) {
@@ -71,6 +73,7 @@ export default function JarvisPoc({ email }: { email: string }) {
         callsLimit: d.callsLimit,
         casquette: d.casquette,
         server: d.timings as ServerTimings | undefined,
+        cacheHits: Array.isArray(d.cacheHits) ? d.cacheHits : undefined,
       }])
     } catch {
       setError(networkAiError())
@@ -117,13 +120,17 @@ export default function JarvisPoc({ email }: { email: string }) {
                     {' '}· serveur {m.server.total ?? '?'} ms
                     {' ('}
                     auth {m.server.auth ?? '?'} ·{' '}
-                    contexte/db {m.server.context ?? '?'} ·{' '}
+                    db/ctx {m.server.context ?? '?'} ·{' '}
+                    quota {m.server.quota ?? '?'} ·{' '}
                     groq {m.server.groq ?? '?'}
                     {')'}
                     {m.durationMs != null && m.server.total != null && (
-                      <> · middleware+réseau ≈ {m.durationMs - m.server.total} ms</>
+                      <> · réseau ≈ {m.durationMs - m.server.total} ms</>
                     )}
                   </>
+                )}
+                {m.cacheHits && m.cacheHits.length > 0 && (
+                  <> · 💾 cache {m.cacheHits.join('+')}</>
                 )}
                 {m.casquette && <> · 🎩 {m.casquette}</>}
                 {m.callsToday != null && m.callsLimit != null && (
