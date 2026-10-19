@@ -71,7 +71,7 @@ export const AI_LIMITS: Record<AiFeature, AiFeatureConfig> = {
 export const GROQ_PRICING_USD_PER_MTOK: Record<string, { input: number; output: number }> = {
   // Modèles actuellement utilisés (lib/ai/groq-models.ts)
   'openai/gpt-oss-120b':   { input: 0.15,  output: 0.75 }, // text (6 routes AI non-vision)
-  'qwen/qwen3.6-27b':      { input: 0.20,  output: 0.60 }, // vision (ai-chart + asset-technical) — remplace llama-4-maverick retiré 2026-03-09, prix à confirmer sur https://groq.com/pricing
+  'qwen/qwen3.8-27b':      { input: 0.80,  output: 4.00 }, // vision (ai-chart + asset-technical) — remplace qwen3.6-27b retiré par Groq 2026-09-14
   // Fallback générique si modèle inconnu — légèrement surestimé pour sécurité budget
   '__fallback__':          { input: 0.20,  output: 0.80 },
 }
