@@ -14,41 +14,63 @@ import { pronounceForVoice } from '@/lib/jarvis/pronunciation'
 export const runtime = 'nodejs'
 
 /**
- * Vocabulaire métier passé à Whisper — améliore la transcription
- * du jargon ATP qui serait sinon mal transcrit (OB, FVG, CHoCH…).
+ * Prompt Whisper — phrase naturelle contenant le jargon ATP.
+ * Whisper se sert mieux d'un contexte phrastique que d'une liste
+ * sèche de mots pour disambiguer "order block" vs "ender bloc" ou
+ * "CHoCH" vs "cho-cho". Doit tenir en 244 tokens max côté Whisper.
  */
-const WHISPER_PROMPT = 'NQ, YM, Dow, Nasdaq, Order Block, OB, FVG, Fair Value Gap, Breaker, CHoCH, Fibo, Hammer, mode Joker, R, stop, TP, prop firm.'
+const WHISPER_PROMPT = `Sur le NQ, le flux est baissier, j'attends mon CHoCH M1 puis M5, retracement sur l'order block ou le FVG, avec un hammer. Mode Joker si le flux est contre moi. Ratio minimum 2 R sur le TP pessimiste, stop financé en hybride.`
 
 const WHISPER_MODEL = 'whisper-large-v3-turbo'
 
 interface WhisperResult {
   text: string
   ms: number
+  attempts: number
 }
 
 async function transcribeAudio(file: File, apiKey: string): Promise<WhisperResult | { error: string; status: number }> {
-  const form = new FormData()
-  form.append('file', file)
-  form.append('model', WHISPER_MODEL)
-  form.append('language', 'fr')
-  form.append('prompt', WHISPER_PROMPT)
-  form.append('response_format', 'json')
-  form.append('temperature', '0')
+  const makeAttempt = async (): Promise<Response> => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('model', WHISPER_MODEL)
+    form.append('language', 'fr')
+    form.append('prompt', WHISPER_PROMPT)
+    form.append('response_format', 'json')
+    form.append('temperature', '0')
+    return fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+      signal: AbortSignal.timeout(5000),
+    })
+  }
 
   const t0 = performance.now()
-  const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
-    signal: AbortSignal.timeout(8000),
-  })
+  let r: Response
+  let attempts = 1
+  try {
+    r = await makeAttempt()
+  } catch (err) {
+    attempts = 2
+    await new Promise(res => setTimeout(res, 300))
+    try { r = await makeAttempt() } catch {
+      return { error: err instanceof Error ? err.message : 'network/timeout', status: 0 }
+    }
+  }
+  if (!r.ok && (r.status === 429 || r.status >= 500)) {
+    attempts = 2
+    await new Promise(res => setTimeout(res, 300))
+    try { r = await makeAttempt() } catch { /* fallthrough */ }
+  }
+
   const ms = Math.round(performance.now() - t0)
   if (!r.ok) {
     const body = await r.text().catch(() => '')
     return { error: body.slice(0, 200) || `HTTP ${r.status}`, status: r.status }
   }
   const data = await r.json() as { text?: string }
-  return { text: (data.text || '').trim(), ms }
+  return { text: (data.text || '').trim(), ms, attempts }
 }
 
 /** Encode une chaîne en base64url pour la glisser dans un header HTTP
@@ -61,15 +83,18 @@ function b64url(s: string): string {
 export async function POST(request: Request) {
   const t_start = performance.now()
   const timings: Record<string, number> = {}
+  const retries: Record<string, number> = {}
   try {
+    const t_authStart = performance.now()
     const auth = await requireJarvisAccessFast()
     if (auth instanceof Response) return auth
     const { userId, email } = auth
-    timings.auth = Math.round(performance.now() - t_start)
+    timings.auth = Math.round(performance.now() - t_authStart)
 
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) return buildProviderErrorResponse({ route: '/api/jarvis/voice', detail: 'GROQ_API_KEY missing' })
 
+    const t_formStart = performance.now()
     const form = await request.formData()
     const audio = form.get('audio')
     if (!(audio instanceof File)) {
@@ -80,54 +105,63 @@ export async function POST(request: Request) {
     let history: ChatMessage[] = []
     try { history = JSON.parse(historyRaw) } catch { history = [] }
     if (!Array.isArray(history)) history = []
+    timings.form = Math.round(performance.now() - t_formStart)
 
-    // ─── Phase 1 : contexte + transcription + quota en parallèle ───
-    // Le quota a besoin de isAdmin → on démarre ctx d'abord (cache
-    // hit = instant), puis quota + transcription en parallèle.
+    // ─── Phase 1 : contexte (cache 5 min) ───
     const t_ctxStart = performance.now()
     const ctx = await prepareContext(userId, email)
     timings.context = Math.round(performance.now() - t_ctxStart)
 
-    const t_sttStart = performance.now()
-    const [quota, whisper] = await Promise.all([
-      checkAndCount(userId, 'jarvis', ctx.isAdmin),
-      transcribeAudio(audio, apiKey),
-    ])
-    timings.quota = Math.round((performance.now() - t_sttStart))
+    // ─── Phase 2 : transcription Whisper + quota en parallèle ───
+    // UN échange vocal = UN appel compté. Si quota refuse, on jette
+    // la transcription (déjà payée côté Groq) et on renvoie 429.
+    const t_phase2Start = performance.now()
+    const quotaStart = performance.now()
+    const sttStart = performance.now()
+    const quotaPromise = checkAndCount(userId, 'jarvis', ctx.isAdmin).then(q => ({ q, ms: Math.round(performance.now() - quotaStart) }))
+    const sttPromise = transcribeAudio(audio, apiKey).then(w => ({ w, ms: Math.round(performance.now() - sttStart) }))
+    const [{ q: quota, ms: quotaMs }, { w: whisper, ms: sttWallMs }] = await Promise.all([quotaPromise, sttPromise])
+    timings.quota = quotaMs
+    timings.stt = 'ms' in whisper ? whisper.ms : sttWallMs
+    timings.phase2 = Math.round(performance.now() - t_phase2Start)
+    if ('attempts' in whisper) retries.whisper = whisper.attempts
 
-    // Quota refusé → on jette la transcription (déjà payée) et on
-    // renvoie 429. UN échange vocal = UN appel compté.
-    if (!quota.allowed) return buildQuotaResponse(quota)
+    if (!quota.allowed) {
+      console.warn('[jarvis-voice-perf]', { userId, event: 'quota_refused', timings, retries })
+      return buildQuotaResponse(quota)
+    }
 
     if ('error' in whisper) {
+      console.error('[jarvis-voice-perf]', { userId, event: 'whisper_error', status: whisper.status, timings, retries })
       return buildProviderErrorResponse({
         route: '/api/jarvis/voice', model: WHISPER_MODEL,
         status: whisper.status, detail: whisper.error,
       })
     }
-    timings.stt = whisper.ms
     const transcription = whisper.text
     if (!transcription) {
+      console.warn('[jarvis-voice-perf]', { userId, event: 'empty_transcription', timings, retries })
       return NextResponse.json({ error: 'transcription vide', timings }, { status: 422 })
     }
 
-    // ─── Phase 2 : brain Groq avec contexte + historique + transcription ───
+    // ─── Phase 3 : cerveau Groq ───
     const t_brainStart = performance.now()
     const messages: ChatMessage[] = [...history, { role: 'user', content: transcription }]
     const brainOutcome = await runBrain(ctx, messages, { format: 'voice', maxChars: 200 })
-    if (!brainOutcome.ok) return brainOutcome.response
     timings.brain = Math.round(performance.now() - t_brainStart)
+    if (!brainOutcome.ok) {
+      console.error('[jarvis-voice-perf]', { userId, event: 'brain_error', timings, retries })
+      return brainOutcome.response
+    }
+    retries.brain = brainOutcome.attempts
 
-    // ─── Phase 3 : ElevenLabs TTS streaming ───
-    // Le texte "parlé" peut différer du texte "visuel" : certains
-    // mots du jargon ATP ne se prononcent pas comme ils s'écrivent
-    // (ex. "flux" → "flu", "CHoCH" → "choche"). On n'applique le
-    // dictionnaire QU'ICI : les headers X-Jarvis-Reply et l'affichage
-    // conservent l'orthographe correcte.
+    // ─── Phase 4 : ElevenLabs TTS streaming ───
+    // pronounceForVoice uniquement sur le texte TTS, pas sur reply.
     const spokenText = pronounceForVoice(brainOutcome.reply)
     const t_ttsStart = performance.now()
     const tts = await synthesizeSpeech(spokenText)
     timings.tts = Math.round(performance.now() - t_ttsStart)
+    if (tts.ok) retries.tts = tts.attempts
 
     // recordUsage via after() — jamais sur le chemin critique
     const usage = brainOutcome.usage
@@ -143,21 +177,26 @@ export async function POST(request: Request) {
     })
 
     timings.total = Math.round(performance.now() - t_start)
+    console.log('[jarvis-voice-perf]', {
+      userId, event: tts.ok ? 'ok' : 'tts_failed',
+      durationSec, callsToday: quota.callsToday,
+      replyLen: brainOutcome.reply.length,
+      ttfbMs: tts.ok ? tts.ttfbMs : null,
+      timings, retries,
+    })
 
     const metaHeaders: Record<string, string> = {
       'X-Jarvis-Transcription': b64url(transcription),
       'X-Jarvis-Reply': b64url(brainOutcome.reply),
       'X-Jarvis-Casquette': brainOutcome.casquette,
       'X-Jarvis-Timings': b64url(JSON.stringify(timings)),
+      'X-Jarvis-Retries': b64url(JSON.stringify(retries)),
       'X-Jarvis-CallsToday': String(quota.callsToday),
       'X-Jarvis-CallsLimit': String(quota.callsLimit),
       'X-Jarvis-CacheHits': ctx.cacheHits.join(',') || '',
-      // CORS pour que la page puisse lire les headers X-Jarvis-*
-      'Access-Control-Expose-Headers': 'X-Jarvis-Transcription, X-Jarvis-Reply, X-Jarvis-Casquette, X-Jarvis-Timings, X-Jarvis-CallsToday, X-Jarvis-CallsLimit, X-Jarvis-CacheHits, X-Jarvis-AudioFailed',
+      'Access-Control-Expose-Headers': 'X-Jarvis-Transcription, X-Jarvis-Reply, X-Jarvis-Casquette, X-Jarvis-Timings, X-Jarvis-Retries, X-Jarvis-CallsToday, X-Jarvis-CallsLimit, X-Jarvis-CacheHits, X-Jarvis-AudioFailed',
     }
 
-    // Fallback : si TTS KO, on retourne quand même la réponse texte
-    // en JSON — Jarvis ne reste jamais muet ET vide.
     if (!tts.ok) {
       console.error('[jarvis] TTS failed, returning text-only', { status: tts.status, reason: tts.reason })
       return NextResponse.json({
@@ -167,6 +206,7 @@ export async function POST(request: Request) {
         callsToday: quota.callsToday,
         callsLimit: quota.callsLimit,
         timings,
+        retries,
         cacheHits: ctx.cacheHits,
         audioFailed: true,
       }, { status: 200 })
@@ -181,6 +221,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (err) {
+    console.error('[jarvis-voice-perf]', { event: 'fatal', timings, retries, err })
     return buildProviderErrorResponse({ route: '/api/jarvis/voice', detail: err })
   }
 }

@@ -165,7 +165,20 @@ RÈGLES ABSOLUES :
 - Français, tutoiement, calme et posé.
 - Si donnée absente, dis-le une seule fois dans la conversation.
 - Jamais de signal : pas de "prends le trade", pas de niveau.
-- UNE SEULE réponse finale.`
+- UNE SEULE réponse finale.
+
+IMPORTANT — ERREURS DE TRANSCRIPTION
+La question du trader arrive d'une reconnaissance vocale. Elle peut
+contenir des mots du jargon SMC/ICT mal transcrits :
+  "enderbloc" / "ender bloc"       = order block
+  "ichoche" / "ichoch" / "cho-cho" = CHoCH
+  "effeveger" / "F V G"            = FVG
+  "ammeur"                         = hammer
+  "mode joueur"                    = mode Joker
+  "deux R" / "2R"                  = ratio 2 R
+Comprends le mot voulu dans son contexte (bible ATP + stats), et
+utilise TOUJOURS l'orthographe correcte dans ta réponse. Ne répète
+JAMAIS un mot mal transcrit tel quel.`
 
 // ─── Détection "routine déjà mentionnée" ─────────────────────────────
 function routineAlreadyFlagged(messages: ChatMessage[]): boolean {
@@ -278,7 +291,8 @@ function jaccardWords(a: string, b: string): number {
 }
 
 // ─── Fetch Groq budgeté (6s max) ────────────────────────────────────
-async function fetchGroqBudgeted(payload: unknown, apiKey: string): Promise<Response> {
+interface FetchBudgetedResult { response: Response; attempts: number }
+async function fetchGroqBudgeted(payload: unknown, apiKey: string): Promise<FetchBudgetedResult> {
   const PER = 2800
   const PAUSE = 300
   const makeAttempt = () => fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -293,12 +307,18 @@ async function fetchGroqBudgeted(payload: unknown, apiKey: string): Promise<Resp
     r1 = await makeAttempt()
   } catch (err) {
     await new Promise(res => setTimeout(res, PAUSE))
-    return makeAttempt().catch(() => { throw err })
+    try {
+      const r2 = await makeAttempt()
+      return { response: r2, attempts: 2 }
+    } catch { throw err }
   }
-  if (r1.ok) return r1
-  if (r1.status !== 429 && r1.status < 500) return r1
+  if (r1.ok) return { response: r1, attempts: 1 }
+  if (r1.status !== 429 && r1.status < 500) return { response: r1, attempts: 1 }
   await new Promise(res => setTimeout(res, PAUSE))
-  try { return await makeAttempt() } catch { return r1 }
+  try {
+    const r2 = await makeAttempt()
+    return { response: r2, attempts: 2 }
+  } catch { return { response: r1, attempts: 2 } }
 }
 
 // ─── runBrain : contexte → Groq → clamp ─────────────────────────────
@@ -312,6 +332,7 @@ export interface BrainOk {
   reply: string
   usage: { prompt_tokens?: number; completion_tokens?: number } | undefined
   groqMs: number
+  attempts: number
   casquette: Casquette
 }
 
@@ -349,7 +370,7 @@ export async function runBrain(
   }
 
   const t0 = performance.now()
-  const r = await fetchGroqBudgeted(payload, apiKey)
+  const { response: r, attempts } = await fetchGroqBudgeted(payload, apiKey)
   const groqMs = Math.round(performance.now() - t0)
 
   const data = await r.json().catch(() => null)
@@ -367,5 +388,5 @@ export async function runBrain(
   const reply = clampResponse(rawReply, cfg.maxChars)
   const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
 
-  return { ok: true, reply, usage, groqMs, casquette: ctx.casquette.casquette }
+  return { ok: true, reply, usage, groqMs, attempts, casquette: ctx.casquette.casquette }
 }

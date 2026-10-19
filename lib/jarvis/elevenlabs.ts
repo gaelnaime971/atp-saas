@@ -23,6 +23,7 @@ export interface ElevenLabsSuccess {
   stream: ReadableStream<Uint8Array>
   ttfbMs: number        // temps jusqu'au 1er octet du corps HTTP
   ttsChars: number
+  attempts: number
 }
 
 export interface ElevenLabsFailure {
@@ -63,9 +64,11 @@ export async function synthesizeSpeech(text: string): Promise<ElevenLabsSuccess 
   })
 
   let r: Response
+  let attempts = 1
   try {
     r = await makeAttempt()
   } catch (err) {
+    attempts = 2
     await new Promise(res => setTimeout(res, 300))
     try { r = await makeAttempt() } catch {
       return { ok: false, status: 0, reason: err instanceof Error ? err.message : 'network/timeout' }
@@ -81,10 +84,11 @@ export async function synthesizeSpeech(text: string): Promise<ElevenLabsSuccess 
     } else if (r.status === 429 || r.status >= 500) {
       // Transitoire : 1 retry rapide
       await new Promise(res => setTimeout(res, 300))
+      attempts = 2
       try {
         const r2 = await makeAttempt()
         if (r2.ok && r2.body) {
-          return { ok: true, stream: r2.body, ttfbMs: Math.round(performance.now() - t0), ttsChars: text.length }
+          return { ok: true, stream: r2.body, ttfbMs: Math.round(performance.now() - t0), ttsChars: text.length, attempts }
         }
       } catch { /* fallthrough */ }
     }
@@ -100,6 +104,7 @@ export async function synthesizeSpeech(text: string): Promise<ElevenLabsSuccess 
     stream: r.body,
     ttfbMs: Math.round(performance.now() - t0),
     ttsChars: text.length,
+    attempts,
   }
 }
 

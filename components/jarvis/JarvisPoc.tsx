@@ -11,13 +11,21 @@ import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
 
 interface ServerTimings {
   auth?: number
+  form?: number
   context?: number
-  quota?: number
-  groq?: number
   stt?: number
+  quota?: number
+  phase2?: number
+  groq?: number
   brain?: number
   tts?: number
   total?: number
+}
+
+interface ServerRetries {
+  whisper?: number
+  brain?: number
+  tts?: number
 }
 
 interface Msg {
@@ -31,6 +39,7 @@ interface Msg {
   callsLimit?: number
   casquette?: string
   server?: ServerTimings
+  retries?: ServerRetries
   cacheHits?: string[]
   audioFailed?: boolean
 }
@@ -42,6 +51,90 @@ function decodeB64Url(s: string): string {
     const b64 = s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '=')
     return decodeURIComponent(escape(atob(b64)))
   } catch { return '' }
+}
+
+/**
+ * Joue le body audio en streaming via MediaSource dès que possible —
+ * la voix démarre après les premiers chunks MP3 (quelques KB), pas
+ * après le téléchargement complet. Fallback blob si MediaSource n'est
+ * pas supporté (vieux navigateur). Retourne le "temps jusqu'à la voix"
+ * en ms (de tStop à l'event 'playing' sur l'audio).
+ */
+async function playAudioStream(
+  response: Response,
+  tStop: number,
+  urlRef: React.MutableRefObject<string | null>,
+  audioRef: React.MutableRefObject<HTMLAudioElement | null>,
+): Promise<number | undefined> {
+  if (urlRef.current) {
+    URL.revokeObjectURL(urlRef.current)
+    urlRef.current = null
+  }
+  const supportsStream = typeof MediaSource !== 'undefined' &&
+    MediaSource.isTypeSupported('audio/mpeg') &&
+    response.body !== null
+
+  if (!supportsStream) {
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    urlRef.current = url
+    const audio = new Audio(url)
+    audioRef.current = audio
+    return awaitPlaying(audio, tStop)
+  }
+
+  const ms = new MediaSource()
+  const url = URL.createObjectURL(ms)
+  urlRef.current = url
+  const audio = new Audio(url)
+  audioRef.current = audio
+
+  const sourceOpen = new Promise<void>((resolve) => {
+    ms.addEventListener('sourceopen', () => resolve(), { once: true })
+  })
+
+  const playingPromise = awaitPlaying(audio, tStop)
+  // play() peut être appelé avant que le buffer ait du contenu ; le
+  // navigateur attendra automatiquement les premiers samples décodables.
+  audio.play().catch(err => console.error('[jarvis] audio.play error', err))
+
+  await sourceOpen
+  const sb = ms.addSourceBuffer('audio/mpeg')
+  const reader = response.body!.getReader()
+  ;(async () => {
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (!value) continue
+        await new Promise<void>((res, rej) => {
+          const onEnd = () => { sb.removeEventListener('updateend', onEnd); sb.removeEventListener('error', onErr); res() }
+          const onErr = () => { sb.removeEventListener('updateend', onEnd); sb.removeEventListener('error', onErr); rej(new Error('sourceBuffer error')) }
+          sb.addEventListener('updateend', onEnd)
+          sb.addEventListener('error', onErr)
+          try { sb.appendBuffer(value) } catch (e) { rej(e as Error) }
+        })
+      }
+      if (ms.readyState === 'open') ms.endOfStream()
+    } catch (err) {
+      console.error('[jarvis] stream pump error', err)
+      try { if (ms.readyState === 'open') ms.endOfStream() } catch { /* ignore */ }
+    }
+  })()
+
+  return playingPromise
+}
+
+function awaitPlaying(audio: HTMLAudioElement, tStop: number): Promise<number | undefined> {
+  return new Promise((resolve) => {
+    const onPlaying = () => {
+      audio.removeEventListener('playing', onPlaying)
+      resolve(Math.round(performance.now() - tStop))
+    }
+    audio.addEventListener('playing', onPlaying)
+    // Garde-fou 10s au cas où l'event playing ne part jamais
+    setTimeout(() => resolve(undefined), 10_000)
+  })
 }
 
 export default function JarvisPoc({ email }: { email: string }) {
@@ -223,12 +316,15 @@ export default function JarvisPoc({ email }: { email: string }) {
       let audioFailed = false
       let voiceTimeToPlayMs: number | undefined
 
+      let retries: ServerRetries | undefined
+
       if (ct.startsWith('application/json')) {
         // Fallback texte (TTS KO)
         const d = await r.json()
         transcription = d.transcription || ''
         reply = d.reply || ''
         server = d.timings
+        retries = d.retries
         audioFailed = Boolean(d.audioFailed)
       } else if (ct.startsWith('audio/')) {
         transcription = decodeB64Url(r.headers.get('X-Jarvis-Transcription') || '')
@@ -237,19 +333,11 @@ export default function JarvisPoc({ email }: { email: string }) {
         if (tStr) {
           try { server = JSON.parse(decodeB64Url(tStr)) as ServerTimings } catch { /* ignore */ }
         }
-        const audioBlob = await r.blob()
-        if (currentAudioUrlRef.current) URL.revokeObjectURL(currentAudioUrlRef.current)
-        const audioUrl = URL.createObjectURL(audioBlob)
-        currentAudioUrlRef.current = audioUrl
-        const audio = new Audio(audioUrl)
-        audioRef.current = audio
-        voiceTimeToPlayMs = await new Promise<number | undefined>((resolve) => {
-          const onPlaying = () => { resolve(Math.round(performance.now() - tStop)); audio.removeEventListener('playing', onPlaying) }
-          audio.addEventListener('playing', onPlaying)
-          audio.play().catch(() => resolve(undefined))
-          // Garde-fou 10 s au cas où l'event playing ne part jamais
-          setTimeout(() => resolve(undefined), 10_000)
-        })
+        const rStr = r.headers.get('X-Jarvis-Retries')
+        if (rStr) {
+          try { retries = JSON.parse(decodeB64Url(rStr)) as ServerRetries } catch { /* ignore */ }
+        }
+        voiceTimeToPlayMs = await playAudioStream(r, tStop, currentAudioUrlRef, audioRef)
       }
 
       setMessages(h => [...h, {
@@ -266,6 +354,7 @@ export default function JarvisPoc({ email }: { email: string }) {
         callsLimit,
         casquette,
         server,
+        retries,
         cacheHits,
         audioFailed,
       }])
@@ -320,12 +409,19 @@ export default function JarvisPoc({ email }: { email: string }) {
                   <>
                     serveur {m.server.total ?? '?'} ms{' '}
                     {m.via === 'voice' ? (
-                      <>(stt {m.server.stt ?? '?'} · brain {m.server.brain ?? '?'} · tts {m.server.tts ?? '?'})</>
+                      <>(auth {m.server.auth ?? '?'} · form {m.server.form ?? '?'} · ctx {m.server.context ?? '?'} · stt {m.server.stt ?? '?'} · quota {m.server.quota ?? '?'} · brain {m.server.brain ?? '?'} · tts {m.server.tts ?? '?'})</>
                     ) : (
                       <>(auth {m.server.auth ?? '?'} · db/ctx {m.server.context ?? '?'} · quota {m.server.quota ?? '?'} · groq {m.server.groq ?? '?'})</>
                     )}
                   </>
                 )}
+                {m.retries && (() => {
+                  const extra: string[] = []
+                  if ((m.retries.whisper ?? 1) > 1) extra.push(`stt×${m.retries.whisper}`)
+                  if ((m.retries.brain ?? 1) > 1) extra.push(`brain×${m.retries.brain}`)
+                  if ((m.retries.tts ?? 1) > 1) extra.push(`tts×${m.retries.tts}`)
+                  return extra.length > 0 ? <> · 🔁 {extra.join(', ')}</> : null
+                })()}
                 {m.cacheHits && m.cacheHits.length > 0 && (
                   <> · 💾 cache {m.cacheHits.join('+')}</>
                 )}
