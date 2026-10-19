@@ -9,13 +9,21 @@ import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
  * cerveau en texte avant d'ajouter la voix en 2B.
  */
 
+interface ServerTimings {
+  auth?: number
+  context?: number
+  groq?: number
+  total?: number
+}
+
 interface Msg {
   role: 'user' | 'assistant'
   content: string
-  durationMs?: number
+  durationMs?: number     // client : fetch → réponse (inclut middleware + réseau + route)
   callsToday?: number
   callsLimit?: number
   casquette?: string
+  server?: ServerTimings  // décomposition serveur
 }
 
 export default function JarvisPoc({ email }: { email: string }) {
@@ -62,6 +70,7 @@ export default function JarvisPoc({ email }: { email: string }) {
         callsToday: d.callsToday,
         callsLimit: d.callsLimit,
         casquette: d.casquette,
+        server: d.timings as ServerTimings | undefined,
       }])
     } catch {
       setError(networkAiError())
@@ -101,8 +110,21 @@ export default function JarvisPoc({ email }: { email: string }) {
             </div>
             <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
             {m.role === 'assistant' && (
-              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
-                {m.durationMs != null && <>⏱ {m.durationMs} ms</>}
+              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4, lineHeight: 1.5 }}>
+                {m.durationMs != null && <>⏱ total client {m.durationMs} ms</>}
+                {m.server && (
+                  <>
+                    {' '}· serveur {m.server.total ?? '?'} ms
+                    {' ('}
+                    auth {m.server.auth ?? '?'} ·{' '}
+                    contexte/db {m.server.context ?? '?'} ·{' '}
+                    groq {m.server.groq ?? '?'}
+                    {')'}
+                    {m.durationMs != null && m.server.total != null && (
+                      <> · middleware+réseau ≈ {m.durationMs - m.server.total} ms</>
+                    )}
+                  </>
+                )}
                 {m.casquette && <> · 🎩 {m.casquette}</>}
                 {m.callsToday != null && m.callsLimit != null && (
                   <> · 📊 {m.callsToday} / {m.callsLimit === -1 ? '∞' : m.callsLimit} aujourd'hui</>

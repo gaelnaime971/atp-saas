@@ -2,6 +2,17 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function proxy(request: NextRequest) {
+  // Jarvis (POC gated par JARVIS_ENABLED + JARVIS_ALLOWED_EMAILS) gère
+  // son propre auth + accès via requireJarvisAccess() DANS la route
+  // handler. Court-circuiter le middleware évite 2 round-trips Supabase
+  // (getUser + SELECT profiles) qui ajoutent ~1s par requête sans
+  // apporter de valeur ici. Zéro risque de session morte : le client
+  // @supabase/ssr côté app rafraîchit déjà le token depuis les cookies
+  // à chaque navigation, et la route Jarvis fait son propre getUser().
+  if (request.nextUrl.pathname.startsWith('/api/jarvis/')) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
