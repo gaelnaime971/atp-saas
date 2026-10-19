@@ -195,12 +195,37 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const [pipMessage, setPipMessage] = useState<string | null>(null)
   const pipCleanupRef = useRef<(() => void) | null>(null)
 
+  // 3F.7 : bouton reset réservé aux testeurs
+  const [isTester, setIsTester] = useState(false)
+
   // Lecture ?compact=1 à l'ouverture (fallback popup Safari/Firefox)
   useEffect(() => {
     if (typeof window === 'undefined') return
     const sp = new URLSearchParams(window.location.search)
     if (sp.get('compact') === '1') setCompact(true)
   }, [])
+
+  // Détecte si l'utilisateur est testeur (GET /api/jarvis/reset-session)
+  useEffect(() => {
+    fetch('/api/jarvis/reset-session', { method: 'GET' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.tester) setIsTester(true) })
+      .catch(() => { /* silencieux : non-testeur */ })
+  }, [])
+
+  const resetSession = async () => {
+    if (!confirm('Réinitialiser ta session du jour ? Les trades notés et règles annoncées seront supprimés.')) return
+    try {
+      const r = await fetch('/api/jarvis/reset-session', { method: 'POST' })
+      if (r.ok) {
+        // Vider les sessions côté UI pour les derniers échanges
+        setExchanges(h => h.map(e => e.session ? ({ ...e, session: {
+          state: { tradesCount: 0, rSum: 0, usdSum: 0 },
+          notedEvent: null, triggered: [], detection: 'none',
+        } }) : e))
+      }
+    } catch { /* silencieux */ }
+  }
 
   const levelRef = useRef(0) // 0..1 — pilote --level côté SVG
   const recorderRef = useRef<MediaRecorder | null>(null)
@@ -706,7 +731,17 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           </details>
         )}
 
-        <div className="jv-account">Connecté : {email}</div>
+        <div className="jv-account">
+          Connecté : {email}
+          {isTester && (
+            <>
+              {' · '}
+              <button type="button" className="jv-reset-link" onClick={resetSession}>
+                Réinitialiser ma session du jour
+              </button>
+            </>
+          )}
+        </div>
       </main>
 
       <style jsx>{`
@@ -903,6 +938,13 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           font-size: 10px; color: #4A5852;
           margin-top: 20px;
           font-family: ui-monospace, monospace;
+        }
+        .jv-reset-link {
+          background: none; border: none;
+          color: #F2994A; font-size: 10px;
+          text-decoration: underline;
+          cursor: pointer; padding: 0;
+          font-family: inherit;
         }
         .jv-pip-row {
           display: flex; align-items: center; gap: 6px;
