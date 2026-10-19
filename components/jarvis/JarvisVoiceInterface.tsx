@@ -536,15 +536,34 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   }
 
   // ─── Actions sur un event noté ───
+  // La route PATCH/DELETE retourne le nouveau snapshot complet
+  // (state + triggered) après avoir reconcilié les rule_triggered
+  // caducs côté serveur. On met à jour l'UI SANS recharger.
+  const applySessionUpdate = (
+    eventId: string,
+    nextNoted: NotedEvent | null,
+    serverSession?: { state: SessionPayload['state']; triggered: SessionPayload['triggered'] },
+  ) => {
+    setExchanges(h => h.map(e => {
+      if (e.session?.notedEvent?.id !== eventId) return e
+      const prev = e.session
+      return {
+        ...e,
+        session: {
+          ...prev,
+          notedEvent: nextNoted,
+          state: serverSession?.state ?? prev.state,
+          triggered: serverSession?.triggered ?? [],  // vides si non fournis
+        },
+      }
+    }))
+  }
   const deleteEvent = async (id: string) => {
     try {
       const r = await fetch(`/api/jarvis/events/${encodeURIComponent(id)}`, { method: 'DELETE' })
-      if (r.ok) {
-        setExchanges(h => h.map(e =>
-          e.session?.notedEvent?.id === id
-            ? { ...e, session: e.session ? { ...e.session, notedEvent: null } : e.session }
-            : e))
-      }
+      if (!r.ok) return
+      const d = await r.json() as { ok: boolean; session?: { state: SessionPayload['state']; triggered: SessionPayload['triggered'] } }
+      applySessionUpdate(id, null, d.session)
     } catch { /* silencieux */ }
   }
   const patchEvent = async (id: string, patch: Partial<NotedEvent['payload']>) => {
@@ -554,13 +573,25 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       })
-      if (r.ok) {
-        const d = await r.json() as { ok: boolean; payload: NotedEvent['payload'] }
-        setExchanges(h => h.map(e =>
-          e.session?.notedEvent?.id === id && e.session.notedEvent
-            ? { ...e, session: { ...e.session, notedEvent: { ...e.session.notedEvent, payload: d.payload } } }
-            : e))
+      if (!r.ok) return
+      const d = await r.json() as {
+        ok: boolean
+        payload: NotedEvent['payload']
+        session?: { state: SessionPayload['state']; triggered: SessionPayload['triggered'] }
       }
+      // Reconstruit le noted event avec le payload mergé côté serveur
+      setExchanges(h => h.map(e => {
+        if (e.session?.notedEvent?.id !== id || !e.session.notedEvent) return e
+        return {
+          ...e,
+          session: {
+            ...e.session,
+            notedEvent: { ...e.session.notedEvent, payload: d.payload },
+            state: d.session?.state ?? e.session.state,
+            triggered: d.session?.triggered ?? [],
+          },
+        }
+      }))
     } catch { /* silencieux */ }
   }
 

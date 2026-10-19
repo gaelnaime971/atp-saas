@@ -7,8 +7,16 @@
 
 import { createClient } from '@supabase/supabase-js'
 import type { DetectedTrade } from './event-detection'
-import type { RuleKey } from './rules-engine'
-import type { SessionEventRow } from './brain'
+import {
+  computeSessionState,
+  evaluateRules,
+  type RuleKey,
+  type TraderRules,
+} from './rules-engine'
+import {
+  eventsToTrades,
+  type SessionEventRow,
+} from './brain'
 
 function serviceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -69,6 +77,80 @@ export async function insertRuleTriggered(
     throw new Error('insertRuleTriggered failed')
   }
   return data as SessionEventRow
+}
+
+/**
+ * Après une correction / suppression de trade, les règles
+ * rule_triggered déjà enregistrées peuvent ne plus être justifiées
+ * (ex: le trade qui a déclenché first_win a été corrigé en perte).
+ * Cette fonction :
+ *   1. Recharge les events du jour
+ *   2. Recalcule l'état et évalue les règles encore vraies
+ *   3. Supprime les rule_triggered events dont la clé n'apparaît
+ *      plus dans l'évaluation (same_config_hard_stop comparée aussi
+ *      sur la config)
+ * Retourne le nouvel état + les règles toujours valides.
+ */
+export interface ReconciledSnapshot {
+  state: {
+    tradesCount: number
+    rSum: number | null
+    usdSum: number
+    consecutiveLosses: number
+  }
+  triggered: Array<{ key: RuleKey; message: string; config?: string }>
+  events: SessionEventRow[]
+}
+
+export async function reconcileRuleTriggered(
+  userId: string,
+  rules: TraderRules,
+): Promise<ReconciledSnapshot> {
+  const supabase = serviceClient()
+  const todayParis = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }))
+    .toISOString().slice(0, 10)
+
+  const { data: eventsRaw } = await supabase
+    .from('jarvis_session_events')
+    .select('id, type, payload, created_at')
+    .eq('user_id', userId)
+    .eq('session_date', todayParis)
+    .order('created_at', { ascending: true })
+  const events = (eventsRaw as SessionEventRow[] | null) || []
+
+  const trades = eventsToTrades(events)
+  const state = computeSessionState(trades, rules)
+
+  // On ré-évalue SANS priorStop (on va retirer les rule_triggered caducs)
+  const currentlyValid = evaluateRules(state, rules, false)
+  const validKeys = new Set(currentlyValid.map(t => `${t.key}::${t.config ?? ''}`))
+
+  // Identifie les rule_triggered events qui ne sont plus justifiés
+  const toDelete: string[] = []
+  for (const ev of events) {
+    if (ev.type !== 'rule_triggered') continue
+    const p = ev.payload as { key?: RuleKey; config?: string }
+    if (!p.key) { toDelete.push(ev.id); continue }
+    const sig = `${p.key}::${p.config ?? ''}`
+    if (!validKeys.has(sig)) toDelete.push(ev.id)
+  }
+
+  if (toDelete.length > 0) {
+    const { error } = await supabase.from('jarvis_session_events')
+      .delete().in('id', toDelete)
+    if (error) console.error('[jarvis-session-write] reconcile delete failed', error)
+  }
+
+  return {
+    state: {
+      tradesCount: state.tradesCount,
+      rSum: state.rSum,
+      usdSum: state.usdSum,
+      consecutiveLosses: state.consecutiveLosses,
+    },
+    triggered: currentlyValid.map(t => ({ key: t.key, message: t.message, config: t.config })),
+    events: events.filter(e => !toDelete.includes(e.id)),
+  }
 }
 
 /**

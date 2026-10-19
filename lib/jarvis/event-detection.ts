@@ -62,13 +62,20 @@ function detectSide(t: string): Side | undefined {
 // Capture : signe, entier, séparateur décimal, décimale.
 // Accepte "+1R", "+1 R", "plus 1 r", "-0,5R", "moins 0.5 r", "2R",
 // "1,5R", etc.
-const WORD_PLUS  = /(?:^|[^a-zéèàç])(plus|positif)(?:$|[^a-zéèàç])/i
-const WORD_MINUS = /(?:^|[^a-zéèàç])(moins|négatif|negatif)(?:$|[^a-zéèàç])/i
+// Détection d'un signal "négatif" PRÉSENT dans le texte sans qu'il
+// soit déjà rattaché à la valeur chiffrée. Si trouvé → on refuse de
+// retourner un trade positif par défaut (règle de sécurité).
+function hasUnpairedNegativeSignal(t: string): boolean {
+  return /(?<![\p{L}])(moins|négatif|negatif|perdu|perte|loss)(?![\p{L}])/iu.test(t)
+}
 
 function toNumber(signChar: string | undefined, body: string): number {
   const n = Number(body.replace(',', '.'))
   return signChar === '-' ? -n : n
 }
+
+/** Classe de signe : accepte +, -, et − (U+2212 "minus sign"). */
+const SIGN_CHAR_CLASS = '[+\\-\\u2212]'
 
 // ─── Signaux "futurs/intentions" qui excluent toute extraction ──────
 function hasIntentionSignal(t: string): boolean {
@@ -94,52 +101,80 @@ function hasIntentionSignal(t: string): boolean {
 
 // ─── Patterns de résultat chiffré ───────────────────────────────────
 
-/** Trade chiffré en R : "+2R", "-0,5R", "plus 2 r", "moins un r" (texte). */
+/** Trade chiffré en R : "+2R", "-0,5R", "−1R" (minus unicode),
+ *  "plus 2 r", "moins 1,5 R", "Moins 1 R.", "moins un R" (texte). */
 function parseRResult(t: string): { value: number } | null {
-  // 1) Forme numérique "+/-N R" ou "N R"
-  //    - signe explicite + nombre : "+1R", "-0,5 r"
-  const mNum = t.match(/(?<![a-zéèàç0-9])([+-])?\s*(\d+(?:[,.]\d+)?)\s*r\b/i)
+  // 1) Mots de signe + chiffre : "moins 1 R", "plus 0,5 R", "MOINS 2 R"
+  //    Insensible à la casse. Capture AVANT les patterns suivants pour
+  //    éviter que "1 R" sans signe gagne quand "moins" est devant.
+  const mWordDigit = t.match(/(?<![\p{L}])(plus|moins)\s+(\d+(?:[,.]\d+)?)\s*r(?![\p{L}])/iu)
+  if (mWordDigit) {
+    const sign = mWordDigit[1].toLowerCase() === 'moins' ? '-' : '+'
+    return { value: toNumber(sign, mWordDigit[2]) }
+  }
+
+  // 2) Forme numérique "+/-/−N R" ou "N R" (signe optionnel, espace OK)
+  const mNum = t.match(new RegExp(
+    `(?<![\\p{L}0-9])(${SIGN_CHAR_CLASS})?\\s*(\\d+(?:[,.]\\d+)?)\\s*r(?![\\p{L}])`, 'iu'))
   if (mNum) {
-    const sign = mNum[1]
+    const rawSign = mNum[1]
     const body = mNum[2]
-    // Exclure si précédé immédiatement de "ratio" / "risque" / "stop-loss"
     const before = t.slice(0, mNum.index ?? 0)
-    if (/\b(ratio|ratios|r\.r|risk reward|risque|stop[- ]?loss|sl|tp)\b[^.?!]{0,15}$/i.test(before) && !sign) {
-      // "ratio 2 R" → pas un trade
+    // Exclure si précédé immédiatement de "ratio" / "risque" / "stop-loss"
+    //  → "ratio 2 R" n'est pas un trade.
+    if (/(?<![\p{L}])(ratio|ratios|r\.r|risk reward|risque|stop[- ]?loss|sl|tp)(?![\p{L}])[^.?!]{0,15}$/iu.test(before) && !rawSign) {
       return null
     }
+    // Normalise le signe (- ou − → "-")
+    const sign = rawSign && (rawSign === '-' || rawSign === '−') ? '-' : (rawSign === '+' ? '+' : undefined)
+    // RÈGLE DE SÉCURITÉ : si pas de signe trouvé MAIS le texte contient
+    // un signal négatif ailleurs ("moins", "perdu"…), on NE RETOURNE PAS
+    // un trade positif par défaut — c'est l'appelant qui classera "flou".
+    if (!sign && hasUnpairedNegativeSignal(t)) return null
     return { value: toNumber(sign, body) }
   }
-  // 2) Forme texte "plus/moins <nombre texte> r"
-  //    "plus un R", "moins deux R", "plus 2 r"
+
+  // 3) Forme texte "plus/moins <nombre texte> r"
   const wordNum: Record<string, number> = {
     'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4, 'cinq': 5,
     'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10,
   }
-  const mWord = t.match(/\b(plus|moins)\s+(un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|\d+(?:[,.]\d+)?)\s*r\b/i)
+  const mWord = t.match(/(?<![\p{L}])(plus|moins)\s+(un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix)\s*r(?![\p{L}])/iu)
   if (mWord) {
     const sign = mWord[1].toLowerCase() === 'moins' ? '-' : '+'
-    const token = mWord[2]
-    const value = wordNum[token.toLowerCase()] ?? Number(token.replace(',', '.'))
+    const value = wordNum[mWord[2].toLowerCase()]
     return { value: toNumber(sign, String(value)) }
   }
   return null
 }
 
-/** Montant en dollars signé : "900 $", "+450 dollars", "-120 $", "perdu 120 $", "pris 450 dollars". */
+/** Montant en dollars signé : "900 $", "+450 dollars", "-120 $",
+ *  "moins 120 dollars", "−120 $", "perdu 120 $", "pris 450 dollars". */
 function parseUsdResult(t: string): { value: number } | null {
-  // Pattern explicite signe + nombre + $/dollars/€...non
-  const mSigned = t.match(/([+-])\s*(\d+(?:[,.]\d+)?)\s*(?:\$|dollars?|usd)\b/i)
-  if (mSigned) {
-    return { value: toNumber(mSigned[1], mSigned[2]) }
+  // 1) Mots de signe + chiffre + unité
+  const mWordDigit = t.match(/(?<![\p{L}])(plus|moins)\s+(\d+(?:[,.]\d+)?)\s*(?:\$|dollars?|usd)(?![\p{L}])/iu)
+  if (mWordDigit) {
+    const sign = mWordDigit[1].toLowerCase() === 'moins' ? '-' : '+'
+    return { value: toNumber(sign, mWordDigit[2]) }
   }
-  // "perdu N $"
-  const mLost = t.match(/\b(perdu|perte de)\s+(\d+(?:[,.]\d+)?)\s*(?:\$|dollars?|usd)?\b/i)
+  // 2) Pattern explicite signe (+, -, −) + nombre + $
+  const mSigned = t.match(new RegExp(
+    `(${SIGN_CHAR_CLASS})\\s*(\\d+(?:[,.]\\d+)?)\\s*(?:\\$|dollars?|usd)(?![\\p{L}])`, 'iu'))
+  if (mSigned) {
+    const sign = mSigned[1] === '+' ? '+' : '-'
+    return { value: toNumber(sign, mSigned[2]) }
+  }
+  // 3) "perdu N $"
+  const mLost = t.match(/(?<![\p{L}])(perdu|perte de)\s+(\d+(?:[,.]\d+)?)\s*(?:\$|dollars?|usd)?(?![\p{L}])/iu)
   if (mLost) return { value: -Number(mLost[2].replace(',', '.')) }
-  // "gagné / pris / fait N $"
-  const mWin = t.match(/\b(gagné|pris|fait|j'ai pris|j'ai gagné)\s+(\d+(?:[,.]\d+)?)\s*(?:\$|dollars?|usd)\b/i)
-  if (mWin) return { value: Number(mWin[2].replace(',', '.')) }
-  // Nombre + $/dollars sans verbe → ambigu (laisser à l'appelant)
+  // 4) "gagné / pris / fait N $"
+  const mWin = t.match(/(?<![\p{L}])(gagné|pris|fait|j'ai pris|j'ai gagné)\s+(\d+(?:[,.]\d+)?)\s*(?:\$|dollars?|usd)(?![\p{L}])/iu)
+  if (mWin) {
+    // Garde-fou : si "moins/perdu/négatif" quelque part dans le texte,
+    // ne pas retourner un positif par défaut.
+    if (hasUnpairedNegativeSignal(t)) return null
+    return { value: Number(mWin[2].replace(',', '.')) }
+  }
   return null
 }
 

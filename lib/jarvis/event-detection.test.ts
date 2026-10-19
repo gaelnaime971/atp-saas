@@ -101,6 +101,47 @@ describe('event-detection — FLOU (demande au trader)', () => {
   }
 })
 
+describe('event-detection — signe (3F.4-fix)', () => {
+  const cases: Array<[string, number]> = [
+    ['Moins 1 R', -1],
+    ['moins 1R.', -1],
+    ['MOINS 2 R', -2],
+    ['−1 R', -1],              // U+2212 minus sign
+    ['- 1 R', -1],              // tiret + espace
+    ['Plus 1 R', 1],
+    ['plus 0,5R', 0.5],
+  ]
+  for (const [phrase, expected] of cases) {
+    it(`"${phrase}" → ${expected} R`, () => {
+      const t = expectTrade(detectTradeEvent(phrase))
+      expect(t.result_r).toBe(expected)
+    })
+  }
+
+  it('"Moins 1,5 R sur l\'ES" → -1.5 R, ES', () => {
+    const t = expectTrade(detectTradeEvent("Moins 1,5 R sur l'ES"))
+    expect(t.result_r).toBe(-1.5)
+    expect(t.instrument).toBe('ES')
+  })
+
+  it('"moins 120 dollars" → -120 $', () => {
+    const t = expectTrade(detectTradeEvent('moins 120 dollars'))
+    expect(t.result_usd).toBe(-120)
+  })
+
+  it('"−120 $" (minus unicode) → -120 $', () => {
+    const t = expectTrade(detectTradeEvent('−120 $'))
+    expect(t.result_usd).toBe(-120)
+  })
+
+  it('garde-fou : "stoppé 1R" (chiffre sans signe + signal négatif) → PAS +1R', () => {
+    // "stoppé" active parseStopHit → -1R. Même si on inversait l'ordre,
+    // la garde refuse un +1R par défaut dès qu'un signal négatif traîne.
+    const t = expectTrade(detectTradeEvent('stoppé 1R'))
+    expect(t.result_r).toBe(-1) // stoppé l'emporte, pas de régression
+  })
+})
+
 describe('event-detection — détection de config', () => {
   it('"-1R sur mon order block M15" → config = "order block m15"', () => {
     const t = expectTrade(detectTradeEvent('-1R sur mon order block M15'))
