@@ -12,19 +12,53 @@ export const runtime = 'nodejs'
  *
  * JARVIS_TESTERS absent/vide → 404 pour tout le monde.
  */
+/** Normalise une entrée d'email : lowercase + trim + retire les
+ *  guillemets simples/doubles éventuels autour (erreur fréquente de
+ *  config Vercel : `"gael.naime@gmail.com"` au lieu de la valeur nue). */
+function normalizeEmail(raw: string): string {
+  return raw.trim().replace(/^["']+|["']+$/g, '').trim().toLowerCase()
+}
+
 function parseTesters(): Set<string> {
-  const raw = process.env.JARVIS_TESTERS || ''
-  return new Set(raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean))
+  const raw = (process.env.JARVIS_TESTERS || '').trim()
+  // Supporte aussi les guillemets globaux autour de toute la liste
+  const unquoted = raw.replace(/^["']+|["']+$/g, '')
+  return new Set(unquoted.split(',').map(normalizeEmail).filter(Boolean))
+}
+
+/** Même source de vérité qu'access.ts, répété ici pour comparer
+ *  les deux listes dans le log et aider le diagnostic. */
+function parseAllowed(): Set<string> {
+  const raw = (process.env.JARVIS_ALLOWED_EMAILS || '').trim()
+  const unquoted = raw.replace(/^["']+|["']+$/g, '')
+  return new Set(unquoted.split(',').map(normalizeEmail).filter(Boolean))
+}
+
+/** Log temporaire pour diagnostiquer les 404. À retirer plus tard. */
+function logTesters(stage: string, email: string, testers: Set<string>) {
+  const rawTesters = process.env.JARVIS_TESTERS
+  console.log('[jarvis-testers]', {
+    stage,
+    emailFromAuth: email,
+    emailLen: email.length,
+    JARVIS_TESTERS_defined: rawTesters !== undefined,
+    JARVIS_TESTERS_raw: rawTesters,
+    JARVIS_TESTERS_rawLen: rawTesters?.length ?? 0,
+    testersParsed: Array.from(testers),
+    allowedParsed: Array.from(parseAllowed()),
+    matchesTester: testers.has(email),
+  })
 }
 
 export async function POST() {
   // Même gate 404 que les autres routes Jarvis : jamais 403/401.
   const supabase = await createSsrClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const email = user?.email?.toLowerCase() || ''
+  const email = normalizeEmail(user?.email || '')
   if (!user || !email) return new NextResponse(null, { status: 404 })
 
   const testers = parseTesters()
+  logTesters('POST', email, testers)
   if (!testers.has(email)) return new NextResponse(null, { status: 404 })
 
   try {
@@ -41,9 +75,10 @@ export async function GET() {
   // → bouton affiché seulement si oui. Toujours 404 sinon.
   const supabase = await createSsrClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const email = user?.email?.toLowerCase() || ''
+  const email = normalizeEmail(user?.email || '')
   if (!user || !email) return new NextResponse(null, { status: 404 })
   const testers = parseTesters()
+  logTesters('GET', email, testers)
   if (!testers.has(email)) return new NextResponse(null, { status: 404 })
   return NextResponse.json({ ok: true, tester: true })
 }
