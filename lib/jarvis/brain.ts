@@ -189,47 +189,65 @@ export async function prepareContext(userId: string, email: string, now: Date = 
   }
 }
 
-// ─── Prompts FORMAT ─────────────────────────────────────────────────
-export const FORMAT_TEXT = `FORMAT DE SORTIE (TEXTE)
-- Réponds en français, tutoiement, calme et posé.
-- 2 à 3 phrases MAX, 300 caractères MAX.
-- Les montants s'écrivent en $ (dollars), jamais en €.
-- AUCUN markdown, AUCUNE liste à puces, AUCUN titre. Texte brut.
-- Si une donnée du contexte manque, dis-le franchement, n'invente jamais.
-- Ne donne jamais de signal : pas de "prends le trade", pas de niveau d'entrée/TP/SL.
-- Écris UNE SEULE réponse finale. Ne la révise pas, ne la reformule pas.`
+// ─── Prompts FORMAT dynamiques (casquette + detailRequested) ────────
+//
+// Longueurs par contexte :
+//   detailRequested ("développe", "explique", "détaille") → 900 car
+//   TRADER (session en cours)                              → 250 car
+//   autres casquettes                                      → 600 car
+// Le coupe-texte serveur (clampResponse) applique ces mêmes limites.
 
-export const FORMAT_VOICE = `FORMAT DE SORTIE (VOIX)
-Ta réponse sera lue à voix haute ET affichée telle quelle à l'écran.
-Écris naturellement, comme un texte propre : les chiffres et symboles
-courants ($, %, +, R) sont AUTORISÉS — une couche serveur les
-convertit en mots avant la synthèse ("0,2 %" devient "zéro virgule
-deux pour cent" seulement dans l'audio).
+type FormatMode = 'text' | 'voice'
 
-RÈGLES ABSOLUES :
-- 2 phrases courtes, 200 caractères MAX.
-- Chiffres et symboles : "0,2 à 0,4 %", "+2 R", "900 $" — c'est OK.
-- AUCUN markdown, aucune liste, aucun titre, aucune apostrophe
-  typographique. Texte brut sur une ligne.
+export function computeMaxChars(casquette: Casquette, detailRequested: boolean): number {
+  if (detailRequested) return 900
+  if (casquette === 'TRADER') return 250
+  return 600
+}
+
+export function detectDetailRequested(text: string): boolean {
+  // Détecte une demande explicite d'élaboration dans le dernier
+  // message du trader. "développe", "explique", "détaille", avec ou
+  // sans "moi", "nous", "ça".
+  return /\b(d[ée]veloppe|d[ée]taille|explique)\b/i.test(text)
+}
+
+function phraseAllowance(casquette: Casquette, detailRequested: boolean): string {
+  if (detailRequested) return '4 à 8 phrases, UNE réponse longue cette fois'
+  if (casquette === 'TRADER') return '1 à 3 phrases COURTES — le trader regarde son graphique'
+  return 'jusqu\'à 5 phrases'
+}
+
+export function buildFormatPrompt(mode: FormatMode, casquette: Casquette, detailRequested: boolean): string {
+  const maxChars = computeMaxChars(casquette, detailRequested)
+  const phrases = phraseAllowance(casquette, detailRequested)
+
+  const voiceExtras = mode === 'voice' ? `
+
+ERREURS DE TRANSCRIPTION — la question du trader arrive d'une
+reconnaissance vocale et peut contenir des mots du jargon mal
+transcrits : "enderbloc" / "ender bloc" = order block, "ichoche" /
+"cho-cho" = CHoCH, "effeveger" / "F V G" = FVG, "ammeur" = hammer,
+"mode joueur" = mode Joker, "deux R" / "2R" = ratio 2 R. Comprends
+le mot voulu dans le contexte, utilise TOUJOURS l'orthographe
+correcte dans ta réponse. Ne répète JAMAIS un mot mal transcrit.` : ''
+
+  return `FORMAT DE SORTIE
+- ${phrases}, ${maxChars} caractères MAX.
+- Chiffres et symboles autorisés : "0,2 à 0,4 %", "+2 R", "900 $".
+  Une couche serveur les convertit en mots pour la voix.
+- AUCUN markdown, aucune liste à puces, aucun titre, aucune
+  apostrophe typographique. Texte brut.
 - Pas d'abréviations lues bizarrement : écris "Order Block" plutôt
-  que "OB" quand c'est la 1re mention.
-- Français, tutoiement, calme et posé.
-- Si donnée absente, dis-le une seule fois dans la conversation.
-- Jamais de signal : pas de "prends le trade", pas de niveau.
-- UNE SEULE réponse finale.
-
-IMPORTANT — ERREURS DE TRANSCRIPTION
-La question du trader arrive d'une reconnaissance vocale. Elle peut
-contenir des mots du jargon SMC/ICT mal transcrits :
-  "enderbloc" / "ender bloc"       = order block
-  "ichoche" / "ichoch" / "cho-cho" = CHoCH
-  "effeveger" / "F V G"            = FVG
-  "ammeur"                         = hammer
-  "mode joueur"                    = mode Joker
-  "deux R" / "2R"                  = ratio 2 R
-Comprends le mot voulu dans son contexte (bible ATP + stats), et
-utilise TOUJOURS l'orthographe correcte dans ta réponse. Ne répète
-JAMAIS un mot mal transcrit tel quel.`
+  que "OB" à la 1re mention.
+- Français, tutoiement, calme et chaleureux.
+- Si une donnée du contexte manque, dis-le franchement, n'invente rien.
+- Ne donne jamais de signal : pas de "prends le trade", pas de niveau
+  d'entrée/TP/SL.
+- Varie l'ouverture : ne commence jamais deux réponses de la même
+  façon, jamais de "Rappel :".
+- UNE SEULE réponse finale. Ne la révise pas, ne la reformule pas.${voiceExtras}`
+}
 
 // ─── Détection "routine déjà mentionnée" ─────────────────────────────
 function routineAlreadyFlagged(messages: ChatMessage[]): boolean {
@@ -375,7 +393,10 @@ async function fetchGroqBudgeted(payload: unknown, apiKey: string): Promise<Fetc
 // ─── runBrain : contexte → Groq → clamp ─────────────────────────────
 export interface BrainRunConfig {
   format: 'text' | 'voice'
-  maxChars: number
+  /** Casquette active côté serveur — pilote la longueur et le ton. */
+  casquette: Casquette
+  /** Détecté dans le dernier message du trader. */
+  detailRequested: boolean
 }
 
 export interface BrainOk {
@@ -403,13 +424,19 @@ export async function runBrain(
   }
 
   const contextMsg = buildContextMessage(ctx, messages)
-  const formatMsg = cfg.format === 'voice' ? FORMAT_VOICE : FORMAT_TEXT
+  const formatMsg = buildFormatPrompt(cfg.format, cfg.casquette, cfg.detailRequested)
+  const maxChars = computeMaxChars(cfg.casquette, cfg.detailRequested)
+  // ~2.5 chars par token (FR, ponctuation), + marge pour que le modèle
+  // termine proprement avant le clamp. Jamais inférieur à 150.
+  const maxTokens = Math.max(150, Math.ceil(maxChars / 2.3) + 50)
   const trimmed = messages.slice(-10)
 
   const payload = {
     model: GROQ_TEXT_MODEL,
-    max_tokens: cfg.format === 'voice' ? 200 : 300,
-    temperature: 0.2,
+    max_tokens: maxTokens,
+    temperature: 0.7,                   // ↑ 0.2 → 0.7 : variété (le filet
+                                        // anti-doublon depuis 2A-FIX gère les
+                                        // dérives occasionnelles de gpt-oss).
     reasoning_effort: 'low',
     reasoning_format: 'parsed',
     messages: [
@@ -436,7 +463,7 @@ export async function runBrain(
   }
 
   const rawReply: string = data.choices?.[0]?.message?.content || ''
-  const reply = clampResponse(rawReply, cfg.maxChars)
+  const reply = clampResponse(rawReply, maxChars)
   const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
 
   return { ok: true, reply, usage, groqMs, attempts, casquette: ctx.casquette.casquette }

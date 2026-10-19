@@ -7,7 +7,7 @@ import {
   buildProviderErrorResponse,
 } from '@/lib/ai/quota'
 import { requireJarvisAccessFast } from '@/lib/jarvis/access'
-import { prepareContext, runBrain, type ChatMessage } from '@/lib/jarvis/brain'
+import { prepareContext, runBrain, detectDetailRequested, type ChatMessage } from '@/lib/jarvis/brain'
 
 export const runtime = 'nodejs'
 
@@ -34,9 +34,15 @@ export async function POST(request: Request) {
     // Quota en parallèle de l'appel Groq cerveau — sa réponse est
     // connue avant l'étape coûteuse. Si refus, on jette le résultat
     // Groq et on retourne 429.
+    const lastUser = [...body.messages].reverse().find(m => m.role === 'user')?.content ?? ''
+    const detailRequested = detectDetailRequested(lastUser)
     const t_runStart = performance.now()
     const quotaPromise = checkAndCount(userId, 'jarvis', ctx.isAdmin)
-    const brainPromise = runBrain(ctx, body.messages, { format: 'text', maxChars: 300 })
+    const brainPromise = runBrain(ctx, body.messages, {
+      format: 'text',
+      casquette: ctx.casquette.casquette,
+      detailRequested,
+    })
     const [quota, brainOutcome] = await Promise.all([quotaPromise, brainPromise])
 
     if (!quota.allowed) return buildQuotaResponse(quota)

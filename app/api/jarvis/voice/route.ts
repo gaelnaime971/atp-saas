@@ -7,7 +7,7 @@ import {
   buildProviderErrorResponse,
 } from '@/lib/ai/quota'
 import { requireJarvisAccessFast } from '@/lib/jarvis/access'
-import { prepareContext, runBrain, type ChatMessage } from '@/lib/jarvis/brain'
+import { prepareContext, runBrain, detectDetailRequested, type ChatMessage } from '@/lib/jarvis/brain'
 import { synthesizeSpeech } from '@/lib/jarvis/elevenlabs'
 import { pronounceForVoice } from '@/lib/jarvis/pronunciation'
 import { numbersToWords } from '@/lib/jarvis/voice-numbers'
@@ -147,7 +147,12 @@ export async function POST(request: Request) {
     // ─── Phase 4 : cerveau Groq ───
     const t_brainStart = performance.now()
     const messages: ChatMessage[] = [...history, { role: 'user', content: transcription }]
-    const brainOutcome = await runBrain(ctx, messages, { format: 'voice', maxChars: 200 })
+    const detailRequested = detectDetailRequested(transcription)
+    const brainOutcome = await runBrain(ctx, messages, {
+      format: 'voice',
+      casquette: ctx.casquette.casquette,
+      detailRequested,
+    })
     timings.brain = Math.round(performance.now() - t_brainStart)
     if (!brainOutcome.ok) {
       quotaPromise.catch(() => {})
