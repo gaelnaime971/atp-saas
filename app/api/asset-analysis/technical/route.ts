@@ -1,6 +1,6 @@
 import { NextResponse, after } from 'next/server'
 import { GROQ_VISION_MODEL } from '@/lib/ai/groq-models'
-import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
 
 interface ChartInput {
   slot: 'HTF' | 'MTF' | 'LTF' | 'Exec'
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     }
 
     const apiKey = process.env.GROQ_API_KEY
-    if (!apiKey) return NextResponse.json({ error: 'GROQ_API_KEY non configurée' }, { status: 500 })
+    if (!apiKey) return buildProviderErrorResponse({ route: '/api/asset-analysis/technical', detail: 'GROQ_API_KEY missing' })
 
     const quota = await checkAndCount(user.id, 'asset-technical', isAdmin)
     if (!quota.allowed) return buildQuotaResponse(quota)
@@ -123,9 +123,10 @@ export async function POST(request: Request) {
     })
 
     const data = await r.json()
-    if (data.error) {
-      console.error('Technical vision error:', data.error)
-      return NextResponse.json({ error: data.error?.message || 'Erreur IA vision' }, { status: 500 })
+    if (!r.ok || data.error) {
+      return buildProviderErrorResponse({
+        route: '/api/asset-analysis/technical', model: GROQ_VISION_MODEL, status: r.status, detail: data.error,
+      })
     }
 
     // Filet anti-thinking Qwen : strip tout bloc <think>...</think> AVANT parse
@@ -137,7 +138,7 @@ export async function POST(request: Request) {
       const m = raw.match(/\{[\s\S]*\}/)
       result = m ? JSON.parse(m[0]) : null
     }
-    if (!result) return NextResponse.json({ error: 'Réponse IA invalide', raw }, { status: 500 })
+    if (!result) return buildProviderErrorResponse({ route: '/api/asset-analysis/technical', model: GROQ_VISION_MODEL, detail: 'invalid-json' })
 
     const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
     if (usage) {
@@ -152,7 +153,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ technical: result })
   } catch (err) {
-    console.error('Technical analysis fatal:', err)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    return buildProviderErrorResponse({ route: '/api/asset-analysis/technical', model: GROQ_VISION_MODEL, detail: err })
   }
 }

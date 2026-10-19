@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Card from '@/components/ui/Card'
+import { readAiError, networkAiError, type AiErrorInfo } from '@/lib/ai/client-errors'
+import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -228,6 +230,7 @@ export default function AnalyseGraphique() {
   const [sentiment, setSentiment] = useState<PillarState<SentimentResult>>({ data: null, loading: false, error: null })
   const [correlations, setCorrelations] = useState<PillarState<CorrelationsResult>>({ data: null, loading: false, error: null })
   const [synthesis, setSynthesis] = useState<PillarState<Synthesis>>({ data: null, loading: false, error: null })
+  const [aiError, setAiError] = useState<AiErrorInfo | null>(null)
 
   const fileInputs = useRef<Record<SlotKey, HTMLInputElement | null>>({ HTF: null, MTF: null, LTF: null, Exec: null })
 
@@ -303,6 +306,7 @@ export default function AnalyseGraphique() {
     setSentiment({ data: null, loading: true, error: null })
     setCorrelations({ data: null, loading: true, error: null })
     setSynthesis({ data: null, loading: false, error: null })
+    setAiError(null)
 
     const technicalBody = {
       symbol,
@@ -313,20 +317,28 @@ export default function AnalyseGraphique() {
     }
     const simpleBody = JSON.stringify({ symbol })
 
-    const post = async <T,>(path: string, body: string, setter: (st: PillarState<T>) => void): Promise<T | null> => {
+    // isAi=true pour /api/asset-analysis/technical : l'erreur part dans
+    // aiError (banner global unifié) et le pillar.error reste null pour
+    // éviter d'afficher deux messages distincts.
+    const post = async <T,>(path: string, body: string, setter: (st: PillarState<T>) => void, isAi = false): Promise<T | null> => {
       try {
         const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
-        const d = await r.json()
-        if (!r.ok) { setter({ data: null, loading: false, error: d.error || `Erreur (${r.status})` }); return null }
-        return d as T
+        if (!r.ok) {
+          if (isAi) setAiError(await readAiError(r))
+          const errMsg = isAi ? null : (await r.json().catch(() => ({ error: null }))).error || `Erreur (${r.status})`
+          setter({ data: null, loading: false, error: errMsg })
+          return null
+        }
+        return (await r.json()) as T
       } catch (e) {
-        setter({ data: null, loading: false, error: e instanceof Error ? e.message : 'Erreur réseau' })
+        if (isAi) setAiError(networkAiError())
+        setter({ data: null, loading: false, error: isAi ? null : (e instanceof Error ? e.message : 'Erreur réseau') })
         return null
       }
     }
 
     const [techRes, newsRes, macroRes, sentRes, corrRes] = await Promise.all([
-      post<{ technical: TechnicalResult; error?: string }>('/api/asset-analysis/technical', JSON.stringify(technicalBody), v => setTechnical(v as PillarState<TechnicalResult>)),
+      post<{ technical: TechnicalResult; error?: string }>('/api/asset-analysis/technical', JSON.stringify(technicalBody), v => setTechnical(v as PillarState<TechnicalResult>), true),
       post<{ news: NewsResult; error?: string }>('/api/asset-analysis/news', simpleBody, v => setNews(v as PillarState<NewsResult>)),
       post<{ macro: MacroResult; error?: string }>('/api/asset-analysis/macro', simpleBody, v => setMacro(v as PillarState<MacroResult>)),
       post<{ sentiment: SentimentResult; error?: string }>('/api/asset-analysis/sentiment', simpleBody, v => setSentiment(v as PillarState<SentimentResult>)),
@@ -355,11 +367,16 @@ export default function AnalyseGraphique() {
             correlations: corrRes?.correlations ?? null,
           }),
         })
-        const d = await r.json()
-        if (!r.ok) setSynthesis({ data: null, loading: false, error: d.error || `Erreur (${r.status})` })
-        else setSynthesis({ data: d.synthesis, loading: false, error: null })
-      } catch (e) {
-        setSynthesis({ data: null, loading: false, error: e instanceof Error ? e.message : 'Erreur réseau' })
+        if (!r.ok) {
+          setAiError(await readAiError(r))
+          setSynthesis({ data: null, loading: false, error: null })
+        } else {
+          const d = await r.json()
+          setSynthesis({ data: d.synthesis, loading: false, error: null })
+        }
+      } catch {
+        setAiError(networkAiError())
+        setSynthesis({ data: null, loading: false, error: null })
       }
     }
   }, [canRun, symbol, uploadedCharts])
@@ -511,9 +528,10 @@ export default function AnalyseGraphique() {
       </div>
 
       {/* ── 4. Pillar results ── */}
-      {(technical.loading || technical.data || technical.error) && (
+      {(technical.loading || technical.data || technical.error || aiError) && (
         <>
           <SectionHeader icon="📊" label="Résultats de l'analyse" />
+          {aiError && <AiErrorBanner error={aiError} style={{ marginBottom: 10 }} />}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 10 }}>
             <PillarCard

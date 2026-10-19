@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { readAiError, networkAiError, type AiErrorInfo } from '@/lib/ai/client-errors'
+import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
 import {
   Area,
   AreaChart,
@@ -261,9 +263,10 @@ export default function StockAnalysis() {
   // AI states
   const [scores, setScores] = useState<AiScores | null>(null)
   const [loadingScores, setLoadingScores] = useState(false)
+  const [scoresError, setScoresError] = useState<AiErrorInfo | null>(null)
   const [verdict, setVerdict] = useState<Verdict | null>(null)
   const [loadingVerdict, setLoadingVerdict] = useState(false)
-  const [verdictError, setVerdictError] = useState<string | null>(null)
+  const [verdictError, setVerdictError] = useState<AiErrorInfo | null>(null)
 
   const loadSymbol = useCallback(async (sym: string, name?: string) => {
     setSymbol(sym)
@@ -271,6 +274,7 @@ export default function StockAnalysis() {
     setData(null)
     setLongChart([])
     setScores(null)
+    setScoresError(null)
     setVerdict(null)
     setVerdictError(null)
     setLoading(true)
@@ -302,7 +306,7 @@ export default function StockAnalysis() {
 
   // Auto-fetch AI scores once data is available
   useEffect(() => {
-    if (!data?.summary || scores || loadingScores) return
+    if (!data?.summary || scores || loadingScores || scoresError) return
     setLoadingScores(true)
     const fin = data.summary.financialData
     const detail = data.summary.summaryDetail
@@ -342,9 +346,15 @@ export default function StockAnalysis() {
         sector: profile?.sector,
       }),
     })
-      .then(r => r.json())
-      .then(r => setScores(r.scores || null))
-      .catch(() => { /* ignore */ })
+      .then(async r => {
+        if (!r.ok) {
+          setScoresError(await readAiError(r))
+          return
+        }
+        const j = await r.json()
+        setScores(j.scores || null)
+      })
+      .catch(() => setScoresError(networkAiError()))
       .finally(() => setLoadingScores(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data])
@@ -394,11 +404,14 @@ export default function StockAnalysis() {
           longBusinessSummary: profile?.longBusinessSummary,
         }),
       })
-      const d = await r.json()
-      if (!r.ok) setVerdictError(d.error || `Erreur (${r.status})`)
-      else setVerdict(d.verdict || null)
-    } catch (e) {
-      setVerdictError(e instanceof Error ? e.message : 'Erreur réseau')
+      if (!r.ok) {
+        setVerdictError(await readAiError(r))
+      } else {
+        const d = await r.json()
+        setVerdict(d.verdict || null)
+      }
+    } catch {
+      setVerdictError(networkAiError())
     } finally {
       setLoadingVerdict(false)
     }
@@ -435,6 +448,7 @@ export default function StockAnalysis() {
               setPeriod={setPeriod}
               scores={scores}
               loadingScores={loadingScores}
+              scoresError={scoresError}
             />
           )}
           {tab === 'graphique' && <GraphiqueTab data={data} longChart={longChart} period={period} setPeriod={setPeriod} />}
@@ -752,11 +766,12 @@ const ChartTooltipAny = ChartTooltip as unknown as (props: object) => React.JSX.
 // ─────────── Synthèse tab ───────────
 
 function SyntheseTab({
-  data, longChart, period, setPeriod, scores, loadingScores,
+  data, longChart, period, setPeriod, scores, loadingScores, scoresError,
 }: {
   data: StockData | null; longChart: ChartPoint[]
   period: Period; setPeriod: (p: Period) => void
   scores: AiScores | null; loadingScores: boolean
+  scoresError: AiErrorInfo | null
 }) {
   const ccy = data?.quote?.currency || data?.summary?.summaryDetail?.currency || 'USD'
   const chart = data?.chart || []
@@ -934,7 +949,9 @@ function SyntheseTab({
 
       {/* Row 4: Radar IA + commentaires (compact 2-col layout) */}
       <Section title="Notation IA · 6 axes" right={loadingScores ? <span className="text-[10px]" style={{ color: 'var(--text3)' }}>…</span> : null}>
-        {scores ? (
+        {scoresError ? (
+          <AiErrorBanner error={scoresError} compact />
+        ) : scores ? (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
             <div className="md:col-span-2" style={{ height: 230 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -1633,7 +1650,7 @@ function NewsTab({ data }: { data: StockData | null }) {
 
 // ─────────── AI verdict tab ───────────
 
-function AiTab({ verdict, loading, error, onRegenerate, hasData }: { verdict: Verdict | null; loading: boolean; error: string | null; onRegenerate: () => void; hasData: boolean }) {
+function AiTab({ verdict, loading, error, onRegenerate, hasData }: { verdict: Verdict | null; loading: boolean; error: AiErrorInfo | null; onRegenerate: () => void; hasData: boolean }) {
   if (!hasData) return <div className="rounded-xl p-8 text-center text-xs" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text3)' }}>Charge d&apos;abord les données.</div>
 
   if (loading) return (
@@ -1645,10 +1662,13 @@ function AiTab({ verdict, loading, error, onRegenerate, hasData }: { verdict: Ve
   )
 
   if (error) return (
-    <div className="rounded-xl p-5 text-center" style={{ background: 'rgba(var(--color-loss-rgb), 0.05)', border: '1px solid rgba(var(--color-loss-rgb), 0.3)' }}>
-      <div className="text-sm font-bold mb-2" style={{ color: RED }}>⚠ Erreur</div>
-      <div className="text-xs mb-3" style={{ color: 'var(--text3)' }}>{error}</div>
-      <button onClick={onRegenerate} className="px-3 py-2 rounded text-xs font-bold" style={{ background: GREEN, color: '#000', cursor: 'pointer' }}>Réessayer</button>
+    <div className="space-y-2">
+      <AiErrorBanner error={error} />
+      {error.kind !== 'auth' && (
+        <div className="text-center">
+          <button onClick={onRegenerate} className="px-3 py-2 rounded text-xs font-bold" style={{ background: GREEN, color: '#000', cursor: 'pointer' }}>Réessayer</button>
+        </div>
+      )}
     </div>
   )
 

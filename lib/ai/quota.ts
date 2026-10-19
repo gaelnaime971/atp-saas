@@ -218,6 +218,28 @@ export function buildQuotaResponse(quota: QuotaResult): Response {
   )
 }
 
+/**
+ * Réponse unifiée pour TOUTE erreur hors 401/429 dans les routes IA :
+ * Groq KO, modèle retiré, timeout, bug route, body JSON parse… Le détail
+ * (route, modèle, statut HTTP, payload d'erreur Groq) est loggé côté
+ * serveur sous le tag [ai-provider] mais JAMAIS exposé au client.
+ * Le client reçoit uniquement { error: 'ai_unavailable' } en 502.
+ */
+export function buildProviderErrorResponse(ctx: {
+  route: string
+  model?: string
+  status?: number
+  detail?: unknown
+}): Response {
+  console.error('[ai-provider]', {
+    route: ctx.route,
+    model: ctx.model,
+    status: ctx.status,
+    detail: ctx.detail,
+  })
+  return NextResponse.json({ error: 'ai_unavailable' }, { status: 502 })
+}
+
 // ─── Record usage réel après retour fournisseur ─────────────────────────────
 
 export interface RecordUsageInput {

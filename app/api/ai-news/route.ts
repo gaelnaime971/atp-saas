@@ -1,6 +1,6 @@
 import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
-import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     if (!prompt) return NextResponse.json({ error: 'No prompt' }, { status: 400 })
 
     const apiKey = process.env.GROQ_API_KEY
-    if (!apiKey) return NextResponse.json({ error: 'No API key' }, { status: 500 })
+    if (!apiKey) return buildProviderErrorResponse({ route: '/api/ai-news', detail: 'GROQ_API_KEY missing' })
 
     const quota = await checkAndCount(user.id, 'news', isAdmin)
     if (!quota.allowed) return buildQuotaResponse(quota)
@@ -31,9 +31,10 @@ export async function POST(request: Request) {
     })
 
     const data = await r.json()
-    if (data.error) {
-      console.error('Groq API error:', data.error)
-      return NextResponse.json({ text: '', error: data.error })
+    if (!r.ok || data.error) {
+      return buildProviderErrorResponse({
+        route: '/api/ai-news', model: GROQ_TEXT_MODEL, status: r.status, detail: data.error,
+      })
     }
 
     const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
     const text = data.choices?.[0]?.message?.content || ''
     return NextResponse.json({ text })
-  } catch {
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  } catch (err) {
+    return buildProviderErrorResponse({ route: '/api/ai-news', model: GROQ_TEXT_MODEL, detail: err })
   }
 }

@@ -1,6 +1,6 @@
 import { NextResponse, after } from 'next/server'
 import { GROQ_VISION_MODEL } from '@/lib/ai/groq-models'
-import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     if (!image) return NextResponse.json({ error: 'No image' }, { status: 400 })
 
     const apiKey = process.env.GROQ_API_KEY
-    if (!apiKey) return NextResponse.json({ error: 'No API key' }, { status: 500 })
+    if (!apiKey) return buildProviderErrorResponse({ route: '/api/ai-chart', detail: 'GROQ_API_KEY missing' })
 
     const quota = await checkAndCount(user.id, 'chart', isAdmin)
     if (!quota.allowed) return buildQuotaResponse(quota)
@@ -71,9 +71,10 @@ Réponds UNIQUEMENT en JSON valide avec cette structure exacte:
     })
 
     const data = await r.json()
-    if (data.error) {
-      console.error('Groq Vision error:', data.error)
-      return NextResponse.json({ text: '', error: data.error })
+    if (!r.ok || data.error) {
+      return buildProviderErrorResponse({
+        route: '/api/ai-chart', model: GROQ_VISION_MODEL, status: r.status, detail: data.error,
+      })
     }
 
     const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
@@ -92,7 +93,7 @@ Réponds UNIQUEMENT en JSON valide avec cette structure exacte:
     const rawText = data.choices?.[0]?.message?.content || ''
     const text = rawText.replace(/<think>[\s\S]*?<\/think>\s*/gi, '').trim()
     return NextResponse.json({ text })
-  } catch {
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  } catch (err) {
+    return buildProviderErrorResponse({ route: '/api/ai-chart', model: GROQ_VISION_MODEL, detail: err })
   }
 }

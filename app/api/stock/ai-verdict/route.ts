@@ -1,6 +1,6 @@
 import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
-import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
 
 interface VerdictBody {
   symbol: string
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     if (!body?.symbol) return NextResponse.json({ error: 'symbol requis' }, { status: 400 })
 
     const apiKey = process.env.GROQ_API_KEY
-    if (!apiKey) return NextResponse.json({ error: 'GROQ_API_KEY non configurée' }, { status: 500 })
+    if (!apiKey) return buildProviderErrorResponse({ route: '/api/stock/ai-verdict', detail: 'GROQ_API_KEY missing' })
 
     const quota = await checkAndCount(user.id, 'stock-verdict', isAdmin)
     if (!quota.allowed) return buildQuotaResponse(quota)
@@ -152,9 +152,10 @@ export async function POST(request: Request) {
     })
 
     const data = await r.json()
-    if (data.error) {
-      console.error('Groq verdict error:', data.error)
-      return NextResponse.json({ error: data.error?.message || 'Erreur IA' }, { status: 500 })
+    if (!r.ok || data.error) {
+      return buildProviderErrorResponse({
+        route: '/api/stock/ai-verdict', model: GROQ_TEXT_MODEL, status: r.status, detail: data.error,
+      })
     }
 
     const raw = data.choices?.[0]?.message?.content || '{}'
@@ -166,7 +167,7 @@ export async function POST(request: Request) {
       const match = raw.match(/\{[\s\S]*\}/)
       verdict = match ? JSON.parse(match[0]) : null
     }
-    if (!verdict) return NextResponse.json({ error: 'Réponse IA invalide', raw }, { status: 500 })
+    if (!verdict) return buildProviderErrorResponse({ route: '/api/stock/ai-verdict', model: GROQ_TEXT_MODEL, detail: 'invalid-json' })
 
     const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
     if (usage) {
@@ -181,7 +182,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ verdict })
   } catch (err) {
-    console.error('Stock AI verdict error:', err)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    return buildProviderErrorResponse({ route: '/api/stock/ai-verdict', model: GROQ_TEXT_MODEL, detail: err })
   }
 }

@@ -2,7 +2,7 @@ import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { computeStats, compactContext, type SessionRow, type BacktestRow, type MetricsOptions } from '@/lib/trader-metrics'
-import { requireUser, checkAndCount, recordUsage, buildQuotaResponse } from '@/lib/ai/quota'
+import { requireUser, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
 
 interface RequestBody {
   from?: string
@@ -130,7 +130,7 @@ function buildRoutineStats(
 export async function POST(request: Request) {
   try {
     const apiKey = process.env.GROQ_API_KEY
-    if (!apiKey) return NextResponse.json({ error: 'No API key' }, { status: 500 })
+    if (!apiKey) return buildProviderErrorResponse({ route: '/api/ai-coach-analysis', detail: 'GROQ_API_KEY missing' })
 
     const auth = await requireUser()
     if (auth instanceof Response) return auth
@@ -291,9 +291,10 @@ IMPORTANT: réponds UNIQUEMENT le JSON, rien d'autre.`
     })
 
     const data = await r.json()
-    if (data.error) {
-      console.error('Groq error:', data.error)
-      return NextResponse.json({ error: typeof data.error === 'string' ? data.error : data.error.message || 'Erreur API' }, { status: 500 })
+    if (!r.ok || data.error) {
+      return buildProviderErrorResponse({
+        route: '/api/ai-coach-analysis', model: GROQ_TEXT_MODEL, status: r.status, detail: data.error,
+      })
     }
 
     // ─── Record usage réel APRÈS retour Groq, via after() ───
@@ -311,7 +312,6 @@ IMPORTANT: réponds UNIQUEMENT le JSON, rien d'autre.`
     const text = data.choices?.[0]?.message?.content || ''
     return NextResponse.json({ analysis: text, stats })
   } catch (err) {
-    console.error('Analysis error:', err)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    return buildProviderErrorResponse({ route: '/api/ai-coach-analysis', model: GROQ_TEXT_MODEL, detail: err })
   }
 }

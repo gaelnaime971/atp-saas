@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { readAiError, networkAiError, type AiErrorInfo } from '@/lib/ai/client-errors'
+import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
 import { Responsive, WidthProvider, type LayoutItem, type ResponsiveLayouts } from 'react-grid-layout/legacy'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -215,6 +217,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
   const [chartLoading, setChartLoading] = useState(false)
   const [chartResult, setChartResult] = useState<{ tendance?: string; structure?: string; niveaux?: Array<{ type: string; prix: string; description: string }>; confluences?: string[]; premium_discount?: string; liquidity?: string; biais?: string; analyse?: string } | null>(null)
   const [chartPreview, setChartPreview] = useState<string | null>(null)
+  const [chartError, setChartError] = useState<AiErrorInfo | null>(null)
 
   // AI
   const [aiLoading, setAiLoading] = useState(false)
@@ -222,6 +225,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
   const [aiSummary, setAiSummary] = useState('')
   const [aiTime, setAiTime] = useState('')
   const [aiInput, setAiInput] = useState('')
+  const [newsError, setNewsError] = useState<AiErrorInfo | null>(null)
 
   // Quotes — pick random shuffled set
   const quotesRef = useRef((() => {
@@ -480,21 +484,22 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
     setAiLoading(true)
     setAiCards([])
     setAiSummary('')
+    setNewsError(null)
     const ctx = `Session: ${trades.length} trades, P&L ${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}$`
     const prompt = aiInput.trim()
       ? `Tu es un trader senior sur futures US (YM, NQ, ES). Analyse ces news pour la session de trading.\n\nNEWS: ${aiInput}\nContexte: ${ctx}\n\nRéponds UNIQUEMENT en JSON valide avec cette structure exacte:\n{"items":[{"headline":"titre court","signal":"BULLISH ou BEARISH ou NEUTRE","impact":"FORT ou MODÉRÉ ou FAIBLE","analyse":"2 phrases concises et actionnables","instruments":["YM","NQ"]}],"summary":"biais global + conseil pour la session US en 1-2 phrases"}`
       : `Tu es un trader senior sur futures US.\nDate: ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}. Contexte: ${ctx}\n\nDonne 3 facteurs macro à surveiller pour la session US aujourd'hui.\n\nRéponds UNIQUEMENT en JSON valide avec cette structure exacte:\n{"items":[{"headline":"facteur","signal":"BULLISH ou BEARISH ou NEUTRE","impact":"FORT ou MODÉRÉ ou FAIBLE","analyse":"explication actionnable","instruments":["YM","NQ"]}],"summary":"conseil général pour la session en 1-2 phrases"}`
     try {
       const r = await fetch('/api/ai-news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
-      const data = await r.json()
-      if (data.error) {
-        setAiSummary(`Erreur API: ${typeof data.error === 'string' ? data.error : JSON.stringify(data.error)}`)
+      if (!r.ok) {
+        setNewsError(await readAiError(r))
         setAiLoading(false)
         return
       }
+      const data = await r.json()
       let raw = data.text || ''
       if (!raw) {
-        setAiSummary('Aucune réponse reçue de l\'API')
+        setNewsError(networkAiError())
         setAiLoading(false)
         return
       }
@@ -522,8 +527,8 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
       if (parsedCards.length === 0 && !parsedSummary.trim()) setAiSummary(raw.substring(0, 300))
       const now = new Date()
       setAiTime(`ANALYSÉ ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`)
-    } catch (err) {
-      setAiSummary(`Erreur: ${err instanceof Error ? err.message : 'connexion échouée'}`)
+    } catch {
+      setNewsError(networkAiError())
     }
     setAiLoading(false)
   }
@@ -538,18 +543,19 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
       setChartPreview(base64)
       setChartLoading(true)
       setChartResult(null)
+      setChartError(null)
       try {
         const r = await fetch('/api/ai-chart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: base64 }),
         })
-        const data = await r.json()
-        if (data.error) {
-          setChartResult({ analyse: `Erreur: ${typeof data.error === 'string' ? data.error : JSON.stringify(data.error)}` })
+        if (!r.ok) {
+          setChartError(await readAiError(r))
           setChartLoading(false)
           return
         }
+        const data = await r.json()
         let raw = (data.text || '').replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
         // Extract JSON object — find first { and last }
         const firstBrace = raw.indexOf('{')
@@ -568,8 +574,8 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
             setChartResult({ analyse: raw.substring(0, 500) || 'Réponse invalide de l\'IA, réessaie.' })
           }
         }
-      } catch (err) {
-        setChartResult({ analyse: `Erreur: ${err instanceof Error ? err.message : 'connexion échouée'}` })
+      } catch {
+        setChartError(networkAiError())
       }
       setChartLoading(false)
     }
@@ -1095,6 +1101,7 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
                 <input className="aiinp" placeholder="Colle une headline → Enter" value={aiInput} onChange={e => setAiInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') analyzeNews() }} />
                 <div className="aihint">// ex: NFP +178K · FOMC hawkish · CPI 3.2%</div>
                 <div className="aicards">
+                  {newsError && <AiErrorBanner error={newsError} compact style={{ marginBottom: 6 }} />}
                   {aiLoading && <div className="aiload"><div className="aispin" />ANALYSE EN COURS...</div>}
                   {aiCards.map((c, i) => {
                     const cc = c.signal === 'BULLISH' ? 'ai-bull' : c.signal === 'BEARISH' ? 'ai-bear' : 'ai-neu'
@@ -1213,6 +1220,10 @@ export default function SessionLive({ onExit }: { onExit?: () => void }) {
 
                 {chartLoading && (
                   <div className="aiload"><div className="aispin" />ANALYSE DU GRAPHE EN COURS...</div>
+                )}
+
+                {chartError && !chartLoading && (
+                  <AiErrorBanner error={chartError} compact style={{ marginTop: 8 }} />
                 )}
 
                 {chartResult && !chartLoading && (

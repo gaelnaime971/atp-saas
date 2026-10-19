@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Card from '@/components/ui/Card'
 import Badge, { type BadgeTone } from '@/components/ui/Badge'
+import { readAiError, networkAiError, type AiErrorInfo } from '@/lib/ai/client-errors'
+import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
 import {
   Area,
   AreaChart,
@@ -271,7 +273,7 @@ const QUICK_QUESTIONS = [
 // ---------- Component ----------
 export default function AnalyseIA() {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<AiErrorInfo | null>(null)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
   const [generatedAt, setGeneratedAt] = useState<Date | null>(null)
@@ -303,6 +305,7 @@ export default function AnalyseIA() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
+  const [chatError, setChatError] = useState<AiErrorInfo | null>(null)
   const chatScrollRef = useRef<HTMLDivElement | null>(null)
 
   // Resolve dates from period state
@@ -360,6 +363,7 @@ export default function AnalyseIA() {
     setChatMessages(newHistory)
     setChatInput('')
     setChatLoading(true)
+    setChatError(null)
     try {
       const r = await fetch('/api/ai-coach-chat', {
         method: 'POST',
@@ -370,14 +374,14 @@ export default function AnalyseIA() {
           instrument: filterInstrument, accountId: filterAccount,
         }),
       })
-      const d = await r.json()
       if (!r.ok) {
-        setChatMessages(h => [...h, { role: 'assistant', content: `⚠ ${d.error || 'Erreur'}` }])
+        setChatError(await readAiError(r))
       } else {
+        const d = await r.json()
         setChatMessages(h => [...h, { role: 'assistant', content: d.reply || '(réponse vide)' }])
       }
-    } catch (e) {
-      setChatMessages(h => [...h, { role: 'assistant', content: `⚠ ${e instanceof Error ? e.message : 'Erreur réseau'}` }])
+    } catch {
+      setChatError(networkAiError())
     } finally {
       setChatLoading(false)
     }
@@ -407,7 +411,7 @@ export default function AnalyseIA() {
 
   const generate = async () => {
     setLoading(true)
-    setError('')
+    setError(null)
     setAnalysis(null)
     setStats(null)
     try {
@@ -419,12 +423,12 @@ export default function AnalyseIA() {
           instrument: filterInstrument, accountId: filterAccount,
         }),
       })
-      const data = await r.json()
-      if (data.error) {
-        setError(data.error)
+      if (!r.ok) {
+        setError(await readAiError(r))
         setLoading(false)
         return
       }
+      const data = await r.json()
       let raw: string = (data.analysis || '').replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
       const firstBrace = raw.indexOf('{')
       const lastBrace = raw.lastIndexOf('}')
@@ -465,7 +469,7 @@ export default function AnalyseIA() {
         }
         parsed = { ...ANALYSIS_DEFAULTS, ...rawParsed } as Analysis
       } catch {
-        setError('Réponse de l\'IA invalide. Réessaie.')
+        setError({ kind: 'unavailable', title: 'Analyse IA indisponible', message: 'L\'analyse IA est momentanément indisponible. Réessaie dans quelques minutes.' })
         setLoading(false)
         return
       }
@@ -509,8 +513,8 @@ export default function AnalyseIA() {
         saveHistory(next)
         setHistory(next)
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur de connexion')
+    } catch {
+      setError(networkAiError())
     }
     setLoading(false)
   }
@@ -1774,10 +1778,8 @@ export default function AnalyseIA() {
 
       {/* Error */}
       {error && (
-        <Card style={{ border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}>
-          <div style={{ fontSize: 13, color: '#ef4444', lineHeight: 1.6 }}>
-            <strong>Erreur :</strong> {error}
-          </div>
+        <Card>
+          <AiErrorBanner error={error} />
         </Card>
       )}
 
@@ -1895,6 +1897,7 @@ export default function AnalyseIA() {
                   Le coach réfléchit…
                 </div>
               )}
+              {chatError && <AiErrorBanner error={chatError} compact />}
             </div>
           )}
 
