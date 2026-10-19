@@ -7,7 +7,13 @@ import {
   buildProviderErrorResponse,
 } from '@/lib/ai/quota'
 import { requireJarvisAccessFast } from '@/lib/jarvis/access'
-import { prepareContext, runBrain, detectDetailRequested, type ChatMessage } from '@/lib/jarvis/brain'
+import {
+  prepareContext, runBrain, detectDetailRequested,
+  snapshotSession, buildSessionDirective,
+  type ChatMessage, type SessionEventRow,
+} from '@/lib/jarvis/brain'
+import { detectTradeEvent } from '@/lib/jarvis/event-detection'
+import { insertTrade, insertRuleTriggered } from '@/lib/jarvis/session-write'
 import { synthesizeSpeech } from '@/lib/jarvis/elevenlabs'
 import { pronounceForVoice } from '@/lib/jarvis/pronunciation'
 import { numbersToWords } from '@/lib/jarvis/voice-numbers'
@@ -144,6 +150,48 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'transcription vide', timings }, { status: 422 })
     }
 
+    // ─── Phase 3.5 : détection event déterministe (AVANT cerveau) ───
+    //
+    // Le cerveau NE crée JAMAIS un trade. Si on détecte un trade, on
+    // l'insère tout de suite → le snapshot inclut le nouveau trade →
+    // les règles sont évaluées sur l'état POST-trade → le prompt
+    // force l'annonce mot-pour-mot.
+    const detection = detectTradeEvent(transcription)
+    let notedEvent: SessionEventRow | null = null
+    if (detection.kind === 'trade') {
+      try {
+        notedEvent = await insertTrade(userId, detection.trade)
+        ctx.events.push(notedEvent)
+      } catch (err) {
+        console.error('[jarvis-voice] insertTrade failed, continuing without noting', err)
+      }
+    }
+
+    const snapshot = snapshotSession(ctx.events, ctx.rules)
+
+    // Risque demandé déjà aujourd'hui ? (approximation : l'historique
+    // contient-il une question "risque par trade" posée par Jarvis ?)
+    const riskAlreadyAsked = history.some(m =>
+      m.role === 'assistant' && /risque\s+par\s+trade/i.test(m.content))
+    const tradeUsdOnly = detection.kind === 'trade'
+      && detection.trade.result_r == null
+      && detection.trade.result_usd != null
+
+    const directive = buildSessionDirective(
+      detection.kind, snapshot, ctx.rules, tradeUsdOnly, riskAlreadyAsked,
+    )
+
+    // Enregistre les rule_triggered via after() (anti-répétition)
+    if (directive.triggered.length > 0) {
+      after(async () => {
+        for (const t of directive.triggered) {
+          try { await insertRuleTriggered(userId, t.key, t.config) } catch (err) {
+            console.error('[jarvis-voice] insertRuleTriggered failed', { key: t.key, err })
+          }
+        }
+      })
+    }
+
     // ─── Phase 4 : cerveau Groq ───
     const t_brainStart = performance.now()
     const messages: ChatMessage[] = [...history, { role: 'user', content: transcription }]
@@ -152,6 +200,7 @@ export async function POST(request: Request) {
       format: 'voice',
       casquette: ctx.casquette.casquette,
       detailRequested,
+      extraSystem: directive.systemAddendum || undefined,
     })
     timings.brain = Math.round(performance.now() - t_brainStart)
     if (!brainOutcome.ok) {
@@ -204,16 +253,27 @@ export async function POST(request: Request) {
       timings, retries,
     })
 
+    const sessionPayload = {
+      state: {
+        tradesCount: snapshot.state.tradesCount,
+        rSum: snapshot.state.rSum,
+        usdSum: snapshot.state.usdSum,
+      },
+      notedEvent,
+      triggered: directive.triggered.map(t => ({ key: t.key, message: t.message, config: t.config })),
+      detection: detection.kind,
+    }
     const metaHeaders: Record<string, string> = {
       'X-Jarvis-Transcription': b64url(transcription),
       'X-Jarvis-Reply': b64url(brainOutcome.reply),
       'X-Jarvis-Casquette': brainOutcome.casquette,
       'X-Jarvis-Timings': b64url(JSON.stringify(timings)),
       'X-Jarvis-Retries': b64url(JSON.stringify(retries)),
+      'X-Jarvis-Session': b64url(JSON.stringify(sessionPayload)),
       'X-Jarvis-CallsToday': String(quota.callsToday),
       'X-Jarvis-CallsLimit': String(quota.callsLimit),
       'X-Jarvis-CacheHits': ctx.cacheHits.join(',') || '',
-      'Access-Control-Expose-Headers': 'X-Jarvis-Transcription, X-Jarvis-Reply, X-Jarvis-Casquette, X-Jarvis-Timings, X-Jarvis-Retries, X-Jarvis-CallsToday, X-Jarvis-CallsLimit, X-Jarvis-CacheHits, X-Jarvis-AudioFailed',
+      'Access-Control-Expose-Headers': 'X-Jarvis-Transcription, X-Jarvis-Reply, X-Jarvis-Casquette, X-Jarvis-Timings, X-Jarvis-Retries, X-Jarvis-Session, X-Jarvis-CallsToday, X-Jarvis-CallsLimit, X-Jarvis-CacheHits, X-Jarvis-AudioFailed',
     }
 
     if (!tts.ok) {
@@ -227,6 +287,7 @@ export async function POST(request: Request) {
         timings,
         retries,
         cacheHits: ctx.cacheHits,
+        session: sessionPayload,
         audioFailed: true,
       }, { status: 200 })
     }

@@ -460,6 +460,65 @@ export interface SessionSnapshot {
   freshTriggers: TriggeredRule[]
   alreadyAnnounced: AnnouncedRuleRecord[]
 }
+
+export interface SessionDirective {
+  /** Si une règle doit être annoncée, le message officiel à placer en
+   *  tête de réponse MOT POUR MOT. null = pas d'annonce. */
+  announce: string | null
+  /** Instruction additionnelle pour le cerveau (ambigu, trade $ sans
+   *  risque, règle déclenchée…). Peut être combinée. */
+  systemAddendum: string
+  /** Les règles déclenchées qu'on veut renvoyer à l'UI. */
+  triggered: TriggeredRule[]
+}
+
+/**
+ * Construit le system message additionnel à injecter dans runBrain
+ * selon le résultat de la détection + de l'évaluation.
+ *
+ * - "trade"     + 1 règle   → force l'annonce mot pour mot en tête + max 1 phrase
+ * - "trade"     + 0 règle   → confirmation discrète ("j'ai noté… ")
+ * - "ambiguous"             → demande le résultat en R ou $
+ * - "trade" en $ sans risk  → demande UNE FOIS le risque dans la journée
+ */
+export function buildSessionDirective(
+  detectionKind: 'trade' | 'ambiguous' | 'none',
+  snapshot: SessionSnapshot,
+  rules: TraderRules,
+  tradeDeclaredInUsdOnly: boolean,
+  riskAlreadyAskedToday: boolean,
+): SessionDirective {
+  const parts: string[] = []
+  const triggered = snapshot.freshTriggers
+
+  if (triggered.length > 0) {
+    const announce = triggered.map(t => t.message).join(' ')
+    parts.push(
+`RÈGLE DÉCLENCHÉE PAR LE CODE — tu DOIS commencer ta réponse par exactement cette phrase, telle quelle, sans la modifier ni la paraphraser :
+
+${announce}
+
+Puis au plus UNE phrase courte (empathique ou de contexte), sans contredire la règle, sans relancer un trade, sans questionner la décision.`)
+  }
+
+  if (detectionKind === 'trade' && triggered.length === 0) {
+    parts.push('Le trader vient de déclarer un trade (déjà enregistré par le code). Confirme brièvement ce que tu as noté en 1 phrase, en langage naturel.')
+  }
+
+  if (detectionKind === 'ambiguous') {
+    parts.push('Le trader semble avoir parlé d\'un trade mais SANS en donner le résultat. Demande-lui UNE FOIS, en une phrase courte, le résultat précis en R ou en $.')
+  }
+
+  if (detectionKind === 'trade' && tradeDeclaredInUsdOnly && rules.risk_per_trade_usd <= 0 && !riskAlreadyAskedToday) {
+    parts.push('Le trader a déclaré un trade en $ sans que son risque par trade soit renseigné. Demande-lui UNE SEULE FOIS aujourd\'hui son risque par trade en $ (une phrase, après ta confirmation du trade).')
+  }
+
+  return {
+    announce: triggered.length > 0 ? triggered.map(t => t.message).join(' ') : null,
+    systemAddendum: parts.join('\n\n'),
+    triggered,
+  }
+}
 /**
  * Calcule l'état + les règles à annoncer MAINTENANT (celles qui
  * ne l'ont pas déjà été). Entrée = events bruts du jour.
@@ -576,6 +635,10 @@ export interface BrainRunConfig {
   casquette: Casquette
   /** Détecté dans le dernier message du trader. */
   detailRequested: boolean
+  /** System message additionnel à injecter juste avant le format
+   *  (annonce de règle, demande de clarification, etc. — cf. 3F.4
+   *  buildSessionDirective). */
+  extraSystem?: string
 }
 
 export interface BrainOk {
@@ -610,6 +673,16 @@ export async function runBrain(
   const maxTokens = Math.max(150, Math.ceil(maxChars / 2.3) + 50)
   const trimmed = messages.slice(-10)
 
+  const groqMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+    { role: 'system', content: ctx.bibleTxt },
+    { role: 'system', content: contextMsg },
+  ]
+  if (cfg.extraSystem && cfg.extraSystem.trim()) {
+    groqMessages.push({ role: 'system', content: cfg.extraSystem })
+  }
+  groqMessages.push({ role: 'system', content: formatMsg })
+  for (const m of trimmed) groqMessages.push({ role: m.role, content: m.content })
+
   const payload = {
     model: GROQ_TEXT_MODEL,
     max_tokens: maxTokens,
@@ -618,12 +691,7 @@ export async function runBrain(
                                         // dérives occasionnelles de gpt-oss).
     reasoning_effort: 'low',
     reasoning_format: 'parsed',
-    messages: [
-      { role: 'system' as const, content: ctx.bibleTxt },
-      { role: 'system' as const, content: contextMsg },
-      { role: 'system' as const, content: formatMsg },
-      ...trimmed.map(m => ({ role: m.role, content: m.content })),
-    ],
+    messages: groqMessages,
   }
 
   const t0 = performance.now()

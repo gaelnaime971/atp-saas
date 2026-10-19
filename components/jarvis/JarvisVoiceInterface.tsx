@@ -106,6 +106,29 @@ interface ServerTimings {
 }
 interface ServerRetries { whisper?: number; brain?: number; tts?: number }
 
+interface NotedEvent {
+  id: string
+  type: string
+  payload: {
+    result_r?: number | null
+    result_usd?: number | null
+    instrument?: string | null
+    side?: 'long' | 'short' | null
+    config?: string | null
+  }
+}
+interface TriggeredRule {
+  key: string
+  message: string
+  config?: string
+}
+interface SessionPayload {
+  state: { tradesCount: number; rSum: number | null; usdSum: number }
+  notedEvent: NotedEvent | null
+  triggered: TriggeredRule[]
+  detection: 'trade' | 'ambiguous' | 'none'
+}
+
 interface Exchange {
   trader: string
   jarvis: string
@@ -119,6 +142,27 @@ interface Exchange {
   audioFailed?: boolean
   voiceTimeToPlayMs?: number
   durationMs?: number
+  session?: SessionPayload
+}
+
+const AMBER_RULES = new Set([
+  'three_losses', 'max_trades', 'same_config_hard_stop', 'trade_after_stop',
+])
+function isAmberRule(key: string): boolean { return AMBER_RULES.has(key) }
+function formatNoted(ev: NotedEvent): string {
+  const p = ev.payload
+  const parts: string[] = []
+  if (typeof p.result_r === 'number') {
+    const r = p.result_r
+    parts.push(`${r > 0 ? '+' : ''}${r} R`)
+  } else if (typeof p.result_usd === 'number') {
+    const d = p.result_usd
+    parts.push(`${d > 0 ? '+' : ''}${d} $`)
+  }
+  if (p.instrument) parts.push('sur ' + p.instrument)
+  if (p.side === 'short') parts.push('short')
+  if (p.side === 'long')  parts.push('long')
+  return 'Noté : ' + parts.join(' ')
 }
 
 const MAX_RECORD_MS = 30_000
@@ -171,10 +215,17 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const audioUrlRef = useRef<string | null>(null)
 
   // ─── État de l'orbe ───
+  // Si une règle est déclenchée sur le dernier échange, l'orbe
+  // prend la couleur dédiée pendant que Jarvis parle (ambre pour
+  // les stops dûrs, doré éclatant pour les objectifs atteints).
+  const lastTrig = exchanges[exchanges.length - 1]?.session?.triggered?.[0]
+  const ruleOrb: OrbState | null = lastTrig
+    ? (isAmberRule(lastTrig.key) ? 'ambre' : 'objectif')
+    : null
   const orbState: OrbState =
     recording ? 'ecoute'
     : loading ? 'reflexion'
-    : playing ? 'parle'
+    : playing ? (ruleOrb ?? 'parle')
     : 'veille'
 
   // ─── Statut texte (sous l'orbe) ───
@@ -315,6 +366,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         via: 'text', durationMs: duration,
         callsToday: d.callsToday, callsLimit: d.callsLimit,
         casquette: d.casquette, server: d.timings, cacheHits: d.cacheHits,
+        session: d.session as SessionPayload | undefined,
       }])
       setCurrentCallsToday(d.callsToday)
       setCurrentCallsLimit(d.callsLimit)
@@ -428,6 +480,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
       let retries: ServerRetries | undefined
       let audioFailed = false
       let voiceTimeToPlayMs: number | undefined
+      let session: SessionPayload | undefined
 
       if (ct.startsWith('application/json')) {
         const d = await r.json()
@@ -435,11 +488,13 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         reply = d.reply || ''
         server = d.timings; retries = d.retries
         audioFailed = Boolean(d.audioFailed)
+        session = d.session as SessionPayload | undefined
       } else if (ct.startsWith('audio/')) {
         transcription = decodeB64Url(r.headers.get('X-Jarvis-Transcription') || '')
         reply = decodeB64Url(r.headers.get('X-Jarvis-Reply') || '')
         try { server = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Timings') || '')) } catch {}
         try { retries = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Retries') || '')) } catch {}
+        try { session = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Session') || '')) as SessionPayload } catch {}
         voiceTimeToPlayMs = await playAudioStream(r, tStop, audioUrlRef, audioRef, levelRef, rafRef, setPlaying)
       }
 
@@ -448,10 +503,40 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         via: 'voice', voiceTimeToPlayMs,
         callsToday, callsLimit,
         casquette, server, retries, cacheHits, audioFailed,
+        session,
       }])
       setCurrentCallsToday(callsToday)
       setCurrentCallsLimit(callsLimit)
     } catch { setError(networkAiError()) } finally { setLoading(false) }
+  }
+
+  // ─── Actions sur un event noté ───
+  const deleteEvent = async (id: string) => {
+    try {
+      const r = await fetch(`/api/jarvis/events/${encodeURIComponent(id)}`, { method: 'DELETE' })
+      if (r.ok) {
+        setExchanges(h => h.map(e =>
+          e.session?.notedEvent?.id === id
+            ? { ...e, session: e.session ? { ...e.session, notedEvent: null } : e.session }
+            : e))
+      }
+    } catch { /* silencieux */ }
+  }
+  const patchEvent = async (id: string, patch: Partial<NotedEvent['payload']>) => {
+    try {
+      const r = await fetch(`/api/jarvis/events/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+      if (r.ok) {
+        const d = await r.json() as { ok: boolean; payload: NotedEvent['payload'] }
+        setExchanges(h => h.map(e =>
+          e.session?.notedEvent?.id === id && e.session.notedEvent
+            ? { ...e, session: { ...e.session, notedEvent: { ...e.session.notedEvent, payload: d.payload } } }
+            : e))
+      }
+    } catch { /* silencieux */ }
   }
 
   // ─── Compteur échanges restants ───
@@ -498,6 +583,49 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
             <div className="jv-trader-echo">Clique Parler ou écris. Jarvis connaît la bible, ta routine et tes stats.</div>
           )}
         </section>
+
+        {lastExchange?.session?.triggered && lastExchange.session.triggered.length > 0 && (
+          <div className={`jv-rule-banner ${lastExchange.session.triggered.some(t => isAmberRule(t.key)) ? 'is-amber' : 'is-gold'}`}>
+            {lastExchange.session.triggered.map(t => t.message).join(' ')}
+          </div>
+        )}
+
+        {lastExchange?.session?.notedEvent && (
+          <div className="jv-noted">
+            <span className="jv-noted-label">{formatNoted(lastExchange.session.notedEvent)}</span>
+            <button type="button" className="jv-noted-btn" onClick={() => {
+              const ev = lastExchange.session!.notedEvent!
+              const raw = prompt('Nouveau résultat (ex: "-0.5R", "+200$", "BE") :', '')
+              if (!raw) return
+              const t = raw.trim().toLowerCase()
+              const patch: Partial<NotedEvent['payload']> = {}
+              if (/^be|break/.test(t)) { patch.result_r = 0; patch.result_usd = null }
+              else {
+                const rMatch = t.match(/([+-]?)\s*(\d+(?:[.,]\d+)?)\s*r/)
+                const uMatch = t.match(/([+-]?)\s*(\d+(?:[.,]\d+)?)\s*(?:\$|dollars?)/)
+                if (rMatch) {
+                  patch.result_r = (rMatch[1] === '-' ? -1 : 1) * Number(rMatch[2].replace(',', '.'))
+                } else if (uMatch) {
+                  patch.result_usd = (uMatch[1] === '-' ? -1 : 1) * Number(uMatch[2].replace(',', '.'))
+                }
+              }
+              if (Object.keys(patch).length > 0) void patchEvent(ev.id, patch)
+            }}>Corriger</button>
+            <button type="button" className="jv-noted-btn jv-noted-del" onClick={() => {
+              const ev = lastExchange.session!.notedEvent!
+              if (confirm('Supprimer ce trade de la session ?')) void deleteEvent(ev.id)
+            }}>Supprimer</button>
+          </div>
+        )}
+
+        {lastExchange?.session && lastExchange.session.state.tradesCount > 0 && (
+          <div className="jv-session-line">
+            Session : {lastExchange.session.state.tradesCount} trade{lastExchange.session.state.tradesCount > 1 ? 's' : ''}
+            {lastExchange.session.state.rSum != null && (
+              <>, {lastExchange.session.state.rSum >= 0 ? '+' : ''}{lastExchange.session.state.rSum.toFixed(1)} R</>
+            )}
+          </div>
+        )}
 
         <div className={`jv-counter ${remaining.cls}`}>{remaining.label || '—'}</div>
 
@@ -670,6 +798,45 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         }
         .jv-counter.warn { color: #F2994A; }
         .jv-counter.stop { color: #DD5555; }
+        .jv-rule-banner {
+          max-width: 340px; width: 100%;
+          padding: 10px 14px; border-radius: 10px;
+          font-size: 13px; line-height: 1.4;
+          font-family: var(--font-oxanium), system-ui, sans-serif;
+          text-align: center;
+        }
+        .jv-rule-banner.is-amber {
+          background: rgba(242, 153, 74, 0.14);
+          border: 1px solid rgba(242, 153, 74, 0.45);
+          color: #F2994A;
+        }
+        .jv-rule-banner.is-gold {
+          background: rgba(233, 201, 138, 0.14);
+          border: 1px solid rgba(233, 201, 138, 0.45);
+          color: #E9C98A;
+        }
+        .jv-noted {
+          max-width: 340px; width: 100%;
+          display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+          padding: 6px 10px; border-radius: 8px;
+          background: rgba(159, 176, 166, 0.08);
+          border: 1px solid rgba(159, 176, 166, 0.2);
+          font-size: 12px; color: #E9EEEA;
+        }
+        .jv-noted-label { flex: 1; min-width: 0; }
+        .jv-noted-btn {
+          padding: 4px 8px; font-size: 10px;
+          background: transparent; color: #9FB0A6;
+          border: 1px solid rgba(159, 176, 166, 0.3);
+          border-radius: 5px; cursor: pointer;
+          font-family: inherit;
+        }
+        .jv-noted-del { color: #DD5555; border-color: rgba(221, 85, 85, 0.4); }
+        .jv-session-line {
+          font-family: var(--font-oxanium), system-ui, sans-serif;
+          font-size: 11px; color: #9FB0A6;
+          letter-spacing: 0.02em;
+        }
         .jv-error-wrap { width: 100%; max-width: 340px; }
         .jv-actions { padding: 4px 0; }
         .jv-btn {
