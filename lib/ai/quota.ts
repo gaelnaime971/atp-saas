@@ -40,6 +40,7 @@ import {
   getQuotaMode,
   GROQ_PRICING_USD_PER_MTOK,
   GROQ_WHISPER_USD_PER_HOUR,
+  ELEVENLABS_USD_PER_CHAR,
   type AiFeature,
 } from './quota-limits'
 import { maybeAlertProviderFailure } from './provider-alerts'
@@ -279,7 +280,10 @@ function estimateCost(input: RecordUsageInput): number {
   const audioCost =
     ((input.audioSeconds ?? 0) / 3600) * GROQ_WHISPER_USD_PER_HOUR
 
-  return Number((tokenCost + audioCost).toFixed(6))
+  const ttsCost =
+    (input.ttsChars ?? 0) * ELEVENLABS_USD_PER_CHAR
+
+  return Number((tokenCost + audioCost + ttsCost).toFixed(6))
 }
 
 /**

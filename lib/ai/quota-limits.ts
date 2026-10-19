@@ -83,6 +83,14 @@ export const GROQ_PRICING_USD_PER_MTOK: Record<string, { input: number; output: 
 export const GROQ_WHISPER_USD_PER_HOUR = 0.04
 
 /**
+ * Tarif ElevenLabs TTS pour la synthèse vocale Jarvis — $/caractère.
+ * Référence 2026-10 : ≈ 0,05 $ / 1 000 caractères (plan Creator).
+ * À ajuster selon le plan actif. Pour le POC, utilisé par
+ * estimateCost(ttsChars) dans lib/ai/quota.ts.
+ */
+export const ELEVENLABS_USD_PER_CHAR = 0.00005
+
+/**
  * Mode global de la couche quota — contrôlé par env var AI_QUOTA_MODE.
  *   - 'off'     : skip total, aucun check, aucun increment. Comportement
  *                 d'avant ce chantier. Défaut (sécurité : rollout progressif).
