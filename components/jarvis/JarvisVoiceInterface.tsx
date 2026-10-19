@@ -730,6 +730,21 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
             {lastExchange.session.state.rSum != null && (
               <>, {lastExchange.session.state.rSum >= 0 ? '+' : ''}{lastExchange.session.state.rSum.toFixed(1)} R</>
             )}
+            {' · '}
+            <a href="/jarvis/regles" className="jv-rules-link">Mes règles</a>
+          </div>
+        )}
+        {(!lastExchange?.session || lastExchange.session.state.tradesCount === 0) && (
+          <div className="jv-session-line">
+            <a href="/jarvis/regles" className="jv-rules-link">Mes règles</a>
+          </div>
+        )}
+        {/* Si Jarvis a demandé le risque dans sa dernière réponse,
+            on fait pointer explicitement vers la page règles. */}
+        {lastExchange?.jarvis && /risque\s+par\s+trade/i.test(lastExchange.jarvis) && (
+          <div className="jv-ask-rules">
+            Tu peux renseigner ton risque par trade dans{' '}
+            <a href="/jarvis/regles" className="jv-rules-link">Mes règles</a>.
           </div>
         )}
 
@@ -956,6 +971,18 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           font-family: var(--font-oxanium), system-ui, sans-serif;
           font-size: 11px; color: #9FB0A6;
           letter-spacing: 0.02em;
+        }
+        .jv-rules-link {
+          color: #DDB977; text-decoration: underline;
+          font-family: inherit;
+        }
+        .jv-ask-rules {
+          max-width: 340px; width: 100%;
+          padding: 8px 10px; border-radius: 6px;
+          background: rgba(221, 185, 119, 0.08);
+          border: 1px solid rgba(221, 185, 119, 0.25);
+          font-size: 11px; color: #DDB977;
+          font-family: var(--font-oxanium), system-ui, sans-serif;
         }
         /* ─── Stepper Joker (3F.5) ───────────────────────────── */
         .jv-joker {

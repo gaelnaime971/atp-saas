@@ -26,30 +26,6 @@ function parseTesters(): Set<string> {
   return new Set(unquoted.split(',').map(normalizeEmail).filter(Boolean))
 }
 
-/** Même source de vérité qu'access.ts, répété ici pour comparer
- *  les deux listes dans le log et aider le diagnostic. */
-function parseAllowed(): Set<string> {
-  const raw = (process.env.JARVIS_ALLOWED_EMAILS || '').trim()
-  const unquoted = raw.replace(/^["']+|["']+$/g, '')
-  return new Set(unquoted.split(',').map(normalizeEmail).filter(Boolean))
-}
-
-/** Log temporaire pour diagnostiquer les 404. À retirer plus tard. */
-function logTesters(stage: string, email: string, testers: Set<string>) {
-  const rawTesters = process.env.JARVIS_TESTERS
-  console.log('[jarvis-testers]', {
-    stage,
-    emailFromAuth: email,
-    emailLen: email.length,
-    JARVIS_TESTERS_defined: rawTesters !== undefined,
-    JARVIS_TESTERS_raw: rawTesters,
-    JARVIS_TESTERS_rawLen: rawTesters?.length ?? 0,
-    testersParsed: Array.from(testers),
-    allowedParsed: Array.from(parseAllowed()),
-    matchesTester: testers.has(email),
-  })
-}
-
 export async function POST() {
   // Même gate 404 que les autres routes Jarvis : jamais 403/401.
   const supabase = await createSsrClient()
@@ -58,7 +34,6 @@ export async function POST() {
   if (!user || !email) return new NextResponse(null, { status: 404 })
 
   const testers = parseTesters()
-  logTesters('POST', email, testers)
   if (!testers.has(email)) return new NextResponse(null, { status: 404 })
 
   try {
@@ -78,7 +53,6 @@ export async function GET() {
   const email = normalizeEmail(user?.email || '')
   if (!user || !email) return new NextResponse(null, { status: 404 })
   const testers = parseTesters()
-  logTesters('GET', email, testers)
   if (!testers.has(email)) return new NextResponse(null, { status: 404 })
   return NextResponse.json({ ok: true, tester: true })
 }
