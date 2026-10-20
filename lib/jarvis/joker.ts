@@ -95,25 +95,71 @@ function isApproachingZone(t: string): boolean {
   return true
 }
 
-/** Détecte CHoCH + unité temporelle. Tolère transcriptions imparfaites
- *  (choche, choc, chock, "une minute", "cinq minutes"). Retourne le
- *  timeframe demandé ("m1" | "m5") ou null. */
-function detectChochTimeframe(t: string): 'm1' | 'm5' | null {
-  // Variantes orthographiques du mot CHoCH
-  const chochRe = /(?<![\p{L}])(choch|choche|choc|chock|cho[-\s]?ch)(?![\p{L}])/iu
-  if (!chochRe.test(t)) return null
+/** 3F-CORRECTIF-3 — Détection TOLÉRANTE des étapes CHoCH mentionnées
+ *  et confirmées dans un message. Supporte :
+ *   - plusieurs étapes dans un même message ("M1 validé et M5 validé")
+ *   - mots intercalés entre CHoCH et la TF ("le CHoCH M1")
+ *   - mots intercalés entre la TF et la confirmation ("M1 est validé")
+ *   - accents facultatifs : "valide" / "validé" / "validée" / "validées"
+ *   - synonymes : "confirmé", "ok", "cassé", "coché"
+ *   - "aussi"/"également" + CHoCH → confirmation implicite si un
+ *     frère est déjà confirmé dans le message
+ *   - transcriptions : "choche", "choc", "chock", "cho ch"
+ *   - "M un" / "M une" / "une minute" / "1 minute"
+ *   - "M cinq" / "cinq minutes" / "5 minutes"
+ */
+const CHOCH_WORD = '(?:choch|choche|choc|chock|cho[-\\s]?ch)'
+const TF_PATTERN = '(m\\s?1|m\\s?une?|une?\\s+minute|1\\s+minute|m\\s?5|m\\s?cinq|cinq\\s+minutes|5\\s+minutes)'
+const CONFIRM_RE = /(?<![\p{L}])(valid[eé][eés]*|j'ai|je\s+vois|confirm[eé][eés]*|pris|c'est\s+bon|cass[eé][eés]*|coch[eé][eérsz]*|ok)(?![\p{L}])/iu
+const ALSO_RE = /(?<![\p{L}])(aussi|[eé]galement|idem|pareil)(?![\p{L}])/iu
 
-  // Timeframe M1 ou "une minute" / "1 minute"
-  const m1 = /(?<![\p{L}])(m\s?1|une?\s+minute|1\s+minute)(?![\p{L}])/iu.test(t)
-  const m5 = /(?<![\p{L}])(m\s?5|cinq\s+minutes|5\s+minutes)(?![\p{L}])/iu.test(t)
-  if (m5) return 'm5'
-  if (m1) return 'm1'
-  return null
+function tfKindOf(raw: string): 'm1' | 'm5' {
+  const s = raw.toLowerCase().replace(/\s+/g, '')
+  if (/5|cinq/.test(s)) return 'm5'
+  return 'm1'
 }
 
-/** Confirmation : "validé", "j'ai", "je vois", "confirmé", "pris". */
-function hasConfirmation(t: string): boolean {
-  return /(?<![\p{L}])(valid[ée]|j'ai|je\s+vois|confirm[ée]|pris|c'est bon|cassé)(?![\p{L}])/iu.test(t)
+/** Scanne le texte et retourne l'ordre des étapes CHoCH confirmées. */
+export function detectConfirmedChochSteps(t: string): Array<'m1' | 'm5'> {
+  // Jusqu'à 20 caractères (lettres, espaces, apostrophes, articles)
+  // entre CHoCH et la TF.
+  const re = new RegExp(`(?<![\\p{L}])${CHOCH_WORD}([\\p{L}\\s'’]{0,20})${TF_PATTERN}`, 'giu')
+  const results: Array<{ kind: 'm1' | 'm5'; idx: number; end: number; confirmed: boolean }> = []
+  let m: RegExpExecArray | null
+  while ((m = re.exec(t)) !== null) {
+    const kind = tfKindOf(m[2])
+    const idx = m.index
+    const end = idx + m[0].length
+    // Window FORWARD : jusqu'au prochain CHoCH ou jusqu'à 150 chars.
+    const nextCh = (() => {
+      const rest = t.slice(end)
+      const nextRe = new RegExp(`(?<![\\p{L}])${CHOCH_WORD}`, 'iu')
+      const nm = rest.match(nextRe)
+      return nm && nm.index !== undefined ? end + nm.index : Math.min(end + 150, t.length)
+    })()
+    const forward = t.slice(end, nextCh)
+    const confirmed = CONFIRM_RE.test(forward)
+    results.push({ kind, idx, end, confirmed })
+  }
+  // Confirmation implicite via "aussi"/"également" + CHoCH frère confirmé
+  for (let i = 1; i < results.length; i++) {
+    if (results[i].confirmed) continue
+    const prev = results[i - 1]
+    if (!prev.confirmed) continue
+    const linker = t.slice(prev.end, results[i].idx)
+    if (ALSO_RE.test(linker)) results[i].confirmed = true
+  }
+  // Garder l'ordre chronologique dans le texte, dédoublonner (si un
+  // M1 confirmé apparaît deux fois, on le compte une fois).
+  const seen = new Set<string>()
+  const steps: Array<'m1' | 'm5'> = []
+  for (const r of results) {
+    if (!r.confirmed) continue
+    if (seen.has(r.kind)) continue
+    seen.add(r.kind)
+    steps.push(r.kind)
+  }
+  return steps
 }
 
 /** Retracement sur zone + signal (Hammer ou "signal validé"). */
@@ -166,22 +212,34 @@ export function advanceJokerState(
     return { next: 'inactive' }
   }
 
-  // Depuis armed → attend CHoCH M1
+  // 3F-CORRECTIF-3 — Les étapes confirmées peuvent se cumuler dans un
+  // seul message ("CHoCH M1 validé et CHoCH M5 validé" depuis armed →
+  // on remonte directement à choch_m5). Le code fait foi : si M5 est
+  // annoncé sans M1 depuis armed, c'est outOfOrder, on ne remonte pas.
+  const steps = detectConfirmedChochSteps(t)
+  const sawM1 = steps.includes('m1')
+  const sawM5 = steps.includes('m5')
+
+  // Depuis armed → attend CHoCH M1, puis éventuellement M5 cumulé
   if (current === 'armed') {
-    const tf = detectChochTimeframe(t)
-    if (tf === 'm1' && hasConfirmation(t)) return { next: 'choch_m1' }
-    if (tf === 'm5') {
-      // Hors ordre : il faut M1 d'abord
-      return { next: 'armed', outOfOrder: true }
+    let next: JokerStep = 'armed'
+    if (sawM1) next = 'choch_m1'
+    if (sawM5 && next === 'choch_m1') next = 'choch_m5'
+    if (sawM5 && !sawM1) return { next: 'armed', outOfOrder: true }
+    if (next === 'choch_m5' && isRetracementReady(t)) {
+      return { next: 'ready', reachedReady: true }
     }
-    return { next: 'armed' }
+    return { next }
   }
 
-  // Depuis choch_m1 → attend CHoCH M5
+  // Depuis choch_m1 → attend CHoCH M5 (ou retrace+signal si M5 cumulé)
   if (current === 'choch_m1') {
-    const tf = detectChochTimeframe(t)
-    if (tf === 'm5' && hasConfirmation(t)) return { next: 'choch_m5' }
-    return { next: 'choch_m1' }
+    let next: JokerStep = 'choch_m1'
+    if (sawM5) next = 'choch_m5'
+    if (next === 'choch_m5' && isRetracementReady(t)) {
+      return { next: 'ready', reachedReady: true }
+    }
+    return { next }
   }
 
   // Depuis choch_m5 → attend retracement + signal

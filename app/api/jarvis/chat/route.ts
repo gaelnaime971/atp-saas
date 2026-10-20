@@ -15,7 +15,7 @@ const VALID_CASQUETTES = new Set<Casquette>([
 import {
   prepareContext, runBrain, detectDetailRequested,
   snapshotSession, buildSessionDirective, buildAntiRepetitionAddendum,
-  stripAnnouncement,
+  stripAnnouncement, applyGoldenRuleGuard,
   type ChatMessage, type SessionEventRow,
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
@@ -158,10 +158,45 @@ export async function POST(request: Request) {
     // On strip toute reprise dans la sortie du modèle (répétitions,
     // guillemets « »), puis on préfixe.
     const announcement = directive.announce ?? jokerAnnounce
-    const brainBody = stripAnnouncement(brainOutcome.reply, announcement)
-    const finalReply = announcement
+    let brainBody = stripAnnouncement(brainOutcome.reply, announcement)
+
+    // 3F-CORRECTIF-3 — Garde-fou règle d'or : retire toute phrase du
+    // cerveau qui pousse à entrer, exécuter ou dimensionner. S'applique
+    // sur le corps post-strip (jamais sur l'annonce officielle).
+    const guard = applyGoldenRuleGuard(brainBody)
+    if (guard.removed.length > 0) {
+      console.warn('[jarvis-guard]', {
+        route: '/api/jarvis/chat', userId,
+        removed: guard.removed.map(r => ({ label: r.label, len: r.sentence.length })),
+      })
+    }
+    brainBody = guard.text
+
+    // 3F-CORRECTIF-3 — Si Joker actif, on coupe le brainBody à UNE
+    // phrase max (le code dit déjà l'annonce, pas besoin d'épilogue).
+    const jokerActive = jokerTransition.next !== 'inactive'
+    if (jokerActive && announcement) {
+      const firstSent = brainBody.match(/^.*?[.!?…](?=\s|$)/)
+      if (firstSent) brainBody = firstSent[0]
+    }
+
+    let finalReply = announcement
       ? (brainBody ? `${announcement} ${brainBody}` : announcement)
-      : brainOutcome.reply
+      : (brainBody || 'Je reste à ton écoute.')
+
+    // 3F-CORRECTIF-3 — Joker actif → longueur TRADER (texte : 400 car,
+    // voix : 250 car), quelle que soit la casquette ambiante.
+    if (jokerActive) {
+      const CAP = 400
+      if (finalReply.length > CAP) {
+        const slice = finalReply.slice(0, CAP)
+        const lastPunct = Math.max(
+          slice.lastIndexOf('.'), slice.lastIndexOf('!'),
+          slice.lastIndexOf('?'), slice.lastIndexOf('…'),
+        )
+        finalReply = lastPunct > 60 ? slice.slice(0, lastPunct + 1).trim() : slice.trim() + '…'
+      }
+    }
 
     timings.quota = Math.round((performance.now() - t_runStart) - brainOutcome.groqMs)
     if (timings.quota < 0) timings.quota = 0

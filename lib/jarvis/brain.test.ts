@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { stripAnnouncement, buildAntiRepetitionAddendum } from './brain'
+import { stripAnnouncement, buildAntiRepetitionAddendum, applyGoldenRuleGuard } from './brain'
 
 describe('stripAnnouncement — 3F-correctif-2 : code place l\'annonce, retire reprise du modèle', () => {
   const ANN = 'CHoCH M1 validé. On attend le M5, pas avant.'
@@ -84,5 +84,83 @@ describe('buildAntiRepetitionAddendum — scan historique', () => {
   it('user demande explicitement les stats → stats autorisées', () => {
     const r = buildAntiRepetitionAddendum([], 'c\'est quoi mon win rate sur 30 jours ?')
     expect(r).toBeNull()
+  })
+})
+
+describe('applyGoldenRuleGuard — règle d\'or : jamais pousser à entrer', () => {
+  it('texte vide → vide, rien retiré', () => {
+    const r = applyGoldenRuleGuard('')
+    expect(r.text).toBe('')
+    expect(r.removed).toEqual([])
+  })
+
+  it('"Passe à l\'exécution selon ton plan de risque." → retiré', () => {
+    const r = applyGoldenRuleGuard('Passe à l\'exécution selon ton plan de risque.')
+    expect(r.text).toBe('')
+    expect(r.removed).toHaveLength(1)
+    expect(r.removed[0].label).toBe('push:execution')
+  })
+
+  it('"Quelle taille de position vas-tu allouer ?" → retiré', () => {
+    const r = applyGoldenRuleGuard('Quelle taille de position vas-tu allouer ?')
+    expect(r.text).toBe('')
+    expect(r.removed[0].label).toBe('push:taille-position')
+  })
+
+  it('"Tu peux entrer maintenant." → retiré', () => {
+    const r = applyGoldenRuleGuard('Tu peux entrer maintenant.')
+    expect(r.text).toBe('')
+    expect(r.removed[0].label).toBe('push:tu-peux-entrer')
+  })
+
+  it('"Prends position dès que le signal se confirme." → retiré', () => {
+    const r = applyGoldenRuleGuard('Prends position dès que le signal se confirme.')
+    expect(r.removed[0].label).toBe('push:prends-position')
+  })
+
+  it('"Clique sur buy." → retiré', () => {
+    const r = applyGoldenRuleGuard('Clique sur buy.')
+    expect(r.removed[0].label).toBe('push:clique-side')
+  })
+
+  it('phrase mixte : garde ce qui est OK, retire ce qui pousse', () => {
+    const text = 'On attend ta zone. Passe à l\'exécution selon ton plan. Reste concentré.'
+    const r = applyGoldenRuleGuard(text)
+    expect(r.text).toBe('On attend ta zone. Reste concentré.')
+    expect(r.removed).toHaveLength(1)
+  })
+
+  it('"C\'est toi qui cliques, et toi seul qui décides." → GARDÉ (phrase officielle)', () => {
+    const r = applyGoldenRuleGuard('C\'est toi qui cliques, et toi seul qui décides.')
+    expect(r.text).toBe('C\'est toi qui cliques, et toi seul qui décides.')
+    expect(r.removed).toEqual([])
+  })
+
+  it('annonce ready complète → GARDÉE intégralement', () => {
+    const ann = 'Ta checklist Joker est complète. C\'est toi qui cliques, et toi seul qui décides.'
+    const r = applyGoldenRuleGuard(ann)
+    expect(r.text).toBe(ann)
+    expect(r.removed).toEqual([])
+  })
+
+  it('"Reste calme et observe le marché." → GARDÉ', () => {
+    const r = applyGoldenRuleGuard('Reste calme et observe le marché.')
+    expect(r.text).toBe('Reste calme et observe le marché.')
+  })
+
+  it('"Note dans ton journal après coup." → GARDÉ', () => {
+    const r = applyGoldenRuleGuard('Note dans ton journal après coup.')
+    expect(r.text).toBe('Note dans ton journal après coup.')
+  })
+
+  it('"Combien de lots vas-tu prendre ?" → retiré', () => {
+    const r = applyGoldenRuleGuard('Combien de lots vas-tu prendre ?')
+    expect(r.text).toBe('')
+    expect(r.removed[0].label).toBe('push:combien-lots')
+  })
+
+  it('"Exécute le trade." → retiré', () => {
+    const r = applyGoldenRuleGuard('Exécute le trade.')
+    expect(r.removed[0].label).toBe('push:execute-trade')
   })
 })

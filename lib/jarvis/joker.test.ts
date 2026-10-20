@@ -152,6 +152,64 @@ describe('joker — annulation + timeout', () => {
   })
 })
 
+describe('joker — 3F-correctif-3 : phrases prod (détection tolérante)', () => {
+  it('"CHoCH M5 validé." avant M1 depuis armed → outOfOrder, reste armed', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M5 validé.')
+    expect(r.next).toBe('armed')
+    expect(r.outOfOrder).toBe(true)
+  })
+
+  it('"CHoCH M1 valide et aussi. Et aussi CHoCH M5." → armed → choch_m5', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M1 valide et aussi. Et aussi CHoCH M5.')
+    expect(r.next).toBe('choch_m5')
+  })
+
+  it('"Je t\'ai dit que le CHoCH M1 est validé, donc il faut que tu le coches, et que le CHoCH M5 aussi est validé." → choch_m5', () => {
+    const r = advanceJokerState(ctx('armed'),
+      "Je t'ai dit que le CHoCH M1 est validé, donc il faut que tu le coches, et que le CHoCH M5 aussi est validé.")
+    expect(r.next).toBe('choch_m5')
+  })
+
+  it('"Ok, retracement sur ma zone avec un hammer, après le CHoCH M1 validé et le CHoCH M5 validé." depuis armed → ready', () => {
+    const r = advanceJokerState(ctx('armed'),
+      'Ok, retracement sur ma zone avec un hammer, après le CHoCH M1 validé et le CHoCH M5 validé.')
+    expect(r.next).toBe('ready')
+    expect(r.reachedReady).toBe(true)
+  })
+
+  it('"le CHoCH M1 est validé" depuis armed → choch_m1 (mots intercalés)', () => {
+    const r = advanceJokerState(ctx('armed'), 'le CHoCH M1 est validé')
+    expect(r.next).toBe('choch_m1')
+  })
+
+  it('"CHoCH M1 valide" (sans accent) → choch_m1', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M1 valide')
+    expect(r.next).toBe('choch_m1')
+  })
+
+  it('"CHoCH M une confirmé" → choch_m1 (M un = M1 par ASR)', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M une confirmé')
+    expect(r.next).toBe('choch_m1')
+  })
+
+  it('"CHoCH M cinq ok" → outOfOrder depuis armed', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M cinq ok')
+    expect(r.next).toBe('armed')
+    expect(r.outOfOrder).toBe(true)
+  })
+
+  it('depuis choch_m1 : "M5 validée" (accent féminin) → choch_m5', () => {
+    const r = advanceJokerState(ctx('choch_m1'), 'CHoCH M5 validée')
+    expect(r.next).toBe('choch_m5')
+  })
+
+  it('plusieurs M1 dans le texte → ne compte qu\'une fois', () => {
+    const r = advanceJokerState(ctx('armed'),
+      'bon alors CHoCH M1 validé, oui CHoCH M1 validé je te dis')
+    expect(r.next).toBe('choch_m1')
+  })
+})
+
 describe('joker — séquence complète (non-régression retard d\'un message)', () => {
   it('armé → M1 → M5 → prêt : chaque transition retourne le NOUVEL état, pas l\'ancien', () => {
     let r = advanceJokerState(ctx('armed'), 'CHoCH M1 validé')

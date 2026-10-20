@@ -382,7 +382,15 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
 
   // 3F-CORRECTIF : testeurs peuvent forcer une casquette ("TRADER" à
   // 22h pour tester les règles de session). Vide = casquette calculée.
-  const [forcedCasquette, setForcedCasquette] = useState<string>('')
+  // 3F-CORRECTIF-3 : persisté en localStorage pour survivre au reload.
+  const [forcedCasquette, setForcedCasquetteState] = useState<string>('')
+  const setForcedCasquette = (v: string) => {
+    setForcedCasquetteState(v)
+    try {
+      if (v) window.localStorage.setItem('jarvis.forcedCasquette', v)
+      else window.localStorage.removeItem('jarvis.forcedCasquette')
+    } catch { /* storage indisponible : non-bloquant */ }
+  }
 
   // 3F-ter : mode comparaison (testeurs, en mode Écrire)
   const [compareMode, setCompareMode] = useState(false)
@@ -395,6 +403,11 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
     if (typeof window === 'undefined') return
     const sp = new URLSearchParams(window.location.search)
     if (sp.get('compact') === '1') setCompact(true)
+    // 3F-CORRECTIF-3 : relire la casquette forcée du localStorage
+    try {
+      const saved = window.localStorage.getItem('jarvis.forcedCasquette') || ''
+      if (saved) setForcedCasquetteState(saved)
+    } catch { /* non-bloquant */ }
   }, [])
 
   // Détecte si l'utilisateur est testeur (GET /api/jarvis/reset-session)
@@ -826,8 +839,14 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const remaining = computeRemaining(currentCallsToday, currentCallsLimit)
 
   const lastExchange = exchanges[exchanges.length - 1]
-  const casquetteRaw = lastExchange?.casquette || casquetteInfo?.casquette
-  const casquetteText = labelFor(casquetteRaw)
+  // 3F-CORRECTIF-3 : si l'utilisateur a forcé une casquette (testeur),
+  // elle override l'affichage et on signale "(forcé)".
+  const casquetteRaw = (isTester && forcedCasquette)
+    ? forcedCasquette
+    : (lastExchange?.casquette || casquetteInfo?.casquette)
+  const casquetteText = (isTester && forcedCasquette)
+    ? `${labelFor(forcedCasquette)} (forcé)`
+    : labelFor(casquetteRaw)
   const openCue = formatOpenCue(casquetteInfo)
 
   const ui = (

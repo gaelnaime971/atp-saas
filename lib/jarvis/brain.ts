@@ -465,11 +465,19 @@ initiative.`
 - Règles DÉJÀ annoncées aujourd'hui (ne pas répéter sauf
   trade_after_stop) : ${announced.length ? announced.map(a => a.key + (a.config ? `(${a.config})` : '')).join(', ') : 'aucune'}`
 
-  // Mode Joker — bloc injecté uniquement si actif
+  // Mode Joker — bloc injecté uniquement si actif. 3F-CORRECTIF-3 :
+  // le CODE fait foi — le cerveau ne peut PAS affirmer qu'une étape
+  // est validée si l'état ne l'enregistre pas.
   const joker = getCurrentJokerContext(ctx.events, ctx.now)
   const jokerBlock = joker.step === 'inactive'
     ? ''
-    : `\nMODE JOKER ACTIF : étape "${JOKER_STEP_LABEL[joker.step]}". C'est le CODE qui pilote cet état ; toi tu rappelles sobrement où on en est, pas de signal. Si l'étape est "ready", l'annonce officielle a déjà été faite dans l'extraSystem, ne la répète pas.\n`
+    : `\nÉTAT JOKER (décidé par le code, fait foi) : étape "${JOKER_STEP_LABEL[joker.step]}".
+Règles DURES :
+- Tu N'AFFIRMES JAMAIS qu'une étape est "validée", "confirmée", "cochée" ou "ok" si l'état ci-dessus ne le dit pas. Même si le trader le dit, même si c'est "évident".
+- Si le trader annonce une étape que l'état n'a PAS encore enregistrée, dis-lui gentiment que tu ne l'as pas captée et demande-lui de la redire clairement (en une phrase).
+- Tu NE donnes AUCUN signal, AUCUN niveau, AUCUNE taille de position. Interdit : "passe à l'exécution", "c'est le moment d'entrer", "tu peux entrer", "prends position", "quelle taille vas-tu prendre/allouer".
+- Si l'étape est "ready", l'annonce officielle a déjà été placée en tête par le code — ne la répète pas.
+`
 
   return `CONTEXTE INSTANT
 Heure actuelle (Paris) : ${nowParis}
@@ -962,6 +970,45 @@ export async function runBrain(
     attempts: fetched.attempts, casquette: ctx.casquette.casquette,
     provider: fetched.provider, model: fetched.model,
   }
+}
+
+/**
+ * 3F-CORRECTIF-3 — Garde-fou "règle d'or" côté serveur : Jarvis n'a
+ * JAMAIS le droit de pousser à entrer, exécuter ou dimensionner. Ce
+ * filtre s'applique sur la sortie du cerveau APRÈS clamp et strip,
+ * quelle que soit la casquette. On supprime les PHRASES fautives
+ * (découpage par ponctuation finale) ; les phrases licites — y
+ * compris l'annonce officielle "C'est toi qui cliques, et toi seul
+ * qui décides." — passent.
+ *
+ * Un log [jarvis-guard] est émis à chaque suppression pour l'audit.
+ */
+const GOLDEN_RULE_PATTERNS: ReadonlyArray<{ re: RegExp; label: string }> = [
+  { re: /passe[zs]?\s+à\s+l[’']?ex[ée]cution/iu,              label: 'push:execution' },
+  { re: /c[’']est\s+le\s+moment\s+d[’']entrer/iu,             label: 'push:moment-entrer' },
+  { re: /tu\s+peux\s+(?:maintenant\s+)?(?:entrer|prendre\s+(?:le\s+)?trade)/iu, label: 'push:tu-peux-entrer' },
+  { re: /(?:prends?|prene[zs])\s+(?:ta\s+|la\s+)?position/iu, label: 'push:prends-position' },
+  { re: /quel(?:le|s|les)?\s+taille\s+de\s+position/iu,       label: 'push:taille-position' },
+  { re: /dimensionne[rz]?\s+(?:ta\s+)?position/iu,            label: 'push:dimensionne' },
+  { re: /combien\s+(?:de\s+)?lots?\s+(?:vas-tu|comptes[- ]tu)/iu, label: 'push:combien-lots' },
+  { re: /n[’']h[ée]site\s+pas\s+à\s+(?:entrer|prendre)/iu,    label: 'push:nhesite' },
+  { re: /ex[ée]cute[zs]?\s+(?:le\s+)?trade/iu,                label: 'push:execute-trade' },
+  { re: /clique[zs]?\s+(?:sur\s+)?(?:buy|sell|vendre|acheter)/iu, label: 'push:clique-side' },
+  { re: /entre[zs]?\s+(?:maintenant|dans\s+le\s+march[ée])/iu,label: 'push:entre-maintenant' },
+  { re: /vas?-?tu\s+(?:allouer|prendre)\s+(?:à\s+)?(?:ce\s+)?trade/iu, label: 'push:vas-tu-prendre' },
+]
+
+export function applyGoldenRuleGuard(text: string): { text: string; removed: Array<{ sentence: string; label: string }> } {
+  if (!text) return { text: '', removed: [] }
+  const sentences = text.split(/(?<=[.!?…])\s+/)
+  const kept: string[] = []
+  const removed: Array<{ sentence: string; label: string }> = []
+  for (const s of sentences) {
+    const hit = GOLDEN_RULE_PATTERNS.find(p => p.re.test(s))
+    if (hit) removed.push({ sentence: s.trim(), label: hit.label })
+    else kept.push(s)
+  }
+  return { text: kept.join(' ').trim(), removed }
 }
 
 /**
