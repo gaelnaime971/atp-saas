@@ -241,7 +241,10 @@ async function sendProviderFailureEmail(
   })
 
   const prefix = opts.testMode ? '[TEST] ' : ''
-  const subject = `${prefix}[ATP IA] Panne durable Groq — ${kindLabel}${ctx.model ? ` (${ctx.model})` : ''}`
+  // Libellé générique "Panne durable IA" : Jarvis a maintenant 2
+  // providers possibles (OpenRouter + Groq). On ne mentionne plus
+  // "Groq" dans l'objet pour ne pas induire en erreur.
+  const subject = `${prefix}[ATP IA] Panne durable IA — ${kindLabel}${ctx.model ? ` (${ctx.model})` : ''}`
 
   const html = `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.6;color:#1f2937;max-width:640px;margin:0 auto;padding:16px">

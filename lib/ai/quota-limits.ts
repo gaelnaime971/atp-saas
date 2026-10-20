@@ -75,18 +75,20 @@ export const AI_LIMITS: Record<AiFeature, AiFeatureConfig> = {
  * OpenRouter.
  */
 export const OPENROUTER_PRICING_USD_PER_MTOK: Record<string, { input: number; output: number }> = {
-  'anthropic/claude-sonnet-4.6':  { input: 3.00, output: 15.00 }, // défaut JARVIS_BRAIN_MODEL
-  'anthropic/claude-sonnet-5':    { input: 2.00, output: 10.00 },
-  'openai/gpt-chat-latest':       { input: 5.00, output: 30.00 }, // alias stable
-  'google/gemini-3.6-flash':      { input: 0.75, output:  3.75 },
+  'anthropic/claude-sonnet-5':     { input: 2.00,  output: 10.00 }, // défaut JARVIS_BRAIN_MODEL (profondeur)
+  'anthropic/claude-sonnet-4.6':   { input: 3.00,  output: 15.00 }, // ancienne génération, dispo si besoin
+  'openai/gpt-chat-latest':        { input: 5.00,  output: 30.00 }, // alias stable, pointe sur le dernier Instant
+  'google/gemini-3.7-flash':       { input: 0.75,  output:  3.75 }, // défaut JARVIS_BRAIN_MODEL_LIVE (vitesse)
+  'google/gemini-3.6-flash':       { input: 0.75,  output:  3.75 }, // génération précédente
 }
 
-/** Les 3 modèles comparés en mode comparaison testeur. Mis à jour
- *  après vérification des slugs sur openrouter.ai/models. */
+/** Les 3 modèles comparés en mode comparaison testeur. Vérifiés sur
+ *  openrouter.ai/models (octobre 2026). GPT via alias stable qui
+ *  suit la dernière version Instant d'OpenAI. */
 export const JARVIS_COMPARE_MODELS: ReadonlyArray<string> = [
-  'anthropic/claude-sonnet-4.6',
+  'anthropic/claude-sonnet-5',
   'openai/gpt-chat-latest',
-  'google/gemini-3.6-flash',
+  'google/gemini-3.7-flash',
 ]
 
 export const GROQ_PRICING_USD_PER_MTOK: Record<string, { input: number; output: number }> = {

@@ -1,7 +1,7 @@
 import { NextResponse, after } from 'next/server'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
 import { checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
-import { JARVIS_COMPARE_MODELS } from '@/lib/ai/quota-limits'
+import { JARVIS_COMPARE_MODELS, OPENROUTER_PRICING_USD_PER_MTOK } from '@/lib/ai/quota-limits'
 import { requireJarvisAccessFast } from '@/lib/jarvis/access'
 import {
   prepareContext, detectDetailRequested, snapshotSession,
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
             temperature: 0.7,
             messages: commonMessages,
           }),
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(45000), // 3F-ter : 45 s par modèle
         })
         const data = await r.json().catch(() => null)
         if (!r.ok || !data) {
@@ -95,9 +95,18 @@ export async function POST(request: Request) {
         const raw: string = data.choices?.[0]?.message?.content || ''
         const reply = clampResponse(raw, maxChars)
         const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+        // Coût estimé en $ (prix OpenRouter × tokens / 1M)
+        let costUsd: number | null = null
+        const price = OPENROUTER_PRICING_USD_PER_MTOK[model]
+        if (price && usage) {
+          const tin  = (usage.prompt_tokens     ?? 0) / 1_000_000
+          const tout = (usage.completion_tokens ?? 0) / 1_000_000
+          costUsd = Number((tin * price.input + tout * price.output).toFixed(6))
+        }
         return {
-          model, ok: true as const, reply, ms: Math.round(performance.now() - t_m),
-          usage,
+          model, ok: true as const, reply,
+          ms: Math.round(performance.now() - t_m),
+          usage, costUsd,
         }
       } catch (err) {
         return { model, ok: false as const, error: err instanceof Error ? err.message : 'timeout', ms: Math.round(performance.now() - t_m) }

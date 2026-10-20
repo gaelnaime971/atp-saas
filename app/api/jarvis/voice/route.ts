@@ -278,7 +278,7 @@ export async function POST(request: Request) {
       await recordUsage(userId, 'jarvis', {
         tokensIn: usage?.prompt_tokens ?? 0,
         tokensOut: usage?.completion_tokens ?? 0,
-        model: GROQ_TEXT_MODEL,
+        model: brainOutcome.model, // 3F-ter : provider/model réel
         audioSeconds: durationSec,
         ttsChars,
       })
@@ -311,10 +311,11 @@ export async function POST(request: Request) {
       'X-Jarvis-Timings': b64url(JSON.stringify(timings)),
       'X-Jarvis-Retries': b64url(JSON.stringify(retries)),
       'X-Jarvis-Session': b64url(JSON.stringify(sessionPayload)),
+      'X-Jarvis-Brain': b64url(JSON.stringify({ provider: brainOutcome.provider, model: brainOutcome.model })),
       'X-Jarvis-CallsToday': String(quota.callsToday),
       'X-Jarvis-CallsLimit': String(quota.callsLimit),
       'X-Jarvis-CacheHits': ctx.cacheHits.join(',') || '',
-      'Access-Control-Expose-Headers': 'X-Jarvis-Transcription, X-Jarvis-Reply, X-Jarvis-Casquette, X-Jarvis-Timings, X-Jarvis-Retries, X-Jarvis-Session, X-Jarvis-CallsToday, X-Jarvis-CallsLimit, X-Jarvis-CacheHits, X-Jarvis-AudioFailed',
+      'Access-Control-Expose-Headers': 'X-Jarvis-Transcription, X-Jarvis-Reply, X-Jarvis-Casquette, X-Jarvis-Timings, X-Jarvis-Retries, X-Jarvis-Session, X-Jarvis-Brain, X-Jarvis-CallsToday, X-Jarvis-CallsLimit, X-Jarvis-CacheHits, X-Jarvis-AudioFailed',
     }
 
     if (!tts.ok) {
@@ -328,6 +329,7 @@ export async function POST(request: Request) {
         timings,
         retries,
         cacheHits: ctx.cacheHits,
+        brain: { provider: brainOutcome.provider, model: brainOutcome.model },
         session: sessionPayload,
         audioFailed: true,
       }, { status: 200 })

@@ -39,6 +39,7 @@ import {
   AI_LIMITS,
   getQuotaMode,
   GROQ_PRICING_USD_PER_MTOK,
+  OPENROUTER_PRICING_USD_PER_MTOK,
   GROQ_WHISPER_USD_PER_HOUR,
   ELEVENLABS_USD_PER_CHAR,
   type AiFeature,
@@ -310,7 +311,11 @@ function estimateCost(input: RecordUsageInput): number {
 
   const tokIn = input.tokensIn ?? 0
   const tokOut = input.tokensOut ?? 0
+  // Fusion Groq + OpenRouter : on cherche d'abord dans le dict OR
+  // (prix OpenRouter sont souvent plus hauts qu'un modèle Groq de
+  // même nom), puis dans Groq, puis fallback générique.
   const pricing =
+    (input.model && OPENROUTER_PRICING_USD_PER_MTOK[input.model]) ||
     (input.model && GROQ_PRICING_USD_PER_MTOK[input.model]) ||
     GROQ_PRICING_USD_PER_MTOK.__fallback__
 

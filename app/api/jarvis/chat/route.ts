@@ -132,7 +132,7 @@ export async function POST(request: Request) {
         await recordUsage(userId, 'jarvis', {
           tokensIn: usage.prompt_tokens ?? 0,
           tokensOut: usage.completion_tokens ?? 0,
-          model: GROQ_TEXT_MODEL,
+          model: brainOutcome.model, // 3F-ter : provider/model réel
         })
       })
     }
@@ -146,6 +146,7 @@ export async function POST(request: Request) {
       callsLimit: quota.callsLimit,
       timings,
       cacheHits: ctx.cacheHits,
+      brain: { provider: brainOutcome.provider, model: brainOutcome.model },
       session: {
         state: {
           tradesCount: snapshot.state.tradesCount,

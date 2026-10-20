@@ -133,6 +133,8 @@ interface SessionPayload {
   joker?: JokerStatus
 }
 
+interface BrainInfo { provider: 'openrouter' | 'groq'; model: string }
+
 interface Exchange {
   trader: string
   jarvis: string
@@ -147,6 +149,7 @@ interface Exchange {
   voiceTimeToPlayMs?: number
   durationMs?: number
   session?: SessionPayload
+  brain?: BrainInfo
 }
 
 const AMBER_RULES = new Set([
@@ -367,7 +370,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   // 3F-ter : mode comparaison (testeurs, en mode Écrire)
   const [compareMode, setCompareMode] = useState(false)
   const [compareLoading, setCompareLoading] = useState(false)
-  const [compareResults, setCompareResults] = useState<Array<{ model: string; ok: boolean; reply?: string; error?: string; ms: number }> | null>(null)
+  const [compareResults, setCompareResults] = useState<Array<{ model: string; ok: boolean; reply?: string; error?: string; ms: number; costUsd?: number | null }> | null>(null)
   const [compareRevealed, setCompareRevealed] = useState(false)
 
   // Lecture ?compact=1 à l'ouverture (fallback popup Safari/Firefox)
@@ -589,6 +592,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         callsToday: d.callsToday, callsLimit: d.callsLimit,
         casquette: d.casquette, server: d.timings, cacheHits: d.cacheHits,
         session: d.session as SessionPayload | undefined,
+        brain: d.brain as BrainInfo | undefined,
       }])
       setCurrentCallsToday(d.callsToday)
       setCurrentCallsLimit(d.callsLimit)
@@ -703,6 +707,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
       let audioFailed = false
       let voiceTimeToPlayMs: number | undefined
       let session: SessionPayload | undefined
+      let brain: BrainInfo | undefined
 
       if (ct.startsWith('application/json')) {
         const d = await r.json()
@@ -711,12 +716,14 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         server = d.timings; retries = d.retries
         audioFailed = Boolean(d.audioFailed)
         session = d.session as SessionPayload | undefined
+        brain = d.brain as BrainInfo | undefined
       } else if (ct.startsWith('audio/')) {
         transcription = decodeB64Url(r.headers.get('X-Jarvis-Transcription') || '')
         reply = decodeB64Url(r.headers.get('X-Jarvis-Reply') || '')
         try { server = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Timings') || '')) } catch {}
         try { retries = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Retries') || '')) } catch {}
         try { session = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Session') || '')) as SessionPayload } catch {}
+        try { brain = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Brain') || '')) as BrainInfo } catch {}
         voiceTimeToPlayMs = await playAudioStream(r, tStop, audioUrlRef, audioRef, levelRef, rafRef, setPlaying)
       }
 
@@ -725,7 +732,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         via: 'voice', voiceTimeToPlayMs,
         callsToday, callsLimit,
         casquette, server, retries, cacheHits, audioFailed,
-        session,
+        session, brain,
       }])
       setCurrentCallsToday(callsToday)
       setCurrentCallsLimit(callsLimit)
@@ -952,7 +959,9 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
                       <div className="jv-compare-head">
                         <span className="jv-compare-label">{label}</span>
                         <span className="jv-compare-meta">
-                          {compareRevealed && <code>{r.model}</code>} · {r.ms} ms
+                          {compareRevealed && <code>{r.model}</code>}
+                          {compareRevealed && ' · '}{r.ms} ms
+                          {r.ok && r.costUsd != null && <> · ${r.costUsd.toFixed(4)}</>}
                         </span>
                       </div>
                       <div className="jv-compare-body">
@@ -1011,6 +1020,9 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
                 return extra.length > 0 ? <> · 🔁 {extra.join(', ')}</> : null
               })()}
               {lastExchange.cacheHits && lastExchange.cacheHits.length > 0 && <> · 💾 {lastExchange.cacheHits.join('+')}</>}
+              {lastExchange.brain && (
+                <> · 🧠 {lastExchange.brain.provider === 'openrouter' ? 'OR' : 'Groq'} <code>{lastExchange.brain.model}</code></>
+              )}
             </div>
           </details>
         )}

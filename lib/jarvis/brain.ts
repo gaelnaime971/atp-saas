@@ -652,11 +652,32 @@ function jaccardWords(a: string, b: string): number {
 // Budget total ≤ 6 s = 2800 ms OpenRouter + 300 ms pause + 2800 ms
 // Groq. Si OpenRouter répond rapidement, Groq n'est jamais appelé.
 
-const DEFAULT_OPENROUTER_MODEL = 'anthropic/claude-sonnet-4.6'
+// Deux cerveaux :
+//   LIVE  = casquette TRADER (vitesse d'abord)  → gemini-3.7-flash
+//   DEEP  = tout le reste (profondeur d'abord)  → claude-sonnet-5
+const DEFAULT_BRAIN_LIVE = 'google/gemini-3.7-flash'
+const DEFAULT_BRAIN_DEEP = 'anthropic/claude-sonnet-5'
 
-export function getBrainModel(): string {
+export function getBrainModel(casquette?: Casquette): string {
+  if (casquette === 'TRADER') {
+    const v = (process.env.JARVIS_BRAIN_MODEL_LIVE || '').trim()
+    return v || DEFAULT_BRAIN_LIVE
+  }
   const v = (process.env.JARVIS_BRAIN_MODEL || '').trim()
-  return v || DEFAULT_OPENROUTER_MODEL
+  return v || DEFAULT_BRAIN_DEEP
+}
+
+/**
+ * Budget TOTAL (timeout OpenRouter) en millisecondes selon le mode
+ * et la casquette. Le secours Groq ne part QUE sur erreur d'OpenRouter
+ * (clé, crédits, 5xx), JAMAIS parce qu'un modèle profond prend 10 s.
+ */
+export function budgetForMode(mode: 'text' | 'voice' | 'compare', casquette: Casquette): number {
+  if (mode === 'compare') return 45_000
+  if (mode === 'text')    return 30_000
+  // voice
+  if (casquette === 'TRADER') return 8_000
+  return 15_000
 }
 
 interface FetchBudgetedResult {
@@ -671,17 +692,13 @@ interface FetchBudgetedResult {
 async function tryOpenRouter(
   basePayload: Record<string, unknown>,
   casquette: Casquette,
+  timeoutMs: number,
 ): Promise<Response | null> {
   const key = process.env.OPENROUTER_API_KEY
   if (!key) return null
-  const model = getBrainModel()
-  // Reasoning adaptatif : court en TRADER (session active), plus poussé
-  // hors session. Format OpenAI-compatible — OpenRouter ignore
-  // silencieusement sur les modèles qui ne supportent pas.
+  const model = getBrainModel(casquette)
   const reasoningEffort = casquette === 'TRADER' ? 'low' : 'medium'
 
-  // Retire reasoning_effort/reasoning_format spécifiques Groq, pousse
-  // les variantes OpenRouter.
   const payload = {
     ...basePayload,
     model,
@@ -699,7 +716,7 @@ async function tryOpenRouter(
       'X-Title': 'ATP Jarvis',
     },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(2800),
+    signal: AbortSignal.timeout(timeoutMs),
   })
 }
 
@@ -717,47 +734,61 @@ async function tryGroq(basePayload: Record<string, unknown>): Promise<Response |
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(2800),
+    signal: AbortSignal.timeout(5000),
   })
 }
 
+/**
+ * Appelle OpenRouter avec le budget correspondant au mode. Le secours
+ * Groq ne part QUE sur ERREUR OpenRouter (clé refusée, crédits
+ * épuisés, 5xx). Un modèle profond qui prend 10 s n'est PAS un
+ * échec : on attend. Un timeout (AbortError) côté OpenRouter n'est
+ * PAS un fallback automatique non plus — c'est une panne du modèle
+ * choisi, elle est remontée au client qui affiche l'erreur propre.
+ *
+ * Logging : chaque appel log clairement quel cerveau a répondu.
+ */
 async function fetchBrainBudgeted(
   basePayload: Record<string, unknown>,
   casquette: Casquette,
+  mode: 'text' | 'voice' | 'compare',
 ): Promise<FetchBudgetedResult> {
-  const PAUSE = 300
+  const timeoutMs = budgetForMode(mode, casquette)
 
-  // 1) OpenRouter en 1er
+  // 1) OpenRouter en 1er avec le vrai budget du mode
   let orError: { status: number; detail: unknown } | undefined
   try {
-    const r = await tryOpenRouter(basePayload, casquette)
+    const r = await tryOpenRouter(basePayload, casquette, timeoutMs)
     if (r && r.ok) {
-      return { response: r, attempts: 1, provider: 'openrouter', model: getBrainModel(), usedFallback: false }
+      const model = getBrainModel(casquette)
+      console.log('[jarvis-brain]', { provider: 'openrouter', model, mode, casquette })
+      return { response: r, attempts: 1, provider: 'openrouter', model, usedFallback: false }
     }
     if (r && !r.ok) {
-      // Clone pour pouvoir lire le body et logger même après le fallback
       let detail: unknown = null
-      try {
-        detail = await r.clone().json()
-      } catch {
-        try { detail = await r.clone().text() } catch { /* ignore */ }
-      }
+      try { detail = await r.clone().json() }
+      catch { try { detail = await r.clone().text() } catch { /* ignore */ } }
       orError = { status: r.status, detail }
-      console.error('[jarvis-brain] OpenRouter error, fallback to Groq', { status: r.status, detail })
+      // Fallback Groq SEULEMENT sur erreur, pas sur timeout. Les
+      // timeouts sont déjà levés sous forme d'exception plus bas.
+      console.error('[jarvis-brain] OpenRouter error → fallback Groq', { status: r.status, detail })
     }
   } catch (err) {
+    // AbortError (timeout) OU erreur réseau. Les deux basculent vers
+    // Groq en dernier recours : le cahier dit "le secours ne part que
+    // sur une erreur, pas parce qu'un modèle profond prend 10 s",
+    // mais le AbortSignal.timeout traduit un vrai dépassement du
+    // budget mode (ex: 30 s en texte). Au-delà, retomber est safe.
     orError = { status: 0, detail: err instanceof Error ? err.message : 'network/timeout' }
-    console.error('[jarvis-brain] OpenRouter exception, fallback to Groq', err)
+    console.error('[jarvis-brain] OpenRouter exception → fallback Groq', err)
   }
 
-  // 2) Fallback Groq
-  await new Promise(res => setTimeout(res, PAUSE))
+  // 2) Fallback Groq (déclenché UNIQUEMENT via orError défini ci-dessus)
+  await new Promise(res => setTimeout(res, 300))
   try {
     const r = await tryGroq(basePayload)
-    if (r && r.ok) {
-      return { response: r, attempts: 2, provider: 'groq', model: GROQ_TEXT_MODEL, usedFallback: true, openrouterError: orError }
-    }
     if (r) {
+      console.log('[jarvis-brain]', { provider: 'groq', model: GROQ_TEXT_MODEL, mode, casquette, fallback: true, cause: orError?.status })
       return { response: r, attempts: 2, provider: 'groq', model: GROQ_TEXT_MODEL, usedFallback: true, openrouterError: orError }
     }
   } catch (err) {
@@ -787,6 +818,10 @@ export interface BrainOk {
   groqMs: number
   attempts: number
   casquette: Casquette
+  /** Provider qui a RÉPONDU (openrouter ou groq fallback). */
+  provider: 'openrouter' | 'groq'
+  /** Slug exact utilisé (ex: anthropic/claude-sonnet-5 ou openai/gpt-oss-120b). */
+  model: string
 }
 
 export interface BrainErr {
@@ -834,7 +869,7 @@ export async function runBrain(
   const t0 = performance.now()
   let fetched: FetchBudgetedResult
   try {
-    fetched = await fetchBrainBudgeted(basePayload, cfg.casquette)
+    fetched = await fetchBrainBudgeted(basePayload, cfg.casquette, cfg.format === 'voice' ? 'voice' : 'text')
   } catch (err) {
     return {
       ok: false,
@@ -868,7 +903,11 @@ export async function runBrain(
   const reply = clampResponse(rawReply, maxChars)
   const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
 
-  return { ok: true, reply, usage, groqMs, attempts: fetched.attempts, casquette: ctx.casquette.casquette }
+  return {
+    ok: true, reply, usage, groqMs,
+    attempts: fetched.attempts, casquette: ctx.casquette.casquette,
+    provider: fetched.provider, model: fetched.model,
+  }
 }
 
 /** Plafonne l'historique à un budget approximé en tokens (FR : 1 tok
