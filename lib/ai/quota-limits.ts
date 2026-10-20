@@ -68,6 +68,27 @@ export const AI_LIMITS: Record<AiFeature, AiFeatureConfig> = {
  * Tarifs Groq par million de tokens (USD) — vérifier sur https://groq.com/pricing
  * avant chaque mise à jour. Utilisé par estimateCost() dans lib/ai/quota.ts.
  */
+/**
+ * Pricing par million de tokens (USD, in/out) — OpenRouter 3F-ter.
+ * Vérifier régulièrement sur https://openrouter.ai/models. Prix lus
+ * en octobre 2026. Utilisé par recordUsage() quand le provider est
+ * OpenRouter.
+ */
+export const OPENROUTER_PRICING_USD_PER_MTOK: Record<string, { input: number; output: number }> = {
+  'anthropic/claude-sonnet-4.6':  { input: 3.00, output: 15.00 }, // défaut JARVIS_BRAIN_MODEL
+  'anthropic/claude-sonnet-5':    { input: 2.00, output: 10.00 },
+  'openai/gpt-chat-latest':       { input: 5.00, output: 30.00 }, // alias stable
+  'google/gemini-3.6-flash':      { input: 0.75, output:  3.75 },
+}
+
+/** Les 3 modèles comparés en mode comparaison testeur. Mis à jour
+ *  après vérification des slugs sur openrouter.ai/models. */
+export const JARVIS_COMPARE_MODELS: ReadonlyArray<string> = [
+  'anthropic/claude-sonnet-4.6',
+  'openai/gpt-chat-latest',
+  'google/gemini-3.6-flash',
+]
+
 export const GROQ_PRICING_USD_PER_MTOK: Record<string, { input: number; output: number }> = {
   // Modèles actuellement utilisés (lib/ai/groq-models.ts)
   'openai/gpt-oss-120b':   { input: 0.15,  output: 0.75 }, // text (6 routes AI non-vision)

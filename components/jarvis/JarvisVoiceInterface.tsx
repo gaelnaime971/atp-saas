@@ -364,6 +364,12 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   // 3F.7 : bouton reset réservé aux testeurs
   const [isTester, setIsTester] = useState(false)
 
+  // 3F-ter : mode comparaison (testeurs, en mode Écrire)
+  const [compareMode, setCompareMode] = useState(false)
+  const [compareLoading, setCompareLoading] = useState(false)
+  const [compareResults, setCompareResults] = useState<Array<{ model: string; ok: boolean; reply?: string; error?: string; ms: number }> | null>(null)
+  const [compareRevealed, setCompareRevealed] = useState(false)
+
   // Lecture ?compact=1 à l'ouverture (fallback popup Safari/Firefox)
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -378,6 +384,31 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
       .then(d => { if (d?.tester) setIsTester(true) })
       .catch(() => { /* silencieux : non-testeur */ })
   }, [])
+
+  const sendCompare = async () => {
+    const text = input.trim()
+    if (!text || compareLoading) return
+    const nextHist = [...exchanges.flatMap<{ role: 'user'|'assistant'; content: string }>(e => [
+      { role: 'user', content: e.trader }, { role: 'assistant', content: e.jarvis },
+    ]), { role: 'user' as const, content: text }]
+    setInput('')
+    setCompareLoading(true)
+    setCompareResults(null)
+    setCompareRevealed(false)
+    setError(null)
+    try {
+      const r = await fetch('/api/jarvis/compare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: nextHist.slice(-10) }),
+      })
+      if (!r.ok) { setError(await readAiError(r)); setCompareLoading(false); return }
+      const d = await r.json()
+      setCompareResults(d.results || [])
+      if (typeof d.callsToday === 'number') setCurrentCallsToday(d.callsToday)
+      if (typeof d.callsLimit === 'number') setCurrentCallsLimit(d.callsLimit)
+    } catch { setError(networkAiError()) } finally { setCompareLoading(false) }
+  }
 
   const resetSession = async () => {
     if (!confirm('Réinitialiser ta session du jour ? Les trades notés et règles annoncées seront supprimés.')) return
@@ -888,20 +919,57 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         </button>
 
         {showText && (
-          <div className="jv-text-row">
-            <input
-              type="text" value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-              placeholder="Écris à Jarvis…"
-              disabled={loading || recording}
-              className="jv-text-input"
-            />
-            <button type="button" className="jv-btn jv-btn-send" onClick={send}
-              disabled={loading || recording || !input.trim()}>
-              Envoyer
-            </button>
-          </div>
+          <>
+            {isTester && (
+              <div className="jv-compare-toggle">
+                <label>
+                  <input type="checkbox" checked={compareMode} onChange={e => setCompareMode(e.target.checked)} />
+                  Mode comparaison (3 modèles côte à côte, testeur)
+                </label>
+              </div>
+            )}
+            <div className="jv-text-row">
+              <input
+                type="text" value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); compareMode ? sendCompare() : send() } }}
+                placeholder={compareMode ? 'Question pour les 3 modèles…' : 'Écris à Jarvis…'}
+                disabled={loading || recording || compareLoading}
+                className="jv-text-input"
+              />
+              <button type="button" className="jv-btn jv-btn-send"
+                onClick={compareMode ? sendCompare : send}
+                disabled={loading || recording || compareLoading || !input.trim()}>
+                {compareMode ? (compareLoading ? '…' : 'Comparer') : 'Envoyer'}
+              </button>
+            </div>
+            {compareResults && (
+              <div className="jv-compare-grid">
+                {compareResults.map((r, i) => {
+                  const label = String.fromCharCode(65 + i) // A, B, C
+                  return (
+                    <div key={i} className="jv-compare-card">
+                      <div className="jv-compare-head">
+                        <span className="jv-compare-label">{label}</span>
+                        <span className="jv-compare-meta">
+                          {compareRevealed && <code>{r.model}</code>} · {r.ms} ms
+                        </span>
+                      </div>
+                      <div className="jv-compare-body">
+                        {r.ok ? r.reply : <em>Erreur : {r.error}</em>}
+                      </div>
+                    </div>
+                  )
+                })}
+                <div className="jv-compare-reveal">
+                  <button type="button" className="jv-link"
+                    onClick={() => setCompareRevealed(v => !v)}>
+                    {compareRevealed ? 'Cacher les noms' : 'Révéler les modèles'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         <div className="jv-pip-row">
@@ -1151,6 +1219,43 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           border: none; border-radius: 8px;
         }
         .jv-btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Mode comparaison */
+        .jv-compare-toggle {
+          max-width: 340px; width: 100%;
+          font-family: var(--font-oxanium), system-ui, sans-serif;
+          font-size: 11px; color: #9FB0A6;
+        }
+        .jv-compare-toggle label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+        .jv-compare-grid {
+          max-width: 100%; width: 100%; max-width: 980px;
+          display: grid; grid-template-columns: 1fr; gap: 10px;
+          margin-top: 6px;
+        }
+        @media (min-width: 720px) {
+          .jv-compare-grid { grid-template-columns: 1fr 1fr 1fr; }
+          .jv-compare-reveal { grid-column: 1 / -1; }
+        }
+        .jv-compare-card {
+          padding: 10px 12px;
+          border: 1px solid rgba(159, 176, 166, 0.2);
+          border-radius: 8px;
+          background: rgba(159, 176, 166, 0.04);
+        }
+        .jv-compare-head {
+          display: flex; justify-content: space-between; align-items: baseline;
+          gap: 8px; margin-bottom: 6px;
+        }
+        .jv-compare-label {
+          font-family: var(--font-oxanium), system-ui, sans-serif;
+          font-size: 13px; font-weight: 700; color: #DDB977;
+        }
+        .jv-compare-meta { font-size: 10px; color: #6B7A72; }
+        .jv-compare-meta code { background: rgba(159, 176, 166, 0.1); padding: 1px 5px; border-radius: 3px; }
+        .jv-compare-body {
+          font-size: 13px; line-height: 1.5; color: #E9EEEA;
+          white-space: pre-wrap;
+        }
+        .jv-compare-reveal { text-align: center; margin-top: 4px; }
         .jv-details {
           width: 100%; max-width: 340px;
           font-size: 11px; color: #9FB0A6;

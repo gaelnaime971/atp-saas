@@ -641,35 +641,130 @@ function jaccardWords(a: string, b: string): number {
   return inter / (wa.size + wb.size - inter)
 }
 
-// ─── Fetch Groq budgeté (6s max) ────────────────────────────────────
-interface FetchBudgetedResult { response: Response; attempts: number }
-async function fetchGroqBudgeted(payload: unknown, apiKey: string): Promise<FetchBudgetedResult> {
-  const PER = 2800
-  const PAUSE = 300
-  const makeAttempt = () => fetch('https://api.groq.com/openai/v1/chat/completions', {
+// ─── Fetch cerveau budgeté (6s max) — OpenRouter → fallback Groq ────
+//
+// 3F-ter : le cerveau passe sur OpenRouter en 1er (API compatible
+// OpenAI, modèle choisi par JARVIS_BRAIN_MODEL, défaut
+// anthropic/claude-sonnet-4.6). Si l'appel échoue (clé, crédits, 5xx,
+// timeout), on retombe sur Groq gpt-oss-120b (comportement d'avant).
+// Transcription (Whisper) et voix (ElevenLabs) : inchangées.
+//
+// Budget total ≤ 6 s = 2800 ms OpenRouter + 300 ms pause + 2800 ms
+// Groq. Si OpenRouter répond rapidement, Groq n'est jamais appelé.
+
+const DEFAULT_OPENROUTER_MODEL = 'anthropic/claude-sonnet-4.6'
+
+export function getBrainModel(): string {
+  const v = (process.env.JARVIS_BRAIN_MODEL || '').trim()
+  return v || DEFAULT_OPENROUTER_MODEL
+}
+
+interface FetchBudgetedResult {
+  response: Response
+  attempts: number
+  provider: 'openrouter' | 'groq'
+  model: string
+  usedFallback: boolean
+  openrouterError?: { status: number; detail: unknown }
+}
+
+async function tryOpenRouter(
+  basePayload: Record<string, unknown>,
+  casquette: Casquette,
+): Promise<Response | null> {
+  const key = process.env.OPENROUTER_API_KEY
+  if (!key) return null
+  const model = getBrainModel()
+  // Reasoning adaptatif : court en TRADER (session active), plus poussé
+  // hors session. Format OpenAI-compatible — OpenRouter ignore
+  // silencieusement sur les modèles qui ne supportent pas.
+  const reasoningEffort = casquette === 'TRADER' ? 'low' : 'medium'
+
+  // Retire reasoning_effort/reasoning_format spécifiques Groq, pousse
+  // les variantes OpenRouter.
+  const payload = {
+    ...basePayload,
+    model,
+    reasoning: { effort: reasoningEffort },
+  }
+  delete (payload as Record<string, unknown>).reasoning_effort
+  delete (payload as Record<string, unknown>).reasoning_format
+
+  return fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${key}`,
+      'HTTP-Referer': 'https://atp.gaelnaime.com',
+      'X-Title': 'ATP Jarvis',
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(2800),
+  })
+}
+
+async function tryGroq(basePayload: Record<string, unknown>): Promise<Response | null> {
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) return null
+  const payload = {
+    ...basePayload,
+    model: GROQ_TEXT_MODEL,
+    reasoning_effort: 'low',
+    reasoning_format: 'parsed',
+  }
+  delete (payload as Record<string, unknown>).reasoning
+  return fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(PER),
+    signal: AbortSignal.timeout(2800),
   })
+}
 
-  let r1: Response
+async function fetchBrainBudgeted(
+  basePayload: Record<string, unknown>,
+  casquette: Casquette,
+): Promise<FetchBudgetedResult> {
+  const PAUSE = 300
+
+  // 1) OpenRouter en 1er
+  let orError: { status: number; detail: unknown } | undefined
   try {
-    r1 = await makeAttempt()
+    const r = await tryOpenRouter(basePayload, casquette)
+    if (r && r.ok) {
+      return { response: r, attempts: 1, provider: 'openrouter', model: getBrainModel(), usedFallback: false }
+    }
+    if (r && !r.ok) {
+      // Clone pour pouvoir lire le body et logger même après le fallback
+      let detail: unknown = null
+      try {
+        detail = await r.clone().json()
+      } catch {
+        try { detail = await r.clone().text() } catch { /* ignore */ }
+      }
+      orError = { status: r.status, detail }
+      console.error('[jarvis-brain] OpenRouter error, fallback to Groq', { status: r.status, detail })
+    }
   } catch (err) {
-    await new Promise(res => setTimeout(res, PAUSE))
-    try {
-      const r2 = await makeAttempt()
-      return { response: r2, attempts: 2 }
-    } catch { throw err }
+    orError = { status: 0, detail: err instanceof Error ? err.message : 'network/timeout' }
+    console.error('[jarvis-brain] OpenRouter exception, fallback to Groq', err)
   }
-  if (r1.ok) return { response: r1, attempts: 1 }
-  if (r1.status !== 429 && r1.status < 500) return { response: r1, attempts: 1 }
+
+  // 2) Fallback Groq
   await new Promise(res => setTimeout(res, PAUSE))
   try {
-    const r2 = await makeAttempt()
-    return { response: r2, attempts: 2 }
-  } catch { return { response: r1, attempts: 2 } }
+    const r = await tryGroq(basePayload)
+    if (r && r.ok) {
+      return { response: r, attempts: 2, provider: 'groq', model: GROQ_TEXT_MODEL, usedFallback: true, openrouterError: orError }
+    }
+    if (r) {
+      return { response: r, attempts: 2, provider: 'groq', model: GROQ_TEXT_MODEL, usedFallback: true, openrouterError: orError }
+    }
+  } catch (err) {
+    console.error('[jarvis-brain] Groq fallback exception', err)
+    throw err
+  }
+  throw new Error('[jarvis-brain] both providers unavailable')
 }
 
 // ─── runBrain : contexte → Groq → clamp ─────────────────────────────
@@ -704,51 +799,67 @@ export async function runBrain(
   messages: ChatMessage[],
   cfg: BrainRunConfig,
 ): Promise<BrainOk | BrainErr> {
-  const apiKey = process.env.GROQ_API_KEY
-  if (!apiKey) {
-    return { ok: false, response: buildProviderErrorResponse({ route: '/api/jarvis/brain', detail: 'GROQ_API_KEY missing' }) }
+  const hasOpenRouter = Boolean(process.env.OPENROUTER_API_KEY)
+  const hasGroq = Boolean(process.env.GROQ_API_KEY)
+  if (!hasOpenRouter && !hasGroq) {
+    return { ok: false, response: buildProviderErrorResponse({ route: '/api/jarvis/brain', detail: 'OPENROUTER_API_KEY and GROQ_API_KEY both missing' }) }
   }
 
   const contextMsg = buildContextMessage(ctx, messages)
   const formatMsg = buildFormatPrompt(cfg.format, cfg.casquette, cfg.detailRequested)
   const maxChars = computeMaxChars(cfg.format, cfg.casquette, cfg.detailRequested)
-  // ~2.5 chars par token (FR, ponctuation), + marge pour que le modèle
-  // termine proprement avant le clamp. Jamais inférieur à 150.
   const maxTokens = Math.max(150, Math.ceil(maxChars / 2.3) + 50)
-  const trimmed = messages.slice(-10)
 
-  const groqMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+  // 3F-ter : budget tokens de l'historique — pas uniquement nb d'échanges.
+  // Approximation 1 tok ≈ 2.5 chars FR + marge. 2 500 tokens max pour
+  // l'historique → une longue conversation ne fait jamais exploser l'appel.
+  const trimmed = trimHistoryByBudget(messages, 2500)
+
+  const brainMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
     { role: 'system', content: ctx.bibleTxt },
     { role: 'system', content: contextMsg },
   ]
   if (cfg.extraSystem && cfg.extraSystem.trim()) {
-    groqMessages.push({ role: 'system', content: cfg.extraSystem })
+    brainMessages.push({ role: 'system', content: cfg.extraSystem })
   }
-  groqMessages.push({ role: 'system', content: formatMsg })
-  for (const m of trimmed) groqMessages.push({ role: m.role, content: m.content })
+  brainMessages.push({ role: 'system', content: formatMsg })
+  for (const m of trimmed) brainMessages.push({ role: m.role, content: m.content })
 
-  const payload = {
-    model: GROQ_TEXT_MODEL,
+  const basePayload: Record<string, unknown> = {
     max_tokens: maxTokens,
-    temperature: 0.7,                   // ↑ 0.2 → 0.7 : variété (le filet
-                                        // anti-doublon depuis 2A-FIX gère les
-                                        // dérives occasionnelles de gpt-oss).
-    reasoning_effort: 'low',
-    reasoning_format: 'parsed',
-    messages: groqMessages,
+    temperature: 0.7,
+    messages: brainMessages,
   }
 
   const t0 = performance.now()
-  const { response: r, attempts } = await fetchGroqBudgeted(payload, apiKey)
+  let fetched: FetchBudgetedResult
+  try {
+    fetched = await fetchBrainBudgeted(basePayload, cfg.casquette)
+  } catch (err) {
+    return {
+      ok: false,
+      response: buildProviderErrorResponse({ route: '/api/jarvis/brain', detail: err }),
+    }
+  }
   const groqMs = Math.round(performance.now() - t0)
+  const r = fetched.response
 
   const data = await r.json().catch(() => null)
   if (!r.ok || !data || data.error) {
+    // Si on avait aussi une erreur OpenRouter avant le fallback, on
+    // enrichit le log pour alerte email (classifyProviderFailure saura
+    // déduire kind=invalid_api_key / insufficient_credits via provider).
     return {
       ok: false,
       response: buildProviderErrorResponse({
-        route: '/api/jarvis/brain', model: GROQ_TEXT_MODEL,
-        status: r.status, detail: data?.error,
+        route: '/api/jarvis/brain',
+        model: fetched.model,
+        status: r.status,
+        detail: {
+          provider: fetched.provider,
+          error: data?.error,
+          openrouterError: fetched.openrouterError,
+        },
       }),
     }
   }
@@ -757,5 +868,24 @@ export async function runBrain(
   const reply = clampResponse(rawReply, maxChars)
   const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
 
-  return { ok: true, reply, usage, groqMs, attempts, casquette: ctx.casquette.casquette }
+  return { ok: true, reply, usage, groqMs, attempts: fetched.attempts, casquette: ctx.casquette.casquette }
+}
+
+/** Plafonne l'historique à un budget approximé en tokens (FR : 1 tok
+ *  ≈ 2.5 chars). Garde les plus récents, retire les plus anciens. */
+export function trimHistoryByBudget(messages: ChatMessage[], maxTokens: number): ChatMessage[] {
+  const budget = maxTokens
+  let used = 0
+  const kept: ChatMessage[] = []
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i]
+    const tok = Math.ceil((m.content?.length ?? 0) / 2.5) + 4 // +4 marge rôle/formatage
+    if (used + tok > budget) break
+    used += tok
+    kept.unshift(m)
+  }
+  // Toujours garder au moins le dernier message user si possible, sinon
+  // on envoie quelque chose au cerveau.
+  if (kept.length === 0 && messages.length > 0) kept.push(messages[messages.length - 1])
+  return kept
 }

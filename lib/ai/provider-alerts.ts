@@ -29,6 +29,8 @@ export type AiAlertKind =
   | 'invalid_api_key'
   | 'insufficient_quota'
   | 'billing_hard_limit'
+  | 'openrouter_invalid_api_key'
+  | 'openrouter_insufficient_credits'
 
 export interface ProviderErrorContext {
   route: string
@@ -46,11 +48,13 @@ interface ClassifiedFailure {
 const ANTI_SPAM_WINDOW_HOURS = 24
 
 const KIND_LABELS: Record<AiAlertKind, string> = {
-  model_not_found:      'Modèle introuvable',
-  model_decommissioned: 'Modèle retiré par Groq',
-  invalid_api_key:      'Clé API Groq refusée',
-  insufficient_quota:   'Quota Groq épuisé',
-  billing_hard_limit:   'Plafond de facturation Groq atteint',
+  model_not_found:                'Modèle introuvable',
+  model_decommissioned:           'Modèle retiré par Groq',
+  invalid_api_key:                'Clé API Groq refusée',
+  insufficient_quota:             'Quota Groq épuisé',
+  billing_hard_limit:             'Plafond de facturation Groq atteint',
+  openrouter_invalid_api_key:     'Clé API OpenRouter refusée',
+  openrouter_insufficient_credits:'Crédits OpenRouter épuisés',
 }
 
 const ROUTE_TO_FEATURES: Record<string, { feature: string }> = {
@@ -70,6 +74,36 @@ export function classifyProviderFailure(ctx: ProviderErrorContext): ClassifiedFa
   // GROQ_API_KEY absent côté serveur — sentinelle levée par les 8 routes
   if (ctx.detail === 'GROQ_API_KEY missing') {
     return { kind: 'invalid_api_key', groqCode: null, groqMessage: 'GROQ_API_KEY env var missing' }
+  }
+
+  // 3F-ter : erreurs OpenRouter encapsulées par brain.ts
+  //   detail = { provider: 'openrouter' | 'groq', error, openrouterError }
+  if (ctx.detail && typeof ctx.detail === 'object') {
+    const d = ctx.detail as { provider?: string; openrouterError?: { status?: number; detail?: unknown } }
+    const or = d.openrouterError
+    if (or) {
+      const status = or.status ?? 0
+      // 401/403 → clé refusée
+      if (status === 401 || status === 403) {
+        return { kind: 'openrouter_invalid_api_key', groqCode: null, groqMessage: safeString(or.detail) }
+      }
+      // 402 → crédits épuisés
+      if (status === 402) {
+        return { kind: 'openrouter_insufficient_credits', groqCode: null, groqMessage: safeString(or.detail) }
+      }
+      // Chercher les messages typiques dans le detail JSON OpenRouter
+      const detailStr = safeString(or.detail).toLowerCase()
+      if (/invalid.*api[-_ ]?key|unauthoriz/i.test(detailStr)) {
+        return { kind: 'openrouter_invalid_api_key', groqCode: null, groqMessage: safeString(or.detail) }
+      }
+      if (/insufficient.*credits?|out\s+of\s+credits?|credit.*exhausted|requires more credits/i.test(detailStr)) {
+        return { kind: 'openrouter_insufficient_credits', groqCode: null, groqMessage: safeString(or.detail) }
+      }
+    }
+    // Déballer d.error pour la classif Groq ci-dessous
+    if ('error' in d) {
+      return classifyProviderFailure({ ...ctx, detail: (d as { error?: unknown }).error })
+    }
   }
 
   const groq = extractGroqError(ctx.detail)
@@ -119,6 +153,12 @@ interface GroqError {
   code?: string
   message?: string
   type?: string
+}
+
+function safeString(x: unknown): string {
+  if (x == null) return ''
+  if (typeof x === 'string') return x
+  try { return JSON.stringify(x) } catch { return String(x) }
 }
 
 function extractGroqError(detail: unknown): GroqError | null {
