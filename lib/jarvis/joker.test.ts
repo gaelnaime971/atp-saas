@@ -210,6 +210,48 @@ describe('joker — 3F-correctif-3 : phrases prod (détection tolérante)', () =
   })
 })
 
+describe('joker — un seul "CHoCH" + plusieurs TFs chaînées (3F-correctif-4)', () => {
+  it('"CHoCH M1 et M5 validés" → choch_m5 (les deux cumulés)', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M1 et M5 validés')
+    expect(r.next).toBe('choch_m5')
+  })
+
+  it('"CHoCH M1 puis M5" → choch_m5 (énumération en Joker)', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M1 puis M5')
+    expect(r.next).toBe('choch_m5')
+  })
+
+  it('"CHoCH M1, M5 validés" → choch_m5 (séparateur virgule)', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M1, M5 validés')
+    expect(r.next).toBe('choch_m5')
+  })
+
+  it('"M1 et M5 cassés" (pas de CHoCH explicite mais confirmation) → choch_m5', () => {
+    const r = advanceJokerState(ctx('armed'), 'M1 et M5 cassés')
+    expect(r.next).toBe('choch_m5')
+  })
+
+  it('"CHoCH M1 et M5 confirmés" (pluriel) → choch_m5', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M1 et M5 confirmés')
+    expect(r.next).toBe('choch_m5')
+  })
+
+  it('PIÈGE : "CHoCH M1 validé, j\'attends aussi le CHoCH M5" → choch_m1 SEUL', () => {
+    const r = advanceJokerState(ctx('armed'), "CHoCH M1 validé, j'attends aussi le CHoCH M5")
+    expect(r.next).toBe('choch_m1')
+  })
+
+  it('PIÈGE 2 : "CHoCH M1 validé, il manque le M5" → choch_m1 seul', () => {
+    const r = advanceJokerState(ctx('armed'), 'CHoCH M1 validé, il manque le M5')
+    expect(r.next).toBe('choch_m1')
+  })
+
+  it('"CHoCH M1 et M5 validés" depuis inactive → reste inactive (Joker pas armé)', () => {
+    const r = advanceJokerState(ctx('inactive'), 'CHoCH M1 et M5 validés')
+    expect(r.next).toBe('inactive')
+  })
+})
+
 describe('joker — séquence complète (non-régression retard d\'un message)', () => {
   it('armé → M1 → M5 → prêt : chaque transition retourne le NOUVEL état, pas l\'ancien', () => {
     let r = advanceJokerState(ctx('armed'), 'CHoCH M1 validé')

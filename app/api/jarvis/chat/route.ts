@@ -15,7 +15,7 @@ const VALID_CASQUETTES = new Set<Casquette>([
 import {
   prepareContext, runBrain, detectDetailRequested,
   snapshotSession, buildSessionDirective, buildAntiRepetitionAddendum,
-  stripAnnouncement, applyGoldenRuleGuard,
+  stripAnnouncement, applyGoldenRuleGuard, applyJokerCodeFaitFoiGuard,
   type ChatMessage, type SessionEventRow,
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
@@ -171,6 +171,18 @@ export async function POST(request: Request) {
       })
     }
     brainBody = guard.text
+
+    // 3F-CORRECTIF-4 — Le CODE fait foi côté sortie : retire les
+    // phrases qui affirment une étape Joker validée alors que l'état
+    // enregistré ne la couvre pas.
+    const jokerGuard = applyJokerCodeFaitFoiGuard(brainBody, jokerTransition.next)
+    if (jokerGuard.removed.length > 0) {
+      console.warn('[jarvis-guard]', {
+        route: '/api/jarvis/chat', userId, step: jokerTransition.next,
+        removed: jokerGuard.removed.map(r => ({ label: r.label, len: r.sentence.length })),
+      })
+    }
+    brainBody = jokerGuard.text
 
     // 3F-CORRECTIF-3 — Si Joker actif, on coupe le brainBody à UNE
     // phrase max (le code dit déjà l'annonce, pas besoin d'épilogue).

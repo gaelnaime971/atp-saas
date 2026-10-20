@@ -38,7 +38,7 @@ import {
   type TriggeredRule,
   type AnnouncedRuleRecord,
 } from './rules-engine'
-import { getCurrentJokerContext, JOKER_STEP_LABEL, type JokerContext } from './joker'
+import { getCurrentJokerContext, JOKER_STEP_LABEL, type JokerContext, type JokerStep } from './joker'
 
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }
 
@@ -997,6 +997,66 @@ const GOLDEN_RULE_PATTERNS: ReadonlyArray<{ re: RegExp; label: string }> = [
   { re: /entre[zs]?\s+(?:maintenant|dans\s+le\s+march[ée])/iu,label: 'push:entre-maintenant' },
   { re: /vas?-?tu\s+(?:allouer|prendre)\s+(?:à\s+)?(?:ce\s+)?trade/iu, label: 'push:vas-tu-prendre' },
 ]
+
+/**
+ * 3F-CORRECTIF-4 — "Le code fait foi" côté sortie : retire toute
+ * phrase du cerveau qui AFFIRME une étape Joker validée alors que
+ * l'état enregistré ne la couvre pas.
+ *
+ * Mapping validation → étape :
+ *   M1 validé  → nécessite choch_m1 ou choch_m5 ou ready
+ *   M5 validé  → nécessite choch_m5 ou ready
+ *   M1+M5 ensemble → nécessite choch_m5 ou ready
+ *
+ * Les négations ("M1 n'est pas validé", "pas encore validé") et les
+ * formulations d'attente ("on attend le M1", "il manque le M5") NE
+ * déclenchent PAS la suppression (la phrase est licite).
+ */
+function stepAffirmedInSentence(s: string, step: 'm1' | 'm5'): boolean {
+  const tf = step === 'm1' ? '(?:1|une?)' : '(?:5|cinq)'
+  // Forme simple : M<n> [est|a été|est bien|est déjà]? <confirmation>
+  const AFFIRM = new RegExp(
+    `(?<![\\p{L}])(?:le\\s+|la\\s+|du\\s+|ton\\s+|mon\\s+)?(?:choch\\s+)?m\\s?${tf}\\s+(?:est\\s+(?:bien\\s+|d[eé]j[àa]\\s+)?|a\\s+été\\s+(?:bien\\s+)?)?(?:valid[eé][eés]*|confirm[eé][eés]*|cass[eé][eés]*|coch[eé][eérsz]*|ok)(?![\\p{L}])`,
+    'iu',
+  )
+  if (AFFIRM.test(s)) return true
+  // Forme combinée : "M1 et M5 (sont)? validés" / "les deux (sont)? validés"
+  const AFFIRM_BOTH = /(?<![\p{L}])(?:choch\s+)?m\s?(?:1|une?|5|cinq)\s*(?:et|,|puis)\s*(?:(?:le\s+)?(?:choch\s+)?)?m\s?(?:1|une?|5|cinq)(?:\s+(?:sont|est)\s+(?:bien\s+|d[eé]j[àa]\s+)?)?\s*(?:valid[eé][eés]*|confirm[eé][eés]*|cass[eé][eés]*|coch[eé][eérsz]*|ok)(?![\p{L}])/iu
+  if (AFFIRM_BOTH.test(s)) return true
+  // "les deux CHoCH sont validés"
+  const AFFIRM_DEUX = /(?<![\p{L}])(?:les\s+deux|tous\s+les\s+deux)\s+(?:choch(?:s)?\s+)?(?:sont|ont\s+été)\s+(?:bien\s+)?(?:valid[eé][eés]*|confirm[eé][eés]*|cass[eé][eés]*)(?![\p{L}])/iu
+  if (AFFIRM_DEUX.test(s)) return true
+  return false
+}
+
+export function applyJokerCodeFaitFoiGuard(
+  text: string,
+  jokerStep: JokerStep,
+): { text: string; removed: Array<{ sentence: string; label: string }> } {
+  if (!text) return { text: '', removed: [] }
+  // Étapes autorisées à être affirmées validées
+  const m1Allowed = jokerStep === 'choch_m1' || jokerStep === 'choch_m5' || jokerStep === 'ready'
+  const m5Allowed = jokerStep === 'choch_m5' || jokerStep === 'ready'
+  if (m1Allowed && m5Allowed) return { text, removed: [] }
+
+  const sentences = text.split(/(?<=[.!?…])\s+/)
+  const kept: string[] = []
+  const removed: Array<{ sentence: string; label: string }> = []
+  for (const s of sentences) {
+    const m1Affirmed = stepAffirmedInSentence(s, 'm1')
+    const m5Affirmed = stepAffirmedInSentence(s, 'm5')
+    if (!m1Allowed && m1Affirmed) {
+      removed.push({ sentence: s.trim(), label: 'joker:affirm-m1-not-registered' })
+      continue
+    }
+    if (!m5Allowed && m5Affirmed) {
+      removed.push({ sentence: s.trim(), label: 'joker:affirm-m5-not-registered' })
+      continue
+    }
+    kept.push(s)
+  }
+  return { text: kept.join(' ').trim(), removed }
+}
 
 export function applyGoldenRuleGuard(text: string): { text: string; removed: Array<{ sentence: string; label: string }> } {
   if (!text) return { text: '', removed: [] }

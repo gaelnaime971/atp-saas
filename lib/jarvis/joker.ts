@@ -119,45 +119,143 @@ function tfKindOf(raw: string): 'm1' | 'm5' {
   return 'm1'
 }
 
-/** Scanne le texte et retourne l'ordre des étapes CHoCH confirmées. */
+/** Mots qui coupent la confirmation : le trader attend l'étape, elle
+ *  n'est pas (encore) validée. */
+const GATE_RE = /(?<![\p{L}])(j'?attends?|en\s+attente|pas\s+encore|je\s+patiente|il\s+manque)(?![\p{L}])/iu
+
+/** Connecteurs qui enchaînent une TF à la précédente dans la même
+ *  phrase ("et", "puis", "ensuite", ","). */
+const CONNECTOR_RE = /(?<![\p{L}])(et|puis|ensuite|apr[eè]s|ainsi(?:\s+que)?|comme)(?![\p{L}])|,/iu
+
+/** Scanne le texte et retourne les étapes CHoCH confirmées, dans
+ *  l'ordre où elles apparaissent. Gère : CHoCH + une seule TF,
+ *  CHoCH + plusieurs TFs chaînées ("CHoCH M1 et M5 validés"), TFs nues
+ *  chaînées ("M1 et M5 cassés"), piège "j'attends aussi le CHoCH M5". */
 export function detectConfirmedChochSteps(t: string): Array<'m1' | 'm5'> {
-  // Jusqu'à 20 caractères (lettres, espaces, apostrophes, articles)
-  // entre CHoCH et la TF.
-  const re = new RegExp(`(?<![\\p{L}])${CHOCH_WORD}([\\p{L}\\s'’]{0,20})${TF_PATTERN}`, 'giu')
-  const results: Array<{ kind: 'm1' | 'm5'; idx: number; end: number; confirmed: boolean }> = []
+  const CHOCH_ANCHOR = new RegExp(`(?<![\\p{L}])${CHOCH_WORD}([\\p{L}\\s'’]{0,20})${TF_PATTERN}`, 'giu')
+  const BARE_TF_G   = new RegExp(`(?<![\\p{L}0-9])${TF_PATTERN}(?![\\p{L}0-9])`, 'giu')
+  const BARE_TF_1   = new RegExp(`(?<![\\p{L}0-9])${TF_PATTERN}(?![\\p{L}0-9])`, 'iu')
+
+  interface Entry { kind: 'm1' | 'm5'; start: number; end: number; confirmed: boolean; chochAnchored: boolean }
+  const entries: Entry[] = []
+
+  // Pass 1 — CHoCH-anchored : "CHoCH M1 (…) M5 validés" ou "CHoCH M1
+  // puis M5" : on prolonge chaque ancre par les TFs chaînées via un
+  // connecteur, bornées par la ponctuation forte, le mot de gating ou
+  // le prochain "CHoCH".
   let m: RegExpExecArray | null
-  while ((m = re.exec(t)) !== null) {
-    const kind = tfKindOf(m[2])
-    const idx = m.index
-    const end = idx + m[0].length
-    // Window FORWARD : jusqu'au prochain CHoCH ou jusqu'à 150 chars.
-    const nextCh = (() => {
-      const rest = t.slice(end)
-      const nextRe = new RegExp(`(?<![\\p{L}])${CHOCH_WORD}`, 'iu')
-      const nm = rest.match(nextRe)
-      return nm && nm.index !== undefined ? end + nm.index : Math.min(end + 150, t.length)
-    })()
-    const forward = t.slice(end, nextCh)
-    const confirmed = CONFIRM_RE.test(forward)
-    results.push({ kind, idx, end, confirmed })
+  while ((m = CHOCH_ANCHOR.exec(t)) !== null) {
+    const firstTfStart = m.index + m[0].length - m[2].length
+    const firstTfEnd = m.index + m[0].length
+    entries.push({ kind: tfKindOf(m[2]), start: firstTfStart, end: firstTfEnd, confirmed: false, chochAnchored: true })
+
+    let cursor = firstTfEnd
+    while (true) {
+      const rest = t.slice(cursor)
+      // Borne : prochain "CHoCH", ponctuation forte, gating word, ou 100 chars.
+      const nextChochRel = (() => { const n = rest.search(new RegExp(`(?<![\\p{L}])${CHOCH_WORD}`, 'iu')); return n < 0 ? Infinity : n })()
+      const nextSentRel  = (() => { const n = rest.search(/[.!?…]/); return n < 0 ? Infinity : n })()
+      const nextGateRel  = (() => { const g = rest.match(GATE_RE); return g && g.index !== undefined ? g.index : Infinity })()
+      const bound = Math.min(nextChochRel, nextSentRel, nextGateRel, 100)
+      const windowText = rest.slice(0, bound)
+      const bareMatch = windowText.match(BARE_TF_1)
+      if (!bareMatch || bareMatch.index === undefined) break
+      const linker = windowText.slice(0, bareMatch.index)
+      if (!CONNECTOR_RE.test(linker)) break
+      const absStart = cursor + bareMatch.index
+      const absEnd = absStart + bareMatch[0].length
+      if (entries.some(e => e.start === absStart)) break
+      entries.push({ kind: tfKindOf(bareMatch[1]), start: absStart, end: absEnd, confirmed: false, chochAnchored: false })
+      cursor = absEnd
+    }
   }
-  // Confirmation implicite via "aussi"/"également" + CHoCH frère confirmé
-  for (let i = 1; i < results.length; i++) {
-    if (results[i].confirmed) continue
-    const prev = results[i - 1]
+
+  // Pass 2 — TFs nues hors ancrage : "M1 et M5 cassés" (pas de CHoCH
+  // explicite, mais un mot de confirmation local).
+  const bareOutside: Array<{ kind: 'm1' | 'm5'; start: number; end: number }> = []
+  BARE_TF_G.lastIndex = 0
+  let bm: RegExpExecArray | null
+  while ((bm = BARE_TF_G.exec(t)) !== null) {
+    const start = bm.index
+    if (entries.some(e => e.start === start)) continue
+    bareOutside.push({ kind: tfKindOf(bm[1]), start, end: start + bm[0].length })
+  }
+  if (bareOutside.length >= 2) {
+    // Regrouper par proximité : connecteur entre deux voisins, pas de
+    // sentence boundary ni de gating.
+    const bareGroups: typeof bareOutside[] = []
+    let currentGroup: typeof bareOutside = [bareOutside[0]]
+    for (let i = 1; i < bareOutside.length; i++) {
+      const prev = bareOutside[i - 1], curr = bareOutside[i]
+      const between = t.slice(prev.end, curr.start)
+      if (/[.!?…]/.test(between) || GATE_RE.test(between) || !CONNECTOR_RE.test(between)) {
+        bareGroups.push(currentGroup); currentGroup = [curr]
+      } else currentGroup.push(curr)
+    }
+    bareGroups.push(currentGroup)
+    for (const group of bareGroups) {
+      if (group.length < 2) continue
+      const first = group[0], last = group[group.length - 1]
+      const spanStart = Math.max(0, first.start - 10)
+      const spanEnd = Math.min(t.length, last.end + 80)
+      const span = t.slice(spanStart, spanEnd)
+      if (!CONFIRM_RE.test(span)) continue
+      if (GATE_RE.test(t.slice(spanStart, last.end))) continue
+      for (const g of group) {
+        entries.push({ kind: g.kind, start: g.start, end: g.end, confirmed: true, chochAnchored: false })
+      }
+    }
+  }
+
+  // Trier par position et grouper par ancre CHoCH : chaque chochAnchored
+  // ouvre un nouveau groupe, les suivants s'y rattachent.
+  entries.sort((a, b) => a.start - b.start)
+  const groups: Entry[][] = []
+  let current: Entry[] = []
+  for (const e of entries) {
+    if (e.chochAnchored && current.length > 0) {
+      groups.push(current); current = [e]
+    } else current.push(e)
+  }
+  if (current.length > 0) groups.push(current)
+
+  // Pass 3 — confirmation : groupe ≥ 2 TFs → confirmé (le trader
+  // énumère) ; groupe de 1 → besoin d'un mot de confirmation dans la
+  // fenêtre avant tout gating.
+  for (const group of groups) {
+    const last = group[group.length - 1]
+    const idxInEntries = entries.indexOf(last)
+    const nextEntryStart = idxInEntries + 1 < entries.length ? entries[idxInEntries + 1].start : t.length
+    const windowRaw = t.slice(last.end, Math.min(nextEntryStart, last.end + 100))
+    // Couper au premier gate word s'il existe
+    const gateMatch = windowRaw.match(GATE_RE)
+    const windowTrim = gateMatch && gateMatch.index !== undefined ? windowRaw.slice(0, gateMatch.index) : windowRaw
+    const hasConfirm = CONFIRM_RE.test(windowTrim)
+    const multiple = group.length >= 2
+    // Déjà confirmé par Pass 2 (bare group) ?
+    const alreadyConfirmed = group.every(e => e.confirmed)
+    const confirmed = alreadyConfirmed || multiple || hasConfirm
+    if (confirmed) for (const e of group) e.confirmed = true
+  }
+
+  // Pass 4 — propagation "aussi/également" : une TF non confirmée qui
+  // suit une TF confirmée via "aussi" dans le linker (sans gating).
+  for (let i = 1; i < entries.length; i++) {
+    if (entries[i].confirmed) continue
+    const prev = entries[i - 1]
     if (!prev.confirmed) continue
-    const linker = t.slice(prev.end, results[i].idx)
-    if (ALSO_RE.test(linker)) results[i].confirmed = true
+    const linker = t.slice(prev.end, entries[i].start)
+    if (ALSO_RE.test(linker) && !GATE_RE.test(linker)) entries[i].confirmed = true
   }
-  // Garder l'ordre chronologique dans le texte, dédoublonner (si un
-  // M1 confirmé apparaît deux fois, on le compte une fois).
+
+  // Dédoublonnage + ordre
   const seen = new Set<string>()
   const steps: Array<'m1' | 'm5'> = []
-  for (const r of results) {
-    if (!r.confirmed) continue
-    if (seen.has(r.kind)) continue
-    seen.add(r.kind)
-    steps.push(r.kind)
+  for (const e of entries) {
+    if (!e.confirmed) continue
+    if (seen.has(e.kind)) continue
+    seen.add(e.kind)
+    steps.push(e.kind)
   }
   return steps
 }

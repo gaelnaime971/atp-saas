@@ -15,7 +15,7 @@ const VALID_CASQUETTES = new Set<Casquette>([
 import {
   prepareContext, runBrain, detectDetailRequested,
   snapshotSession, buildSessionDirective, buildAntiRepetitionAddendum,
-  stripAnnouncement, applyGoldenRuleGuard,
+  stripAnnouncement, applyGoldenRuleGuard, applyJokerCodeFaitFoiGuard,
   type ChatMessage, type SessionEventRow,
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
@@ -290,6 +290,16 @@ export async function POST(request: Request) {
       })
     }
     brainBody = guard.text
+
+    // 3F-CORRECTIF-4 — Le CODE fait foi côté sortie.
+    const jokerGuard = applyJokerCodeFaitFoiGuard(brainBody, jokerTransition.next)
+    if (jokerGuard.removed.length > 0) {
+      console.warn('[jarvis-guard]', {
+        route: '/api/jarvis/voice', userId, step: jokerTransition.next,
+        removed: jokerGuard.removed.map(r => ({ label: r.label, len: r.sentence.length })),
+      })
+    }
+    brainBody = jokerGuard.text
 
     // 3F-CORRECTIF-3 — Joker actif → brainBody tronqué à UNE phrase.
     const jokerActive = jokerTransition.next !== 'inactive'

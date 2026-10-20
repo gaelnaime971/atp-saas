@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { stripAnnouncement, buildAntiRepetitionAddendum, applyGoldenRuleGuard } from './brain'
+import { stripAnnouncement, buildAntiRepetitionAddendum, applyGoldenRuleGuard, applyJokerCodeFaitFoiGuard } from './brain'
 
 describe('stripAnnouncement — 3F-correctif-2 : code place l\'annonce, retire reprise du modèle', () => {
   const ANN = 'CHoCH M1 validé. On attend le M5, pas avant.'
@@ -162,5 +162,78 @@ describe('applyGoldenRuleGuard — règle d\'or : jamais pousser à entrer', () 
   it('"Exécute le trade." → retiré', () => {
     const r = applyGoldenRuleGuard('Exécute le trade.')
     expect(r.removed[0].label).toBe('push:execute-trade')
+  })
+})
+
+describe('applyJokerCodeFaitFoiGuard — le code fait foi côté sortie', () => {
+  it('texte vide → vide', () => {
+    const r = applyJokerCodeFaitFoiGuard('', 'armed')
+    expect(r.text).toBe('')
+  })
+
+  it('step=ready → tout passe (M1+M5 autorisés)', () => {
+    const txt = 'CHoCH M1 et M5 validés. Super.'
+    const r = applyJokerCodeFaitFoiGuard(txt, 'ready')
+    expect(r.text).toBe(txt)
+    expect(r.removed).toEqual([])
+  })
+
+  it('step=armed + "CHoCH M1 et M5 validés." → RETIRÉ (bug prod)', () => {
+    const r = applyJokerCodeFaitFoiGuard('CHoCH M1 et M5 validés.', 'armed')
+    expect(r.text).toBe('')
+    expect(r.removed).toHaveLength(1)
+    expect(r.removed[0].label).toMatch(/joker:affirm/)
+  })
+
+  it('step=armed + "M1 est validé." → RETIRÉ', () => {
+    const r = applyJokerCodeFaitFoiGuard('M1 est validé.', 'armed')
+    expect(r.text).toBe('')
+    expect(r.removed[0].label).toBe('joker:affirm-m1-not-registered')
+  })
+
+  it('step=armed + "M5 confirmé." → RETIRÉ', () => {
+    const r = applyJokerCodeFaitFoiGuard('M5 confirmé.', 'armed')
+    expect(r.removed[0].label).toBe('joker:affirm-m5-not-registered')
+  })
+
+  it('step=choch_m1 + "M1 est validé." → GARDÉ (M1 enregistré)', () => {
+    const r = applyJokerCodeFaitFoiGuard('M1 est validé.', 'choch_m1')
+    expect(r.text).toBe('M1 est validé.')
+  })
+
+  it('step=choch_m1 + "M5 est validé." → RETIRÉ (M5 pas encore)', () => {
+    const r = applyJokerCodeFaitFoiGuard('M5 est validé.', 'choch_m1')
+    expect(r.removed[0].label).toBe('joker:affirm-m5-not-registered')
+  })
+
+  it('step=armed + "M1 n\'est pas encore validé." → GARDÉ (négation)', () => {
+    const r = applyJokerCodeFaitFoiGuard('M1 n\'est pas encore validé.', 'armed')
+    expect(r.text).toBe('M1 n\'est pas encore validé.')
+  })
+
+  it('step=armed + "On attend ton CHoCH M1." → GARDÉ (attente)', () => {
+    const r = applyJokerCodeFaitFoiGuard('On attend ton CHoCH M1.', 'armed')
+    expect(r.text).toBe('On attend ton CHoCH M1.')
+  })
+
+  it('step=armed + "Il manque le CHoCH M5." → GARDÉ (manque)', () => {
+    const r = applyJokerCodeFaitFoiGuard('Il manque le CHoCH M5.', 'armed')
+    expect(r.text).toBe('Il manque le CHoCH M5.')
+  })
+
+  it('step=choch_m5 + "les deux CHoCHs sont validés." → GARDÉ', () => {
+    const r = applyJokerCodeFaitFoiGuard('les deux CHoCHs sont validés.', 'choch_m5')
+    expect(r.text).toBe('les deux CHoCHs sont validés.')
+  })
+
+  it('step=armed + "les deux CHoCHs sont validés." → RETIRÉ', () => {
+    const r = applyJokerCodeFaitFoiGuard('les deux CHoCHs sont validés.', 'armed')
+    expect(r.text).toBe('')
+  })
+
+  it('phrase mixte : garde ce qui est licite, retire l\'affirmation', () => {
+    const txt = 'On surveille ta zone. CHoCH M1 et M5 validés. Reste concentré.'
+    const r = applyJokerCodeFaitFoiGuard(txt, 'armed')
+    expect(r.text).toBe('On surveille ta zone. Reste concentré.')
   })
 })
