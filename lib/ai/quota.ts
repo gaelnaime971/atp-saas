@@ -314,9 +314,18 @@ function estimateCost(input: RecordUsageInput): number {
   // Fusion Groq + OpenRouter : on cherche d'abord dans le dict OR
   // (prix OpenRouter sont souvent plus hauts qu'un modèle Groq de
   // même nom), puis dans Groq, puis fallback générique.
+  //
+  // 3F-CORRECTIF-2 : lookup tolérant au suffixe de variante OpenRouter
+  // (":nitro", ":floor"…). On tente d'abord le slug complet, puis le
+  // slug sans variante — pour que `openai/gpt-oss-120b:online` reprenne
+  // automatiquement le prix de `openai/gpt-oss-120b` sans doublon
+  // d'entrée dans la table.
+  const bareModel = input.model ? input.model.split(':')[0] : ''
   const pricing =
-    (input.model && OPENROUTER_PRICING_USD_PER_MTOK[input.model]) ||
-    (input.model && GROQ_PRICING_USD_PER_MTOK[input.model]) ||
+    (input.model  && OPENROUTER_PRICING_USD_PER_MTOK[input.model])  ||
+    (bareModel    && OPENROUTER_PRICING_USD_PER_MTOK[bareModel])    ||
+    (input.model  && GROQ_PRICING_USD_PER_MTOK[input.model])        ||
+    (bareModel    && GROQ_PRICING_USD_PER_MTOK[bareModel])          ||
     GROQ_PRICING_USD_PER_MTOK.__fallback__
 
   const tokenCost =

@@ -30,6 +30,7 @@ import {
   computeSessionState,
   evaluateRules,
   wasAlreadyAnnounced,
+  pickPrimaryTrigger,
   type TraderRules,
   type TradeEvent,
   type RuleKey,
@@ -530,14 +531,14 @@ export function buildSessionDirective(
   const parts: string[] = []
   const triggered = snapshot.freshTriggers
 
-  if (triggered.length > 0) {
-    const announce = triggered.map(t => t.message).join(' ')
+  // 3F-CORRECTIF-2 — Une seule annonce par message. Si plusieurs règles
+  // tombent (ex: first_win + target_reached), on prend la prioritaire.
+  // Les autres sont enregistrées comme annoncées côté caller (via
+  // directive.triggered), mais ne sont PAS dites.
+  const primary = pickPrimaryTrigger(triggered)
+  if (primary) {
     parts.push(
-`RÈGLE DÉCLENCHÉE PAR LE CODE — tu DOIS commencer ta réponse par exactement cette phrase, telle quelle, sans la modifier ni la paraphraser (PREMIÈRE lettre comprise, zéro troncage) :
-
-${announce}
-
-Puis au plus UNE phrase courte (empathique ou de contexte), sans contredire la règle, sans relancer un trade, sans questionner la décision.`)
+`ANNONCE DÉJÀ FAITE PAR LE CODE — l'annonce officielle est placée en tête de réponse par le serveur, PAS par toi. NE la répète JAMAIS, NE la paraphrase pas, NE la cite pas entre guillemets, NE la commente pas. Contente-toi d'écrire UNE phrase courte qui prolonge le propos (contexte, empathie), sans contredire la règle, sans relancer un trade, sans questionner la décision. Si plusieurs règles concordent, elles ont toutes été enregistrées côté code — n'en rajoute pas.`)
   }
 
   if (detectionKind === 'trade' && triggered.length === 0) {
@@ -567,7 +568,7 @@ Puis au plus UNE phrase courte (empathique ou de contexte), sans contredire la r
   }
 
   return {
-    announce: triggered.length > 0 ? triggered.map(t => t.message).join(' ') : null,
+    announce: primary ? primary.message : null,
     systemAddendum: parts.join('\n\n'),
     triggered,
   }
@@ -704,9 +705,11 @@ function jaccardWords(a: string, b: string): number {
 // Groq. Si OpenRouter répond rapidement, Groq n'est jamais appelé.
 
 // Deux cerveaux :
-//   LIVE  = casquette TRADER (vitesse d'abord)  → gemini-3.7-flash
+//   LIVE  = casquette TRADER (vitesse d'abord)  → gpt-oss-120b:nitro
+//           (3F-CORRECTIF-2 : mode Nitro OpenRouter = fournisseur le
+//           plus rapide, latence TTFB réduite en session TRADER)
 //   DEEP  = tout le reste (profondeur d'abord)  → claude-sonnet-5
-const DEFAULT_BRAIN_LIVE = 'google/gemini-3.7-flash'
+const DEFAULT_BRAIN_LIVE = 'openai/gpt-oss-120b:nitro'
 const DEFAULT_BRAIN_DEEP = 'anthropic/claude-sonnet-5'
 
 export function getBrainModel(casquette?: Casquette): string {
@@ -860,9 +863,6 @@ export interface BrainRunConfig {
    *  (annonce de règle, demande de clarification, etc. — cf. 3F.4
    *  buildSessionDirective). */
   extraSystem?: string
-  /** Phrase officielle que la réponse DOIT ouvrir mot pour mot. Si le
-   *  modèle tronque ou omet, enforceOpening répare côté serveur. */
-  mandatoryOpening?: string | null
 }
 
 export interface BrainOk {
@@ -954,8 +954,7 @@ export async function runBrain(
   }
 
   const rawReply: string = data.choices?.[0]?.message?.content || ''
-  const clamped = clampResponse(rawReply, maxChars)
-  const reply = enforceOpening(clamped, cfg.mandatoryOpening ?? null)
+  const reply = clampResponse(rawReply, maxChars)
   const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
 
   return {
@@ -966,29 +965,56 @@ export async function runBrain(
 }
 
 /**
- * Garantit que la réponse commence par la phrase officielle attendue
- * (annonce de règle ou de transition Joker). Si le modèle a tronqué
- * la première lettre (bug observé en prod : "a checklist" au lieu de
- * "Ta checklist"), on la remet. Si le modèle a complètement ignoré
- * l'instruction, on préfixe la réponse par la phrase + un espace.
+ * 3F-CORRECTIF-2 — L'annonce est placée en tête par le CODE. Si le
+ * cerveau l'a quand même recrachée (répétition observée en prod,
+ * parfois entre guillemets « »), on la retire du texte généré avant
+ * de concaténer. Essaie, dans l'ordre :
+ *   1) préfixe exact
+ *   2) préfixe entre « » ou " " ou  " ... "
+ *   3) la même phrase à l'intérieur du texte (plus prudent)
  *
- * Testé indirectement via les tests Joker et les annonces de règles ;
- * exporté pour pouvoir le tester directement.
+ * Normalise les apostrophes typographiques côté comparaison : le
+ * modèle utilise souvent ’ au lieu de ' et vice-versa.
  */
-export function enforceOpening(reply: string, expected: string | null): string {
-  if (!expected) return reply
-  const trimmed = reply.trimStart()
-  if (trimmed.startsWith(expected)) return reply
-  // Cas prod : "a checklist…" au lieu de "Ta checklist…" (ou autre
-  // tronquage initial jusqu'à 3 caractères).
-  for (let drop = 1; drop <= 3; drop++) {
-    const tail = expected.slice(drop)
-    if (tail.length > 15 && trimmed.startsWith(tail)) {
-      return expected.slice(0, drop) + reply.slice(reply.indexOf(tail))
+export function stripAnnouncement(reply: string, announcement: string | null): string {
+  if (!announcement) return reply
+  const norm = (s: string): string => s.replace(/[’‘]/g, "'").trim()
+  const target = norm(announcement)
+  let out = reply
+
+  // 1) Préfixe + variations entre guillemets
+  const quoteVariants = [
+    target,
+    `«${target}»`,
+    `« ${target} »`,
+    `"${target}"`,
+    `« ${target}»`,
+    `«${target} »`,
+  ]
+  for (const variant of quoteVariants) {
+    const normOut = norm(out)
+    if (normOut.startsWith(variant)) {
+      // On enlève la longueur équivalente côté brut (en gardant la
+      // casse / espaces initiaux non significatifs).
+      const idx = out.toLowerCase().indexOf(variant.toLowerCase())
+      if (idx >= 0) {
+        out = (out.slice(0, idx) + out.slice(idx + variant.length)).trim()
+      }
     }
   }
-  // Pire : le modèle a complètement ignoré. On préfixe.
-  return expected + ' ' + reply
+
+  // 2) Même phrase (ou entre « ») n'importe où dans le texte
+  const needles = [target, `«${target}»`, `« ${target} »`]
+  for (const needle of needles) {
+    const idx = norm(out).toLowerCase().indexOf(needle.toLowerCase())
+    if (idx >= 0) {
+      out = (out.slice(0, idx) + out.slice(idx + needle.length)).trim()
+    }
+  }
+
+  // Nettoyage : ponctuation orpheline en tête
+  out = out.replace(/^[\s,.;:!?…»"']+/u, '').trim()
+  return out
 }
 
 /** Plafonne l'historique à un budget approximé en tokens (FR : 1 tok

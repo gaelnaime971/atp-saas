@@ -137,7 +137,7 @@ export default function JarvisRulesForm({ email }: { email: string }) {
                 <>
                   {pctOfAccount != null && (
                     <>
-                      {pctOfAccount.toFixed(2)} % du compte ·
+                      {pctOfAccount.toFixed(2).replace('.', ',')} % du compte ·
                       {' '}limite 0,4 % = {riskCapUsd!.toFixed(0)} $
                       {riskOverCap && <span className="jr-over"> · dépasse la limite</span>}
                     </>

@@ -318,15 +318,28 @@ function JokerStepper({ step }: { step: JokerStep }) {
   )
 }
 
+/** 3F-CORRECTIF-2 — Format français : virgule décimale, signe + explicite
+ *  pour positif. "+3,0 R", "-0,5 R", "+450 $" (entiers sans virgule). */
+function fmtR(x: number): string {
+  const sign = x > 0 ? '+' : (x < 0 ? '' : '')
+  const abs = Math.abs(x)
+  const body = Number.isInteger(abs) ? `${abs}` : abs.toFixed(1).replace('.', ',')
+  return x < 0 ? `-${body}` : `${sign}${body}`
+}
+function fmtUsd(x: number): string {
+  const sign = x > 0 ? '+' : (x < 0 ? '-' : '')
+  const abs = Math.abs(x)
+  const body = Number.isInteger(abs) ? `${abs}` : abs.toFixed(2).replace('.', ',')
+  return `${sign}${body}`
+}
+
 function formatNoted(ev: NotedEvent): string {
   const p = ev.payload
   const parts: string[] = []
   if (typeof p.result_r === 'number') {
-    const r = p.result_r
-    parts.push(`${r > 0 ? '+' : ''}${r} R`)
+    parts.push(`${fmtR(p.result_r)} R`)
   } else if (typeof p.result_usd === 'number') {
-    const d = p.result_usd
-    parts.push(`${d > 0 ? '+' : ''}${d} $`)
+    parts.push(`${fmtUsd(p.result_usd)} $`)
   }
   if (p.instrument) parts.push('sur ' + p.instrument)
   if (p.side === 'short') parts.push('short')
@@ -892,7 +905,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           <div className="jv-session-line">
             Session : {lastExchange.session.state.tradesCount} trade{lastExchange.session.state.tradesCount > 1 ? 's' : ''}
             {lastExchange.session.state.rSum != null && (
-              <>, {lastExchange.session.state.rSum >= 0 ? '+' : ''}{lastExchange.session.state.rSum.toFixed(1)} R</>
+              <>, {fmtR(lastExchange.session.state.rSum)} R</>
             )}
             {' · '}
             <a href="/jarvis/regles" className="jv-rules-link">Mes règles</a>

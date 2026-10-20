@@ -15,6 +15,7 @@ const VALID_CASQUETTES = new Set<Casquette>([
 import {
   prepareContext, runBrain, detectDetailRequested,
   snapshotSession, buildSessionDirective, buildAntiRepetitionAddendum,
+  stripAnnouncement,
   type ChatMessage, type SessionEventRow,
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
@@ -128,11 +129,9 @@ export async function POST(request: Request) {
     let jokerAddendum: string | null = null
     if (jokerAnnounce) {
       const canInvite = jokerTransition.next === 'ready'
-      jokerAddendum = `MODE JOKER — Commence TA réponse par EXACTEMENT ces mots (reproduis à l'identique, caractère par caractère, PREMIÈRE lettre comprise, les guillemets ne font pas partie du texte) :
-
-«${jokerAnnounce}»
-
-Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ? 'pas de signal, pas de niveau, pas de "tu peux cliquer"' : 'ne JAMAIS inviter à entrer, ne JAMAIS donner de signal ni de niveau, ne JAMAIS sauter d\'étape'}.`
+      // 3F-CORRECTIF-2 — L'annonce est placée en tête par le CODE.
+      // On INTERDIT au cerveau de la redire (y compris entre « »).
+      jokerAddendum = `MODE JOKER — L'annonce officielle est placée en tête de réponse par le serveur, PAS par toi. NE la répète JAMAIS, NE la cite pas entre guillemets « », NE la paraphrase pas. Contente-toi d'écrire UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ? 'pas de signal, pas de niveau, pas de "tu peux cliquer"' : 'ne JAMAIS inviter à entrer, ne JAMAIS donner de signal ni de niveau, ne JAMAIS sauter d\'étape'}.`
     } else if (jokerOutOfOrder) {
       jokerAddendum = `MODE JOKER — Le trader a mentionné une étape plus avancée que l'étape courante. Relève-le avec douceur en UNE phrase : rappelle qu'il faut d'abord valider le CHoCH M1 avant le M5.`
     }
@@ -149,12 +148,20 @@ Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ?
       casquette: ctx.casquette.casquette,
       detailRequested,
       extraSystem,
-      mandatoryOpening: directive.announce ?? jokerAnnounce,
     })
     const [quota, brainOutcome] = await Promise.all([quotaPromise, brainPromise])
 
     if (!quota.allowed) return buildQuotaResponse(quota)
     if (!brainOutcome.ok) return brainOutcome.response
+
+    // 3F-CORRECTIF-2 — Le CODE place l'annonce officielle en tête.
+    // On strip toute reprise dans la sortie du modèle (répétitions,
+    // guillemets « »), puis on préfixe.
+    const announcement = directive.announce ?? jokerAnnounce
+    const brainBody = stripAnnouncement(brainOutcome.reply, announcement)
+    const finalReply = announcement
+      ? (brainBody ? `${announcement} ${brainBody}` : announcement)
+      : brainOutcome.reply
 
     timings.quota = Math.round((performance.now() - t_runStart) - brainOutcome.groqMs)
     if (timings.quota < 0) timings.quota = 0
@@ -174,7 +181,7 @@ Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ?
     timings.total = Math.round(performance.now() - t_start)
 
     return NextResponse.json({
-      reply: brainOutcome.reply,
+      reply: finalReply,
       casquette: brainOutcome.casquette,
       callsToday: quota.callsToday,
       callsLimit: quota.callsLimit,

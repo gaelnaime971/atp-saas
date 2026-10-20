@@ -15,6 +15,7 @@ const VALID_CASQUETTES = new Set<Casquette>([
 import {
   prepareContext, runBrain, detectDetailRequested,
   snapshotSession, buildSessionDirective, buildAntiRepetitionAddendum,
+  stripAnnouncement,
   type ChatMessage, type SessionEventRow,
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
@@ -246,11 +247,8 @@ export async function POST(request: Request) {
     let jokerAddendum: string | null = null
     if (jokerAnnounce) {
       const canInvite = jokerTransition.next === 'ready'
-      jokerAddendum = `MODE JOKER — Commence TA réponse par EXACTEMENT ces mots (reproduis à l'identique, caractère par caractère, PREMIÈRE lettre comprise, les guillemets ne font pas partie du texte) :
-
-«${jokerAnnounce}»
-
-Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ? 'pas de signal, pas de niveau, pas de "tu peux cliquer"' : 'ne JAMAIS inviter à entrer, ne JAMAIS donner de signal ni de niveau, ne JAMAIS sauter d\'étape'}.`
+      // 3F-CORRECTIF-2 — L'annonce est placée en tête par le CODE.
+      jokerAddendum = `MODE JOKER — L'annonce officielle est placée en tête de réponse par le serveur, PAS par toi. NE la répète JAMAIS, NE la cite pas entre guillemets « », NE la paraphrase pas. Contente-toi d'écrire UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ? 'pas de signal, pas de niveau, pas de "tu peux cliquer"' : 'ne JAMAIS inviter à entrer, ne JAMAIS donner de signal ni de niveau, ne JAMAIS sauter d\'étape'}.`
     } else if (jokerOutOfOrder) {
       jokerAddendum = `MODE JOKER — Le trader a mentionné une étape plus avancée que l'étape courante. Relève-le avec douceur en UNE phrase : rappelle qu'il faut d'abord valider le CHoCH M1 avant le M5.`
     }
@@ -267,7 +265,6 @@ Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ?
       casquette: ctx.casquette.casquette,
       detailRequested,
       extraSystem,
-      mandatoryOpening: directive.announce ?? jokerAnnounce,
     })
     timings.brain = Math.round(performance.now() - t_brainStart)
     if (!brainOutcome.ok) {
@@ -276,6 +273,15 @@ Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ?
       return brainOutcome.response
     }
     retries.brain = brainOutcome.attempts
+
+    // 3F-CORRECTIF-2 — Le CODE place l'annonce officielle en tête.
+    // On strip toute reprise dans la sortie du modèle (répétitions,
+    // guillemets « »), puis on préfixe.
+    const announcement = directive.announce ?? jokerAnnounce
+    const brainBody = stripAnnouncement(brainOutcome.reply, announcement)
+    const finalReply = announcement
+      ? (brainBody ? `${announcement} ${brainBody}` : announcement)
+      : brainOutcome.reply
 
     // ─── Barrière quota AVANT TTS (étape coûteuse). Si refus → jeté. ───
     const quota = await quotaPromise
@@ -292,7 +298,7 @@ Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ?
     //   2. pronounceForVoice : "flux" → "flu", "CHoCH" → "choche".
     // Les headers X-Jarvis-Reply et l'affichage conservent le texte
     // original avec chiffres et symboles.
-    const spokenText = pronounceForVoice(numbersToWords(brainOutcome.reply))
+    const spokenText = pronounceForVoice(numbersToWords(finalReply))
     const t_ttsStart = performance.now()
     const tts = await synthesizeSpeech(spokenText)
     timings.tts = Math.round(performance.now() - t_ttsStart)
@@ -315,7 +321,7 @@ Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ?
     console.log('[jarvis-voice-perf]', {
       userId, event: tts.ok ? 'ok' : 'tts_failed',
       durationSec, callsToday: quota.callsToday,
-      replyLen: brainOutcome.reply.length,
+      replyLen: finalReply.length,
       ttfbMs: tts.ok ? tts.ttfbMs : null,
       timings, retries,
     })
@@ -333,7 +339,7 @@ Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ?
     }
     const metaHeaders: Record<string, string> = {
       'X-Jarvis-Transcription': b64url(transcription),
-      'X-Jarvis-Reply': b64url(brainOutcome.reply),
+      'X-Jarvis-Reply': b64url(finalReply),
       'X-Jarvis-Casquette': brainOutcome.casquette,
       'X-Jarvis-Timings': b64url(JSON.stringify(timings)),
       'X-Jarvis-Retries': b64url(JSON.stringify(retries)),
@@ -348,7 +354,7 @@ Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ?
     if (!tts.ok) {
       console.error('[jarvis] TTS failed, returning text-only', { status: tts.status, reason: tts.reason })
       return NextResponse.json({
-        reply: brainOutcome.reply,
+        reply: finalReply,
         transcription,
         casquette: brainOutcome.casquette,
         callsToday: quota.callsToday,

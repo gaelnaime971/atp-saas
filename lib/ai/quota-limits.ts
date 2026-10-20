@@ -75,11 +75,16 @@ export const AI_LIMITS: Record<AiFeature, AiFeatureConfig> = {
  * OpenRouter.
  */
 export const OPENROUTER_PRICING_USD_PER_MTOK: Record<string, { input: number; output: number }> = {
-  'anthropic/claude-sonnet-5':     { input: 2.00,  output: 10.00 }, // défaut JARVIS_BRAIN_MODEL (profondeur)
-  'anthropic/claude-sonnet-4.6':   { input: 3.00,  output: 15.00 }, // ancienne génération, dispo si besoin
-  'openai/gpt-chat-latest':        { input: 5.00,  output: 30.00 }, // alias stable, pointe sur le dernier Instant
-  'google/gemini-3.7-flash':       { input: 0.75,  output:  3.75 }, // défaut JARVIS_BRAIN_MODEL_LIVE (vitesse)
-  'google/gemini-3.6-flash':       { input: 0.75,  output:  3.75 }, // génération précédente
+  'anthropic/claude-sonnet-5':         { input: 2.00,  output: 10.00 }, // défaut JARVIS_BRAIN_MODEL (profondeur)
+  'anthropic/claude-sonnet-4.6':       { input: 3.00,  output: 15.00 }, // ancienne génération, dispo si besoin
+  'openai/gpt-chat-latest':            { input: 5.00,  output: 30.00 }, // alias stable, pointe sur le dernier Instant
+  'google/gemini-3.7-flash':           { input: 0.75,  output:  3.75 }, // ancien défaut LIVE
+  'google/gemini-3.6-flash':           { input: 0.75,  output:  3.75 }, // génération précédente
+  // 3F-CORRECTIF-2 — défaut JARVIS_BRAIN_MODEL_LIVE : OSS 120b en mode
+  // Nitro (fournisseur le + rapide). Pricing identique au slug non-Nitro
+  // sur OpenRouter (le suffixe :nitro change de fournisseur, pas de prix).
+  'openai/gpt-oss-120b':               { input: 0.15,  output:  0.75 },
+  'openai/gpt-oss-120b:nitro':         { input: 0.15,  output:  0.75 },
 }
 
 /** Les 3 modèles comparés en mode comparaison testeur. Vérifiés sur

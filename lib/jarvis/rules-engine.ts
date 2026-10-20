@@ -87,6 +87,33 @@ export type RuleKey =
   | 'same_config_hard_stop'
   | 'trade_after_stop'
 
+/**
+ * 3F-CORRECTIF-2 — Priorité d'annonce. Si plusieurs règles tombent au
+ * même message, on n'annonce que la principale. Les autres sont
+ * enregistrées comme annoncées (pour ne pas retomber), mais SILENT.
+ */
+const RULE_PRIORITY: ReadonlyArray<RuleKey> = [
+  'target_reached',
+  'first_win',
+  'loss_then_win',
+  'three_losses',
+  'max_trades',
+  'same_config_hard_stop',
+  'trade_after_stop',
+]
+
+/** Retourne la règle prioritaire parmi les triggers (ou null si vide). */
+export function pickPrimaryTrigger(triggers: TriggeredRule[]): TriggeredRule | null {
+  if (triggers.length === 0) return null
+  for (const key of RULE_PRIORITY) {
+    const hit = triggers.find(t => t.key === key)
+    if (hit) return hit
+  }
+  // Si une règle n'est pas dans la priorité (ne devrait pas arriver),
+  // on retourne la 1re — jamais rien.
+  return triggers[0]
+}
+
 export interface TriggeredRule {
   key: RuleKey
   /** Libellé officiel à annoncer MOT POUR MOT. Interpolé si {R}/{N}. */

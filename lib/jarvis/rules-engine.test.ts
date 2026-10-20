@@ -3,10 +3,12 @@ import {
   computeSessionState,
   evaluateRules,
   wasAlreadyAnnounced,
+  pickPrimaryTrigger,
   DEFAULT_RULES,
   RULE_MESSAGES,
   type TradeEvent,
   type TraderRules,
+  type TriggeredRule,
 } from './rules-engine'
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -264,5 +266,36 @@ describe('rules-engine — pending ignoré', () => {
     const state = computeSessionState(trades, RULES)
     expect(state.tradesCount).toBe(1)
     expect(state.firstTradeWin).toBe(true) // le gain est premier car pending ignoré
+  })
+})
+
+describe('pickPrimaryTrigger — 3F-correctif-2 : une seule annonce', () => {
+  const r = (key: TriggeredRule['key']): TriggeredRule => ({
+    key, message: RULE_MESSAGES[key], blocking: true,
+  })
+
+  it('vide → null', () => {
+    expect(pickPrimaryTrigger([])).toBeNull()
+  })
+
+  it('un seul → lui-même', () => {
+    expect(pickPrimaryTrigger([r('first_win')])?.key).toBe('first_win')
+  })
+
+  it('first_win + target_reached → target_reached (priorité)', () => {
+    expect(pickPrimaryTrigger([r('first_win'), r('target_reached')])?.key).toBe('target_reached')
+  })
+
+  it('three_losses + loss_then_win → loss_then_win (priorité)', () => {
+    expect(pickPrimaryTrigger([r('three_losses'), r('loss_then_win')])?.key).toBe('loss_then_win')
+  })
+
+  it('ordre dans l\'array ne change rien, la priorité l\'emporte', () => {
+    expect(pickPrimaryTrigger([r('trade_after_stop'), r('target_reached'), r('first_win')])?.key)
+      .toBe('target_reached')
+  })
+
+  it('max_trades + same_config_hard_stop → max_trades', () => {
+    expect(pickPrimaryTrigger([r('same_config_hard_stop'), r('max_trades')])?.key).toBe('max_trades')
   })
 })
