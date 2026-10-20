@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { detectTradeEvent } from './event-detection'
+import { detectTradeEvent, parseRiskAndResult } from './event-detection'
 
 function expectTrade(res: ReturnType<typeof detectTradeEvent>) {
   if (res.kind !== 'trade') throw new Error(`Expected trade, got ${res.kind}`)
@@ -152,5 +152,52 @@ describe('event-detection — détection de config', () => {
   it('"+2R sur l\'OB" → config détectée', () => {
     const t = expectTrade(detectTradeEvent("+2R sur l'OB"))
     expect(t.config).toBeTruthy()
+  })
+})
+
+describe('event-detection — risque + résultat dans la MÊME phrase (3F-correctif)', () => {
+  it('"je risque 150$ sur un trade et j\'ai gagné 450$" → trade +450$, +3R, hint 150', () => {
+    const t = expectTrade(detectTradeEvent("je risque 150$ sur un trade et j'ai gagné 450$"))
+    expect(t.result_usd).toBe(450)
+    expect(t.result_r).toBe(3)
+    expect(t.risk_per_trade_hint).toBe(150)
+  })
+
+  it('"je risque 100 dollars et j\'ai perdu 100 dollars" → trade -100$, -1R, hint 100', () => {
+    const t = expectTrade(detectTradeEvent('je risque 100 dollars et j\'ai perdu 100 dollars'))
+    expect(t.result_usd).toBe(-100)
+    expect(t.result_r).toBe(-1)
+    expect(t.risk_per_trade_hint).toBe(100)
+  })
+
+  it('"je risque 200$ et j\'ai pris 600$" → trade +600$, +3R, hint 200', () => {
+    const t = expectTrade(detectTradeEvent("je risque 200$ et j'ai pris 600$"))
+    expect(t.result_usd).toBe(600)
+    expect(t.result_r).toBe(3)
+    expect(t.risk_per_trade_hint).toBe(200)
+  })
+
+  it('"mon risque est de 80$ et je me suis fait stopper" → trade -80$, -1R, hint 80', () => {
+    const t = expectTrade(detectTradeEvent("mon risque est de 80$ et je me suis fait stopper"))
+    expect(t.result_usd).toBe(-80)
+    expect(t.result_r).toBe(-1)
+    expect(t.risk_per_trade_hint).toBe(80)
+  })
+
+  it('"je risque 150$ aujourd\'hui" (SANS résultat) → PAS un trade (intention)', () => {
+    const res = detectTradeEvent("je risque 150$ aujourd'hui")
+    expect(res.kind).toBe('none')
+  })
+
+  it('parseRiskAndResult expose risk+result+R calculés', () => {
+    const r = parseRiskAndResult("je risque 50$ et j'ai gagné 200$")
+    expect(r?.risk).toBe(50)
+    expect(r?.resultUsd).toBe(200)
+    expect(r?.resultR).toBe(4)
+  })
+
+  it('parseRiskAndResult retourne null si pas de résultat', () => {
+    expect(parseRiskAndResult("je risque 50$")).toBeNull()
+    expect(parseRiskAndResult('bonjour tout va bien')).toBeNull()
   })
 })

@@ -24,6 +24,19 @@ export type JokerStep = 'inactive' | 'armed' | 'choch_m1' | 'choch_m5' | 'ready'
 export const READY_MESSAGE =
   'Ta checklist Joker est complète. C\'est toi qui cliques, et toi seul qui décides.'
 
+/**
+ * Annonces officielles pour CHAQUE transition Joker. Reprises MOT POUR
+ * MOT par le cerveau en tête de réponse (comme les règles de session).
+ * `inactive` n'a pas d'annonce (le trader annule, aucun bruit).
+ */
+export const JOKER_ANNOUNCE: Record<JokerStep, string | null> = {
+  inactive: null,
+  armed:    'Flux contre ta zone : mode Joker armé. Pas d\'entrée avant ton CHoCH M1, puis M5.',
+  choch_m1: 'CHoCH M1 validé. On attend le M5, pas avant.',
+  choch_m5: 'CHoCH M5 validé. Il manque le retracement sur ta zone et ton signal.',
+  ready:    'Ta checklist Joker est complète. C\'est toi qui cliques, et toi seul qui décides.',
+}
+
 export interface JokerContext {
   step: JokerStep
   /** ISO date de l'entrée dans l'état courant (pour timeout). */
@@ -58,13 +71,28 @@ function isJokerKeyword(t: string): boolean {
          /(?<![\p{L}])joker\s+arm[ée](?![\p{L}])/iu.test(t)
 }
 
+/** Dict de zones techniques — accepte "order block", "order-block",
+ *  "orderblock" (collé), "OB", "FVG", "breaker", "fibo", "support",
+ *  "résistance". */
+const ZONE_RE = /(?<![\p{L}])(support|r[ée]sistance|order\s*block|orderblock|\bOB\b|fvg|breaker|fibo)(?![\p{L}])/iu
+
 /** Armement implicite : flux CONTRE une zone technique. */
 function isCounterFlowOnZone(t: string): boolean {
-  // "flux (baissier|haussier|contre moi|contre ma zone) + mon/ma/sur
-  // ma / sur mon + (support/résistance/OB/order block/FVG/breaker/fibo)"
   const hasFluxAgainst = /(?<![\p{L}])flux\s+(baissier|haussier|contre\s+(moi|ma|mon))(?![\p{L}])/iu.test(t)
-  const hasZone = /(?<![\p{L}])(support|r[ée]sistance|order[-\s]?block|\bOB\b|fvg|breaker|fibo)(?![\p{L}])/iu.test(t)
-  return hasFluxAgainst && hasZone
+  return hasFluxAgainst && ZONE_RE.test(t)
+}
+
+/** Armement implicite : le trader décrit qu'il arrive/est sur sa zone.
+ *  Garde-fou : refuse si un résultat chiffré est dans la phrase
+ *  (c'est un trade déclaré, pas un armement). */
+function isApproachingZone(t: string): boolean {
+  const approach = /(?<![\p{L}])(j'?arrive|je\s+suis|on\s+arrive|on\s+est|je\s+touche|je\s+teste|j'?approche)[^.!?]{1,60}/iu
+  if (!approach.test(t)) return false
+  if (!ZONE_RE.test(t)) return false
+  // Exclure si résultat chiffré dans la phrase
+  if (/[+-]?\d+(?:[,.]\d+)?\s*(R|\$|dollars?|usd|%)/iu.test(t)) return false
+  if (/(?<![\p{L}])(stopp[ée]|stop touch[ée]|financ[ée]|BE|break[- ]?even|TP|j'ai\s+(gagn|pris|perdu))/iu.test(t)) return false
+  return true
 }
 
 /** Détecte CHoCH + unité temporelle. Tolère transcriptions imparfaites
@@ -134,7 +162,7 @@ export function advanceJokerState(
 
   // Depuis inactive
   if (current === 'inactive') {
-    if (isJokerKeyword(t) || isCounterFlowOnZone(t)) return { next: 'armed' }
+    if (isJokerKeyword(t) || isCounterFlowOnZone(t) || isApproachingZone(t)) return { next: 'armed' }
     return { next: 'inactive' }
   }
 

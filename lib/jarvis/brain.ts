@@ -520,6 +520,12 @@ export function buildSessionDirective(
   rules: TraderRules,
   tradeDeclaredInUsdOnly: boolean,
   riskAlreadyAskedToday: boolean,
+  options?: {
+    /** 3F-CORRECTIF : risque énoncé dans la MÊME phrase que le trade. */
+    riskHint?: number | null
+    /** Pour anti-propose-doublon : les messages assistant précédents. */
+    priorAssistantText?: string
+  },
 ): SessionDirective {
   const parts: string[] = []
   const triggered = snapshot.freshTriggers
@@ -527,7 +533,7 @@ export function buildSessionDirective(
   if (triggered.length > 0) {
     const announce = triggered.map(t => t.message).join(' ')
     parts.push(
-`RÈGLE DÉCLENCHÉE PAR LE CODE — tu DOIS commencer ta réponse par exactement cette phrase, telle quelle, sans la modifier ni la paraphraser :
+`RÈGLE DÉCLENCHÉE PAR LE CODE — tu DOIS commencer ta réponse par exactement cette phrase, telle quelle, sans la modifier ni la paraphraser (PREMIÈRE lettre comprise, zéro troncage) :
 
 ${announce}
 
@@ -546,11 +552,56 @@ Puis au plus UNE phrase courte (empathique ou de contexte), sans contredire la r
     parts.push('Le trader a déclaré un trade en $ sans que son risque par trade soit renseigné. Demande-lui UNE SEULE FOIS aujourd\'hui son risque par trade en $ (une phrase, après ta confirmation du trade).')
   }
 
+  // 3F-CORRECTIF — Si le trader a donné son risque dans la phrase et
+  // qu'il diffère des règles perso, proposer UNE FOIS la mise à jour.
+  const riskHint = options?.riskHint ?? null
+  const priorText = options?.priorAssistantText ?? ''
+  if (
+    detectionKind === 'trade' &&
+    riskHint != null && Number.isFinite(riskHint) && riskHint > 0 &&
+    rules.risk_per_trade_usd > 0 &&
+    Math.abs(riskHint - rules.risk_per_trade_usd) >= 1 &&
+    !/\bmes\s+règles\b/i.test(priorText)
+  ) {
+    parts.push(`Le trader vient de dire qu'il risque ${riskHint} $ sur ce trade, alors que ses règles perso affichent ${rules.risk_per_trade_usd} $. Après ta confirmation du trade, propose-lui UNE SEULE FOIS (une phrase courte, question ouverte) de mettre à jour sa page "Mes règles" si c'est devenu son nouveau risque habituel. N'insiste pas.`)
+  }
+
   return {
     announce: triggered.length > 0 ? triggered.map(t => t.message).join(' ') : null,
     systemAddendum: parts.join('\n\n'),
     triggered,
   }
+}
+
+/**
+ * 3F-CORRECTIF — Scan de l'historique assistant pour éviter la pile de
+ * répétitions : si on a déjà mentionné le ratio minimum, invité à
+ * noter dans le journal ou demandé l'émotion, on l'interdit pour ce
+ * message. Idem pour les stats (win rate, profit factor) : jamais
+ * sauf question explicite.
+ */
+export function buildAntiRepetitionAddendum(messages: ChatMessage[], userLast: string): string | null {
+  const priorText = messages
+    .filter(m => m.role === 'assistant')
+    .map(m => m.content)
+    .join(' ')
+
+  const ratioMentioned   = /\bratio\s+(minimum|de\s+\d|\d\s*r\b)/i.test(priorText)
+  const journalInvited   = /\b(note|écris|not[eé]|écris)\s+(dans\s+)?(ton|le)\s+journal\b|\bdans\s+ton\s+journal\b/i.test(priorText)
+  const emotionAsked     = /\b(quelle\s+émotion|comment\s+tu\s+te\s+sens|qu'est[- ]?ce\s+que\s+tu\s+ressens|ton\s+ressenti)/i.test(priorText)
+  const userAsksStats    = /\b(stats?|win\s*rate|profit\s*factor|statistiques?|ratio\s+gagnant|taux\s+de\s+r[ée]ussite)\b/i.test(userLast)
+
+  const bans: string[] = []
+  if (ratioMentioned) bans.push('- NE REPARLE PAS du ratio minimum (déjà rappelé dans cette conversation).')
+  if (journalInvited) bans.push('- N\'INVITE PAS à noter dans le journal (déjà invité dans cette conversation).')
+  if (emotionAsked)   bans.push('- NE DEMANDE PAS l\'émotion / le ressenti (déjà demandé dans cette conversation).')
+  if (!userAsksStats) bans.push('- NE SORS AUCUNE STAT (win rate, profit factor, ratio gagnant/perdant, nombre de trades sur 30j…). Elles ne sont utiles que si le trader les demande explicitement.')
+
+  if (bans.length === 0) return null
+  return `ANTI-RÉPÉTITION — Dans cette même conversation :
+${bans.join('\n')}
+
+Reste court et concentré sur la question actuelle.`
 }
 /**
  * Calcule l'état + les règles à annoncer MAINTENANT (celles qui
@@ -809,6 +860,9 @@ export interface BrainRunConfig {
    *  (annonce de règle, demande de clarification, etc. — cf. 3F.4
    *  buildSessionDirective). */
   extraSystem?: string
+  /** Phrase officielle que la réponse DOIT ouvrir mot pour mot. Si le
+   *  modèle tronque ou omet, enforceOpening répare côté serveur. */
+  mandatoryOpening?: string | null
 }
 
 export interface BrainOk {
@@ -900,7 +954,8 @@ export async function runBrain(
   }
 
   const rawReply: string = data.choices?.[0]?.message?.content || ''
-  const reply = clampResponse(rawReply, maxChars)
+  const clamped = clampResponse(rawReply, maxChars)
+  const reply = enforceOpening(clamped, cfg.mandatoryOpening ?? null)
   const usage = data.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
 
   return {
@@ -908,6 +963,32 @@ export async function runBrain(
     attempts: fetched.attempts, casquette: ctx.casquette.casquette,
     provider: fetched.provider, model: fetched.model,
   }
+}
+
+/**
+ * Garantit que la réponse commence par la phrase officielle attendue
+ * (annonce de règle ou de transition Joker). Si le modèle a tronqué
+ * la première lettre (bug observé en prod : "a checklist" au lieu de
+ * "Ta checklist"), on la remet. Si le modèle a complètement ignoré
+ * l'instruction, on préfixe la réponse par la phrase + un espace.
+ *
+ * Testé indirectement via les tests Joker et les annonces de règles ;
+ * exporté pour pouvoir le tester directement.
+ */
+export function enforceOpening(reply: string, expected: string | null): string {
+  if (!expected) return reply
+  const trimmed = reply.trimStart()
+  if (trimmed.startsWith(expected)) return reply
+  // Cas prod : "a checklist…" au lieu de "Ta checklist…" (ou autre
+  // tronquage initial jusqu'à 3 caractères).
+  for (let drop = 1; drop <= 3; drop++) {
+    const tail = expected.slice(drop)
+    if (tail.length > 15 && trimmed.startsWith(tail)) {
+      return expected.slice(0, drop) + reply.slice(reply.indexOf(tail))
+    }
+  }
+  // Pire : le modèle a complètement ignoré. On préfixe.
+  return expected + ' ' + reply
 }
 
 /** Plafonne l'historique à un budget approximé en tokens (FR : 1 tok

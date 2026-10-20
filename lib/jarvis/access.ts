@@ -34,6 +34,24 @@ function parseAllowedEmails(): Set<string> {
   )
 }
 
+/** Normalisation robuste (strip guillemets, trim, lowercase) — doit
+ *  rester identique à reset-session/route.ts. */
+function normalizeEmail(raw: string): string {
+  return raw.trim().replace(/^["']+|["']+$/g, '').trim().toLowerCase()
+}
+
+function parseTesters(): Set<string> {
+  const raw = (process.env.JARVIS_TESTERS || '').trim()
+  const unquoted = raw.replace(/^["']+|["']+$/g, '')
+  return new Set(unquoted.split(',').map(normalizeEmail).filter(Boolean))
+}
+
+/** Vrai si l'email appartient à la liste JARVIS_TESTERS. Pur, zéro I/O. */
+export function isTesterEmail(email: string | null | undefined): boolean {
+  if (!email) return false
+  return parseTesters().has(normalizeEmail(email))
+}
+
 /**
  * Pour les Server Components / pages Next : retourne `null` si l'accès
  * est refusé — l'appelant appelle `notFound()` du module `next/navigation`.

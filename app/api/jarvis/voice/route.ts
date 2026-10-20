@@ -6,16 +6,21 @@ import {
   buildQuotaResponse,
   buildProviderErrorResponse,
 } from '@/lib/ai/quota'
-import { requireJarvisAccessFast } from '@/lib/jarvis/access'
+import { requireJarvisAccessFast, isTesterEmail } from '@/lib/jarvis/access'
+import type { Casquette } from '@/lib/jarvis/casquette'
+
+const VALID_CASQUETTES = new Set<Casquette>([
+  'marché-fermé', 'hors-session', 'MANAGER', 'ANALYSTE', 'TRADER', 'COMPTABLE',
+])
 import {
   prepareContext, runBrain, detectDetailRequested,
-  snapshotSession, buildSessionDirective,
+  snapshotSession, buildSessionDirective, buildAntiRepetitionAddendum,
   type ChatMessage, type SessionEventRow,
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
 import { insertTrade, insertRuleTriggered, insertJokerState } from '@/lib/jarvis/session-write'
 import { getMarketBlock, needsMarketContext } from '@/lib/jarvis/market-context'
-import { advanceJokerState, getCurrentJokerContext, READY_MESSAGE } from '@/lib/jarvis/joker'
+import { advanceJokerState, getCurrentJokerContext, JOKER_ANNOUNCE } from '@/lib/jarvis/joker'
 import { synthesizeSpeech } from '@/lib/jarvis/elevenlabs'
 import { pronounceForVoice } from '@/lib/jarvis/pronunciation'
 import { numbersToWords } from '@/lib/jarvis/voice-numbers'
@@ -121,6 +126,15 @@ export async function POST(request: Request) {
     const ctx = await prepareContext(userId, email)
     timings.context = Math.round(performance.now() - t_ctxStart)
 
+    // 3F-CORRECTIF — forceCasquette (testeurs uniquement).
+    const forceCasquetteRaw = (form.get('forceCasquette') as string | null) || ''
+    if (forceCasquetteRaw && isTesterEmail(email)) {
+      const fc = forceCasquetteRaw as Casquette
+      if (VALID_CASQUETTES.has(fc)) {
+        ctx.casquette.casquette = fc
+      }
+    }
+
     // ─── Phase 2 : quota lancé en parallèle de TOUT le chemin critique ───
     // On n'attend sa réponse qu'avant la synthèse vocale (étape coûteuse).
     // Si refus : on jette transcription + brain (déjà payés) et on
@@ -181,9 +195,14 @@ export async function POST(request: Request) {
       && detection.trade.result_r == null
       && detection.trade.result_usd != null
 
+    const priorAssistantText = history
+      .filter(m => m.role === 'assistant').map(m => m.content).join(' ')
+    const riskHint = detection.kind === 'trade' ? detection.trade.risk_per_trade_hint ?? null : null
     const directive = buildSessionDirective(
       detection.kind, snapshot, ctx.rules, tradeUsdOnly, riskAlreadyAsked,
+      { riskHint, priorAssistantText },
     )
+    const antiRep = buildAntiRepetitionAddendum(history, transcription)
 
     if (directive.triggered.length > 0) {
       after(async () => {
@@ -210,7 +229,9 @@ export async function POST(request: Request) {
       } catch (err) {
         console.error('[jarvis-voice] insertJokerState failed', err)
       }
-      if (jokerTransition.reachedReady) jokerAnnounce = READY_MESSAGE
+      // 3F-CORRECTIF : chaque transition a sa propre annonce officielle
+      // (armé / M1 / M5 / prêt), pas uniquement "ready".
+      jokerAnnounce = JOKER_ANNOUNCE[jokerTransition.next]
     }
     if (jokerTransition.outOfOrder) jokerOutOfOrder = true
 
@@ -224,12 +245,17 @@ export async function POST(request: Request) {
     // Addendum Joker injecté dans extraSystem si pertinent
     let jokerAddendum: string | null = null
     if (jokerAnnounce) {
-      jokerAddendum = `MODE JOKER — Checklist complète. Commence ta réponse par EXACTEMENT cette phrase, sans la modifier :\n\n${READY_MESSAGE}\n\nPuis au plus UNE phrase courte, sans donner de signal ni de niveau.`
+      const canInvite = jokerTransition.next === 'ready'
+      jokerAddendum = `MODE JOKER — Commence TA réponse par EXACTEMENT ces mots (reproduis à l'identique, caractère par caractère, PREMIÈRE lettre comprise, les guillemets ne font pas partie du texte) :
+
+«${jokerAnnounce}»
+
+Puis au plus UNE phrase courte qui prolonge le propos. Interdits : ${canInvite ? 'pas de signal, pas de niveau, pas de "tu peux cliquer"' : 'ne JAMAIS inviter à entrer, ne JAMAIS donner de signal ni de niveau, ne JAMAIS sauter d\'étape'}.`
     } else if (jokerOutOfOrder) {
       jokerAddendum = `MODE JOKER — Le trader a mentionné une étape plus avancée que l'étape courante. Relève-le avec douceur en UNE phrase : rappelle qu'il faut d'abord valider le CHoCH M1 avant le M5.`
     }
 
-    const extraParts = [jokerAddendum, directive.systemAddendum, marketBlock].filter(Boolean) as string[]
+    const extraParts = [jokerAddendum, directive.systemAddendum, antiRep, marketBlock].filter(Boolean) as string[]
     const extraSystem = extraParts.length > 0 ? extraParts.join('\n\n') : undefined
 
     // ─── Phase 4 : cerveau Groq ───
@@ -241,6 +267,7 @@ export async function POST(request: Request) {
       casquette: ctx.casquette.casquette,
       detailRequested,
       extraSystem,
+      mandatoryOpening: directive.announce ?? jokerAnnounce,
     })
     timings.brain = Math.round(performance.now() - t_brainStart)
     if (!brainOutcome.ok) {

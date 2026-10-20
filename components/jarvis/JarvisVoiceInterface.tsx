@@ -367,6 +367,10 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   // 3F.7 : bouton reset réservé aux testeurs
   const [isTester, setIsTester] = useState(false)
 
+  // 3F-CORRECTIF : testeurs peuvent forcer une casquette ("TRADER" à
+  // 22h pour tester les règles de session). Vide = casquette calculée.
+  const [forcedCasquette, setForcedCasquette] = useState<string>('')
+
   // 3F-ter : mode comparaison (testeurs, en mode Écrire)
   const [compareMode, setCompareMode] = useState(false)
   const [compareLoading, setCompareLoading] = useState(false)
@@ -581,7 +585,10 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
       const r = await fetch('/api/jarvis/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextHist.slice(-10) }),
+        body: JSON.stringify({
+          messages: nextHist.slice(-10),
+          ...(isTester && forcedCasquette ? { forceCasquette: forcedCasquette } : {}),
+        }),
       })
       if (!r.ok) { setError(await readAiError(r)); setLoading(false); return }
       const d = await r.json()
@@ -689,6 +696,9 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         { role: 'assistant' as const, content: e.jarvis },
       ]).slice(-10),
     ))
+    if (isTester && forcedCasquette) {
+      form.append('forceCasquette', forcedCasquette)
+    }
 
     try {
       const r = await fetch('/api/jarvis/voice', { method: 'POST', body: form })
@@ -1023,6 +1033,24 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
               {lastExchange.brain && (
                 <> · 🧠 {lastExchange.brain.provider === 'openrouter' ? 'OR' : 'Groq'} <code>{lastExchange.brain.model}</code></>
               )}
+              {isTester && (
+                <div className="jv-tester-row">
+                  <label htmlFor="jv-force-casquette">Forcer la casquette&nbsp;:</label>
+                  <select
+                    id="jv-force-casquette"
+                    value={forcedCasquette}
+                    onChange={(e) => setForcedCasquette(e.target.value)}
+                  >
+                    <option value="">auto (calculée)</option>
+                    <option value="hors-session">hors-session</option>
+                    <option value="MANAGER">MANAGER</option>
+                    <option value="ANALYSTE">ANALYSTE</option>
+                    <option value="TRADER">TRADER</option>
+                    <option value="COMPTABLE">COMPTABLE</option>
+                    <option value="marché-fermé">marché-fermé</option>
+                  </select>
+                </div>
+              )}
             </div>
           </details>
         )}
@@ -1280,6 +1308,16 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         .jv-details-body {
           padding: 6px 0; line-height: 1.5;
           font-family: ui-monospace, monospace; font-size: 10px;
+        }
+        .jv-tester-row {
+          margin-top: 8px; display: flex; align-items: center; gap: 8px;
+          font-family: var(--font-manrope), system-ui, sans-serif;
+          font-size: 11px; color: #DDB977;
+        }
+        .jv-tester-row select {
+          background: rgba(221, 185, 119, 0.08);
+          color: #E9EEEA; border: 1px solid rgba(221, 185, 119, 0.35);
+          border-radius: 4px; padding: 2px 6px; font-size: 11px;
         }
         .jv-account {
           font-size: 10px; color: #4A5852;

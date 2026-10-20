@@ -3,6 +3,7 @@ import {
   advanceJokerState,
   getCurrentJokerContext,
   READY_MESSAGE,
+  JOKER_ANNOUNCE,
   type JokerContext,
   type JokerStep,
 } from './joker'
@@ -36,6 +37,26 @@ describe('joker — armement', () => {
   it('"flux haussier sur ma FVG" → armed', () => {
     const r = advanceJokerState(ctx('inactive'), 'flux haussier sur ma FVG')
     expect(r.next).toBe('armed')
+  })
+  it('"flux baissier sur mon orderblock" (collé) → armed', () => {
+    const r = advanceJokerState(ctx('inactive'), 'flux baissier sur mon orderblock M15')
+    expect(r.next).toBe('armed')
+  })
+  it('"on arrive sur mon order block" (sans mention de flux) → armed', () => {
+    const r = advanceJokerState(ctx('inactive'), 'on arrive sur mon order block H1')
+    expect(r.next).toBe('armed')
+  })
+  it('"je suis sur ma résistance" → armed', () => {
+    const r = advanceJokerState(ctx('inactive'), 'je suis sur ma résistance D1')
+    expect(r.next).toBe('armed')
+  })
+  it('"on arrive sur mon OB avec +1R" NE doit PAS armer (trade déclaré)', () => {
+    const r = advanceJokerState(ctx('inactive'), 'on arrive sur mon OB avec +1R')
+    expect(r.next).toBe('inactive')
+  })
+  it('"j\'ai pris 450 $ sur mon OB" NE doit PAS armer (résultat)', () => {
+    const r = advanceJokerState(ctx('inactive'), "j'ai pris 450 $ sur mon OB")
+    expect(r.next).toBe('inactive')
   })
   it('phrase neutre → reste inactive', () => {
     const r = advanceJokerState(ctx('inactive'), 'je vise 2R aujourd\'hui')
@@ -92,6 +113,13 @@ describe('joker — ready', () => {
   })
   it('READY_MESSAGE est le libellé officiel mot pour mot', () => {
     expect(READY_MESSAGE).toBe("Ta checklist Joker est complète. C'est toi qui cliques, et toi seul qui décides.")
+  })
+  it('JOKER_ANNOUNCE : chaque étape active a sa phrase mot pour mot', () => {
+    expect(JOKER_ANNOUNCE.inactive).toBeNull()
+    expect(JOKER_ANNOUNCE.armed).toBe("Flux contre ta zone : mode Joker armé. Pas d'entrée avant ton CHoCH M1, puis M5.")
+    expect(JOKER_ANNOUNCE.choch_m1).toBe('CHoCH M1 validé. On attend le M5, pas avant.')
+    expect(JOKER_ANNOUNCE.choch_m5).toBe('CHoCH M5 validé. Il manque le retracement sur ta zone et ton signal.')
+    expect(JOKER_ANNOUNCE.ready).toBe(READY_MESSAGE)
   })
   it('choch_m5 + "hammer" seul (sans mention zone) → reste choch_m5', () => {
     const r = advanceJokerState(ctx('choch_m5'), 'je vois un hammer')

@@ -23,6 +23,11 @@ export interface DetectedTrade {
   side?: Side
   config?: string | null
   pending: false
+  /** 3F-CORRECTIF : le trader a énoncé son risque dans la même phrase
+   *  que le résultat ("je risque 150$ et j'ai gagné 450$"). Permet au
+   *  serveur de calculer R et de proposer une mise à jour des règles
+   *  perso si ça diffère. */
+  risk_per_trade_hint?: number
 }
 
 export type DetectionResult =
@@ -97,6 +102,56 @@ function hasIntentionSignal(t: string): boolean {
     /\bratio minimum\b/.test(t) ||
     /\?$/.test(t.trim())
   )
+}
+
+/**
+ * 3F-CORRECTIF — Cas spécial : la phrase contient le RISQUE *et* le
+ * RÉSULTAT dans la même phrase ("je risque 150$ sur un trade et j'ai
+ * gagné 450$"). On veut :
+ *   - noter le trade (+450 $),
+ *   - calculer R = 450 / 150 = +3 R,
+ *   - exposer `risk_per_trade_hint = 150` pour que le serveur
+ *     propose UNE FOIS une mise à jour des règles perso.
+ *
+ * Retourne null si la phrase ne contient PAS les deux. "je risque
+ * 150$ aujourd'hui" sans résultat → null (reste une intention).
+ */
+export function parseRiskAndResult(input: string): { risk: number; resultUsd: number; resultR: number } | null {
+  if (!input || typeof input !== 'string') return null
+  const t = normalize(input)
+
+  // Risque explicite : "je risque X $", "je mets X $ en risque",
+  // "mon risque est de X $", "risque de X $".
+  const riskRe = /(?:je\s+risque\s+|je\s+mets\s+en\s+risque\s+|mon\s+risque\s+(?:est|c'est)\s+(?:de\s+)?|risque\s+de\s+)(\d+(?:[,.]\d+)?)\s*(?:\$|dollars?|usd)?/iu
+  const mRisk = t.match(riskRe)
+  if (!mRisk) return null
+  const risk = Number(mRisk[1].replace(',', '.'))
+  if (!Number.isFinite(risk) || risk <= 0) return null
+
+  // Résultat : "gagné X $", "pris X $", "perdu X $", "+X $", "-X $"
+  // On fait un pass dédié qui ignore volontairement le "je risque X $"
+  // (déjà consommé).
+  const afterRisk = t.slice((mRisk.index ?? 0) + mRisk[0].length)
+  const win = afterRisk.match(/(?<![\p{L}])(gagné|pris|fait|empoch[ée]|encaissé)\s+(\d+(?:[,.]\d+)?)\s*(?:\$|dollars?|usd)?(?![\p{L}])/iu)
+  const lose = afterRisk.match(/(?<![\p{L}])(perdu|cram[ée]|lâch[ée])\s+(\d+(?:[,.]\d+)?)\s*(?:\$|dollars?|usd)?(?![\p{L}])/iu)
+  const signed = afterRisk.match(new RegExp(
+    `(${SIGN_CHAR_CLASS})\\s*(\\d+(?:[,.]\\d+)?)\\s*(?:\\$|dollars?|usd)(?![\\p{L}])`, 'iu'))
+  const stopped = /(?<![\p{L}])(stopp(?:er|é|ée|és|ées|e)|stop touch[ée]|sl touch[ée]|fait stopper)(?![\p{L}])/iu.test(afterRisk)
+  const be = /(?<![\p{L}])(be|break[- ]?even|financée?)(?![\p{L}])/iu.test(afterRisk)
+
+  let resultUsd: number | null = null
+  if (win) resultUsd = Number(win[2].replace(',', '.'))
+  else if (lose) resultUsd = -Number(lose[2].replace(',', '.'))
+  else if (signed) {
+    const sign = signed[1] === '+' ? 1 : -1
+    resultUsd = sign * Number(signed[2].replace(',', '.'))
+  } else if (stopped) resultUsd = -risk // approx : trade stoppé → -1R → -risk
+  else if (be) resultUsd = 0
+
+  if (resultUsd == null || !Number.isFinite(resultUsd)) return null
+
+  const resultR = risk > 0 ? Number((resultUsd / risk).toFixed(2)) : 0
+  return { risk, resultUsd, resultR }
 }
 
 // ─── Patterns de résultat chiffré ───────────────────────────────────
@@ -251,6 +306,25 @@ export function detectTradeEvent(input: string): DetectionResult {
   if (!input || typeof input !== 'string') return { kind: 'none' }
   const t = normalize(input)
   if (!t) return { kind: 'none' }
+
+  // 0) Cas spécial 3F-CORRECTIF : phrase "je risque X $ ET j'ai gagné
+  //    Y $" → on bypasse hasIntentionSignal (qui bloquerait "je
+  //    risque"), on note le trade et on expose le risque en hint.
+  const combined = parseRiskAndResult(input)
+  if (combined) {
+    return {
+      kind: 'trade',
+      trade: {
+        result_r:   combined.resultR,
+        result_usd: combined.resultUsd,
+        instrument: detectInstrument(t),
+        side:       detectSide(t),
+        config:     detectConfig(t),
+        pending:    false,
+        risk_per_trade_hint: combined.risk,
+      },
+    }
+  }
 
   // 1) Garde-fou : signaux d'intention/question → NONE
   if (hasIntentionSignal(t)) return { kind: 'none' }
