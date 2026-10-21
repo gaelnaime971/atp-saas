@@ -466,6 +466,8 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const [recording, setRecording] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [error, setError] = useState<AiErrorInfo | null>(null)
+  // 3G-CORRECTIF — "Je n'ai rien entendu, réessaie." (silence/fantôme).
+  const [emptyMessage, setEmptyMessage] = useState<string | null>(null)
   const [casquetteInfo, setCasquetteInfo] = useState<CasquetteInfo | null>(null)
   const [currentCallsToday, setCurrentCallsToday] = useState<number | null>(null)
   const [currentCallsLimit, setCurrentCallsLimit] = useState<number | null>(null)
@@ -735,6 +737,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
     setInput('')
     setLoading(true)
     setError(null)
+    setEmptyMessage(null)
     const t0 = performance.now()
     try {
       const r = await fetch('/api/jarvis/chat', {
@@ -773,6 +776,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const startRecord = useCallback(async () => {
     if (loading || recording) return
     setError(null)
+    setEmptyMessage(null)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
@@ -885,6 +889,15 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
       let momentFromResp: MomentPayload | null = null
       if (ct.startsWith('application/json')) {
         const d = await r.json()
+        // 3G-CORRECTIF — Transcription vide / fantôme Whisper : pas
+        // d'échange, pas de voix, quota déjà remboursé côté serveur.
+        if (d.empty) {
+          if (typeof d.callsToday === 'number') setCurrentCallsToday(d.callsToday)
+          if (typeof d.callsLimit === 'number') setCurrentCallsLimit(d.callsLimit)
+          setEmptyMessage(typeof d.message === 'string' ? d.message : "Je n'ai rien entendu, réessaie.")
+          setLoading(false)
+          return
+        }
         transcription = d.transcription || ''
         reply = d.reply || ''
         server = d.timings; retries = d.retries
@@ -1173,6 +1186,9 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         <div className={`jv-counter ${remaining.cls}`}>{remaining.label || '—'}</div>
 
         {error && <div className="jv-error-wrap"><AiErrorBanner error={error} compact /></div>}
+        {emptyMessage && !error && (
+          <div className="jv-empty-wrap" role="status" aria-live="polite">{emptyMessage}</div>
+        )}
 
         <div className="jv-actions">
           <button
@@ -1526,6 +1542,13 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         /* Stepper Joker : styles portés par le composant JokerStepper
            (styled-jsx est scopé par composant). */
         .jv-error-wrap { width: 100%; max-width: 340px; }
+        .jv-empty-wrap {
+          width: 100%; max-width: 340px;
+          font-family: var(--font-manrope), system-ui, sans-serif;
+          font-size: 13px; color: #9FB0A6;
+          border: 1px dashed #2A3A31; border-radius: 10px;
+          padding: 10px 14px; text-align: center;
+        }
         .jv-actions { padding: 4px 0; }
         .jv-btn {
           font-family: var(--font-oxanium), system-ui, sans-serif;

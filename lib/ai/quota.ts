@@ -177,6 +177,52 @@ export async function checkAndCount(
   }
 }
 
+/**
+ * 3G-CORRECTIF — Rembourse un appel déjà compté par checkAndCount.
+ * Utilisé par /api/jarvis/voice quand la transcription est rejetée
+ * (silence ou fantôme Whisper) : le compteur a déjà été incrémenté
+ * en parallèle de la transcription, on le remet à zéro ici.
+ *
+ * Décrémente `calls_count` d'1 sur la ligne du jour (sans jamais
+ * descendre sous 0). Service role → bypass RLS.
+ * Fail silencieux : logue, mais ne jamais faire tomber la route.
+ */
+export async function refundQuotaCall(
+  userId: string,
+  feature: AiFeature,
+): Promise<void> {
+  const mode = getQuotaMode()
+  if (mode === 'off') return
+  try {
+    const supabase = serviceRoleClient()
+    // On lit, puis on écrit — pas d'atomicité stricte mais c'est OK :
+    // c'est un remboursement, pire scénario une décrémentation est
+    // perdue (le user "sur-paye" d'1 appel). Jamais de double-remb.
+    const { data } = await supabase
+      .from('ai_usage')
+      .select('calls_count')
+      // date Paris = colonne usage_date avec default _atp_today_paris()
+      // La ligne du jour est garantie d'exister car checkAndCount
+      // vient de l'upsert.
+      .eq('user_id', userId)
+      .eq('feature', feature)
+      .order('usage_date', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const current = Number((data as { calls_count?: number } | null)?.calls_count ?? 0)
+    if (current <= 0) return
+    const { error } = await supabase
+      .from('ai_usage')
+      .update({ calls_count: current - 1 })
+      .eq('user_id', userId)
+      .eq('feature', feature)
+      .gte('calls_count', 1)
+    if (error) console.error('[ai-quota] refundQuotaCall failed', { feature, userId, error })
+  } catch (err) {
+    console.error('[ai-quota] refundQuotaCall unexpected error', { feature, userId, err })
+  }
+}
+
 function handleFail(
   feature: AiFeature,
   failMode: 'open' | 'closed',

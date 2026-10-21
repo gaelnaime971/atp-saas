@@ -3,9 +3,11 @@ import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 import {
   checkAndCount,
   recordUsage,
+  refundQuotaCall,
   buildQuotaResponse,
   buildProviderErrorResponse,
 } from '@/lib/ai/quota'
+import { classifyWhisperOutput } from '@/lib/jarvis/whisper-ghost'
 import { requireJarvisAccessFast, isTesterEmail } from '@/lib/jarvis/access'
 import type { Casquette } from '@/lib/jarvis/casquette'
 
@@ -43,6 +45,16 @@ interface WhisperResult {
   text: string
   ms: number
   attempts: number
+  /** no_speech_prob moyen sur les segments (0-1). null si indisponible. */
+  noSpeechProb: number | null
+}
+
+/** 3G-CORRECTIF — réponse Whisper verbose_json : contient `segments[]`
+ *  dont chacun porte `no_speech_prob`. On en prend le max (pessimiste :
+ *  si un seul segment est silencieux, c'est suspect). */
+interface WhisperVerboseResponse {
+  text?: string
+  segments?: Array<{ no_speech_prob?: number }>
 }
 
 async function transcribeAudio(file: File, apiKey: string): Promise<WhisperResult | { error: string; status: number }> {
@@ -52,7 +64,8 @@ async function transcribeAudio(file: File, apiKey: string): Promise<WhisperResul
     form.append('model', WHISPER_MODEL)
     form.append('language', 'fr')
     form.append('prompt', WHISPER_PROMPT)
-    form.append('response_format', 'json')
+    // verbose_json → segments[] avec no_speech_prob (anti-fantômes).
+    form.append('response_format', 'verbose_json')
     form.append('temperature', '0')
     return fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
@@ -85,8 +98,11 @@ async function transcribeAudio(file: File, apiKey: string): Promise<WhisperResul
     const body = await r.text().catch(() => '')
     return { error: body.slice(0, 200) || `HTTP ${r.status}`, status: r.status }
   }
-  const data = await r.json() as { text?: string }
-  return { text: (data.text || '').trim(), ms, attempts }
+  const data = await r.json() as WhisperVerboseResponse
+  const segments = Array.isArray(data.segments) ? data.segments : []
+  const probs = segments.map(s => Number(s.no_speech_prob)).filter(n => Number.isFinite(n))
+  const noSpeechProb = probs.length > 0 ? Math.max(...probs) : null
+  return { text: (data.text || '').trim(), ms, attempts, noSpeechProb }
 }
 
 /** Encode une chaîne en base64url pour la glisser dans un header HTTP
@@ -161,12 +177,39 @@ export async function POST(request: Request) {
         status: whisper.status, detail: whisper.error,
       })
     }
-    const transcription = whisper.text
-    if (!transcription) {
-      quotaPromise.catch(() => {})
-      console.warn('[jarvis-voice-perf]', { userId, event: 'empty_transcription', timings, retries })
-      return NextResponse.json({ error: 'transcription vide', timings }, { status: 422 })
+    // 3G-CORRECTIF — Filtre anti-fantômes Whisper : silence (durée
+    // < 1 s), no_speech_prob élevé, texte reconnu comme fantôme
+    // ("Réalisé par Neo035", "Sous-titres…", "Abonnez-vous"…). Dans
+    // ce cas : rembourse le quota (compté en parallèle), pas d'appel
+    // cerveau, pas de TTS, UI affiche "Je n'ai rien entendu…".
+    const classified = classifyWhisperOutput({
+      text: whisper.text,
+      durationSec,
+      noSpeechProb: whisper.noSpeechProb,
+    })
+    if (classified.kind === 'empty') {
+      // Attendre le quota pour avoir une ligne à décrémenter, puis
+      // rembourser l'appel qui ne sera pas effectivement utilisé.
+      const quota = await quotaPromise
+      if (quota.allowed) await refundQuotaCall(userId, 'jarvis')
+      console.warn('[jarvis-voice-perf]', {
+        userId, event: 'empty_transcription',
+        reason: classified.reason,
+        ghostText: whisper.text.slice(0, 80),
+        durationSec, noSpeechProb: whisper.noSpeechProb,
+        timings, retries,
+      })
+      return NextResponse.json({
+        empty: true,
+        reason: classified.reason,
+        message: "Je n'ai rien entendu, réessaie.",
+        timings,
+        // On renvoie le compteur post-remboursement pour que l'UI reste synchro.
+        callsToday: Math.max(0, quota.callsToday - 1),
+        callsLimit: quota.callsLimit,
+      }, { status: 200 })
     }
+    const transcription = classified.text
 
     // ─── Phase 3.5 : détection event déterministe (AVANT cerveau) ───
     //
