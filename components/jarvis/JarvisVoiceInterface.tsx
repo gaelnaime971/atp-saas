@@ -137,7 +137,14 @@ interface SessionPayload {
   joker?: JokerStatus
 }
 
-interface BrainInfo { provider: 'openrouter' | 'groq'; model: string }
+interface BrainInfo {
+  provider: 'openrouter' | 'groq'
+  model: string
+  /** 3G-CORRECTIF : cause lisible du secours Groq ("reasoning refusé
+   *  par le modèle", "crédits OpenRouter épuisés", "timeout"…). null
+   *  si OpenRouter a répondu. */
+  fallbackCause?: string | null
+}
 
 // 3G — Payload "moment" renvoyé par le serveur (chat JSON + voice header)
 interface MomentPayload {
@@ -161,6 +168,8 @@ interface MomentPayload {
     side?: 'long' | 'short'
   }>
   announcedKeys: RuleKey[]
+  primaryMessage: string | null
+  consecutiveLosses: number
 }
 
 interface Exchange {
@@ -196,52 +205,55 @@ function triggeredMissionFresh(prev: ReadonlyArray<RuleKey>, next: ReadonlyArray
 /** 3G — Données d'exemple pour l'aperçu testeur (aucune I/O, aucun DB). */
 function buildPreviewMoment(kind: MomentKind, nowISO: string, openISO: string): MomentPayload {
   const t0 = new Date(openISO).getTime()
-  if (kind === 'avant_open') {
-    return {
-      openISO,
-      routine: { filled: false, confidence: null },
-      rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true },
-      trades: [],
-      announcedKeys: [],
-    }
+  const BASE_RULES = { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true }
+  const EMPTY: MomentPayload = {
+    openISO, routine: { filled: false, confidence: null }, rules: BASE_RULES,
+    trades: [], announcedKeys: [], primaryMessage: null, consecutiveLosses: 0,
   }
+  if (kind === 'avant_open') return EMPTY
   if (kind === 'stop') {
     return {
       openISO,
       routine: { filled: true, confidence: 6 },
-      rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true },
+      rules: BASE_RULES,
       trades: [
         { at: new Date(t0 + 10 * 60_000).toISOString(), result_r: -1, result_usd: -150 },
         { at: new Date(t0 + 40 * 60_000).toISOString(), result_r: -1, result_usd: -150 },
         { at: new Date(t0 + 70 * 60_000).toISOString(), result_r: -1, result_usd: -150 },
       ],
       announcedKeys: ['three_losses'],
+      primaryMessage: "Trois pertes d'affilée : stop pour aujourd'hui. Ce n'est pas ton jour, et ce n'est pas grave.",
+      consecutiveLosses: 3,
     }
   }
   if (kind === 'mission') {
     return {
       openISO,
       routine: { filled: true, confidence: 8 },
-      rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true },
+      rules: BASE_RULES,
       trades: [
         { at: new Date(t0 + 15 * 60_000).toISOString(), result_r: 3, result_usd: 450, instrument: 'NQ', side: 'long' },
       ],
       announcedKeys: ['target_reached'],
+      primaryMessage: 'Plus 3 R : objectif atteint. Mission du jour accomplie, on coupe.',
+      consecutiveLosses: 0,
     }
   }
   if (kind === 'session') {
     return {
       openISO,
       routine: { filled: true, confidence: 7 },
-      rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true },
+      rules: BASE_RULES,
       trades: [
         { at: new Date(t0 + 6 * 60_000).toISOString(),  result_r: 1,  result_usd: 150,  instrument: 'NQ', side: 'long' },
         { at: new Date(t0 + 24 * 60_000).toISOString(), result_r: -1, result_usd: -150, instrument: 'NQ', side: 'short' },
       ],
       announcedKeys: [],
+      primaryMessage: null,
+      consecutiveLosses: 1,
     }
   }
-  return { openISO, routine: { filled: false, confidence: null }, rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true }, trades: [], announcedKeys: [] }
+  return EMPTY
 }
 function JokerStepper({ step }: { step: JokerStep }) {
   // Les 3 étapes du suivi
@@ -988,11 +1000,18 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const openCue = formatOpenCue(casquetteInfo)
 
   // 3G — Moment courant. Aperçu testeur override tout.
+  // En preview avant_open : on simule "Open dans 12 min" (openISO
+  // calé à now+12 min, countdown à 12/45). En réel, le moment
+  // avant_open n'existe qu'entre T-45 et T-0 (pickMoment filtre).
   const nowISO = new Date().toISOString()
-  const previewOpenISO = moment?.openISO || new Date(Date.now() + 15 * 60_000).toISOString()
+  const PREVIEW_MINUTES_TO_OPEN = 12
+  const previewOpenISO = previewMoment === 'avant_open'
+    ? new Date(Date.now() + PREVIEW_MINUTES_TO_OPEN * 60_000).toISOString()
+    : (moment?.openISO || new Date(Date.now() + 15 * 60_000).toISOString())
   const effectiveMoment: MomentPayload | null = previewMoment
     ? buildPreviewMoment(previewMoment, nowISO, previewOpenISO)
     : moment
+  const previewMinutesToOpen = previewMoment === 'avant_open' ? PREVIEW_MINUTES_TO_OPEN : null
   const jokerStep = (lastExchange?.session?.joker?.step ?? 'inactive') as JokerStep
   const momentKind: MomentKind = previewMoment
     ? previewMoment
@@ -1008,7 +1027,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
 
   // Dernier message mission → burst (déjà géré par missionBurstToken).
   const momentData = effectiveMoment ? {
-    minutesToOpen: casquetteInfo?.minutesToOpen ?? null,
+    minutesToOpen: previewMinutesToOpen ?? casquetteInfo?.minutesToOpen ?? null,
     routine: effectiveMoment.routine,
     tradesCount: previewMoment
       ? effectiveMoment.trades.length
@@ -1021,8 +1040,11 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
       : (lastExchange?.session?.state.usdSum ?? 0),
     rules: effectiveMoment.rules,
     announcedKeys: effectiveMoment.announcedKeys,
-    triggeredMessage: lastExchange?.session?.triggered?.[0]?.message ?? null,
-    consecutiveLosses: 0, // calculé côté serveur, non exposé pour l'instant
+    // 3G-CORRECTIF — primaryMessage calculé serveur (phrase officielle
+    // interpolée avec R/N courants) ; fresh trigger de l'échange prime
+    // (c'est l'annonce qui vient de tomber), sinon fallback sur primary.
+    triggeredMessage: lastExchange?.session?.triggered?.[0]?.message ?? effectiveMoment.primaryMessage ?? null,
+    consecutiveLosses: effectiveMoment.consecutiveLosses,
   } : null
 
   const ui = (
@@ -1049,7 +1071,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
             <MomentOverlay
               kind={momentKind}
               size={240}
-              minutesToOpen={casquetteInfo?.minutesToOpen ?? null}
+              minutesToOpen={previewMinutesToOpen ?? casquetteInfo?.minutesToOpen ?? null}
               trades={effectiveMoment.trades}
               openISO={effectiveMoment.openISO}
               nowISO={nowISO}
@@ -1263,7 +1285,11 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
               })()}
               {lastExchange.cacheHits && lastExchange.cacheHits.length > 0 && <> · 💾 {lastExchange.cacheHits.join('+')}</>}
               {lastExchange.brain && (
-                <> · 🧠 {lastExchange.brain.provider === 'openrouter' ? 'OR' : 'Groq'} <code>{lastExchange.brain.model}</code></>
+                <> · 🧠 {lastExchange.brain.provider === 'openrouter' ? 'OR' : 'Groq'} <code>{lastExchange.brain.model}</code>
+                  {lastExchange.brain.provider === 'groq' && lastExchange.brain.fallbackCause && (
+                    <> · <span className="jv-fallback-cause">secours Groq : {lastExchange.brain.fallbackCause}</span></>
+                  )}
+                </>
               )}
               {isTester && (
                 <>
@@ -1598,6 +1624,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           padding: 6px 0; line-height: 1.5;
           font-family: ui-monospace, monospace; font-size: 10px;
         }
+        .jv-fallback-cause { color: #F2994A; }
         .jv-tester-row {
           margin-top: 8px; display: flex; align-items: center; gap: 8px;
           font-family: var(--font-manrope), system-ui, sans-serif;

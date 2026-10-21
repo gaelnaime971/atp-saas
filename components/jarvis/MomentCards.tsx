@@ -82,12 +82,12 @@ export function MomentCard({ kind, data, previewBadge, sessionExpanded, onToggle
     return (
       <div className="jv-moment jv-moment-stop">
         {previewBadge && <PreviewBadge />}
-        <div className="jv-moment-head">
-          <span className="jv-moment-eyebrow" aria-hidden="true">🔒</span>
+        <div className="jv-moment-head jv-moment-head-left">
+          <span className="jv-moment-lock" aria-hidden="true">🔒</span>
           <span className="jv-moment-title">{title}</span>
         </div>
         {data.triggeredMessage && (
-          <div className="jv-moment-body">{data.triggeredMessage}</div>
+          <div className="jv-moment-body jv-moment-rule">{data.triggeredMessage}</div>
         )}
         <div className="jv-moment-stats">
           <Stat label="Trades" value={`${data.tradesCount} / ${data.rules.max_trades}`} />
@@ -193,6 +193,14 @@ const STYLES = `
   .jv-moment-head {
     display: flex; align-items: baseline; justify-content: space-between;
     gap: 8px; margin-bottom: 6px;
+  }
+  .jv-moment-head-left {
+    justify-content: flex-start; align-items: center;
+  }
+  .jv-moment-lock { font-size: 16px; line-height: 1; color: #F2994A; }
+  .jv-moment-rule {
+    color: #E9EEEA; font-weight: 500;
+    margin: 4px 0 2px; font-size: 13px;
   }
   .jv-moment-eyebrow {
     font-family: var(--font-oxanium), system-ui, sans-serif;

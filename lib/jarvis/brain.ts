@@ -31,6 +31,7 @@ import {
   evaluateRules,
   wasAlreadyAnnounced,
   pickPrimaryTrigger,
+  resolveMessage,
   type TraderRules,
   type TradeEvent,
   type RuleKey,
@@ -102,10 +103,18 @@ export interface MomentPayload {
     side?: 'long' | 'short'
   }>
   announcedKeys: RuleKey[]
+  /** 3G-CORRECTIF — Phrase officielle (interpolée R/N) de la règle
+   *  prioritaire déjà annoncée (stop ou mission). null si rien n'a
+   *  été annoncé aujourd'hui. Affichée sous le titre de la carte. */
+  primaryMessage: string | null
+  /** Pertes consécutives (sortie du moteur d'état). Affichée dans la
+   *  carte Stop. */
+  consecutiveLosses: number
 }
 
 export function buildMomentPayload(ctx: JarvisContext): MomentPayload {
-  const trades = eventsToTrades(ctx.events).map(t => ({
+  const tradeEvents = eventsToTrades(ctx.events)
+  const trades = tradeEvents.map(t => ({
     at: t.at.toISOString(),
     result_r: t.result_r,
     result_usd: t.result_usd,
@@ -114,6 +123,14 @@ export function buildMomentPayload(ctx: JarvisContext): MomentPayload {
   }))
   const announcedKeys = eventsToAnnounced(ctx.events).map(a => a.key)
   const r = ctx.rules
+  const state = computeSessionState(tradeEvents, ctx.rules)
+  // 3G-CORRECTIF — Priorité d'annonce = celle du moteur de règles
+  // (target_reached > first_win > ...). Pour chaque message, on
+  // interpole R/N depuis l'état courant.
+  const announcedTriggered: TriggeredRule[] = announcedKeys.map(key => ({
+    key, message: resolveMessage(key, state), blocking: false,
+  }))
+  const primary = pickPrimaryTrigger(announcedTriggered)
   return {
     openISO: ctx.casquette.usOpenParisISO ?? null,
     routine: {
@@ -132,6 +149,8 @@ export function buildMomentPayload(ctx: JarvisContext): MomentPayload {
     },
     trades,
     announcedKeys,
+    primaryMessage: primary ? primary.message : null,
+    consecutiveLosses: state.consecutiveLosses,
   }
 }
 
@@ -770,12 +789,25 @@ function jaccardWords(a: string, b: string): number {
 // Groq. Si OpenRouter répond rapidement, Groq n'est jamais appelé.
 
 // Deux cerveaux :
-//   LIVE  = casquette TRADER (vitesse d'abord)  → gpt-oss-120b:nitro
-//           (3F-CORRECTIF-2 : mode Nitro OpenRouter = fournisseur le
-//           plus rapide, latence TTFB réduite en session TRADER)
+//   LIVE  = casquette TRADER (vitesse d'abord)  → gpt-oss-120b
+//           (3G-CORRECTIF : le suffixe ":nitro" + le champ `reasoning`
+//           cassaient OpenRouter → bascule systématique sur Groq. On
+//           garde le slug nu et on demande "fournisseur le plus
+//           rapide" via `provider.sort = 'throughput'` ; le champ
+//           `reasoning` n'est envoyé qu'aux modèles qui l'implémentent.)
 //   DEEP  = tout le reste (profondeur d'abord)  → claude-sonnet-5
-const DEFAULT_BRAIN_LIVE = 'openai/gpt-oss-120b:nitro'
+const DEFAULT_BRAIN_LIVE = 'openai/gpt-oss-120b'
 const DEFAULT_BRAIN_DEEP = 'anthropic/claude-sonnet-5'
+
+/** Modèles qui supportent le champ unifié `reasoning: { effort }` sur
+ *  OpenRouter (Anthropic, modèles de "thinking" OpenAI/Google). Les
+ *  OSS/instruct classiques (gpt-oss, llama…) renvoient 400 si on l'envoie. */
+function supportsReasoning(model: string): boolean {
+  if (/^anthropic\/claude-/.test(model)) return true
+  if (/^openai\/(o\d|gpt-5)/.test(model)) return true
+  if (/^google\/gemini-.*(flash|pro)/.test(model)) return true
+  return false
+}
 
 export function getBrainModel(casquette?: Casquette): string {
   if (casquette === 'TRADER') {
@@ -818,13 +850,22 @@ async function tryOpenRouter(
   const model = getBrainModel(casquette)
   const reasoningEffort = casquette === 'TRADER' ? 'low' : 'medium'
 
-  const payload = {
-    ...basePayload,
-    model,
-    reasoning: { effort: reasoningEffort },
+  const payload: Record<string, unknown> = { ...basePayload, model }
+  // Casquette TRADER = latence prioritaire → on demande à OpenRouter
+  // le fournisseur avec le meilleur débit (équivalent `:nitro` dans
+  // le slug, mais exprimé proprement et combinable avec `reasoning`).
+  if (casquette === 'TRADER') {
+    payload.provider = { sort: 'throughput' }
   }
-  delete (payload as Record<string, unknown>).reasoning_effort
-  delete (payload as Record<string, unknown>).reasoning_format
+  // Le champ `reasoning` n'est accepté QUE par les modèles qui
+  // l'implémentent (Anthropic, GPT thinking, Gemini). Pour un OSS
+  // classique (gpt-oss, llama…), OpenRouter renvoie 400 — c'est la
+  // cause du secours Groq systématique en 3G.
+  if (supportsReasoning(model)) {
+    payload.reasoning = { effort: reasoningEffort }
+  }
+  delete payload.reasoning_effort
+  delete payload.reasoning_format
 
   return fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -837,6 +878,34 @@ async function tryOpenRouter(
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(timeoutMs),
   })
+}
+
+/**
+ * 3G-CORRECTIF — Traduit une erreur OpenRouter en libellé court et
+ * lisible pour l'UI ("secours Groq : <cause>"). Pur, aucune I/O.
+ */
+export function openrouterCauseLabel(err: { status: number; detail: unknown } | undefined): string {
+  if (!err) return 'inconnue'
+  const { status, detail } = err
+  const detailStr = typeof detail === 'string'
+    ? detail
+    : (detail && typeof detail === 'object' && 'error' in (detail as Record<string, unknown>))
+      ? JSON.stringify((detail as { error: unknown }).error)
+      : JSON.stringify(detail ?? {})
+  const d = detailStr.toLowerCase()
+  if (status === 0) {
+    if (d.includes('timeout') || d.includes('abort')) return 'timeout OpenRouter'
+    return 'réseau OpenRouter indisponible'
+  }
+  if (status === 401 || /invalid.*api.*key|unauthorized/.test(d)) return 'clé OpenRouter refusée'
+  if (status === 402 || /insufficient.*credit|credit.*exhaust/.test(d)) return 'crédits OpenRouter épuisés'
+  if (status === 403 && /privacy|data policy/.test(d)) return 'confidentialité OpenRouter (opt-in requis)'
+  if (status === 404 || /model.*not.*found|no.*endpoints/.test(d)) return 'modèle OpenRouter introuvable'
+  if (status === 400 && /reasoning/.test(d)) return 'reasoning refusé par le modèle'
+  if (status === 400) return 'requête OpenRouter refusée (400)'
+  if (status === 429) return 'limite OpenRouter atteinte'
+  if (status >= 500) return `panne OpenRouter (${status})`
+  return `OpenRouter HTTP ${status}`
 }
 
 async function tryGroq(basePayload: Record<string, unknown>): Promise<Response | null> {
@@ -941,6 +1010,10 @@ export interface BrainOk {
   provider: 'openrouter' | 'groq'
   /** Slug exact utilisé (ex: anthropic/claude-sonnet-5 ou openai/gpt-oss-120b). */
   model: string
+  /** 3G-CORRECTIF : si secours Groq utilisé, cause lisible pour l'UI
+   *  (ex: "reasoning refusé par le modèle", "crédits OpenRouter
+   *  épuisés", "timeout"). null si OpenRouter a répondu. */
+  fallbackCause: string | null
 }
 
 export interface BrainErr {
@@ -1026,6 +1099,7 @@ export async function runBrain(
     ok: true, reply, usage, groqMs,
     attempts: fetched.attempts, casquette: ctx.casquette.casquette,
     provider: fetched.provider, model: fetched.model,
+    fallbackCause: fetched.usedFallback ? openrouterCauseLabel(fetched.openrouterError) : null,
   }
 }
 

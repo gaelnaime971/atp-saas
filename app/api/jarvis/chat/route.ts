@@ -235,7 +235,7 @@ export async function POST(request: Request) {
       callsLimit: quota.callsLimit,
       timings,
       cacheHits: ctx.cacheHits,
-      brain: { provider: brainOutcome.provider, model: brainOutcome.model },
+      brain: { provider: brainOutcome.provider, model: brainOutcome.model, fallbackCause: brainOutcome.fallbackCause },
       session: {
         state: {
           tradesCount: snapshot.state.tradesCount,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { stripAnnouncement, buildAntiRepetitionAddendum, applyGoldenRuleGuard, applyJokerCodeFaitFoiGuard } from './brain'
+import { stripAnnouncement, buildAntiRepetitionAddendum, applyGoldenRuleGuard, applyJokerCodeFaitFoiGuard, openrouterCauseLabel } from './brain'
 
 describe('stripAnnouncement — 3F-correctif-2 : code place l\'annonce, retire reprise du modèle', () => {
   const ANN = 'CHoCH M1 validé. On attend le M5, pas avant.'
@@ -235,5 +235,61 @@ describe('applyJokerCodeFaitFoiGuard — le code fait foi côté sortie', () => 
     const txt = 'On surveille ta zone. CHoCH M1 et M5 validés. Reste concentré.'
     const r = applyJokerCodeFaitFoiGuard(txt, 'armed')
     expect(r.text).toBe('On surveille ta zone. Reste concentré.')
+  })
+})
+
+describe('openrouterCauseLabel — 3G-correctif : cause lisible du secours', () => {
+  it('undefined → "inconnue"', () => {
+    expect(openrouterCauseLabel(undefined)).toBe('inconnue')
+  })
+
+  it('status 0 + timeout → "timeout OpenRouter"', () => {
+    expect(openrouterCauseLabel({ status: 0, detail: 'AbortError: signal timed out' }))
+      .toBe('timeout OpenRouter')
+  })
+
+  it('status 0 réseau → "réseau OpenRouter indisponible"', () => {
+    expect(openrouterCauseLabel({ status: 0, detail: 'network error' }))
+      .toBe('réseau OpenRouter indisponible')
+  })
+
+  it('status 401 → "clé OpenRouter refusée"', () => {
+    expect(openrouterCauseLabel({ status: 401, detail: { error: { message: 'Invalid API key' } } }))
+      .toBe('clé OpenRouter refusée')
+  })
+
+  it('status 402 → "crédits OpenRouter épuisés"', () => {
+    expect(openrouterCauseLabel({ status: 402, detail: { error: 'Insufficient credits' } }))
+      .toBe('crédits OpenRouter épuisés')
+  })
+
+  it('status 403 + privacy → "confidentialité OpenRouter"', () => {
+    expect(openrouterCauseLabel({ status: 403, detail: { error: 'Data policy violation' } }))
+      .toContain('confidentialité OpenRouter')
+  })
+
+  it('status 404 → "modèle OpenRouter introuvable"', () => {
+    expect(openrouterCauseLabel({ status: 404, detail: 'model not found' }))
+      .toBe('modèle OpenRouter introuvable')
+  })
+
+  it('status 400 + reasoning → "reasoning refusé par le modèle"', () => {
+    expect(openrouterCauseLabel({ status: 400, detail: { error: { message: 'reasoning not supported' } } }))
+      .toBe('reasoning refusé par le modèle')
+  })
+
+  it('status 429 → "limite OpenRouter atteinte"', () => {
+    expect(openrouterCauseLabel({ status: 429, detail: 'rate limit' }))
+      .toBe('limite OpenRouter atteinte')
+  })
+
+  it('status 500 → "panne OpenRouter (500)"', () => {
+    expect(openrouterCauseLabel({ status: 500, detail: 'internal' }))
+      .toBe('panne OpenRouter (500)')
+  })
+
+  it('status inconnu → "OpenRouter HTTP <n>"', () => {
+    expect(openrouterCauseLabel({ status: 418, detail: 'teapot' }))
+      .toBe('OpenRouter HTTP 418')
   })
 })

@@ -152,6 +152,13 @@ function fillMessage(key: RuleKey, state: SessionState): string {
     .replace('{N}', String(state.tradesCount))
 }
 
+/** 3G-CORRECTIF — Expose la résolution d'un message officiel pour une
+ *  règle annoncée + l'état courant. Utilisé par buildMomentPayload
+ *  pour transmettre la phrase sous le titre "Stop du jour" côté UI. */
+export function resolveMessage(key: RuleKey, state: SessionState): string {
+  return fillMessage(key, state)
+}
+
 // ─── Classification d'un trade ──────────────────────────────────────
 type Outcome = 'win' | 'loss' | 'be'
 
