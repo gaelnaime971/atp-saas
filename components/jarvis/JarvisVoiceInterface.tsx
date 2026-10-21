@@ -5,6 +5,10 @@ import { createPortal } from 'react-dom'
 import { readAiError, networkAiError, type AiErrorInfo } from '@/lib/ai/client-errors'
 import { AiErrorBanner } from '@/components/ai/AiErrorBanner'
 import { JarvisOrb, type OrbState } from './JarvisOrb'
+import { MomentOverlay } from './MomentOverlay'
+import { MomentCard } from './MomentCards'
+import { pickMoment, type MomentKind } from '@/lib/jarvis/moments'
+import type { RuleKey } from '@/lib/jarvis/rules-engine'
 
 // ─── Document Picture-in-Picture typing (API encore non standard) ───
 declare global {
@@ -135,6 +139,30 @@ interface SessionPayload {
 
 interface BrainInfo { provider: 'openrouter' | 'groq'; model: string }
 
+// 3G — Payload "moment" renvoyé par le serveur (chat JSON + voice header)
+interface MomentPayload {
+  openISO: string | null
+  routine: { filled: boolean; confidence: number | null }
+  rules: {
+    max_trades: number
+    stop_after_losses: number
+    target_r: number
+    min_ratio: number
+    risk_per_trade_usd: number
+    same_config_hard_stop_after: number
+    stop_after_first_win: boolean
+    stop_after_loss_win: boolean
+  }
+  trades: Array<{
+    at: string
+    result_r: number | null
+    result_usd: number | null
+    instrument?: string
+    side?: 'long' | 'short'
+  }>
+  announcedKeys: RuleKey[]
+}
+
 interface Exchange {
   trader: string
   jarvis: string
@@ -156,6 +184,65 @@ const AMBER_RULES = new Set([
   'three_losses', 'max_trades', 'same_config_hard_stop', 'trade_after_stop',
 ])
 function isAmberRule(key: string): boolean { return AMBER_RULES.has(key) }
+
+const MISSION_RULES = new Set<RuleKey>(['first_win', 'loss_then_win', 'target_reached'])
+/** Vrai si l'ensemble `next` contient une clé mission ABSENTE de `prev`.
+ *  Déclenche la burst "mission accomplie". */
+function triggeredMissionFresh(prev: ReadonlyArray<RuleKey>, next: ReadonlyArray<RuleKey>): boolean {
+  const prevSet = new Set(prev)
+  return next.some(k => MISSION_RULES.has(k) && !prevSet.has(k))
+}
+
+/** 3G — Données d'exemple pour l'aperçu testeur (aucune I/O, aucun DB). */
+function buildPreviewMoment(kind: MomentKind, nowISO: string, openISO: string): MomentPayload {
+  const t0 = new Date(openISO).getTime()
+  if (kind === 'avant_open') {
+    return {
+      openISO,
+      routine: { filled: false, confidence: null },
+      rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true },
+      trades: [],
+      announcedKeys: [],
+    }
+  }
+  if (kind === 'stop') {
+    return {
+      openISO,
+      routine: { filled: true, confidence: 6 },
+      rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true },
+      trades: [
+        { at: new Date(t0 + 10 * 60_000).toISOString(), result_r: -1, result_usd: -150 },
+        { at: new Date(t0 + 40 * 60_000).toISOString(), result_r: -1, result_usd: -150 },
+        { at: new Date(t0 + 70 * 60_000).toISOString(), result_r: -1, result_usd: -150 },
+      ],
+      announcedKeys: ['three_losses'],
+    }
+  }
+  if (kind === 'mission') {
+    return {
+      openISO,
+      routine: { filled: true, confidence: 8 },
+      rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true },
+      trades: [
+        { at: new Date(t0 + 15 * 60_000).toISOString(), result_r: 3, result_usd: 450, instrument: 'NQ', side: 'long' },
+      ],
+      announcedKeys: ['target_reached'],
+    }
+  }
+  if (kind === 'session') {
+    return {
+      openISO,
+      routine: { filled: true, confidence: 7 },
+      rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true },
+      trades: [
+        { at: new Date(t0 + 6 * 60_000).toISOString(),  result_r: 1,  result_usd: 150,  instrument: 'NQ', side: 'long' },
+        { at: new Date(t0 + 24 * 60_000).toISOString(), result_r: -1, result_usd: -150, instrument: 'NQ', side: 'short' },
+      ],
+      announcedKeys: [],
+    }
+  }
+  return { openISO, routine: { filled: false, confidence: null }, rules: { max_trades: 3, stop_after_losses: 3, target_r: 2, min_ratio: 2, risk_per_trade_usd: 150, same_config_hard_stop_after: 2, stop_after_first_win: true, stop_after_loss_win: true }, trades: [], announcedKeys: [] }
+}
 function JokerStepper({ step }: { step: JokerStep }) {
   // Les 3 étapes du suivi
   const stages: Array<{ key: JokerStep; label: string }> = [
@@ -384,6 +471,14 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   // 22h pour tester les règles de session). Vide = casquette calculée.
   // 3F-CORRECTIF-3 : persisté en localStorage pour survivre au reload.
   const [forcedCasquette, setForcedCasquetteState] = useState<string>('')
+
+  // 3G — Payload "moment" (routine, rules, trades, announced, openISO).
+  // Initialisé par /api/jarvis/warm au mount, mis à jour à chaque échange.
+  const [moment, setMoment] = useState<MomentPayload | null>(null)
+  const [previewMoment, setPreviewMoment] = useState<'' | MomentKind>('')
+  const [sessionExpanded, setSessionExpanded] = useState(false)
+  const [missionBurstToken, setMissionBurstToken] = useState(0)
+  const [burstActive, setBurstActive] = useState(false)
   const setForcedCasquette = (v: string) => {
     setForcedCasquetteState(v)
     try {
@@ -477,11 +572,24 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
   const ruleOrb: OrbState | null = lastTrig
     ? (isAmberRule(lastTrig.key) ? 'ambre' : 'objectif')
     : null
+  // 3G — Au repos, l'orbe reflète le moment courant. Les états actifs
+  // (écoute / réflexion / parole) gardent la priorité. Calcul rapide
+  // ici (le vrai pickMoment plus bas réutilise toute la data).
+  const quickMomentKind: MomentKind | '' = previewMoment || (() => {
+    if (!moment) return ''
+    if (moment.announcedKeys.some(k => ['three_losses','max_trades','same_config_hard_stop','trade_after_stop'].includes(k))) return 'stop'
+    if (moment.announcedKeys.some(k => ['first_win','loss_then_win','target_reached'].includes(k))) return 'mission'
+    return ''
+  })()
+  const restingOrb: OrbState | null =
+    quickMomentKind === 'stop' ? 'ambre' :
+    quickMomentKind === 'mission' ? 'objectif' :
+    null
   const orbState: OrbState =
     recording ? 'ecoute'
     : loading ? 'reflexion'
     : playing ? (ruleOrb ?? 'parle')
-    : 'veille'
+    : (restingOrb ?? 'veille')
 
   // ─── Statut texte (sous l'orbe) ───
   const statusLabel =
@@ -508,6 +616,14 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
     return () => clearInterval(id)
   }, [])
 
+  // 3G — Burst mission (2,6 s) après chaque nouveau trigger mission
+  useEffect(() => {
+    if (missionBurstToken === 0) return
+    setBurstActive(true)
+    const id = setTimeout(() => setBurstActive(false), 2600)
+    return () => clearTimeout(id)
+  }, [missionBurstToken])
+
   // ─── Préchauffage ───
   // Au mount + toutes les 4 min. Récupère aussi le compteur du jour
   // (lecture sans incrément, cf. peekQuota serveur) → affiché avant
@@ -521,6 +637,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           console.debug('[jarvis-warm]', d)
           if (typeof d.callsToday === 'number') setCurrentCallsToday(d.callsToday)
           if (typeof d.callsLimit === 'number') setCurrentCallsLimit(d.callsLimit)
+          if (d.moment) setMoment(d.moment as MomentPayload)
         })
         .catch(() => { /* silencieux */ })
     }
@@ -629,6 +746,14 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
       }])
       setCurrentCallsToday(d.callsToday)
       setCurrentCallsLimit(d.callsLimit)
+      if (d.moment) {
+        const next = d.moment as MomentPayload
+        // 3G — Déclenche la burst "mission" si une nouvelle règle mission est tombée
+        if (moment && triggeredMissionFresh(moment.announcedKeys, next.announcedKeys)) {
+          setMissionBurstToken(t => t + 1)
+        }
+        setMoment(next)
+      }
     } catch { setError(networkAiError()) } finally { setLoading(false) }
   }
 
@@ -745,6 +870,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
       let session: SessionPayload | undefined
       let brain: BrainInfo | undefined
 
+      let momentFromResp: MomentPayload | null = null
       if (ct.startsWith('application/json')) {
         const d = await r.json()
         transcription = d.transcription || ''
@@ -753,6 +879,7 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         audioFailed = Boolean(d.audioFailed)
         session = d.session as SessionPayload | undefined
         brain = d.brain as BrainInfo | undefined
+        if (d.moment) momentFromResp = d.moment as MomentPayload
       } else if (ct.startsWith('audio/')) {
         transcription = decodeB64Url(r.headers.get('X-Jarvis-Transcription') || '')
         reply = decodeB64Url(r.headers.get('X-Jarvis-Reply') || '')
@@ -760,7 +887,18 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
         try { retries = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Retries') || '')) } catch {}
         try { session = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Session') || '')) as SessionPayload } catch {}
         try { brain = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Brain') || '')) as BrainInfo } catch {}
+        try {
+          const mp = JSON.parse(decodeB64Url(r.headers.get('X-Jarvis-Moment') || '')) as MomentPayload
+          if (mp && typeof mp === 'object') momentFromResp = mp
+        } catch {}
         voiceTimeToPlayMs = await playAudioStream(r, tStop, audioUrlRef, audioRef, levelRef, rafRef, setPlaying)
+      }
+
+      if (momentFromResp) {
+        if (moment && triggeredMissionFresh(moment.announcedKeys, momentFromResp.announcedKeys)) {
+          setMissionBurstToken(t => t + 1)
+        }
+        setMoment(momentFromResp)
       }
 
       setExchanges(h => [...h, {
@@ -849,6 +987,44 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
     : labelFor(casquetteRaw)
   const openCue = formatOpenCue(casquetteInfo)
 
+  // 3G — Moment courant. Aperçu testeur override tout.
+  const nowISO = new Date().toISOString()
+  const previewOpenISO = moment?.openISO || new Date(Date.now() + 15 * 60_000).toISOString()
+  const effectiveMoment: MomentPayload | null = previewMoment
+    ? buildPreviewMoment(previewMoment, nowISO, previewOpenISO)
+    : moment
+  const jokerStep = (lastExchange?.session?.joker?.step ?? 'inactive') as JokerStep
+  const momentKind: MomentKind = previewMoment
+    ? previewMoment
+    : effectiveMoment
+      ? pickMoment({
+          casquette: (casquetteRaw as 'MANAGER' | 'ANALYSTE' | 'TRADER' | 'COMPTABLE' | 'marché-fermé' | 'hors-session') || 'hors-session',
+          minutesToOpen: casquetteInfo?.minutesToOpen ?? null,
+          jokerStep,
+          announced: effectiveMoment.announcedKeys,
+          tradesCount: lastExchange?.session?.state.tradesCount ?? effectiveMoment.trades.length,
+        })
+      : 'none'
+
+  // Dernier message mission → burst (déjà géré par missionBurstToken).
+  const momentData = effectiveMoment ? {
+    minutesToOpen: casquetteInfo?.minutesToOpen ?? null,
+    routine: effectiveMoment.routine,
+    tradesCount: previewMoment
+      ? effectiveMoment.trades.length
+      : (lastExchange?.session?.state.tradesCount ?? effectiveMoment.trades.length),
+    rSum: previewMoment
+      ? effectiveMoment.trades.reduce((s, t) => s + (t.result_r ?? 0), 0)
+      : (lastExchange?.session?.state.rSum ?? null),
+    usdSum: previewMoment
+      ? effectiveMoment.trades.reduce((s, t) => s + (t.result_usd ?? 0), 0)
+      : (lastExchange?.session?.state.usdSum ?? 0),
+    rules: effectiveMoment.rules,
+    announcedKeys: effectiveMoment.announcedKeys,
+    triggeredMessage: lastExchange?.session?.triggered?.[0]?.message ?? null,
+    consecutiveLosses: 0, // calculé côté serveur, non exposé pour l'instant
+  } : null
+
   const ui = (
     <div className="jv-root" data-compact={compact || undefined}>
       <header className="jv-header">
@@ -864,11 +1040,35 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
       </header>
 
       <main className="jv-main">
-        <div className="jv-orb-wrap">
+        <div
+          className={`jv-orb-wrap ${momentKind === 'mission' ? 'jv-moment-mission-glow' : ''} ${momentKind === 'stop' ? 'jv-moment-stop-glow' : ''}`}
+          data-burst={burstActive ? '1' : undefined}
+        >
           <JarvisOrb state={orbState} levelRef={levelRef} size={240} />
+          {effectiveMoment && (
+            <MomentOverlay
+              kind={momentKind}
+              size={240}
+              minutesToOpen={casquetteInfo?.minutesToOpen ?? null}
+              trades={effectiveMoment.trades}
+              openISO={effectiveMoment.openISO}
+              nowISO={nowISO}
+            />
+          )}
         </div>
 
         <div className="jv-status" aria-live="polite">{statusLabel}</div>
+
+        {!compact && momentData && momentKind !== 'none' && (
+          <MomentCard
+            kind={momentKind}
+            data={momentData}
+            previewBadge={Boolean(previewMoment)}
+            sessionExpanded={sessionExpanded}
+            onToggleSession={() => setSessionExpanded(x => !x)}
+            trades={effectiveMoment?.trades}
+          />
+        )}
 
         <section className="jv-exchange" aria-live="polite">
           {lastExchange ? (
@@ -1066,22 +1266,38 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
                 <> · 🧠 {lastExchange.brain.provider === 'openrouter' ? 'OR' : 'Groq'} <code>{lastExchange.brain.model}</code></>
               )}
               {isTester && (
-                <div className="jv-tester-row">
-                  <label htmlFor="jv-force-casquette">Forcer la casquette&nbsp;:</label>
-                  <select
-                    id="jv-force-casquette"
-                    value={forcedCasquette}
-                    onChange={(e) => setForcedCasquette(e.target.value)}
-                  >
-                    <option value="">auto (calculée)</option>
-                    <option value="hors-session">hors-session</option>
-                    <option value="MANAGER">MANAGER</option>
-                    <option value="ANALYSTE">ANALYSTE</option>
-                    <option value="TRADER">TRADER</option>
-                    <option value="COMPTABLE">COMPTABLE</option>
-                    <option value="marché-fermé">marché-fermé</option>
-                  </select>
-                </div>
+                <>
+                  <div className="jv-tester-row">
+                    <label htmlFor="jv-force-casquette">Forcer la casquette&nbsp;:</label>
+                    <select
+                      id="jv-force-casquette"
+                      value={forcedCasquette}
+                      onChange={(e) => setForcedCasquette(e.target.value)}
+                    >
+                      <option value="">auto (calculée)</option>
+                      <option value="hors-session">hors-session</option>
+                      <option value="MANAGER">MANAGER</option>
+                      <option value="ANALYSTE">ANALYSTE</option>
+                      <option value="TRADER">TRADER</option>
+                      <option value="COMPTABLE">COMPTABLE</option>
+                      <option value="marché-fermé">marché-fermé</option>
+                    </select>
+                  </div>
+                  <div className="jv-tester-row">
+                    <label htmlFor="jv-preview-moment">Aperçu du moment&nbsp;:</label>
+                    <select
+                      id="jv-preview-moment"
+                      value={previewMoment}
+                      onChange={(e) => setPreviewMoment(e.target.value as '' | MomentKind)}
+                    >
+                      <option value="">Aucun</option>
+                      <option value="avant_open">Avant l&apos;Open</option>
+                      <option value="stop">Stop du jour</option>
+                      <option value="mission">Mission accomplie</option>
+                      <option value="session">Session</option>
+                    </select>
+                  </div>
+                </>
               )}
             </div>
           </details>
@@ -1154,7 +1370,48 @@ export default function JarvisVoiceInterface({ email }: { email: string }) {
           padding-top: 24px;
           gap: 14px;
         }
-        .jv-orb-wrap { padding: 8px; }
+        .jv-orb-wrap { padding: 8px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .jv-orb-wrap :global(.jv-moment-overlay) {
+          position: absolute; inset: 0; margin: auto;
+          pointer-events: none;
+        }
+        .jv-orb-wrap[data-burst="1"] :global(svg) {
+          animation: jvMissionBurst 2.6s cubic-bezier(.33,0,.17,1) 1;
+        }
+        .jv-moment-mission-glow :global(svg) {
+          filter: drop-shadow(0 0 24px rgba(221, 185, 119, 0.45));
+        }
+        .jv-moment-stop-glow :global(svg) {
+          filter: drop-shadow(0 0 18px rgba(242, 153, 74, 0.3));
+        }
+        .jv-orb-wrap :global(.jv-pulse-ambre circle) {
+          animation: jvPulseStroke 1.6s ease-in-out infinite;
+        }
+        .jv-orb-wrap :global(.jv-trade-ping) {
+          animation: jvTradePing 1.8s ease-out 1;
+          transform-origin: center;
+          transform-box: fill-box;
+        }
+        @keyframes jvMissionBurst {
+          0%   { transform: scale(0.9); }
+          40%  { transform: scale(1.12); }
+          100% { transform: scale(1); }
+        }
+        @keyframes jvPulseStroke {
+          0%, 100% { stroke: #F2994A; }
+          50%      { stroke: #4A3220; }
+        }
+        @keyframes jvTradePing {
+          0%   { transform: scale(1); opacity: 0.7; }
+          100% { transform: scale(2.4); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .jv-orb-wrap[data-burst="1"] :global(svg),
+          .jv-orb-wrap :global(.jv-pulse-ambre circle),
+          .jv-orb-wrap :global(.jv-trade-ping) {
+            animation: none !important;
+          }
+        }
         .jv-status {
           font-family: var(--font-oxanium), system-ui, sans-serif;
           font-size: 15px; font-weight: 500;

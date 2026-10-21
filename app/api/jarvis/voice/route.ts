@@ -16,6 +16,7 @@ import {
   prepareContext, runBrain, detectDetailRequested,
   snapshotSession, buildSessionDirective, buildAntiRepetitionAddendum,
   stripAnnouncement, applyGoldenRuleGuard, applyJokerCodeFaitFoiGuard,
+  buildMomentPayload,
   type ChatMessage, type SessionEventRow,
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
@@ -380,6 +381,7 @@ export async function POST(request: Request) {
       detection: detection.kind,
       joker: { step: jokerTransition.next, outOfOrder: jokerOutOfOrder },
     }
+    const momentPayload = buildMomentPayload(ctx)
     const metaHeaders: Record<string, string> = {
       'X-Jarvis-Transcription': b64url(transcription),
       'X-Jarvis-Reply': b64url(finalReply),
@@ -387,11 +389,12 @@ export async function POST(request: Request) {
       'X-Jarvis-Timings': b64url(JSON.stringify(timings)),
       'X-Jarvis-Retries': b64url(JSON.stringify(retries)),
       'X-Jarvis-Session': b64url(JSON.stringify(sessionPayload)),
+      'X-Jarvis-Moment':  b64url(JSON.stringify(momentPayload)),
       'X-Jarvis-Brain': b64url(JSON.stringify({ provider: brainOutcome.provider, model: brainOutcome.model })),
       'X-Jarvis-CallsToday': String(quota.callsToday),
       'X-Jarvis-CallsLimit': String(quota.callsLimit),
       'X-Jarvis-CacheHits': ctx.cacheHits.join(',') || '',
-      'Access-Control-Expose-Headers': 'X-Jarvis-Transcription, X-Jarvis-Reply, X-Jarvis-Casquette, X-Jarvis-Timings, X-Jarvis-Retries, X-Jarvis-Session, X-Jarvis-Brain, X-Jarvis-CallsToday, X-Jarvis-CallsLimit, X-Jarvis-CacheHits, X-Jarvis-AudioFailed',
+      'Access-Control-Expose-Headers': 'X-Jarvis-Transcription, X-Jarvis-Reply, X-Jarvis-Casquette, X-Jarvis-Timings, X-Jarvis-Retries, X-Jarvis-Session, X-Jarvis-Moment, X-Jarvis-Brain, X-Jarvis-CallsToday, X-Jarvis-CallsLimit, X-Jarvis-CacheHits, X-Jarvis-AudioFailed',
     }
 
     if (!tts.ok) {
@@ -407,6 +410,7 @@ export async function POST(request: Request) {
         cacheHits: ctx.cacheHits,
         brain: { provider: brainOutcome.provider, model: brainOutcome.model },
         session: sessionPayload,
+        moment: momentPayload,
         audioFailed: true,
       }, { status: 200 })
     }

@@ -78,6 +78,63 @@ export interface JarvisContext {
   cacheHits: string[]
 }
 
+/** 3G — Payload "moment" ajouté à chaque réponse pour piloter la
+ *  carte visuelle et l'orbite côté client. Pur, construit à partir
+ *  du contexte déjà résolu — aucune I/O supplémentaire. */
+export interface MomentPayload {
+  openISO: string | null
+  routine: { filled: boolean; confidence: number | null }
+  rules: {
+    max_trades: number
+    stop_after_losses: number
+    target_r: number
+    min_ratio: number
+    risk_per_trade_usd: number
+    same_config_hard_stop_after: number
+    stop_after_first_win: boolean
+    stop_after_loss_win: boolean
+  }
+  trades: Array<{
+    at: string
+    result_r: number | null
+    result_usd: number | null
+    instrument?: string
+    side?: 'long' | 'short'
+  }>
+  announcedKeys: RuleKey[]
+}
+
+export function buildMomentPayload(ctx: JarvisContext): MomentPayload {
+  const trades = eventsToTrades(ctx.events).map(t => ({
+    at: t.at.toISOString(),
+    result_r: t.result_r,
+    result_usd: t.result_usd,
+    instrument: t.instrument,
+    side: t.side,
+  }))
+  const announcedKeys = eventsToAnnounced(ctx.events).map(a => a.key)
+  const r = ctx.rules
+  return {
+    openISO: ctx.casquette.usOpenParisISO ?? null,
+    routine: {
+      filled: ctx.routine != null,
+      confidence: ctx.routine?.confidence ?? null,
+    },
+    rules: {
+      max_trades: r.max_trades,
+      stop_after_losses: r.stop_after_losses,
+      target_r: r.target_r,
+      min_ratio: r.min_ratio,
+      risk_per_trade_usd: r.risk_per_trade_usd,
+      same_config_hard_stop_after: r.same_config_hard_stop_after,
+      stop_after_first_win: r.stop_after_first_win,
+      stop_after_loss_win: r.stop_after_loss_win,
+    },
+    trades,
+    announcedKeys,
+  }
+}
+
 // ─── Helpers de conversion événements → types rules-engine ──────────
 export function eventsToTrades(events: SessionEventRow[]): TradeEvent[] {
   return events

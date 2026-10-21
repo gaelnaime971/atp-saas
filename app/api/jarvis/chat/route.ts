@@ -16,6 +16,7 @@ import {
   prepareContext, runBrain, detectDetailRequested,
   snapshotSession, buildSessionDirective, buildAntiRepetitionAddendum,
   stripAnnouncement, applyGoldenRuleGuard, applyJokerCodeFaitFoiGuard,
+  buildMomentPayload,
   type ChatMessage, type SessionEventRow,
 } from '@/lib/jarvis/brain'
 import { detectTradeEvent } from '@/lib/jarvis/event-detection'
@@ -246,6 +247,7 @@ export async function POST(request: Request) {
         detection: detection.kind,
         joker: { step: jokerTransition.next, outOfOrder: jokerOutOfOrder },
       },
+      moment: buildMomentPayload(ctx),
     })
   } catch (err) {
     return buildProviderErrorResponse({ route: '/api/jarvis/chat', model: GROQ_TEXT_MODEL, detail: err })

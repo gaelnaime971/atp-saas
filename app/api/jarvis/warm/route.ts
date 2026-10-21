@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireJarvisAccessFast } from '@/lib/jarvis/access'
-import { prepareContext } from '@/lib/jarvis/brain'
+import { prepareContext, buildMomentPayload } from '@/lib/jarvis/brain'
+import { getCurrentJokerContext } from '@/lib/jarvis/joker'
 import { peekQuota } from '@/lib/ai/quota'
 
 export const runtime = 'nodejs'
@@ -40,6 +41,15 @@ export async function POST(request: Request) {
     const callsLimit = ctx.isAdmin ? -1 : counter.callsLimit
     const total = Math.round(performance.now() - t_start)
 
+    // 3G — Payload moment pour que la page affiche le bon état au
+    // chargement, avant tout échange.
+    const jokerCtx = getCurrentJokerContext(ctx.events, ctx.now)
+    const trades = ctx.events.filter(e => e.type === 'trade')
+    const sessionState = {
+      tradesCount: trades.length,
+      rSum: null as number | null,
+      usdSum: 0,
+    }
     return NextResponse.json({
       ok: true,
       cacheHits: ctx.cacheHits,
@@ -47,6 +57,8 @@ export async function POST(request: Request) {
       callsLimit,
       casquette: ctx.casquette.casquette,
       ms: total,
+      session: { state: sessionState, joker: { step: jokerCtx.step } },
+      moment: buildMomentPayload(ctx),
     })
   } catch (err) {
     console.error('[jarvis-warm]', err)
