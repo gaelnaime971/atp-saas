@@ -29,6 +29,7 @@ import {
   exchangeCodeForToken,
   fetchWhopUserInfo,
   hasActiveEliteProMembership,
+  hasActiveEliteProMembershipNew,
   decodeJwtPayload,
 } from '@/lib/whop/client'
 
@@ -96,7 +97,13 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Vérif abonnement ÉLITE PRO — paginé, early-return, fail-closed.
-    const hasAccess = await hasActiveEliteProMembership(whopUserId)
+    //    Interrupteur WHOP_NEW_API_ENABLED (absent = false) : bascule
+    //    entre /v2/memberships (legacy, deprecated 13/11/2026) et
+    //    /api/v1/memberships (Current API). Zéro redéploiement pour
+    //    revenir en arrière.
+    const useNewApi = process.env.WHOP_NEW_API_ENABLED === 'true'
+    const check = useNewApi ? hasActiveEliteProMembershipNew : hasActiveEliteProMembership
+    const hasAccess = await check(whopUserId)
     if (!hasAccess) {
       return toPage('/whop/subscription-required')
     }

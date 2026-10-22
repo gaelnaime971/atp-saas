@@ -26,6 +26,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'node:crypto'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { isMembershipActive } from '@/lib/whop/status'
 
 const WEBHOOK_TIMESTAMP_TOLERANCE_SEC = 5 * 60
 
@@ -55,32 +56,10 @@ interface WhopWebhookPayload {
   }
 }
 
-// Allowlist statuts "actifs" (user a accès dashboard). Fail-closed :
-// tout statut hors allowlist = inactif. Choix produit — voir ADR étape 5.
-//   - active     : paiement OK, en cours
-//   - trialing   : essai en cours (décision validée étape 3)
-//   - completed  : paiement one-shot/lifetime achevé
-//   - canceling  : annulation prévue mais accès maintenu jusqu'à fin de période
-//   - past_due   : grâce — presque toujours carte expirée/découvert, Whop
-//                  redébite auto. Couper au 1er échec braquerait de bons
-//                  clients. Quand les retries échouent vraiment, Whop passe
-//                  à "canceled" et le webhook coupe proprement à ce moment-là.
-// Exclus (= inactif) :
-//   - canceled, expired : accès terminé proprement
-//   - unresolved        : état indéterminé, fail-closed
-//   - drafted           : pas encore effectif
-const ACTIVE_STATUSES: ReadonlySet<string> = new Set([
-  'active',
-  'trialing',
-  'completed',
-  'canceling',
-  'past_due',
-])
-
-function isMembershipActive(status: string | undefined): boolean {
-  if (typeof status !== 'string') return false
-  return ACTIVE_STATUSES.has(status.toLowerCase())
-}
+// Allowlist statuts "actifs" factorisée dans lib/whop/status.ts pour
+// que le webhook et hasActiveEliteProMembership* restent alignés —
+// avant la migration Current API, le webhook passait par cette
+// allowlist et le callback via le flag `valid` renvoyé par /v2.
 
 function requireEnv(name: string): string {
   const v = process.env[name]
