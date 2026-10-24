@@ -472,6 +472,214 @@ export function resolveR(draft: SaisieDraft): number | null {
   return computeRFromPoints(p, sl)
 }
 
+// ─── Reprise à la volée d'un backtest legacy (sans criteria peuplé) ─────────
+//
+// Même logique que la fonction SQL `backfill_backtest_criteria()`, mais
+// côté client — un ancien backtest s'affiche, s'analyse et s'édite
+// normalement même avant qu'on ait lancé la reprise serveur.
+//
+// Règles reprises telles quelles :
+//   - Fibonacci : "38.2%", "50%", "61.8%", "78.6%" (point ou virgule FR,
+//     % optionnel)
+//   - Zones ATP × TF : "<element> <TF>" avec element ∈ {OB, FVG, CHoCH,
+//     BOS} et TF ∈ {M1, M5, M15, H1, H4}
+//   - Signaux ATP × TF : "<element> <TF>" avec element ∈ {Hammer,
+//     Engulfing} et TF ∈ {15s, 100T, M1, M5}
+//   - "Pin Bar" nu (sans TF) → paire { element: 'Pin Bar',
+//     timeframe: '' } (sentinelle "non précisée")
+//   - Tout le reste → my_setups
+
+const LEGACY_ZONE_ELEMENTS = new Set(['OB', 'FVG', 'CHoCH', 'BOS'])
+const LEGACY_ZONE_TFS      = new Set(['M1', 'M5', 'M15', 'H1', 'H4'])
+const LEGACY_SIGNAL_WITH_TF = new Set(['Hammer', 'Engulfing'])
+const LEGACY_SIGNAL_TFS     = new Set(['15s', '100T', 'M1', 'M5'])
+const LEGACY_FIBO_VALUES    = new Set(['38.2', '50', '61.8', '78.6'])
+
+function parseFibonacciRaw(raw: string): string | null {
+  const normalized = raw.replace(/\s*%\s*$/, '').replace(',', '.').trim()
+  return LEGACY_FIBO_VALUES.has(normalized) ? normalized : null
+}
+
+function parsePairRaw(raw: string, elements: Set<string>, tfs: Set<string>): PairedValue | null {
+  const m = raw.trim().match(/^([^\s]+(?:\s+[^\s]+)*?)\s+([^\s]+)$/)
+  if (!m) return null
+  const element = m[1]
+  const timeframe = m[2]
+  if (!elements.has(element) || !tfs.has(timeframe)) return null
+  return { element, timeframe }
+}
+
+/**
+ * Prend un ancien backtest (setup_types + signals peuplés) et produit
+ * un CriteriaMap équivalent. Si le backtest a déjà `criteria` non vide,
+ * on le retourne tel quel. Pure, idempotente.
+ */
+export function parseLegacyEntry(bt: {
+  setup_types?: string[] | null
+  signals?: string[] | null
+  criteria?: CriteriaMap | null
+}): CriteriaMap {
+  const existing = bt.criteria
+  if (existing && Object.keys(existing).length > 0) return existing
+
+  const zones: PairedValue[] = []
+  const fibos: string[] = []
+  const sigs: PairedValue[] = []
+  const myStuff: string[] = []
+
+  const setups = Array.isArray(bt.setup_types) ? bt.setup_types : []
+  for (const raw of setups) {
+    const s = (raw || '').trim()
+    if (!s) continue
+    const fibo = parseFibonacciRaw(s)
+    if (fibo) { fibos.push(fibo); continue }
+    const zone = parsePairRaw(s, LEGACY_ZONE_ELEMENTS, LEGACY_ZONE_TFS)
+    if (zone) { zones.push(zone); continue }
+    myStuff.push(s)
+  }
+
+  const signals = Array.isArray(bt.signals) ? bt.signals : []
+  for (const raw of signals) {
+    const s = (raw || '').trim()
+    if (!s) continue
+    // Pin Bar : accepte "Pin Bar" nu OU "Pin Bar <TF>" (on écarte la TF
+    // dans tous les cas, convention sentinelle "non précisée").
+    if (/^Pin Bar(\s|$)/i.test(s)) {
+      sigs.push({ element: 'Pin Bar', timeframe: UNSPECIFIED_TIMEFRAME })
+      continue
+    }
+    const sig = parsePairRaw(s, LEGACY_SIGNAL_WITH_TF, LEGACY_SIGNAL_TFS)
+    if (sig) { sigs.push(sig); continue }
+    myStuff.push(s)
+  }
+
+  const out: CriteriaMap = {}
+  if (zones.length)   out.zone      = zones
+  if (fibos.length)   out.fibonacci = fibos
+  if (sigs.length)    out.signal    = sigs
+  if (myStuff.length) out.my_setups = myStuff
+  return out
+}
+
+// ─── Analytics résultats V2 : série, courbe, combos, dimensions dérivées ───
+
+/** Entrée minimale pour les analyses chronologiques. */
+export interface BacktestWithDate extends BacktestEntry {
+  date: string      // YYYY-MM-DD
+  instrument?: string
+  direction?: 'LONG' | 'SHORT'
+  created_at?: string
+}
+
+/** Pire série de pertes consécutives (ordre chronologique). BE et win
+ *  cassent la série. Retourne 0 sur tableau vide. */
+export function worstLossStreak(entries: ReadonlyArray<Pick<BacktestEntry, 'result'>>): number {
+  let max = 0
+  let cur = 0
+  for (const e of entries) {
+    if (e.result === 'loss') { cur += 1; if (cur > max) max = cur }
+    else cur = 0
+  }
+  return max
+}
+
+/** Courbe des R cumulés. Garde l'ordre fourni (chronologique attendu).
+ *  Chaque point porte le R cumulé après ce trade. */
+export function cumulativeR(
+  entries: ReadonlyArray<Pick<BacktestEntry, 'r_result'>>,
+): Array<{ i: number; cum: number }> {
+  let cum = 0
+  const out: Array<{ i: number; cum: number }> = []
+  for (let i = 0; i < entries.length; i++) {
+    cum += Number(entries[i].r_result) || 0
+    out.push({ i, cum: Math.round(cum * 100) / 100 })
+  }
+  return out
+}
+
+/** Un trade produit une "combinaison" = ensemble { zones paired triées,
+ *  signaux paired triés }. Deux trades avec les mêmes paires (ordre
+ *  indépendant) partagent la même clé. */
+function combinationKeyFor(e: BacktestEntry): { key: string; tags: string[] } | null {
+  const zones = readPaired(e.criteria, 'zone')
+    .map((p) => legacyZoneLabel(p.element, p.timeframe))
+    .sort()
+  const sigs = readPaired(e.criteria, 'signal')
+    .map((p) => legacySignalLabel(p.element, p.timeframe))
+    .sort()
+  // Combo = au moins 1 zone ET 1 signal
+  if (zones.length === 0 || sigs.length === 0) return null
+  return {
+    key: `${zones.join('|')}+${sigs.join('|')}`,
+    tags: [...zones, ...sigs],
+  }
+}
+
+export interface TopCombinationRow {
+  key: string
+  tags: string[]
+  n: number
+  wins: number
+  winRate: number
+  avgR: number
+}
+
+/**
+ * Top combinaisons zones + signal exactes à partir de `minN` trades
+ * (10 par défaut), triées par avgR desc. Retourne `[]` si aucune combo
+ * ne passe le seuil.
+ */
+export function topCombinations(
+  entries: ReadonlyArray<BacktestEntry>,
+  minN: number = MIN_TRADES_FOR_SIGNAL,
+  limit: number = 3,
+): TopCombinationRow[] {
+  const bucket = new Map<string, { tags: string[]; n: number; wins: number; sumR: number }>()
+  for (const e of entries) {
+    const k = combinationKeyFor(e)
+    if (!k) continue
+    let b = bucket.get(k.key)
+    if (!b) { b = { tags: k.tags, n: 0, wins: 0, sumR: 0 }; bucket.set(k.key, b) }
+    b.n += 1
+    if (e.result === 'win') b.wins += 1
+    b.sumR += Number(e.r_result) || 0
+  }
+  const rows: TopCombinationRow[] = []
+  for (const [key, b] of bucket) {
+    if (b.n < minN) continue
+    rows.push({
+      key, tags: b.tags, n: b.n, wins: b.wins,
+      winRate: Math.round((b.wins / b.n) * 100),
+      avgR: Math.round((b.sumR / b.n) * 100) / 100,
+    })
+  }
+  rows.sort((a, b) => (b.avgR - a.avgR) || (b.n - a.n))
+  return rows.slice(0, limit)
+}
+
+/** Libellés jour de la semaine en français, index 0 = dimanche (JS). */
+const DAY_LABELS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+
+/** Jour de la semaine en français pour une date ISO (YYYY-MM-DD). Pur. */
+export function dayOfWeekFr(dateISO: string): string {
+  const d = new Date(dateISO + 'T12:00:00')
+  const idx = d.getDay()
+  return DAY_LABELS_FR[idx] ?? 'Inconnu'
+}
+
+/** Enrichit une entrée avec des catégories dérivées (préfixe `_`)
+ *  consommables par analyzeBy comme s'il s'agissait de critères du
+ *  trader : `_sens`, `_instrument`, `_jour`. */
+export function enrichDerivedDimensions(
+  e: BacktestWithDate,
+): BacktestEntry {
+  const extra: CriteriaMap = {}
+  if (e.direction) extra._sens = e.direction === 'LONG' ? 'Achat' : 'Vente'
+  if (e.instrument) extra._instrument = e.instrument
+  if (e.date) extra._jour = dayOfWeekFr(e.date)
+  return { ...e, criteria: { ...e.criteria, ...extra } }
+}
+
 /** Seuil minimal de trades pour que le signal soit considéré fiable. */
 export const MIN_TRADES_FOR_SIGNAL = 10
 

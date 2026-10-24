@@ -30,6 +30,7 @@ import {
   projectToLegacy, timeframeLabel,
   validateSaisie, isSaisieSubmittable, resolveR,
   readPaired, readMulti, readSingle,
+  parseLegacyEntry,
   type CategorySelection, type CriteriaMap, type PairedValue,
   type SaisieDraft, type ResultMode,
 } from '@/lib/backtest/criteria'
@@ -122,9 +123,11 @@ const warnText: React.CSSProperties = { color: '#DDB977', fontSize: 12, marginTo
 
 interface Props {
   onGoToCriteria?(): void   // le parent peut déclencher le switch d'onglet
+  editingId?: string | null // mode édition : pré-remplit depuis un backtest existant
+  onEditDone?(): void       // callback une fois l'édition sauvée ou annulée
 }
 
-export default function SaisieV2({ onGoToCriteria }: Props) {
+export default function SaisieV2({ onGoToCriteria, editingId, onEditDone }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const [userId, setUserId] = useState<string | null>(null)
   const [cats, setCats] = useState<CategoryRow[]>([])
@@ -165,6 +168,51 @@ export default function SaisieV2({ onGoToCriteria }: Props) {
   }, [supabase])
 
   useEffect(() => { refresh() }, [refresh])
+
+  // ─── Pré-remplissage mode édition ──────────────────────────────────────
+  useEffect(() => {
+    if (!editingId) return
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase
+        .from('backtests')
+        .select('*')
+        .eq('id', editingId)
+        .maybeSingle()
+      if (cancelled || !data) return
+      const bt = data as {
+        date: string; instrument: string; direction: 'LONG' | 'SHORT';
+        setup_types: string[] | null; signals: string[] | null;
+        criteria: CriteriaMap | null; result: 'win' | 'loss' | 'be';
+        r_result: number; points: number; sl_points: number;
+        notes: string | null; image_url: string | null;
+      }
+      setDate(bt.date)
+      setInstrument(bt.instrument || '')
+      setDirection(bt.direction)
+      // Reprise à la volée si criteria vide (ancien backtest, backfill pas lancé)
+      setCriteria(parseLegacyEntry({
+        setup_types: bt.setup_types, signals: bt.signals, criteria: bt.criteria,
+      }))
+      setResult(bt.result)
+      // Par défaut : mode "r" avec le R stocké. Si points > 0, on bascule
+      // "points" et on affiche les deux (R recalculé en live).
+      if (bt.points && bt.sl_points) {
+        setMode('points')
+        setPointsInput(String(bt.points).replace('.', ','))
+        setSlPointsInput(String(bt.sl_points).replace('.', ','))
+      } else {
+        setMode('r')
+        const r = bt.r_result
+        setRInput((r > 0 ? '+' : '') + String(r).replace('.', ','))
+      }
+      setNotes(bt.notes || '')
+      setImageUrl(bt.image_url || null)
+      setImagePreview(bt.image_url || null)
+      setSubmitted(false)
+    })()
+    return () => { cancelled = true }
+  }, [editingId, supabase])
 
   // ─── Issue → défaut proposé pour "En R" ────────────────────────────────
   useEffect(() => {
@@ -222,7 +270,7 @@ export default function SaisieV2({ onGoToCriteria }: Props) {
   }
 
   // ─── Enregistrer ───────────────────────────────────────────────────────
-  async function save(mode: 'next' | 'done') {
+  async function save(saveMode: 'next' | 'done') {
     setSubmitted(true)
     if (!canSubmit || !userId) return
     setSaving(true)
@@ -232,14 +280,12 @@ export default function SaisieV2({ onGoToCriteria }: Props) {
     const pointsNum = Number(pointsInput.replace(',', '.')) || 0
     const slNum = Number(slPointsInput.replace(',', '.')) || 0
 
-    const { error } = await supabase.from('backtests').insert({
+    const payload = {
       trader_id: userId,
       date,
       instrument,
       direction,
-      // Nouveau format :
       criteria,
-      // Double-écriture pour compat :
       setup_types: legacy.setup_types,
       signals: legacy.signals,
       has_confluence: legacy.has_confluence,
@@ -249,14 +295,23 @@ export default function SaisieV2({ onGoToCriteria }: Props) {
       result,
       notes: notes.trim() || null,
       image_url: imageUrl,
-    })
+    }
+
+    const op = editingId
+      ? supabase.from('backtests').update(payload).eq('id', editingId)
+      : supabase.from('backtests').insert(payload)
+    const { error } = await op
     setSaving(false)
     if (error) { alert('Erreur à l\'enregistrement : ' + error.message); return }
 
-    setSavedToast('Backtest enregistré.')
+    setSavedToast(editingId ? 'Backtest modifié.' : 'Backtest enregistré.')
     setTimeout(() => setSavedToast(null), 2500)
 
-    if (mode === 'next') {
+    // Mode édition : on sort toujours de l'édition après save, quelle que
+    // soit l'intention "next" vs "done" (saisir le suivant = création).
+    if (editingId) { onEditDone?.(); return }
+
+    if (saveMode === 'next') {
       // Garde date / instrument / direction. Reset le reste.
       setCriteria({})
       setResult('')
@@ -485,25 +540,48 @@ export default function SaisieV2({ onGoToCriteria }: Props) {
 
       {/* ─── Boutons ───────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
-        <button type="button" disabled={saving} onClick={() => save('next')}
-          style={{
-            height: 50, padding: '0 22px', border: 0, borderRadius: 12,
-            background: 'var(--color-accent)', color: '#15130F',
-            fontSize: 15, fontWeight: 700, cursor: 'pointer',
-            opacity: saving ? 0.6 : 1,
-          }}
-        >Enregistrer et saisir le suivant</button>
-        <button type="button" disabled={saving} onClick={() => save('done')}
-          style={{
-            height: 50, padding: '0 20px', borderRadius: 12,
-            border: '1px solid var(--border)', background: 'transparent',
-            color: 'var(--text)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
-            fontFamily: 'inherit', opacity: saving ? 0.6 : 1,
-          }}
-        >Enregistrer</button>
-        <span style={{ fontSize: 13, color: 'var(--text3)' }}>
-          La date, l'instrument et le sens restent remplis pour la saisie suivante.
-        </span>
+        {editingId ? (
+          <>
+            <button type="button" disabled={saving} onClick={() => save('done')}
+              style={{
+                height: 50, padding: '0 22px', border: 0, borderRadius: 12,
+                background: 'var(--color-accent)', color: '#15130F',
+                fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >Enregistrer les modifications</button>
+            <button type="button" disabled={saving} onClick={() => onEditDone?.()}
+              style={{
+                height: 50, padding: '0 20px', borderRadius: 12,
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >Annuler</button>
+          </>
+        ) : (
+          <>
+            <button type="button" disabled={saving} onClick={() => save('next')}
+              style={{
+                height: 50, padding: '0 22px', border: 0, borderRadius: 12,
+                background: 'var(--color-accent)', color: '#15130F',
+                fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >Enregistrer et saisir le suivant</button>
+            <button type="button" disabled={saving} onClick={() => save('done')}
+              style={{
+                height: 50, padding: '0 20px', borderRadius: 12,
+                border: '1px solid var(--border)', background: 'transparent',
+                color: 'var(--text)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'inherit', opacity: saving ? 0.6 : 1,
+              }}
+            >Enregistrer</button>
+            <span style={{ fontSize: 13, color: 'var(--text3)' }}>
+              La date, l'instrument et le sens restent remplis pour la saisie suivante.
+            </span>
+          </>
+        )}
         {savedToast && (
           <span style={{ fontSize: 13, fontWeight: 600, color: '#7BE3A9' }}>✓ {savedToast}</span>
         )}

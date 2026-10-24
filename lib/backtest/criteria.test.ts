@@ -680,3 +680,218 @@ describe('resolveR — R final à écrire selon le mode', () => {
     }))).toBeNull()
   })
 })
+
+// ─── Résultats V2 : parseLegacyEntry, worstLossStreak, cumulativeR, combos ─
+
+import {
+  parseLegacyEntry, worstLossStreak, cumulativeR, topCombinations,
+  dayOfWeekFr, enrichDerivedDimensions,
+} from './criteria'
+
+describe('parseLegacyEntry — ancien backtest sans criteria', () => {
+  it('zones ATP × TF → paired zone', () => {
+    const r = parseLegacyEntry({ setup_types: ['OB M5', 'FVG M15'], signals: [] })
+    expect(r.zone).toEqual([
+      { element: 'OB', timeframe: 'M5' },
+      { element: 'FVG', timeframe: 'M15' },
+    ])
+  })
+
+  it('fibonacci : "50%", "61.8%", "78,6%", avec ou sans %', () => {
+    const r = parseLegacyEntry({ setup_types: ['50%', '61.8%', '78,6%', '38.2'], signals: [] })
+    expect(r.fibonacci).toEqual(['50', '61.8', '78.6', '38.2'])
+  })
+
+  it('signaux ATP × TF → paired signal', () => {
+    const r = parseLegacyEntry({ setup_types: [], signals: ['Hammer M1', 'Engulfing M5'] })
+    expect(r.signal).toEqual([
+      { element: 'Hammer', timeframe: 'M1' },
+      { element: 'Engulfing', timeframe: 'M5' },
+    ])
+  })
+
+  it('"Pin Bar" nu → paired { Pin Bar, "" } (sentinelle)', () => {
+    const r = parseLegacyEntry({ setup_types: [], signals: ['Pin Bar'] })
+    expect(r.signal).toEqual([{ element: 'Pin Bar', timeframe: '' }])
+  })
+
+  it('"Pin Bar M5" (incohérent) → Pin Bar sans TF (on ne gobe pas la TF)', () => {
+    const r = parseLegacyEntry({ setup_types: [], signals: ['Pin Bar M5'] })
+    expect(r.signal).toEqual([{ element: 'Pin Bar', timeframe: '' }])
+  })
+
+  it('inconnu → my_setups', () => {
+    const r = parseLegacyEntry({ setup_types: ['Mon-super-setup'], signals: ['CustomSig M5'] })
+    expect(r.my_setups).toEqual(['Mon-super-setup', 'CustomSig M5'])
+  })
+
+  it('déjà peuplé → renvoyé tel quel (idempotence)', () => {
+    const criteria: CriteriaMap = { zone: [{ element: 'OB', timeframe: 'M5' }] }
+    const r = parseLegacyEntry({ setup_types: ['FVG M15'], signals: [], criteria })
+    expect(r).toBe(criteria)
+  })
+
+  it('mix complet', () => {
+    const r = parseLegacyEntry({
+      setup_types: ['OB M5', '50%', 'Mon-super-setup', 'BOS H4'],
+      signals: ['Hammer M1', 'Pin Bar'],
+    })
+    // Tolérance : BOS H4 n'était pas dans l'ancien catalogue d'origine
+    // (BOS n'avait pas de H4) mais projectToLegacy l'écrit en fallback
+    // "BOS H4". On accepte le round-trip propre : TF ∈ {M1,M5,M15,H1,H4}
+    // avec élément zone → paired.
+    expect(r.zone).toEqual([
+      { element: 'OB', timeframe: 'M5' },
+      { element: 'BOS', timeframe: 'H4' },
+    ])
+    expect(r.fibonacci).toEqual(['50'])
+    expect(r.signal).toEqual([
+      { element: 'Hammer', timeframe: 'M1' },
+      { element: 'Pin Bar', timeframe: '' },
+    ])
+    expect(r.my_setups).toEqual(['Mon-super-setup'])
+  })
+
+  it('vide → {}', () => {
+    expect(parseLegacyEntry({})).toEqual({})
+    expect(parseLegacyEntry({ setup_types: [], signals: [] })).toEqual({})
+  })
+})
+
+describe('worstLossStreak', () => {
+  it('vide → 0', () => { expect(worstLossStreak([])).toBe(0) })
+  it('série de 4 pertes → 4', () => {
+    expect(worstLossStreak([
+      { result: 'loss' }, { result: 'loss' }, { result: 'loss' }, { result: 'loss' },
+    ])).toBe(4)
+  })
+  it('win casse la série', () => {
+    expect(worstLossStreak([
+      { result: 'loss' }, { result: 'loss' }, { result: 'win' }, { result: 'loss' },
+    ])).toBe(2)
+  })
+  it('BE casse la série', () => {
+    expect(worstLossStreak([
+      { result: 'loss' }, { result: 'be' }, { result: 'loss' },
+    ])).toBe(1)
+  })
+  it('la pire série au MILIEU est bien détectée', () => {
+    expect(worstLossStreak([
+      { result: 'loss' }, { result: 'win' },
+      { result: 'loss' }, { result: 'loss' }, { result: 'loss' },
+      { result: 'win' }, { result: 'loss' },
+    ])).toBe(3)
+  })
+})
+
+describe('cumulativeR', () => {
+  it('vide → []', () => { expect(cumulativeR([])).toEqual([]) })
+  it('cumul chrono', () => {
+    expect(cumulativeR([
+      { r_result: 2 }, { r_result: -1 }, { r_result: 3 }, { r_result: -0.5 },
+    ])).toEqual([
+      { i: 0, cum: 2 },
+      { i: 1, cum: 1 },
+      { i: 2, cum: 4 },
+      { i: 3, cum: 3.5 },
+    ])
+  })
+})
+
+describe('topCombinations — zones + signal exacts, min 10', () => {
+  function mk(zones: PairedValue[], signals: PairedValue[], result: 'win'|'loss'|'be', r: number): BacktestEntry {
+    return { criteria: { zone: zones, signal: signals }, result, r_result: r }
+  }
+
+  it('< 10 trades → aucune combo retournée', () => {
+    const data = Array.from({ length: 9 }, () =>
+      mk([{ element: 'OB', timeframe: 'M15' }], [{ element: 'Hammer', timeframe: 'M5' }], 'win', 1),
+    )
+    expect(topCombinations(data)).toEqual([])
+  })
+
+  it('>= 10 trades → combo top 1, triée par avgR desc', () => {
+    const combo1 = Array.from({ length: 14 }, (_, i) =>
+      mk([{ element: 'OB', timeframe: 'M15' }], [{ element: 'Hammer', timeframe: 'M5' }],
+         i < 10 ? 'win' : 'loss', i < 10 ? 2 : -1),
+    )
+    const combo2 = Array.from({ length: 11 }, (_, i) =>
+      mk([{ element: 'FVG', timeframe: 'M5' }], [{ element: 'Hammer', timeframe: 'M1' }],
+         i < 6 ? 'win' : 'loss', i < 6 ? 1 : -1),
+    )
+    const r = topCombinations([...combo1, ...combo2])
+    expect(r).toHaveLength(2)
+    expect(r[0].tags).toContain('OB M15')
+    expect(r[0].tags).toContain('Hammer M5')
+    expect(r[0].n).toBe(14)
+    expect(r[0].avgR).toBeGreaterThan(r[1].avgR)
+  })
+
+  it('clé = ensemble ordonné : (OB M5, FVG M5) === (FVG M5, OB M5)', () => {
+    const a = mk(
+      [{ element: 'OB', timeframe: 'M5' }, { element: 'FVG', timeframe: 'M5' }],
+      [{ element: 'Hammer', timeframe: 'M5' }],
+      'win', 1,
+    )
+    const b = mk(
+      [{ element: 'FVG', timeframe: 'M5' }, { element: 'OB', timeframe: 'M5' }],
+      [{ element: 'Hammer', timeframe: 'M5' }],
+      'win', 1,
+    )
+    // 10 trades identiques (combinées) + autres incomplets pour atteindre minN
+    const data = Array.from({ length: 10 }, (_, i) => (i % 2 === 0 ? a : b))
+    const r = topCombinations(data, 10, 3)
+    expect(r).toHaveLength(1)
+    expect(r[0].n).toBe(10)
+  })
+
+  it('un trade sans zone OU sans signal n\'est PAS compté', () => {
+    const noSignal = mk([{ element: 'OB', timeframe: 'M5' }], [], 'win', 1)
+    const noZone   = mk([], [{ element: 'Hammer', timeframe: 'M5' }], 'win', 1)
+    const data = Array.from({ length: 20 }, (_, i) => (i < 10 ? noSignal : noZone))
+    expect(topCombinations(data)).toEqual([])
+  })
+
+  it('top limité à `limit`', () => {
+    // 3 combos distinctes, chacune ≥ 10
+    const mkMany = (zone: PairedValue, sig: PairedValue, n: number, r: number) =>
+      Array.from({ length: n }, () => mk([zone], [sig], 'win', r))
+    const data = [
+      ...mkMany({ element: 'OB',  timeframe: 'M15' }, { element: 'Hammer', timeframe: 'M5' }, 10, 2),
+      ...mkMany({ element: 'FVG', timeframe: 'M5'  }, { element: 'Hammer', timeframe: 'M1' }, 10, 1),
+      ...mkMany({ element: 'BOS', timeframe: 'M1'  }, { element: 'Engulfing', timeframe: 'M5' }, 10, 0.5),
+      ...mkMany({ element: 'CHoCH', timeframe: 'H1'}, { element: 'Pin Bar', timeframe: '' }, 10, 0.1),
+    ]
+    const r = topCombinations(data, 10, 2)
+    expect(r).toHaveLength(2)
+  })
+})
+
+describe('dayOfWeekFr', () => {
+  it('samedi 25/10/2026', () => {
+    // 25 oct 2026 : vérifions via l'API Date (indépendant TZ grâce au T12:00:00)
+    expect(dayOfWeekFr('2026-10-25')).toBe('Dimanche')
+    expect(dayOfWeekFr('2026-10-26')).toBe('Lundi')
+    expect(dayOfWeekFr('2026-10-27')).toBe('Mardi')
+    expect(dayOfWeekFr('2026-10-30')).toBe('Vendredi')
+  })
+})
+
+describe('enrichDerivedDimensions — _sens / _instrument / _jour', () => {
+  it('ajoute les 3 clés dérivées', () => {
+    const e = enrichDerivedDimensions({
+      criteria: { zone: [{ element: 'OB', timeframe: 'M5' }] },
+      result: 'win', r_result: 1,
+      date: '2026-10-26', instrument: 'NQ', direction: 'LONG',
+    })
+    expect(e.criteria._sens).toBe('Achat')
+    expect(e.criteria._instrument).toBe('NQ')
+    expect(e.criteria._jour).toBe('Lundi')
+    expect(e.criteria.zone).toBeDefined() // préservation
+  })
+  it('n\'ajoute pas si données absentes', () => {
+    const e = enrichDerivedDimensions({ criteria: {}, result: 'win', r_result: 1, date: '' })
+    expect(e.criteria._sens).toBeUndefined()
+    expect(e.criteria._instrument).toBeUndefined()
+  })
+})

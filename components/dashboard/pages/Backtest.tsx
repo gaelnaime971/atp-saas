@@ -8,6 +8,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import Badge from '@/components/ui/Badge'
 import MesCriteresTab from './backtest/MesCriteresTab'
 import SaisieV2 from './backtest/SaisieV2'
+import ResultatsV2 from './backtest/ResultatsV2'
 
 // ── Constants ──────────────────────────────────────────────
 
@@ -111,6 +112,9 @@ export default function Backtest() {
   // BACKTEST_V2_TESTERS (interrupteur serveur). Les autres gardent
   // la page strictement identique.
   const [isV2Tester, setIsV2Tester] = useState(false)
+  // Mode édition : set depuis l'historique Résultats V2 → bascule
+  // sur Saisie V2 avec editingId. onEditDone = retour sur Résultats.
+  const [editingId, setEditingId] = useState<string | null>(null)
   useEffect(() => {
     fetch('/api/backtest/is-tester')
       .then(r => r.ok ? r.json() : null)
@@ -428,7 +432,11 @@ export default function Backtest() {
 
       {/* ═══════════════════ TAB SAISIE V2 (testeurs V2) ═══════════════════ */}
       {tab === 'saisie' && isV2Tester && (
-        <SaisieV2 onGoToCriteria={() => setTab('criteres')} />
+        <SaisieV2
+          onGoToCriteria={() => setTab('criteres')}
+          editingId={editingId}
+          onEditDone={() => { setEditingId(null); setTab('resultats') }}
+        />
       )}
 
       {/* ═══════════════════ TAB SAISIE (ancienne, non-testeurs) ═══════════════════ */}
@@ -711,8 +719,13 @@ export default function Backtest() {
         </Card>
       )}
 
-      {/* ═══════════════════ TAB RESULTATS ═══════════════════ */}
-      {tab === 'resultats' && (
+      {/* ═══════════════════ TAB RÉSULTATS V2 (testeurs) ═══════════════════ */}
+      {tab === 'resultats' && isV2Tester && (
+        <ResultatsV2 onEdit={(id) => { setEditingId(id); setTab('saisie') }} />
+      )}
+
+      {/* ═══════════════════ TAB RESULTATS (ancienne, non-testeurs) ═══════════════════ */}
+      {tab === 'resultats' && !isV2Tester && (
         <div>
           {/* Info + Filters */}
           <div style={{ padding: '12px 16px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--border)', marginBottom: 16, fontSize: 13, color: 'var(--text3)', lineHeight: 1.6, borderLeft: '3px solid var(--green)' }}>
