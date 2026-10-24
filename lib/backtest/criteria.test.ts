@@ -6,9 +6,17 @@ import {
   readSingle,
   readMulti,
   readPaired,
+  isAtpCategory,
+  moveItem,
+  validateCategoryDraft,
+  isValidCategoryDraft,
+  legacyZoneLabel,
+  legacySignalLabel,
+  legacyFibonacciLabel,
   MIN_TRADES_FOR_SIGNAL,
   type BacktestEntry,
   type CriteriaMap,
+  type CategoryDraft,
 } from './criteria'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -63,9 +71,14 @@ describe('projectToLegacy — double-écriture setup_types / signals / has_confl
     expect(r.signals).toEqual([])
   })
 
-  it('fibonacci → "<v> %" avec virgule française', () => {
-    const r = projectToLegacy({ fibonacci: ['50', '61.8', '78.6'] })
-    expect(r.setup_types).toEqual(['50 %', '61,8 %', '78,6 %'])
+  it('fibonacci → "38.2%", "50%", "61.8%", "78.6%" (point, SANS espace)', () => {
+    const r = projectToLegacy({ fibonacci: ['38.2', '50', '61.8', '78.6'] })
+    expect(r.setup_types).toEqual(['38.2%', '50%', '61.8%', '78.6%'])
+  })
+
+  it('fibonacci avec virgule française en entrée → normalisé point', () => {
+    const r = projectToLegacy({ fibonacci: ['61,8'] })
+    expect(r.setup_types).toEqual(['61.8%'])
   })
 
   it('signaux paired → signals ("Hammer M1")', () => {
@@ -74,6 +87,24 @@ describe('projectToLegacy — double-écriture setup_types / signals / has_confl
     })
     expect(r.signals).toEqual(['Hammer M1'])
     expect(r.setup_types).toEqual([])
+  })
+
+  it('"Pin Bar" quelle que soit l\'unité → "Pin Bar" sans unité', () => {
+    expect(projectToLegacy({ signal: [{ element: 'Pin Bar', timeframe: 'M1' }] }).signals)
+      .toEqual(['Pin Bar'])
+    expect(projectToLegacy({ signal: [{ element: 'Pin Bar', timeframe: 'M5' }] }).signals)
+      .toEqual(['Pin Bar'])
+    expect(projectToLegacy({ signal: [{ element: 'Pin Bar', timeframe: '100T' }] }).signals)
+      .toEqual(['Pin Bar'])
+  })
+
+  it('combinaison non catalogue → fallback "Élément Unité"', () => {
+    // Engulfing 100T n'existe pas dans l'ancien catalogue → fallback
+    expect(projectToLegacy({ signal: [{ element: 'Engulfing', timeframe: '100T' }] }).signals)
+      .toEqual(['Engulfing 100T'])
+    // BOS H4 n'existe pas dans l'ancien catalogue → fallback
+    expect(projectToLegacy({ zone: [{ element: 'BOS', timeframe: 'H4' }] }).setup_types)
+      .toEqual(['BOS H4'])
   })
 
   it('my_setups → setup_types tels quels', () => {
@@ -89,7 +120,7 @@ describe('projectToLegacy — double-écriture setup_types / signals / has_confl
       my_setups: ['custom-x'],
       session: 'preopen', // ignoré
     })
-    expect(r.setup_types).toEqual(['OB M5', '50 %', 'custom-x'])
+    expect(r.setup_types).toEqual(['OB M5', '50%', 'custom-x'])
     expect(r.signals).toEqual(['Hammer M1'])
   })
 
@@ -295,5 +326,160 @@ describe('analyzeBy — vide / absent', () => {
       'absent', 'single',
     )
     expect(r).toEqual([])
+  })
+})
+
+// ─── labels legacy exposés unitairement ────────────────────────────────────
+
+describe('legacyZoneLabel / legacySignalLabel / legacyFibonacciLabel', () => {
+  it('zone : catalogue connu renvoyé à l\'identique, sinon fallback', () => {
+    expect(legacyZoneLabel('OB',  'M5')).toBe('OB M5')
+    expect(legacyZoneLabel('FVG', 'H4')).toBe('FVG H4')
+    expect(legacyZoneLabel('BOS', 'H4')).toBe('BOS H4') // fallback
+    expect(legacyZoneLabel('Custom', 'M30')).toBe('Custom M30')
+  })
+
+  it('signal : "Pin Bar" ignore toujours la TF, Hammer/Engulfing suivent le catalogue', () => {
+    expect(legacySignalLabel('Hammer', '100T')).toBe('Hammer 100T')
+    expect(legacySignalLabel('Hammer', 'M1')).toBe('Hammer M1')
+    expect(legacySignalLabel('Engulfing', 'M5')).toBe('Engulfing M5')
+    expect(legacySignalLabel('Pin Bar', 'M5')).toBe('Pin Bar')
+    expect(legacySignalLabel('Pin Bar', '100T')).toBe('Pin Bar')
+    expect(legacySignalLabel('CustomSig', 'M5')).toBe('CustomSig M5') // fallback
+  })
+
+  it('fibonacci : "38.2%", "50%", "61.8%", "78.6%" ; virgule normalisée en point', () => {
+    expect(legacyFibonacciLabel('38.2')).toBe('38.2%')
+    expect(legacyFibonacciLabel('50')).toBe('50%')
+    expect(legacyFibonacciLabel('61.8')).toBe('61.8%')
+    expect(legacyFibonacciLabel('78.6')).toBe('78.6%')
+    expect(legacyFibonacciLabel('61,8')).toBe('61.8%')  // tolérance virgule
+    expect(legacyFibonacciLabel('42')).toBe('42%')      // fallback
+  })
+})
+
+// ─── isAtpCategory ─────────────────────────────────────────────────────────
+
+describe('isAtpCategory — les 4 keys semées sont ATP, le reste est Perso', () => {
+  it.each(['zone', 'fibonacci', 'signal', 'my_setups'])('ATP : "%s"', (k) => {
+    expect(isAtpCategory(k)).toBe(true)
+  })
+  it.each(['session', 'context', 'management', 'news', 'mindset', 'custom_whatever', ''])(
+    'Perso : "%s"', (k) => {
+      expect(isAtpCategory(k)).toBe(false)
+    },
+  )
+})
+
+// ─── moveItem ──────────────────────────────────────────────────────────────
+
+describe('moveItem — réordonnancement pur', () => {
+  it('déplace from=0 → to=2', () => {
+    expect(moveItem(['A', 'B', 'C', 'D'], 0, 2)).toEqual(['B', 'C', 'A', 'D'])
+  })
+  it('déplace from=3 → to=1', () => {
+    expect(moveItem(['A', 'B', 'C', 'D'], 3, 1)).toEqual(['A', 'D', 'B', 'C'])
+  })
+  it('from === to → copie inchangée', () => {
+    const src = ['A', 'B', 'C']
+    const out = moveItem(src, 1, 1)
+    expect(out).toEqual(['A', 'B', 'C'])
+    expect(out).not.toBe(src) // nouvelle copie
+  })
+  it('hors bornes → copie inchangée', () => {
+    expect(moveItem(['A', 'B'], -1, 0)).toEqual(['A', 'B'])
+    expect(moveItem(['A', 'B'], 0, 5)).toEqual(['A', 'B'])
+    expect(moveItem(['A', 'B'], 5, 0)).toEqual(['A', 'B'])
+  })
+  it('ne mute pas la source', () => {
+    const src = [1, 2, 3]
+    moveItem(src, 0, 2)
+    expect(src).toEqual([1, 2, 3])
+  })
+  it('array vide → vide', () => {
+    expect(moveItem<number>([], 0, 1)).toEqual([])
+  })
+})
+
+// ─── validateCategoryDraft ─────────────────────────────────────────────────
+
+function draft(partial: Partial<CategoryDraft> = {}): CategoryDraft {
+  return {
+    label: 'Nouveau critère',
+    selection: 'single',
+    options: ['A', 'B'],
+    timeframes: [],
+    ...partial,
+  }
+}
+
+describe('validateCategoryDraft — nom', () => {
+  it('nom vide → erreur', () => {
+    const r = validateCategoryDraft(draft({ label: '  ' }), [])
+    expect(r.label).toBeDefined()
+  })
+  it('nom déjà pris → erreur insensible à la casse', () => {
+    const r = validateCategoryDraft(draft({ label: 'Zones' }), ['Fibonacci', 'ZONES'])
+    expect(r.label).toContain('déjà')
+  })
+  it('nom libre → pas d\'erreur de nom', () => {
+    const r = validateCategoryDraft(draft({ label: 'Nouveau' }), ['Zones', 'Fibonacci'])
+    expect(r.label).toBeUndefined()
+  })
+})
+
+describe('validateCategoryDraft — options (single/multi : ≥ 2)', () => {
+  it('0 option → erreur', () => {
+    const r = validateCategoryDraft(draft({ options: [] }), [])
+    expect(r.options).toContain('2')
+  })
+  it('1 option → erreur', () => {
+    const r = validateCategoryDraft(draft({ options: ['X'] }), [])
+    expect(r.options).toContain('2')
+  })
+  it('2 options → OK', () => {
+    const r = validateCategoryDraft(draft({ options: ['X', 'Y'] }), [])
+    expect(r.options).toBeUndefined()
+  })
+  it('doublons comptent une fois (case-insensitive)', () => {
+    const r = validateCategoryDraft(draft({ options: ['X', 'x', 'X '] }), [])
+    expect(r.options).toContain('2')
+  })
+})
+
+describe('validateCategoryDraft — paired (≥ 1 élément + ≥ 1 unité)', () => {
+  it('1 élément + 1 unité → OK', () => {
+    const r = validateCategoryDraft(
+      draft({ selection: 'paired', options: ['OB'], timeframes: ['M5'] }), [],
+    )
+    expect(r.options).toBeUndefined()
+    expect(r.timeframes).toBeUndefined()
+  })
+  it('0 élément → erreur options', () => {
+    const r = validateCategoryDraft(
+      draft({ selection: 'paired', options: [], timeframes: ['M5'] }), [],
+    )
+    expect(r.options).toContain('1 élément')
+  })
+  it('0 unité → erreur timeframes', () => {
+    const r = validateCategoryDraft(
+      draft({ selection: 'paired', options: ['OB'], timeframes: [] }), [],
+    )
+    expect(r.timeframes).toContain('1 unité')
+  })
+  it('whitespace-only timeframe → compté comme vide', () => {
+    const r = validateCategoryDraft(
+      draft({ selection: 'paired', options: ['OB'], timeframes: ['  '] }), [],
+    )
+    expect(r.timeframes).toContain('1 unité')
+  })
+})
+
+describe('isValidCategoryDraft — raccourci booléen', () => {
+  it('cas OK', () => {
+    expect(isValidCategoryDraft(draft(), [])).toBe(true)
+  })
+  it('cas KO', () => {
+    expect(isValidCategoryDraft(draft({ options: [] }), [])).toBe(false)
   })
 })

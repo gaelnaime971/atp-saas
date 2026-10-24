@@ -6,6 +6,7 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
 import Badge from '@/components/ui/Badge'
+import MesCriteresTab from './backtest/MesCriteresTab'
 
 // ── Constants ──────────────────────────────────────────────
 
@@ -104,7 +105,17 @@ const kpiCardStyle: React.CSSProperties = {
 // ── Component ──────────────────────────────────────────────
 
 export default function Backtest() {
-  const [tab, setTab] = useState<'saisie' | 'resultats'>('saisie')
+  const [tab, setTab] = useState<'saisie' | 'resultats' | 'criteres'>('saisie')
+  // 3G-BACKTEST-V2 : "Mes critères" visible pour les emails de
+  // BACKTEST_V2_TESTERS (interrupteur serveur). Les autres gardent
+  // la page strictement identique.
+  const [isV2Tester, setIsV2Tester] = useState(false)
+  useEffect(() => {
+    fetch('/api/backtest/is-tester')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.isTester) setIsV2Tester(true) })
+      .catch(() => { /* non-testeur : silencieux */ })
+  }, [])
   const [entries, setEntries] = useState<BacktestEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -392,7 +403,10 @@ export default function Backtest() {
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
-        {(['saisie', 'resultats'] as const).map(t => (
+        {(isV2Tester
+          ? (['saisie', 'resultats', 'criteres'] as const)
+          : (['saisie', 'resultats'] as const)
+        ).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -403,10 +417,13 @@ export default function Backtest() {
               color: tab === t ? '#000' : 'var(--text3)',
             }}
           >
-            {t === 'saisie' ? 'Saisie' : 'Resultats'}
+            {t === 'saisie' ? 'Saisie' : t === 'resultats' ? 'Résultats' : 'Mes critères'}
           </button>
         ))}
       </div>
+
+      {/* ═══════════════════ TAB MES CRITÈRES (testeurs V2) ═══════════════════ */}
+      {tab === 'criteres' && isV2Tester && <MesCriteresTab />}
 
       {/* ═══════════════════ TAB SAISIE ═══════════════════ */}
       {tab === 'saisie' && (

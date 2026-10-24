@@ -108,22 +108,73 @@ export function readPaired(criteria: CriteriaMap, key: string): PairedValue[] {
 // ─── Projection vers les colonnes legacy (double-écriture) ──────────────────
 
 /**
+ * Ancien catalogue de setups ATP — garder la casse et le format exacts
+ * (Backtest.tsx:14-21). Si la paire existe telle quelle dans le catalogue,
+ * on la réécrit à l'identique. Sinon, fallback "Élément Unité".
+ */
+const LEGACY_SETUP_LABELS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  OB:    { M1: 'OB M1', M5: 'OB M5', M15: 'OB M15', H1: 'OB H1', H4: 'OB H4' },
+  FVG:   { M1: 'FVG M1', M5: 'FVG M5', M15: 'FVG M15', H1: 'FVG H1', H4: 'FVG H4' },
+  CHoCH: { M1: 'CHoCH M1', M5: 'CHoCH M5', M15: 'CHoCH M15', H1: 'CHoCH H1' },
+  BOS:   { M1: 'BOS M1', M5: 'BOS M5', M15: 'BOS M15', H1: 'BOS H1' },
+}
+
+/**
+ * Ancien catalogue de signaux. "Pin Bar" est le cas particulier :
+ * l'ancien catalogue l'écrit SANS unité, donc projectToLegacy ignore
+ * la timeframe pour Pin Bar et écrit toujours "Pin Bar".
+ */
+const LEGACY_SIGNAL_LABELS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  Hammer:    { '100T': 'Hammer 100T', M1: 'Hammer M1', M5: 'Hammer M5' },
+  Engulfing: { M1: 'Engulfing M1', M5: 'Engulfing M5' },
+}
+const LEGACY_SIGNAL_NO_TF: ReadonlySet<string> = new Set(['Pin Bar'])
+
+/** Fibonacci : "38.2%", "50%", "61.8%", "78.6%" — point et SANS espace. */
+const LEGACY_FIBONACCI: Readonly<Record<string, string>> = {
+  '38.2': '38.2%',
+  '50':   '50%',
+  '61.8': '61.8%',
+  '78.6': '78.6%',
+}
+
+/** Chaîne legacy pour une paire zone donnée. */
+export function legacyZoneLabel(element: string, timeframe: string): string {
+  return LEGACY_SETUP_LABELS[element]?.[timeframe] ?? `${element} ${timeframe}`
+}
+
+/** Chaîne legacy pour un signal donné. "Pin Bar" sans unité. */
+export function legacySignalLabel(element: string, timeframe: string): string {
+  if (LEGACY_SIGNAL_NO_TF.has(element)) return element
+  return LEGACY_SIGNAL_LABELS[element]?.[timeframe] ?? `${element} ${timeframe}`
+}
+
+/** Chaîne legacy pour une valeur Fibonacci. Fallback "<v>%". */
+export function legacyFibonacciLabel(value: string): string {
+  const normalized = value.replace(',', '.')
+  return LEGACY_FIBONACCI[normalized] ?? `${normalized}%`
+}
+
+/**
  * Convertit un `criteria` moderne vers les colonnes `setup_types[]`,
- * `signals[]`, `has_confluence` de `backtests` pour que le coach IA
- * continue de calculer ses stats sans migration simultanée.
+ * `signals[]`, `has_confluence` de `backtests`. **Double-écriture
+ * EXACTE** du format ancien catalogue (sinon les stats du coach IA et
+ * de l'ancienne page se coupent en deux).
  *
  * Règles :
- *   - `zone` (paired)      → setup_types = "<element> <timeframe>"
- *   - `fibonacci` (multi)  → setup_types = "<v> %" ("50 %", "61,8 %")
- *   - `signal` (paired)    → signals    = "<element> <timeframe>"
- *   - `my_setups` (multi)  → setup_types = valeur telle quelle
- *   - Autres catégories custom → ignorées (le coach IA ne les lit pas)
+ *   - `zone` (paired)      → setup_types = "OB M5", "FVG M15"... Chaîne de
+ *                            l'ancien catalogue quand elle existe (par
+ *                            paire), sinon "Élément Unité".
+ *   - `fibonacci` (multi)  → setup_types = "38.2%", "50%", "61.8%", "78.6%"
+ *                            (point, SANS espace). La virgule française
+ *                            n'apparaît QUE dans l'affichage.
+ *   - `signal` (paired)    → signals = chaîne de l'ancien catalogue, OU
+ *                            cas spécial "Pin Bar" (sans unité, quelle que
+ *                            soit la TF), OU fallback "Élément Unité".
+ *   - `my_setups` (multi)  → setup_types = valeur telle quelle.
+ *   - Autres catégories custom → ignorées (le coach IA ne les lit pas).
  *
- * `has_confluence` : vrai si (zone.length + fibonacci.length) >= 2.
- *
- * Pur. Formats de sortie identiques à ce qu'écrit l'UI actuelle (ex.
- * "OB M5" en haut de casse, "50 %" avec espace insécable ` `
- * remplacé par un espace standard).
+ * `has_confluence` : vrai si (zones.length + fibonacci.length) ≥ 2.
  */
 export function projectToLegacy(criteria: CriteriaMap): {
   setup_types: string[]
@@ -134,19 +185,16 @@ export function projectToLegacy(criteria: CriteriaMap): {
   const signals: string[] = []
 
   const zones = readPaired(criteria, 'zone')
-  for (const p of zones) setup_types.push(`${p.element} ${p.timeframe}`)
+  for (const p of zones) setup_types.push(legacyZoneLabel(p.element, p.timeframe))
 
   const fibos = readMulti(criteria, 'fibonacci')
-  for (const f of fibos) {
-    const asFr = f.replace('.', ',')
-    setup_types.push(`${asFr} %`)
-  }
+  for (const f of fibos) setup_types.push(legacyFibonacciLabel(f))
 
   const mySetups = readMulti(criteria, 'my_setups')
   for (const s of mySetups) setup_types.push(s)
 
   const sigs = readPaired(criteria, 'signal')
-  for (const p of sigs) signals.push(`${p.element} ${p.timeframe}`)
+  for (const p of sigs) signals.push(legacySignalLabel(p.element, p.timeframe))
 
   // Confluence = 2+ éléments cumulés zones + fibonacci
   const has_confluence = (zones.length + fibos.length) >= 2
@@ -174,6 +222,94 @@ export function profitFactor(entries: Array<Pick<BacktestEntry, 'result' | 'r_re
 }
 
 // ─── analyzeBy ──────────────────────────────────────────────────────────────
+
+// ─── Catégories ATP figées ──────────────────────────────────────────────────
+
+/** Clés des 4 catégories semées par `seed_trader_criteria` — elles ne sont
+ *  ni modifiables de type, ni supprimables. Toute autre clé (templates et
+ *  critères vierges créés par le trader) est "Perso". */
+export const ATP_CATEGORY_KEYS: ReadonlySet<string> = new Set([
+  'zone', 'fibonacci', 'signal', 'my_setups',
+])
+
+export function isAtpCategory(key: string): boolean {
+  return ATP_CATEGORY_KEYS.has(key)
+}
+
+// ─── Réordonnancement ───────────────────────────────────────────────────────
+
+/** Déplace un élément de `from` à `to` dans un tableau. Pur, hors-bornes
+ *  renvoie une copie inchangée. */
+export function moveItem<T>(items: T[], from: number, to: number): T[] {
+  const n = items.length
+  if (from === to || from < 0 || to < 0 || from >= n || to >= n) {
+    return items.slice()
+  }
+  const copy = items.slice()
+  const [removed] = copy.splice(from, 1)
+  copy.splice(to, 0, removed)
+  return copy
+}
+
+// ─── Validation de la saisie "Nouveau critère" ──────────────────────────────
+
+export interface CategoryDraft {
+  label: string
+  selection: CategorySelection
+  /** Labels des options saisies (dédoublonnage insensible à la casse côté
+   *  validation ; la casse d'origine est conservée côté stockage). */
+  options: string[]
+  /** Pour selection='paired'. Ignoré sinon. */
+  timeframes: string[]
+}
+
+export interface ValidationErrors {
+  label?: string
+  options?: string
+  timeframes?: string
+}
+
+/** Nom unique = aucune catégorie existante n'a ce label (insensible casse). */
+export function validateCategoryDraft(
+  draft: CategoryDraft,
+  existingLabels: ReadonlyArray<string>,
+): ValidationErrors {
+  const errors: ValidationErrors = {}
+  const label = draft.label.trim()
+  if (!label) {
+    errors.label = 'Donne un nom au critère.'
+  } else if (existingLabels.some((l) => l.trim().toLowerCase() === label.toLowerCase())) {
+    errors.label = 'Un critère porte déjà ce nom.'
+  }
+
+  const uniqueOpts = Array.from(new Set(
+    draft.options.map((o) => o.trim()).filter(Boolean).map((o) => o.toLowerCase()),
+  ))
+
+  if (draft.selection === 'paired') {
+    if (uniqueOpts.length < 1) {
+      errors.options = 'Il faut au moins 1 élément.'
+    }
+    if (draft.timeframes.filter((t) => t.trim()).length < 1) {
+      errors.timeframes = 'Il faut au moins 1 unité de temps.'
+    }
+  } else {
+    if (uniqueOpts.length < 2) {
+      errors.options = 'Il faut au moins 2 options.'
+    }
+  }
+
+  return errors
+}
+
+/** Vrai si le draft passe la validation. */
+export function isValidCategoryDraft(
+  draft: CategoryDraft,
+  existingLabels: ReadonlyArray<string>,
+): boolean {
+  const e = validateCategoryDraft(draft, existingLabels)
+  return !e.label && !e.options && !e.timeframes
+}
 
 /** Seuil minimal de trades pour que le signal soit considéré fiable. */
 export const MIN_TRADES_FOR_SIGNAL = 10
