@@ -8,12 +8,15 @@
 -- sens côté stats). Ce patch :
 --
 --   - reconnaît "Pin Bar" sans TF → paire { element: 'Pin Bar',
---     timeframe: 'M5' } (TF par défaut, choix produit : le signal
---     Pin Bar est habituellement regardé en intraday) ;
+--     timeframe: '' } (sentinelle "non précisée", on n'invente
+--     PAS de donnée) ;
 --   - Hammer et Engulfing continuent d'exiger une TF (sinon fallback
 --     "Mes setups") ;
 --   - rejoue l'injection "Pin Bar" idempotemment : si la paire existe
 --     déjà, l'INSERT du log est skippé.
+--
+-- Les stats par unité de temps regrouperont ces lignes dans "Non
+-- précisée" (gérée côté code, timeframe === '' → libellé spécial).
 --
 -- Idempotente : CREATE OR REPLACE unique, aucune donnée touchée en
 -- dehors de l'appel manuel à la fonction.
@@ -45,7 +48,9 @@ declare
   v_fibo_atp      text[] := array['38.2','50','61.8','78.6'];
   v_signal_atp    text[] := array['Hammer','Engulfing'];
   v_signal_notf   text[] := array['Pin Bar'];
-  v_signal_notf_tf text := 'M5';
+  -- Sentinelle "non précisée" : chaîne vide. L'UI remplace en libellé
+  -- "Non précisée" dans les stats par unité de temps.
+  v_signal_notf_tf text := '';
   v_tfs           text[] := array['M1','M5','M15','H1','H4','100T'];
   v_fibo_norm     text;
   v_tf_match      text;

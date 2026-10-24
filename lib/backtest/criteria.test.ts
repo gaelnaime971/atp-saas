@@ -483,3 +483,200 @@ describe('isValidCategoryDraft — raccourci booléen', () => {
     expect(isValidCategoryDraft(draft({ options: [] }), [])).toBe(false)
   })
 })
+
+// ─── Saisie V2 : paires, R, confluence, reset, validation ──────────────────
+
+import {
+  addPair, removePair, takenTimeframesForElement,
+  computeRFromPoints, countConfluence,
+  resetAfterNext, validateSaisie, isSaisieSubmittable, resolveR,
+  timeframeLabel, UNSPECIFIED_TIMEFRAME, UNSPECIFIED_TIMEFRAME_LABEL,
+  type SaisieDraft,
+} from './criteria'
+
+describe('addPair / removePair / takenTimeframesForElement', () => {
+  it('addPair ajoute si absent, idempotent sinon', () => {
+    const after = addPair([], 'OB', 'M5')
+    expect(after).toEqual([{ element: 'OB', timeframe: 'M5' }])
+    const again = addPair(after, 'OB', 'M5')
+    expect(again).toEqual(after)
+    expect(again).not.toBe(after) // copie quand même
+  })
+
+  it('addPair : paires avec même élément mais TF différente coexistent', () => {
+    const r = addPair(addPair([], 'OB', 'M5'), 'OB', 'M15')
+    expect(r).toEqual([
+      { element: 'OB', timeframe: 'M5' },
+      { element: 'OB', timeframe: 'M15' },
+    ])
+  })
+
+  it('addPair : paires d\'éléments différents coexistent', () => {
+    const r = addPair(addPair([], 'OB', 'M5'), 'FVG', 'M5')
+    expect(r).toHaveLength(2)
+  })
+
+  it('removePair retire la paire exacte', () => {
+    const start = [{ element: 'OB', timeframe: 'M5' }, { element: 'FVG', timeframe: 'M5' }]
+    expect(removePair(start, 'OB', 'M5')).toEqual([{ element: 'FVG', timeframe: 'M5' }])
+    expect(removePair(start, 'OB', 'M15')).toEqual(start)
+  })
+
+  it('takenTimeframesForElement : set des TFs prises par élément', () => {
+    const pairs = [
+      { element: 'OB',  timeframe: 'M5' },
+      { element: 'OB',  timeframe: 'M15' },
+      { element: 'FVG', timeframe: 'M5' },
+    ]
+    expect(Array.from(takenTimeframesForElement(pairs, 'OB')).sort()).toEqual(['M15', 'M5'])
+    expect(Array.from(takenTimeframesForElement(pairs, 'FVG'))).toEqual(['M5'])
+    expect(takenTimeframesForElement(pairs, 'BOS').size).toBe(0)
+  })
+
+  it('addPair accepte la sentinelle "non précisée" (chaîne vide)', () => {
+    const r = addPair([], 'Pin Bar', UNSPECIFIED_TIMEFRAME)
+    expect(r).toEqual([{ element: 'Pin Bar', timeframe: '' }])
+  })
+})
+
+describe('computeRFromPoints', () => {
+  it('6 / 3 → 2', () => { expect(computeRFromPoints(6, 3)).toBe(2) })
+  it('5 / 3 → 1.67', () => { expect(computeRFromPoints(5, 3)).toBe(1.67) })
+  it('-3 / 3 → -1', () => { expect(computeRFromPoints(-3, 3)).toBe(-1) })
+  it('sl = 0 → null', () => { expect(computeRFromPoints(10, 0)).toBeNull() })
+  it('sl < 0 → null (incohérent)', () => { expect(computeRFromPoints(10, -2)).toBeNull() })
+  it('NaN → null', () => {
+    expect(computeRFromPoints(NaN, 3)).toBeNull()
+    expect(computeRFromPoints(3, NaN)).toBeNull()
+  })
+})
+
+describe('countConfluence', () => {
+  it('vide → 0', () => { expect(countConfluence({})).toBe(0) })
+  it('1 zone → 1', () => {
+    expect(countConfluence({ zone: [{ element: 'OB', timeframe: 'M5' }] })).toBe(1)
+  })
+  it('1 fibo → 1', () => {
+    expect(countConfluence({ fibonacci: ['50'] })).toBe(1)
+  })
+  it('2 zones → 2 (confluence !)', () => {
+    expect(countConfluence({
+      zone: [
+        { element: 'OB',  timeframe: 'M5' },
+        { element: 'FVG', timeframe: 'M15' },
+      ],
+    })).toBe(2)
+  })
+  it('zones + fibo + signal : signal et my_setups ne comptent PAS', () => {
+    expect(countConfluence({
+      zone: [{ element: 'OB', timeframe: 'M5' }],
+      fibonacci: ['50', '61.8'],
+      signal: [{ element: 'Hammer', timeframe: 'M1' }],
+      my_setups: ['x', 'y'],
+    })).toBe(3)
+  })
+})
+
+describe('resetAfterNext — garde contexte, reste à la charge du caller', () => {
+  it('date / instrument / direction préservés', () => {
+    const ctx = { date: '2026-10-25', instrument: 'NQ', direction: 'LONG' as const }
+    expect(resetAfterNext(ctx)).toEqual(ctx)
+  })
+})
+
+describe('timeframeLabel — sentinelle "Non précisée"', () => {
+  it('M5 → "M5"', () => { expect(timeframeLabel('M5')).toBe('M5') })
+  it('"" → "Non précisée"', () => {
+    expect(timeframeLabel(UNSPECIFIED_TIMEFRAME)).toBe(UNSPECIFIED_TIMEFRAME_LABEL)
+  })
+})
+
+// ─── Validation SaisieDraft ────────────────────────────────────────────────
+
+function sdraft(partial: Partial<SaisieDraft> = {}): SaisieDraft {
+  return {
+    date: '2026-10-25',
+    instrument: 'NQ',
+    direction: 'LONG',
+    result: 'win',
+    mode: 'r',
+    rInput: '+1,5',
+    pointsInput: '',
+    slPointsInput: '',
+    criteria: { zone: [{ element: 'OB', timeframe: 'M5' }] },
+    ...partial,
+  }
+}
+
+describe('validateSaisie — bloquants', () => {
+  it('tout OK → aucun bloquant', () => {
+    const e = validateSaisie(sdraft())
+    expect(e.instrument).toBeUndefined()
+    expect(e.direction).toBeUndefined()
+    expect(e.result).toBeUndefined()
+    expect(e.r).toBeUndefined()
+    expect(isSaisieSubmittable(sdraft())).toBe(true)
+  })
+  it('instrument manquant', () => {
+    expect(validateSaisie(sdraft({ instrument: '' })).instrument).toBeDefined()
+  })
+  it('direction manquante', () => {
+    expect(validateSaisie(sdraft({ direction: '' })).direction).toBeDefined()
+  })
+  it('issue manquante', () => {
+    expect(validateSaisie(sdraft({ result: '' })).result).toBeDefined()
+  })
+  it('mode "r" : R vide / invalide → erreur', () => {
+    expect(validateSaisie(sdraft({ rInput: '' })).r).toBeDefined()
+    expect(validateSaisie(sdraft({ rInput: 'abc' })).r).toBeDefined()
+  })
+  it('mode "r" : R=0 accepté (BE)', () => {
+    expect(validateSaisie(sdraft({ rInput: '0', result: 'be' })).r).toBeUndefined()
+  })
+  it('mode "r" : virgule française acceptée', () => {
+    expect(validateSaisie(sdraft({ rInput: '-0,5' })).r).toBeUndefined()
+  })
+  it('mode "points" : points et sl requis', () => {
+    const base = sdraft({ mode: 'points', rInput: '', pointsInput: '', slPointsInput: '' })
+    const e = validateSaisie(base)
+    expect(e.points).toBeDefined()
+    expect(e.slPoints).toBeDefined()
+  })
+  it('mode "points" : sl ≤ 0 refusé', () => {
+    const e = validateSaisie(sdraft({ mode: 'points', pointsInput: '6', slPointsInput: '0' }))
+    expect(e.slPoints).toBeDefined()
+  })
+  it('mode "points" : OK si points et sl > 0', () => {
+    expect(isSaisieSubmittable(sdraft({
+      mode: 'points', rInput: '', pointsInput: '6', slPointsInput: '3',
+    }))).toBe(true)
+  })
+})
+
+describe('validateSaisie — avertissement setup (NON bloquant)', () => {
+  it('aucun setup → warning mais submittable', () => {
+    const d = sdraft({ criteria: {} })
+    const e = validateSaisie(d)
+    expect(e.setupWarning).toBeDefined()
+    expect(isSaisieSubmittable(d)).toBe(true) // warning ne bloque pas
+  })
+  it('≥ 1 setup → pas de warning', () => {
+    expect(validateSaisie(sdraft()).setupWarning).toBeUndefined()
+  })
+})
+
+describe('resolveR — R final à écrire selon le mode', () => {
+  it('mode "r" : parse direct', () => {
+    expect(resolveR(sdraft({ rInput: '+1,5' }))).toBe(1.5)
+    expect(resolveR(sdraft({ rInput: '-0.5' }))).toBe(-0.5)
+    expect(resolveR(sdraft({ rInput: '' }))).toBeNull()
+  })
+  it('mode "points" : points / sl', () => {
+    expect(resolveR(sdraft({
+      mode: 'points', rInput: '', pointsInput: '6', slPointsInput: '3',
+    }))).toBe(2)
+    expect(resolveR(sdraft({
+      mode: 'points', rInput: '', pointsInput: '', slPointsInput: '3',
+    }))).toBeNull()
+  })
+})

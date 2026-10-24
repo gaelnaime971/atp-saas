@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
 import Badge from '@/components/ui/Badge'
 import MesCriteresTab from './backtest/MesCriteresTab'
+import SaisieV2 from './backtest/SaisieV2'
 
 // ── Constants ──────────────────────────────────────────────
 
@@ -425,8 +426,13 @@ export default function Backtest() {
       {/* ═══════════════════ TAB MES CRITÈRES (testeurs V2) ═══════════════════ */}
       {tab === 'criteres' && isV2Tester && <MesCriteresTab />}
 
-      {/* ═══════════════════ TAB SAISIE ═══════════════════ */}
-      {tab === 'saisie' && (
+      {/* ═══════════════════ TAB SAISIE V2 (testeurs V2) ═══════════════════ */}
+      {tab === 'saisie' && isV2Tester && (
+        <SaisieV2 onGoToCriteria={() => setTab('criteres')} />
+      )}
+
+      {/* ═══════════════════ TAB SAISIE (ancienne, non-testeurs) ═══════════════════ */}
+      {tab === 'saisie' && !isV2Tester && (
         <Card>
           <p className="text-sm font-semibold" style={{ color: 'var(--text)', marginBottom: 20 }}>
             Nouveau backtest

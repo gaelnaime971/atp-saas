@@ -311,6 +311,167 @@ export function isValidCategoryDraft(
   return !e.label && !e.options && !e.timeframes
 }
 
+// ─── Timeframe sentinelle "non précisée" ────────────────────────────────────
+
+/** Chaîne vide = TF non précisée (cas "Pin Bar" repris du backfill, ou
+ *  option paired saisie sans unité). Les stats par unité de temps
+ *  utilisent ce libellé pour afficher la ligne. */
+export const UNSPECIFIED_TIMEFRAME = '' as const
+export const UNSPECIFIED_TIMEFRAME_LABEL = 'Non précisée'
+
+/** Libellé d'une TF pour l'UI. Chaîne vide → "Non précisée". */
+export function timeframeLabel(tf: string): string {
+  return tf === UNSPECIFIED_TIMEFRAME ? UNSPECIFIED_TIMEFRAME_LABEL : tf
+}
+
+// ─── Mutations immuables sur une liste de paires (saisie V2) ────────────────
+
+function pairEq(a: PairedValue, b: PairedValue): boolean {
+  return a.element === b.element && a.timeframe === b.timeframe
+}
+
+/** Ajoute `{element, timeframe}` à `current` si la paire exacte n'est
+ *  pas déjà présente. Pur, retourne une nouvelle liste. */
+export function addPair(current: PairedValue[], element: string, timeframe: string): PairedValue[] {
+  const next: PairedValue = { element, timeframe }
+  if (current.some((p) => pairEq(p, next))) return current.slice()
+  return [...current, next]
+}
+
+/** Retire la paire exacte `{element, timeframe}`. Pur. */
+export function removePair(current: PairedValue[], element: string, timeframe: string): PairedValue[] {
+  return current.filter((p) => !pairEq(p, { element, timeframe }))
+}
+
+/** Set des TFs déjà prises pour un élément donné (utile pour griser
+ *  les boutons "unité" déjà consommés par cet élément dans la saisie). */
+export function takenTimeframesForElement(current: PairedValue[], element: string): Set<string> {
+  const set = new Set<string>()
+  for (const p of current) if (p.element === element) set.add(p.timeframe)
+  return set
+}
+
+// ─── Calcul du R depuis points / stop (saisie V2) ───────────────────────────
+
+/**
+ * R = points / sl_points, arrondi à 2 décimales. Retourne `null` si
+ * sl_points est 0, NaN ou négatif (le trader n'a pas (encore) renseigné
+ * un stop valide — l'UI affiche un placeholder plutôt qu'un faux 0).
+ */
+export function computeRFromPoints(points: number, slPoints: number): number | null {
+  if (!Number.isFinite(points) || !Number.isFinite(slPoints)) return null
+  if (slPoints <= 0) return null
+  return Math.round((points / slPoints) * 100) / 100
+}
+
+// ─── Confluence (saisie V2) ─────────────────────────────────────────────────
+
+/**
+ * Nombre d'éléments cumulés zones (paired) + fibonacci (multi) dans le
+ * criteria courant. Un badge "Confluence détectée : N éléments" s'affiche
+ * en haut du bloc Setup si N ≥ 2 (= has_confluence côté projectToLegacy).
+ */
+export function countConfluence(criteria: CriteriaMap): number {
+  return readPaired(criteria, 'zone').length + readMulti(criteria, 'fibonacci').length
+}
+
+// ─── Reset du formulaire après "Enregistrer et saisir le suivant" ───────────
+
+/**
+ * Contexte conservé entre deux saisies rapides : date, instrument, sens.
+ * Pur — l'UI n'a qu'à appeler cette fn pour obtenir le prochain état.
+ */
+export interface SaisieContext {
+  date: string
+  instrument: string
+  direction: 'LONG' | 'SHORT'
+}
+
+/** Garde `date`, `instrument`, `direction` tels quels et considère
+ *  TOUT le reste (criteria + résultat + notes + image) comme reset
+ *  par le caller. Retourne juste la part conservée. */
+export function resetAfterNext(ctx: SaisieContext): SaisieContext {
+  return { date: ctx.date, instrument: ctx.instrument, direction: ctx.direction }
+}
+
+// ─── Validation de la saisie V2 ─────────────────────────────────────────────
+
+/** Mode de saisie du résultat : "En R" (saisie directe) ou "En points"
+ *  (points + stop → R calculé). */
+export type ResultMode = 'r' | 'points'
+
+export interface SaisieDraft {
+  date: string
+  instrument: string
+  direction: 'LONG' | 'SHORT' | ''
+  result: 'win' | 'loss' | 'be' | ''
+  mode: ResultMode
+  rInput: string          // string pour tolérer "+1,5" / "-0,5"
+  pointsInput: string
+  slPointsInput: string
+  criteria: CriteriaMap
+}
+
+export interface SaisieErrors {
+  instrument?: string
+  direction?: string
+  result?: string
+  r?: string
+  points?: string
+  slPoints?: string
+  setupWarning?: string   // avertissement léger — n'empêche PAS de sauver
+}
+
+function parseFrNumber(s: string): number | null {
+  if (!s) return null
+  const n = Number(s.replace(',', '.').trim())
+  return Number.isFinite(n) ? n : null
+}
+
+/** Validation stricte sauf `setupWarning` (= message indicatif). */
+export function validateSaisie(draft: SaisieDraft): SaisieErrors {
+  const e: SaisieErrors = {}
+  if (!draft.instrument) e.instrument = 'Choisis un instrument.'
+  if (!draft.direction) e.direction = 'Choisis le sens (Achat ou Vente).'
+  if (!draft.result) e.result = 'Choisis l\'issue : Gagnant, Perdant ou BE.'
+  if (draft.mode === 'r') {
+    const r = parseFrNumber(draft.rInput)
+    if (r == null) e.r = 'Renseigne le R (en nombre, ex. +1,5).'
+  } else {
+    const p = parseFrNumber(draft.pointsInput)
+    const sl = parseFrNumber(draft.slPointsInput)
+    if (p == null) e.points = 'Renseigne les points gagnés.'
+    if (sl == null) e.slPoints = 'Renseigne le stop (en points).'
+    else if (sl <= 0) e.slPoints = 'Le stop doit être supérieur à 0.'
+  }
+  // Setup = avertissement léger
+  const totalSetups =
+    readPaired(draft.criteria, 'zone').length +
+    readMulti(draft.criteria, 'fibonacci').length +
+    readPaired(draft.criteria, 'signal').length +
+    readMulti(draft.criteria, 'my_setups').length
+  if (totalSetups === 0) {
+    e.setupWarning = 'Aucun setup choisi — tu peux quand même enregistrer.'
+  }
+  return e
+}
+
+/** Vrai si la saisie est enregistrable (= aucune erreur bloquante). */
+export function isSaisieSubmittable(draft: SaisieDraft): boolean {
+  const e = validateSaisie(draft)
+  return !e.instrument && !e.direction && !e.result && !e.r && !e.points && !e.slPoints
+}
+
+/** Calcule le R final à écrire en base selon le mode. Retourne `null`
+ *  si pas valide. Appel par l'UI juste avant le POST. */
+export function resolveR(draft: SaisieDraft): number | null {
+  if (draft.mode === 'r') return parseFrNumber(draft.rInput)
+  const p = parseFrNumber(draft.pointsInput)
+  const sl = parseFrNumber(draft.slPointsInput)
+  if (p == null || sl == null) return null
+  return computeRFromPoints(p, sl)
+}
+
 /** Seuil minimal de trades pour que le signal soit considéré fiable. */
 export const MIN_TRADES_FOR_SIGNAL = 10
 
