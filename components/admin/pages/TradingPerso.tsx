@@ -11,6 +11,7 @@ import EntityCard, { BalanceHero, PerfCells } from '@/components/ui/EntityCard'
 import { PromoteToFundedButton, FundedActionsPanel } from './propfirm/FundedManagement'
 import TodayFundedPnL from './propfirm/TodayFundedPnL'
 import { AccountGoalBar } from './propfirm/AccountGoal'
+import SimulatorPanel from './propfirm/SimulatorPanel'
 import type { AccountEvent, AccountSnapshot } from '@/lib/propfirm/events'
 import type { GoalBasis } from '@/lib/propfirm/goal'
 
@@ -976,6 +977,9 @@ export default function TradingPerso() {
               Pas encore de compte financé. Valide un challenge dans l&apos;onglet <strong style={{ color: 'var(--green)' }}>Validation Challenges</strong> puis reviens ici pour piloter tes payouts.
             </div>
           )}
+
+          {/* SIMULATEUR — sandbox, aucune incidence sur les comptes */}
+          <SimulatorPanel />
 
           {/* PAYOUTS HISTORY */}
           {(fundedAccounts.length > 0 || payouts.length > 0) && (
