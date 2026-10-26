@@ -10,7 +10,9 @@ import {
 import EntityCard, { BalanceHero, PerfCells } from '@/components/ui/EntityCard'
 import { PromoteToFundedButton, FundedActionsPanel } from './propfirm/FundedManagement'
 import TodayFundedPnL from './propfirm/TodayFundedPnL'
+import { AccountGoalBar } from './propfirm/AccountGoal'
 import type { AccountEvent, AccountSnapshot } from '@/lib/propfirm/events'
+import type { GoalBasis } from '@/lib/propfirm/goal'
 
 // ── Types ─────────────────────────────────────────────
 
@@ -38,6 +40,12 @@ interface PropAccount {
   payout_split_pct: number | null
   notes: string | null
   created_at: string
+  // Objectif par compte (nullable). Alimenté par la migration
+  // 20261026000002 ; silent-fail si pas encore appliquée côté UI.
+  goal_amount_eur: number | null
+  goal_basis: GoalBasis | null
+  goal_deadline: string | null
+  goal_notes: string | null
 }
 
 interface DailyPnL {
@@ -2709,6 +2717,24 @@ function FundedCard({
       onEdit={onEdit}
       onDelete={onDelete}
     >
+      {/* Objectif par compte + barre de progression */}
+      {onRefresh && (
+        <AccountGoalBar
+          account={{
+            id: account.id,
+            starting_balance: Number(account.starting_balance),
+            current_balance: Number(account.current_balance),
+            goal_amount_eur: account.goal_amount_eur,
+            goal_basis: account.goal_basis,
+            goal_deadline: account.goal_deadline,
+            goal_notes: account.goal_notes,
+          }}
+          pnls={accountPnls.map((p) => ({ date: p.date, pnl: Number(p.pnl) }))}
+          lastPayoutDate={lastPayout?.payout_date ?? null}
+          onDone={onRefresh}
+        />
+      )}
+
       {/* Payout profit box — depuis dernier payout */}
       <div style={{
         padding: '14px 16px',
