@@ -8,6 +8,8 @@ import {
   XAxis, YAxis, PieChart, Pie, Legend,
 } from 'recharts'
 import EntityCard, { BalanceHero, PerfCells } from '@/components/ui/EntityCard'
+import { PromoteToFundedButton, FundedActionsPanel } from './propfirm/FundedManagement'
+import type { AccountEvent, AccountSnapshot } from '@/lib/propfirm/events'
 
 // ── Types ─────────────────────────────────────────────
 
@@ -143,6 +145,10 @@ export default function TradingPerso() {
   const [overrides, setOverrides] = useState<DailyOverride[]>([])
   const [annualTarget, setAnnualTarget] = useState<AnnualTarget | null>(null)
   const [payouts, setPayouts] = useState<Payout[]>([])
+  // 2026-10-26 : audit chronologique du cycle de vie d'un compte funded
+  // (scale-up, reset, clôture, breach). Les payouts restent dans leur
+  // propre table.
+  const [events, setEvents] = useState<AccountEvent[]>([])
 
   const [currentMonday, setCurrentMonday] = useState<string>(mondayOf(new Date()))
   const [editingAccount, setEditingAccount] = useState<PropAccount | null>(null)
@@ -159,13 +165,14 @@ export default function TradingPerso() {
 
   // ─── Fetch all ───
   const fetchAll = useCallback(async (uid: string) => {
-    const [accRes, pnlRes, wtRes, ovRes, atRes, poRes] = await Promise.all([
+    const [accRes, pnlRes, wtRes, ovRes, atRes, poRes, evRes] = await Promise.all([
       supabase.from('propfirm_accounts').select('*').eq('owner_id', uid).order('created_at', { ascending: false }),
       supabase.from('propfirm_daily_pnl').select('*, propfirm_accounts!inner(owner_id)').eq('propfirm_accounts.owner_id', uid).order('date', { ascending: false }).limit(2000),
       supabase.from('propfirm_weekly_targets').select('*').eq('owner_id', uid).order('week_start_date', { ascending: false }).limit(52),
       supabase.from('propfirm_daily_target_overrides').select('*, propfirm_weekly_targets!inner(owner_id)').eq('propfirm_weekly_targets.owner_id', uid),
       supabase.from('propfirm_annual_targets').select('*').eq('owner_id', uid).eq('year', new Date().getFullYear()).maybeSingle(),
       supabase.from('propfirm_payouts').select('*, propfirm_accounts!inner(owner_id)').eq('propfirm_accounts.owner_id', uid).order('payout_date', { ascending: false }),
+      supabase.from('propfirm_account_events').select('*, propfirm_accounts!inner(owner_id)').eq('propfirm_accounts.owner_id', uid).order('event_date', { ascending: false }),
     ])
     if (accRes.data) setAccounts(accRes.data as PropAccount[])
     if (pnlRes.data) setPnls(pnlRes.data as unknown as DailyPnL[])
@@ -174,6 +181,10 @@ export default function TradingPerso() {
     if (atRes.data) setAnnualTarget(atRes.data as AnnualTarget)
     else setAnnualTarget(null)
     if (poRes.data) setPayouts(poRes.data as unknown as Payout[])
+    // La table peut ne pas exister si la migration 20261026000001 n'a
+    // pas été appliquée : on silent-fail (events = []).
+    if (evRes.data) setEvents(evRes.data as unknown as AccountEvent[])
+    else if (evRes.error && evRes.error.code === '42P01') setEvents([])
   }, [supabase])
 
   useEffect(() => {
@@ -804,6 +815,7 @@ export default function TradingPerso() {
             weekPnlByAccount={weekPnlByAccount}
             onEdit={setEditingAccount}
             onDelete={deleteAccount}
+            onRefresh={() => userId && fetchAll(userId)}
           />
 
           {/* DAILY P&L MATRIX (challenges only) */}
@@ -929,10 +941,12 @@ export default function TradingPerso() {
             accounts={fundedAccounts}
             pnls={pnls}
             payouts={payouts}
+            events={events}
             weekPnlByAccount={weekPnlByAccount}
             onEdit={setEditingAccount}
             onDelete={deleteAccount}
             onLogPayout={() => setShowPayoutModal(true)}
+            onRefresh={() => userId && fetchAll(userId)}
           />
 
           {fundedAccounts.length === 0 && (
@@ -2232,13 +2246,14 @@ function BulkAccountsModal({
 // ═══════════════════════════════════════════════════════
 
 function ChallengesSection({
-  accounts, pnls, weekPnlByAccount, onEdit, onDelete,
+  accounts, pnls, weekPnlByAccount, onEdit, onDelete, onRefresh,
 }: {
   accounts: PropAccount[]
   pnls: DailyPnL[]
   weekPnlByAccount: Record<string, number>
   onEdit: (a: PropAccount) => void
   onDelete: (id: string) => void
+  onRefresh?: () => void
 }) {
   // Aggregate stats
   const totalCost = accounts.reduce((s, a) => s + Number(a.cost_eur || 0), 0)
@@ -2338,6 +2353,7 @@ function ChallengesSection({
             accountPnls={pnls.filter(p => p.account_id === a.id)}
             onEdit={() => onEdit(a)}
             onDelete={() => onDelete(a.id)}
+            onPromoted={onRefresh}
           />
         ))}
       </div>
@@ -2346,7 +2362,7 @@ function ChallengesSection({
 }
 
 function ChallengeCard({
-  account, weekPnl, todayPnl, accountPnls, onEdit, onDelete,
+  account, weekPnl, todayPnl, accountPnls, onEdit, onDelete, onPromoted,
 }: {
   account: PropAccount
   weekPnl: number
@@ -2354,6 +2370,7 @@ function ChallengeCard({
   accountPnls: DailyPnL[]
   onEdit: () => void
   onDelete: () => void
+  onPromoted?: () => void
 }) {
   const phase = PHASE_LABELS[account.phase]
   const profit = Number(account.current_balance) - Number(account.starting_balance)
@@ -2483,6 +2500,16 @@ function ChallengeCard({
         </div>
       )}
 
+      {/* Bouton "Passer en financé" quand validation atteinte */}
+      {validated && onPromoted && (
+        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+          <PromoteToFundedButton
+            account={account as unknown as AccountSnapshot}
+            onDone={onPromoted}
+          />
+        </div>
+      )}
+
     </EntityCard>
   )
 }
@@ -2492,15 +2519,17 @@ function ChallengeCard({
 // ═══════════════════════════════════════════════════════
 
 function FundedSection({
-  accounts, pnls, payouts, weekPnlByAccount, onEdit, onDelete, onLogPayout,
+  accounts, pnls, payouts, events, weekPnlByAccount, onEdit, onDelete, onLogPayout, onRefresh,
 }: {
   accounts: PropAccount[]
   pnls: DailyPnL[]
   payouts: Payout[]
+  events: AccountEvent[]
   weekPnlByAccount: Record<string, number>
   onEdit: (a: PropAccount) => void
   onDelete: (id: string) => void
   onLogPayout: () => void
+  onRefresh?: () => void
 }) {
   const totalCurrentProfit = accounts.reduce((s, a) => s + (Number(a.current_balance) - Number(a.starting_balance)), 0)
   const totalPayoutsAllTime = payouts.filter(p => accounts.some(a => a.id === p.account_id)).reduce((s, p) => s + Number(p.amount_eur), 0)
@@ -2566,16 +2595,19 @@ function FundedSection({
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {accounts.map(a => {
           const accPayouts = payouts.filter(p => p.account_id === a.id)
+          const accEvents = events.filter(ev => ev.account_id === a.id)
           return (
             <FundedCard
               key={a.id}
               account={a}
               payouts={accPayouts}
+              events={accEvents}
               weekPnl={weekPnlByAccount[a.id] || 0}
               todayPnl={pnls.filter(p => p.account_id === a.id && p.date === todayISO()).reduce((s, p) => s + Number(p.pnl), 0)}
               accountPnls={pnls.filter(p => p.account_id === a.id)}
               onEdit={() => onEdit(a)}
               onDelete={() => onDelete(a.id)}
+              onRefresh={onRefresh}
             />
           )
         })}
@@ -2585,15 +2617,17 @@ function FundedSection({
 }
 
 function FundedCard({
-  account, payouts, weekPnl, todayPnl, accountPnls, onEdit, onDelete,
+  account, payouts, events, weekPnl, todayPnl, accountPnls, onEdit, onDelete, onRefresh,
 }: {
   account: PropAccount
   payouts: Payout[]
+  events: AccountEvent[]
   weekPnl: number
   todayPnl: number
   accountPnls: DailyPnL[]
   onEdit: () => void
   onDelete: () => void
+  onRefresh?: () => void
 }) {
   const profit = Number(account.current_balance) - Number(account.starting_balance)
   const totalPayouts = payouts.reduce((s, p) => s + Number(p.amount_eur), 0)
@@ -2730,6 +2764,15 @@ function FundedCard({
           </div>
         </div>
       </div>
+
+      {/* Panneau d'actions : Scale-up / Reset / Clôturer + timeline */}
+      {onRefresh && (
+        <FundedActionsPanel
+          account={account as unknown as AccountSnapshot}
+          events={events}
+          onDone={onRefresh}
+        />
+      )}
 
     </EntityCard>
   )
