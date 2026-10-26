@@ -9,6 +9,7 @@ import {
 } from 'recharts'
 import EntityCard, { BalanceHero, PerfCells } from '@/components/ui/EntityCard'
 import { PromoteToFundedButton, FundedActionsPanel } from './propfirm/FundedManagement'
+import TodayFundedPnL from './propfirm/TodayFundedPnL'
 import type { AccountEvent, AccountSnapshot } from '@/lib/propfirm/events'
 
 // ── Types ─────────────────────────────────────────────
@@ -868,6 +869,19 @@ export default function TradingPerso() {
       {/* ══════════════════════════════════════════════════════════════ */}
       {activeTab === 'business' && (
         <>
+          {/* SAISIE P&L DU JOUR — met à jour tous les comptes financés */}
+          {fundedAccounts.length > 0 && (
+            <TodayFundedPnL
+              accounts={fundedAccounts}
+              pnls={pnls}
+              onSave={async (updates) => {
+                for (const u of updates) {
+                  await savePnl(u.accountId, u.date, u.pnl, u.tradesCount, u.notes)
+                }
+              }}
+            />
+          )}
+
           {/* HERO — ANNUAL BUSINESS PLAN */}
           <AnnualHero
             year={currentYear}
