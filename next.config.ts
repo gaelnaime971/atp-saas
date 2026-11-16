@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
       // à public/maquettes/aligne/index.html.
       { source: '/maquettes/aligne', destination: '/maquettes/aligne/index.html' },
       { source: '/maquettes/aligne/', destination: '/maquettes/aligne/index.html' },
+      // Page cadeau privée (noindex). Même pattern que /maquettes/aligne :
+      // public/aaron/index.html servi sur /aaron et /aaron/.
+      // Le dossier recevra plus tard /aaron/photos/*, audio, vidéo.
+      { source: '/aaron', destination: '/aaron/index.html' },
+      { source: '/aaron/', destination: '/aaron/index.html' },
     ]
   },
   // Header noindex sur tout le sous-arbre /maquettes/* — doublé de la
@@ -33,6 +38,19 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/maquettes/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        ],
+      },
+      // Page cadeau /aaron : doublé en header en plus de la meta noindex.
+      {
+        source: '/aaron',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        ],
+      },
+      {
+        source: '/aaron/:path*',
         headers: [
           { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
         ],
