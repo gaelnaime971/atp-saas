@@ -386,6 +386,9 @@ body.is-locked .dossier,body.is-locked .ds-foot{visibility:hidden}
 .pill{display:inline-flex;align-items:center;gap:.4rem;padding:.22rem .65rem;border-radius:999px;border:1px solid rgba(34,197,94,.45);color:var(--profit);font-weight:600;font-size:.78rem}
 .note-target b{color:var(--gold-hi);font-weight:700}
 .note-text{margin:0;font-family:var(--font-human);font-style:italic;font-weight:500;font-size:clamp(1.22rem,1.9vw,1.5rem);line-height:1.45;color:#efe8da;max-width:36em}
+.note-text p{margin:0 0 .65em}
+.note-text p:last-child{margin-bottom:0}
+.note-sign{margin:.1rem 0 0;font-family:var(--font-human);font-style:italic;font-weight:600;font-size:clamp(1.55rem,2.5vw,1.95rem);line-height:1;color:var(--gold-hi)}
 
 .cert-frame{position:relative;padding:clamp(10px,2vw,22px);border-radius:14px;border:1px solid var(--rule);background:radial-gradient(120% 120% at 50% 0%,#132a18,#060e07);perspective:1600px}
 #cert,.cert-img{display:block;width:100%;height:auto;border-radius:3px;box-shadow:0 30px 60px rgba(0,0,0,.55);transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .3s var(--ease-out)}
@@ -824,9 +827,17 @@ const CONFIG = {
   ],
 
   // --- Les messages des proches, affichés comme des notes d'analystes ---
+  // texte : un paragraphe par ligne du tableau. signature : affichée en bas du message.
   messages: [
-    { de: "Maman", lien: "Actionnaire fondatrice", texte: "Depuis tout petit, quand tu veux quelque chose, tu vas le chercher. Alors fonce. On sera toujours ton premier soutien. Joyeux anniversaire, mon cœur." },
-    { de: "Papa", lien: "Actionnaire fondateur", texte: "Le meilleur investissement de notre vie, c'est toi. Travaille, reste humble et profite du chemin. Joyeux 20 ans, mon fils." },
+    { de: "Maman", lien: "Actionnaire fondatrice", signature: "Maman", texte: [
+      "Depuis que tu es petit je suis convaincue que tu es spécial, que tu vas accomplir de grandes choses, que ta vie sera à la hauteur de tes rêves.",
+      "Aujourd’hui on t’offre un petit coup de pouce pour lancer la machine car on voit tes qualités et ton potentiel.",
+      "Crois en toi, fonce et ne cesse jamais de rêver.",
+      "Je t’aime très fort mon fils",
+    ] },
+    { de: "Papa", lien: "Actionnaire fondateur", signature: "Papa", texte: [
+      "Aaron mon garçon, 20 ans déjà… Tu rentres dans la phase de vie où tes choix impacteront ton présent, ne te pose pas de questions sur ce programme, prends-le comme une grâce. Donne le meilleur de toi-même, sois humble et reconnaissant envers toi et les autres. Je t'aime, sois rempli de l'Amour de Dieu.",
+    ] },
   ],
 
   // --- Bandeau défilant, avant puis après l'exécution de l'ordre ---
@@ -2355,10 +2366,13 @@ const Dossier = (() => {
     $('#letter').innerHTML = (CONFIG.gerant.lettre || []).map(p => `<p>${tx(p)}</p>`).join('') +
       `<p class="sign">${tx('{coach}')}</p>` + (CONFIG.gerant.role ? `<p class="role">${tx(CONFIG.gerant.role)}</p>` : '');
 
-    $('#notes').innerHTML = (CONFIG.messages || []).map(m =>
-      `<article class="note"><header class="note-head"><p class="note-from">${tx(m.de)}${m.lien ? `<small>${tx(m.lien)}</small>` : ''}</p>` +
-      `<span class="pill">${tx('Achat fort')}</span><span class="note-target">${tx('Objectif de cours')} <b>∞</b></span></header>` +
-      `<p class="note-text">${tx('« ' + m.texte + ' »')}</p></article>`).join('');
+    $('#notes').innerHTML = (CONFIG.messages || []).map(m => {
+      const paras = (Array.isArray(m.texte) ? m.texte : [m.texte]).filter(Boolean);
+      return `<article class="note"><header class="note-head"><p class="note-from">${tx(m.de)}${m.lien ? `<small>${tx(m.lien)}</small>` : ''}</p>` +
+        `<span class="pill">${tx('Achat fort')}</span><span class="note-target">${tx('Objectif de cours')} <b>∞</b></span></header>` +
+        `<div class="note-text">${paras.map(p => `<p>${tx(p)}</p>`).join('')}</div>` +
+        (m.signature ? `<p class="note-sign">${tx(m.signature)}</p>` : '') + '</article>';
+    }).join('');
   }
   function onExecuted() {
     const d = STATE.execAt || new Date();
