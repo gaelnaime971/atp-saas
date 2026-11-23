@@ -166,8 +166,9 @@ export async function POST(request: NextRequest) {
   const data = payload?.data ?? {}
 
   // 7. Filtre strict produit ÉLITE PRO — tout autre produit = skip silencieux.
-  //    data.product est un OBJET { id, title, metadata } dans les webhooks
-  //    (contrairement à /v2/memberships où c'est une string). Vérifié payload réel.
+  //    data.product est un OBJET { id, title, metadata } dans les webhooks,
+  //    vérifié payload réel. Même format que ce que renvoie la Current API
+  //    côté lecture (/api/v1/memberships).
   if (data.product?.id !== productId) {
     return NextResponse.json({ received: true, skipped: 'other_product' })
   }

@@ -2,12 +2,11 @@
  * Statuts Whop qui donnent accès au dashboard — source unique.
  *
  * Factorisé entre le webhook (/api/webhooks/whop) et la vérification
- * d'abonnement au login (hasActiveEliteProMembership*) pour que les
- * deux côtés ne puissent JAMAIS diverger. Avant cette étape, chacun
- * avait sa propre logique : le webhook via allowlist stricte, l'API
- * v2 via le flag `valid` renvoyé par Whop. Avec la Current API, le
- * champ `valid` disparaît → on s'aligne sur la même allowlist
- * statuts, visible et testée ici.
+ * d'abonnement au login (hasActiveEliteProMembership) pour que les
+ * deux côtés ne puissent JAMAIS diverger. La Current API ne renvoie
+ * plus de champ `valid` (comme le faisait la v2 arrêtée le 13/11/2026) ;
+ * la décision passe entièrement par l'allowlist de statuts visible et
+ * testée ici.
  *
  * Décision produit (reprise mot pour mot du webhook) :
  *   active     : paiement OK, en cours

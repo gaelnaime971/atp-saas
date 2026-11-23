@@ -1,20 +1,36 @@
 /**
- * Helper serveur pour l'OAuth 2.1 + PKCE Whop (OIDC compatible).
+ * Helper serveur pour l'OAuth 2.1 + PKCE Whop (OIDC compatible) + vérif
+ * abonnement via la Current API `/api/v1`.
  *
- * Endpoints officiels Whop (confirmés doc + curl réel) :
+ * Endpoints officiels Whop :
  *   https://api.whop.com/oauth/authorize   (redirect user)
  *   https://api.whop.com/oauth/token       (POST JSON, échange code → token)
  *   https://api.whop.com/oauth/userinfo    (GET Bearer, OIDC user info)
- *   https://api.whop.com/oauth/revoke      (POST JSON, logout — étape 4)
+ *   https://api.whop.com/oauth/revoke      (POST JSON, logout)
  *
- * Vérif abonnement (confirmé curl 3 cas réels sur ce compte) :
- *   GET https://api.whop.com/v2/memberships?user_id={id}&page={n}
+ * Vérif abonnement — Current API uniquement (la v2 a été arrêtée le
+ * 13/11/2026 ; la code v2 et l'interrupteur de bascule ont été supprimés
+ * lors du nettoyage post-migration) :
+ *   GET https://api.whop.com/api/v1/memberships
+ *     ?user_id=…&company_id=…&product_ids[]=…&statuses[]=…&first=…
+ *     &after=<cursor>
  *   Authorization: Bearer <WHOP_API_KEY>
- *   → { pagination:{current_page,total_page}, data: [...] }
- *   Chaque membership : { id, product, user, status, valid, ... }
- *   Règle d'accès : data[].some(m => m.product === WHOP_PRODUCT_ID && m.valid === true)
+ *   Api-Version-Date: WHOP_API_VERSION_DATE (fallback DEFAULT ci-dessous)
  *
- * Fail-closed : erreur réseau, 4xx/5xx, timeout → false. On refuse par défaut.
+ *   Réponse : { data: [...], page_info: { has_next_page, end_cursor } }
+ *   Chaque membership : { id, status, product:{id,title}, user:{id,email},
+ *                         member:{access_level} }
+ *
+ * RÈGLE D'ACCÈS (défense en profondeur, voir evaluateMembershipAccess) :
+ *   product.id === WHOP_PRODUCT_ID  ET  status ∈ ACTIVE_STATUSES
+ *
+ *   `member.access_level` n'est PAS suffisant seul : ce champ est GLOBAL au
+ *   membre (toutes offres confondues chez le marchand) — un ÉLITE PRO expiré
+ *   avec un abonnement Discord actif renverrait access_level=customer, ce qui
+ *   aurait accordé l'accès à tort si on s'y fiait. On ne regarde plus que
+ *   le status par membership.
+ *
+ * Fail-closed : erreur réseau, 4xx/5xx, timeout, parse → refus par défaut.
  * Les variables d'env sont lues via requireEnv (throw si manquante). Jamais
  * hardcodées, jamais loggées, jamais exposées au client.
  */
@@ -22,26 +38,31 @@
 import crypto from 'node:crypto'
 import { ACTIVE_STATUSES, isMembershipActive } from './status'
 
-// ─── Endpoints Whop (confirmés doc officielle) ──────────────────────
+// ─── Endpoints Whop ─────────────────────────────────────────────────
 const WHOP_AUTHORIZE_URL = 'https://api.whop.com/oauth/authorize'
 const WHOP_TOKEN_URL     = 'https://api.whop.com/oauth/token'
 const WHOP_USERINFO_URL  = 'https://api.whop.com/oauth/userinfo'
 const WHOP_REVOKE_URL    = 'https://api.whop.com/oauth/revoke'
 
-// Current API (remplace la v2 avant le 13/11/2026).
-const WHOP_NEW_API_BASE = 'https://api.whop.com/api/v1'
-// Date d'épinglage schéma — à aligner avec la version du schéma qu'on
-// a validée pendant l'audit. Modifiable via env si besoin de rebumper
-// sans redéployer.
-const WHOP_NEW_API_VERSION_DATE_DEFAULT = '2026-07-23'
-// Taille de page curseur. Current API : pagination par curseur, "first"
-// = size, "after" = cursor. 50 est généreux (early-return dès 1er match).
-const NEW_API_PAGE_SIZE = 50
+const WHOP_API_BASE = 'https://api.whop.com/api/v1'
+// Date d'épinglage schéma — modifiable via env sans redéployer.
+const WHOP_API_VERSION_DATE_DEFAULT = '2026-07-23'
+// Current API : pagination par curseur ("first" = size, "after" = cursor).
+// 50 est généreux (early-return dès la 1re membership valide pour
+// hasActiveEliteProMembership).
+const PAGE_SIZE = 50
 
-// Safe-guard pagination memberships — un user n'aura jamais 500 memberships
-// ÉLITE PRO (10 pages × 50 default = 500). Early-return dès la 1re valide
-// évite de charger inutilement les autres pages.
+// Safe-guard pagination pour la vérif d'un user : un user n'aura jamais 500
+// memberships ÉLITE PRO (10 pages × 50 = 500). Early-return évite de
+// charger inutilement.
 const MAX_MEMBERSHIP_PAGES = 10
+
+// Plafond pour le rapport de sync admin (toutes les memberships ÉLITE PRO
+// actives, pas uniquement celles d'un user). 40 pages × 50 = 2 000. La
+// route /api/admin/whop-sync-report expose ce plafond via query param pour
+// pouvoir le bumper ponctuellement sans redéployer.
+const SYNC_REPORT_DEFAULT_MAX_PAGES = 40
+const SYNC_REPORT_HARD_MAX_PAGES = 200
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -62,20 +83,6 @@ export interface WhopTokenResponse {
   refresh_token?: string
   scope?: string
   id_token?: string
-}
-
-interface WhopMembershipV2 {
-  id: string                     // "mem_xxxxx"
-  product: string                // "prod_xxxxx" (confirmé — PAS product_id)
-  user: string                   // "user_xxxxx"
-  status: string                 // "trialing" | "completed" | "canceled" | ...
-  valid: boolean                 // true pour trialing + completed, false pour canceled
-  email?: string
-}
-
-interface WhopMembershipsListResponse {
-  pagination?: { current_page: number; total_page: number }
-  data: WhopMembershipV2[]
 }
 
 // ─── Env getter ────────────────────────────────────────────────────
@@ -199,116 +206,46 @@ export async function fetchWhopUserInfo(accessToken: string): Promise<WhopUserIn
   return (await r.json()) as WhopUserInfo
 }
 
-// ─── Vérif abonnement ÉLITE PRO (paginé + early-return) ─────────────
+// ─── Vérif abonnement ÉLITE PRO (Current API) ──────────────────────
 
-/**
- * Vérifie qu'un user Whop a au moins une membership VALIDE sur le produit
- * WHOP_PRODUCT_ID (ÉLITE PRO = prod_JkPZ6NZeqULBR). Toutes les formules du
- * produit (mensuel/semestriel/annuel) comptent — c'est le produit qui donne
- * accès, pas le plan interne.
- *
- * Multi-memberships gérés via .some() (confirmé produit — un user peut
- * avoir plusieurs memberships ÉLITE PRO : une trialing valide + plusieurs
- * canceled historiquement, on prend valid:true sur n'importe laquelle).
- *
- * Pagination : parcourt page par page, early-return dès la 1re membership
- * ÉLITE PRO valide trouvée (pas besoin de charger la suite). Safe-guard
- * MAX_MEMBERSHIP_PAGES contre une boucle infinie si l'API bugguait.
- *
- * Trialing inclus : décision produit — un essai gratuit a accès au dashboard
- * (valid:true quand status:"trialing" OU "completed"). Les canceled/expirés
- * ont valid:false → naturellement exclus par le filtre valid===true.
- *
- * Fail-closed : erreur réseau, 4xx/5xx, timeout, parse → false.
- */
-export async function hasActiveEliteProMembership(whopUserId: string): Promise<boolean> {
-  const apiKey = requireEnv('WHOP_API_KEY')
-  const productId = requireEnv('WHOP_PRODUCT_ID')
-  try {
-    for (let page = 1; page <= MAX_MEMBERSHIP_PAGES; page++) {
-      const url =
-        `https://api.whop.com/v2/memberships` +
-        `?user_id=${encodeURIComponent(whopUserId)}&page=${page}`
-      const r = await fetch(url, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        cache: 'no-store',
-      })
-      if (!r.ok) return false
-      const payload = (await r.json()) as WhopMembershipsListResponse
-      const list = Array.isArray(payload?.data) ? payload.data : []
-
-      // Early-return : dès qu'une page contient une ÉLITE PRO valide, c'est OK.
-      // .some() scanne la page courante — garantit qu'on couvre TOUTES les
-      // memberships du user (pas la première au hasard).
-      if (list.some(m => m.product === productId && m.valid === true)) {
-        return true
-      }
-
-      // Fin de pagination atteinte proprement (dernière page lue).
-      const totalPages = payload?.pagination?.total_page ?? 1
-      if (page >= totalPages) return false
-    }
-    // Safe-guard atteint — très improbable, mais fail-closed par principe.
-    return false
-  } catch {
-    return false
-  }
-}
-
-// ─── Vérif abonnement — Current API (nouvelle génération) ──────────
-//
-// Remplace /v2/memberships (deprecated 13/11/2026). Différences :
-//   - base `/api/v1`, header Api-Version-Date, scope company_id requis
-//   - filtres server-side (product_ids[], statuses[], user_id)
-//   - pagination curseur (first + after) au lieu de page/per
-//   - `product` / `user` deviennent des OBJETS (plus des strings)
-//   - `valid: boolean` disparaît → on juge l'accès via
-//     `member.access_level ∈ {customer, admin}` OU `status ∈ ALLOWLIST`
-//
-// Deux surfaces exportées :
-//   - fetchEliteProAccessNew(whopUserId) : résultat détaillé
-//     (observabilité, route admin de comparaison) ;
-//   - hasActiveEliteProMembershipNew(whopUserId) : booléen fail-closed
-//     — même signature que l'ancienne fonction v2 pour swap trivial.
-
-/** Shape item (Current API — observée doc + migration v2→v5). */
-interface WhopMembershipNew {
+/** Shape item Current API. */
+interface WhopMembership {
   id: string
   status?: string
   product?: { id?: string; title?: string }
   user?: { id?: string; email?: string }
+  /** Global au MEMBRE (toutes offres confondues) — plus utilisé pour
+   *  décider de l'accès à un produit précis, cf. evaluateMembershipAccess. */
   member?: { access_level?: 'customer' | 'admin' | 'no_access' }
   created_at?: string
 }
 
-interface WhopMembershipsListResponseNew {
-  data?: WhopMembershipNew[]
+interface WhopMembershipsListResponse {
+  data?: WhopMembership[]
   page_info?: {
     has_next_page?: boolean
     end_cursor?: string | null
   }
 }
 
+export interface MembershipLine {
+  id: string
+  status: string | null
+  productId: string | null
+  memberAccessLevel: string | null
+  /** 'status' si product.id matche ET status ∈ ACTIVE_STATUSES ; null sinon.
+   *  Exposé pour la route admin — un admin peut voir noir sur blanc
+   *  pourquoi la membership n'ouvre pas l'accès. */
+  reasonValid: 'status' | null
+}
+
 export interface EliteProAccessDetail {
   granted: boolean
   /** Pages réellement interrogées (1 à MAX_MEMBERSHIP_PAGES). */
   pagesChecked: number
-  /** Memberships lues (toutes pages confondues), aplaties pour l'admin
-   *  compare. Reste `[]` sur erreur réseau. */
-  memberships: Array<{
-    id: string
-    status: string | null
-    productId: string | null
-    memberAccessLevel: string | null
-    /** Pourquoi cette membership a-t-elle (ou pas) été jugée valide ?
-     *  'access_level' = member.access_level ∈ customer/admin
-     *  'status'       = status ∈ ACTIVE_STATUSES
-     *  null           = ni l'un ni l'autre */
-    reasonValid: 'access_level' | 'status' | null
-  }>
-  /** Non-null si Whop a renvoyé un header Deprecation sur une des
-   *  pages — on veut le voir dans la route admin, c'est l'indicateur
-   *  que l'URL utilisée n'est pas la bonne. */
+  /** Memberships lues, aplaties pour l'audit admin. `[]` sur erreur réseau. */
+  memberships: MembershipLine[]
+  /** Non-null si Whop a renvoyé un header Deprecation sur une des pages. */
   deprecationHeader: string | null
   /** Code HTTP si une page a retourné un échec ; null si tout OK. */
   errorStatus: number | null
@@ -316,16 +253,34 @@ export interface EliteProAccessDetail {
   errorMessage: string | null
 }
 
-/** Juge si une ligne membership donne accès ÉLITE PRO.
- *  Expose la RAISON (access_level ou status) pour l'audit admin. */
-function evaluateMembershipAccess(m: WhopMembershipNew): 'access_level' | 'status' | null {
-  const lvl = m.member?.access_level
-  if (lvl === 'customer' || lvl === 'admin') return 'access_level'
+/**
+ * Juge si une ligne membership donne accès ÉLITE PRO.
+ *
+ * DÉFENSE EN PROFONDEUR : la Current API filtre déjà `product_ids[]` et
+ * `statuses[]` côté serveur, mais on re-vérifie côté client. Les DEUX
+ * conditions doivent être vraies :
+ *
+ *   1. product.id === WHOP_PRODUCT_ID  (le filtre serveur peut se
+ *      relâcher sur une future évolution)
+ *   2. status ∈ ACTIVE_STATUSES         (active, trialing, completed,
+ *      canceling, past_due — cf. lib/whop/status.ts)
+ *
+ * `member.access_level` est volontairement IGNORÉ comme signal d'accès :
+ * c'est un champ GLOBAL au membre (toutes offres du marchand). Un ÉLITE PRO
+ * expiré + un abonnement Discord actif donnerait `access_level=customer`,
+ * ce qui aurait accordé l'accès à tort si on y faisait confiance. Il reste
+ * exposé dans `memberships[].memberAccessLevel` pour l'audit admin.
+ */
+function evaluateMembershipAccess(
+  m: WhopMembership,
+  productId: string,
+): 'status' | null {
+  if (m.product?.id !== productId) return null
   if (isMembershipActive(m.status)) return 'status'
   return null
 }
 
-export async function fetchEliteProAccessNew(whopUserId: string): Promise<EliteProAccessDetail> {
+export async function fetchEliteProAccess(whopUserId: string): Promise<EliteProAccessDetail> {
   const detail: EliteProAccessDetail = {
     granted: false,
     pagesChecked: 0,
@@ -347,18 +302,18 @@ export async function fetchEliteProAccessNew(whopUserId: string): Promise<EliteP
     return detail
   }
   const apiVersionDate =
-    (process.env.WHOP_API_VERSION_DATE || '').trim() || WHOP_NEW_API_VERSION_DATE_DEFAULT
+    (process.env.WHOP_API_VERSION_DATE || '').trim() || WHOP_API_VERSION_DATE_DEFAULT
 
   let cursor: string | null = null
   for (let page = 1; page <= MAX_MEMBERSHIP_PAGES; page++) {
     const params = new URLSearchParams()
     params.set('user_id', whopUserId)
     params.set('company_id', companyId)
-    params.set('first', String(NEW_API_PAGE_SIZE))
+    params.set('first', String(PAGE_SIZE))
     params.append('product_ids[]', productId)
     for (const s of ACTIVE_STATUSES) params.append('statuses[]', s)
     if (cursor) params.set('after', cursor)
-    const url = `${WHOP_NEW_API_BASE}/memberships?${params.toString()}`
+    const url = `${WHOP_API_BASE}/memberships?${params.toString()}`
 
     let r: Response
     try {
@@ -373,7 +328,7 @@ export async function fetchEliteProAccessNew(whopUserId: string): Promise<EliteP
     } catch (err) {
       detail.errorStatus = 0
       detail.errorMessage = err instanceof Error ? err.message : 'network/timeout'
-      console.error('[whop-new-api] fetch error', { page, url, err })
+      console.error('[whop] fetch error', { page, url, err })
       return detail
     }
 
@@ -382,14 +337,14 @@ export async function fetchEliteProAccessNew(whopUserId: string): Promise<EliteP
     const dep = r.headers.get('deprecation')
     if (dep && !detail.deprecationHeader) {
       detail.deprecationHeader = dep
-      console.warn('[whop-new-api] Deprecation header on current URL', { url, dep })
+      console.warn('[whop] Deprecation header on current URL', { url, dep })
     }
 
     if (!r.ok) {
       detail.errorStatus = r.status
       if (r.status === 403) {
         detail.errorMessage = 'permissions insuffisantes (403) — cocher member:basic:read + member:email:read sur l\'App'
-        console.error('[whop-new-api] 403 — permissions', { url })
+        console.error('[whop] 403 — permissions', { url })
       } else if (r.status === 401) {
         detail.errorMessage = 'clé Whop refusée (401)'
       } else {
@@ -398,23 +353,19 @@ export async function fetchEliteProAccessNew(whopUserId: string): Promise<EliteP
       return detail
     }
 
-    let payload: WhopMembershipsListResponseNew
+    let payload: WhopMembershipsListResponse
     try {
-      payload = await r.json() as WhopMembershipsListResponseNew
+      payload = await r.json() as WhopMembershipsListResponse
     } catch (err) {
       detail.errorStatus = r.status
       detail.errorMessage = 'JSON parse failed'
-      console.error('[whop-new-api] parse error', { url, err })
+      console.error('[whop] parse error', { url, err })
       return detail
     }
 
     const items = Array.isArray(payload.data) ? payload.data : []
     for (const m of items) {
-      // Garde-fou : la Current API filtre déjà par product_ids[], mais on
-      // reverify côté client — défense en profondeur, protège d'un future
-      // relâchement du filtre serveur.
-      if (m.product?.id !== productId) continue
-      const reason = evaluateMembershipAccess(m)
+      const reason = evaluateMembershipAccess(m, productId)
       detail.memberships.push({
         id: m.id,
         status: typeof m.status === 'string' ? m.status : null,
@@ -439,18 +390,150 @@ export async function fetchEliteProAccessNew(whopUserId: string): Promise<EliteP
 }
 
 /**
- * Même signature que `hasActiveEliteProMembership` (v2), mais tape la
- * Current API. Fail-closed sur toute erreur : réseau, 4xx/5xx, parse,
- * env manquante. Comportement d'accès identique en pratique :
- * trialing + active + completed + canceling + past_due → accès ;
- * canceled + expired + unresolved + drafted → refus.
+ * Version booléenne pour l'auth callback. Fail-closed sur toute erreur :
+ * réseau, 4xx/5xx, parse, env manquante.
  */
-export async function hasActiveEliteProMembershipNew(whopUserId: string): Promise<boolean> {
-  const detail = await fetchEliteProAccessNew(whopUserId)
+export async function hasActiveEliteProMembership(whopUserId: string): Promise<boolean> {
+  const detail = await fetchEliteProAccess(whopUserId)
   return detail.granted
 }
 
-// ─── OAuth : revoke token (pour le logout, étape 4) ─────────────────
+// ─── Rapport de sync admin — liste toutes les ÉLITE PRO actives ────
+
+export interface SyncMembership {
+  membershipId: string
+  whopUserId: string | null
+  email: string | null
+  status: string | null
+  createdAt: string | null
+}
+
+export interface SyncReportFetch {
+  memberships: SyncMembership[]
+  pagesChecked: number
+  truncated: boolean
+  deprecationHeader: string | null
+  errorStatus: number | null
+  errorMessage: string | null
+}
+
+/**
+ * Liste TOUTES les memberships ÉLITE PRO actives chez Whop (pagination
+ * curseur). Pour le rapport admin de rattrapage post-13/11.
+ *
+ * Même filtres que fetchEliteProAccess (product_ids[], statuses[]), mais
+ * sans user_id → on tire TOUT le set. Plafonné à `maxPages` pour éviter
+ * une dérive runtime ; `truncated=true` indique qu'il reste des pages.
+ *
+ * Fail-closed sur erreur réseau — renvoie ce qu'on a lu jusque-là + le
+ * détail d'erreur, pas d'exception.
+ */
+export async function listActiveEliteProMemberships(
+  opts: { maxPages?: number } = {},
+): Promise<SyncReportFetch> {
+  const result: SyncReportFetch = {
+    memberships: [],
+    pagesChecked: 0,
+    truncated: false,
+    deprecationHeader: null,
+    errorStatus: null,
+    errorMessage: null,
+  }
+
+  let apiKey: string
+  let productId: string
+  let companyId: string
+  try {
+    apiKey = requireEnv('WHOP_API_KEY')
+    productId = requireEnv('WHOP_PRODUCT_ID')
+    companyId = requireEnv('WHOP_COMPANY_ID')
+  } catch (err) {
+    result.errorMessage = err instanceof Error ? err.message : 'env missing'
+    return result
+  }
+  const apiVersionDate =
+    (process.env.WHOP_API_VERSION_DATE || '').trim() || WHOP_API_VERSION_DATE_DEFAULT
+
+  const maxPages = Math.min(
+    SYNC_REPORT_HARD_MAX_PAGES,
+    Math.max(1, Math.floor(opts.maxPages ?? SYNC_REPORT_DEFAULT_MAX_PAGES)),
+  )
+
+  let cursor: string | null = null
+  for (let page = 1; page <= maxPages; page++) {
+    const params = new URLSearchParams()
+    params.set('company_id', companyId)
+    params.set('first', String(PAGE_SIZE))
+    params.append('product_ids[]', productId)
+    for (const s of ACTIVE_STATUSES) params.append('statuses[]', s)
+    if (cursor) params.set('after', cursor)
+    const url = `${WHOP_API_BASE}/memberships?${params.toString()}`
+
+    let r: Response
+    try {
+      r = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Api-Version-Date': apiVersionDate,
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      })
+    } catch (err) {
+      result.errorStatus = 0
+      result.errorMessage = err instanceof Error ? err.message : 'network/timeout'
+      return result
+    }
+
+    result.pagesChecked = page
+
+    const dep = r.headers.get('deprecation')
+    if (dep && !result.deprecationHeader) result.deprecationHeader = dep
+
+    if (!r.ok) {
+      result.errorStatus = r.status
+      result.errorMessage = r.status === 403
+        ? 'permissions insuffisantes (403)'
+        : r.status === 401
+          ? 'clé Whop refusée (401)'
+          : `HTTP ${r.status}`
+      return result
+    }
+
+    let payload: WhopMembershipsListResponse
+    try {
+      payload = await r.json() as WhopMembershipsListResponse
+    } catch {
+      result.errorStatus = r.status
+      result.errorMessage = 'JSON parse failed'
+      return result
+    }
+
+    const items = Array.isArray(payload.data) ? payload.data : []
+    for (const m of items) {
+      // Même défense en profondeur que fetchEliteProAccess : on ne garde
+      // que les memberships qui matchent STRICTEMENT product + status.
+      if (m.product?.id !== productId) continue
+      if (!isMembershipActive(m.status)) continue
+      result.memberships.push({
+        membershipId: m.id,
+        whopUserId: m.user?.id ?? null,
+        email: m.user?.email ?? null,
+        status: typeof m.status === 'string' ? m.status : null,
+        createdAt: m.created_at ?? null,
+      })
+    }
+
+    const hasNext = payload.page_info?.has_next_page === true
+    const endCursor = payload.page_info?.end_cursor ?? null
+    if (!hasNext || !endCursor) return result
+    cursor = endCursor
+  }
+  result.truncated = true
+  return result
+}
+
+// ─── OAuth : revoke token (pour le logout) ──────────────────────────
 
 export async function revokeWhopToken(accessToken: string): Promise<void> {
   const clientId = requireEnv('NEXT_PUBLIC_WHOP_APP_ID')
