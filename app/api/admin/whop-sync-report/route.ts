@@ -3,39 +3,51 @@
  *
  * Rapport de rattrapage post-13/11/2026 — admin uniquement, LECTURE SEULE.
  *
- * Tire TOUTES les memberships ÉLITE PRO actives chez Whop (pagination
- * curseur, plafond `maxPages`), croise avec les profils du dashboard
- * (whop_user_id, puis email) et renvoie deux listes :
+ * Trois sources Whop Current API, jointes côté serveur :
+ *   - /memberships   : par membership (status, plan_id, dates, cancel)
+ *   - /members       : table user_id → email (manquant sur /memberships)
+ *   - /plans         : table plan_id → nom lisible + type (abonnement
+ *                      ou achat unique) + durée de cycle
  *
- *   a. `missingDashboardAccounts` — abonnés ÉLITE PRO actifs chez Whop
- *      qui n'ont PAS de compte dashboard (ni par whop_user_id, ni par
- *      email) : ceux qui ont pu être bloqués au login OAuth depuis le
- *      13/11 (quand la v2 ne répondait plus et qu'on vérifiait encore
- *      via elle). Email + createdAt remontés pour relance manuelle.
+ * Croise ensuite avec les profils du dashboard (whop_user_id, puis
+ * email) et renvoie :
  *
- *   b. `flagMismatches` — profils dont `whop_subscription_active` ne
- *      correspond pas à Whop :
- *        - `flagged_as_active_but_not_on_whop` : dashboard=true, mais
- *          aucune membership ÉLITE PRO active côté Whop (grâce période
- *          historique, ou abonnement récemment coupé).
- *        - `active_on_whop_but_flag_false` : abonné actif Whop, mais
- *          flag dashboard=false (webhook raté, ou user non encore
- *          connecté depuis la bascule).
+ *   summary : agrégats pour voir le pouls en un coup d'œil
+ *     - totals.whopMemberships
+ *     - totals.matched / totals.missing
+ *     - byStatus    : { active: n, trialing: m, ... }
+ *     - byPlan      : { "<planId>": { name, count } }
+ *     - emailsPermissionMissing : true si /members ne retourne aucun
+ *       email → scope member:email:read à cocher côté App Whop
  *
- * AUCUNE ÉCRITURE DB. La correction (passer un flag, recréer un compte)
- * se fait à part. Ce rapport ne fait que montrer où rattraper.
+ *   missingDashboardAccounts : abonnés ÉLITE PRO actifs chez Whop
+ *     SANS compte dashboard (candidats rattrapage post-13/11). Email,
+ *     plan, dates et cancel_at_period_end remontés pour relance manuelle.
  *
- * SÉCURITÉ : 404 à TOUT appelant non admin.
+ *   flagMismatches : profils dont whop_subscription_active ne
+ *     correspond pas à Whop :
+ *       - flagged_as_active_but_not_on_whop : flag=true côté dashboard,
+ *         plus d'abonnement ÉLITE PRO actif côté Whop.
+ *       - active_on_whop_but_flag_false : abonnement Whop actif, flag=
+ *         false côté dashboard (webhook raté ou user non reconnecté).
+ *
+ * AUCUNE ÉCRITURE DB. 404 à tout appelant non admin.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { listActiveEliteProMemberships } from '@/lib/whop/client'
+import {
+  listActiveEliteProMemberships,
+  fetchActiveEliteProMemberEmails,
+  fetchEliteProPlans,
+  type SyncMembership,
+  type PlanInfo,
+} from '@/lib/whop/client'
 
 export const runtime = 'nodejs'
-// Rapport long (pagination Whop + lecture profiles). Rester généreux sur
-// le timeout pour ne pas tronquer au milieu d'un run.
+// Rapport long (3 pagentions API + lecture profiles). Timeout généreux
+// pour ne pas tronquer au milieu d'un run.
 export const maxDuration = 60
 
 const NOT_FOUND = () => new NextResponse(null, { status: 404 })
@@ -45,6 +57,10 @@ interface ProfileRow {
   email: string | null
   whop_user_id: string | null
   whop_subscription_active: boolean
+}
+
+interface EnrichedMembership extends SyncMembership {
+  plan: Pick<PlanInfo, 'id' | 'name' | 'kind' | 'billingPeriodDays'> | null
 }
 
 export async function GET(request: NextRequest) {
@@ -64,25 +80,46 @@ export async function GET(request: NextRequest) {
 
   // 2. Param optionnel maxPages (bump ponctuel si un run est truncated).
   const rawMax = request.nextUrl.searchParams.get('maxPages')
-  const maxPages = rawMax ? Number.parseInt(rawMax, 10) : undefined
+  const parsed = rawMax ? Number.parseInt(rawMax, 10) : NaN
+  const maxPagesOpt = Number.isFinite(parsed) && parsed > 0
+    ? { maxPages: parsed }
+    : {}
 
-  // 3. Lecture Whop — toutes les memberships ÉLITE PRO actives.
-  const whopList = await listActiveEliteProMemberships(
-    Number.isFinite(maxPages) && maxPages ? { maxPages } : {},
-  )
+  // 3. Lecture Whop — 3 sources en parallèle.
+  const [whopList, memberEmails, plans] = await Promise.all([
+    listActiveEliteProMemberships(maxPagesOpt),
+    fetchActiveEliteProMemberEmails(maxPagesOpt),
+    fetchEliteProPlans(),
+  ])
+
   if (whopList.errorMessage) {
     return NextResponse.json({
       ok: false,
-      whopError: {
-        status: whopList.errorStatus,
-        message: whopList.errorMessage,
-      },
+      source: 'memberships',
+      whopError: { status: whopList.errorStatus, message: whopList.errorMessage },
       pagesChecked: whopList.pagesChecked,
     }, { status: 502 })
   }
 
-  // 4. Lecture profiles via admin client — bypass RLS (on a besoin de
-  //    la vue complète). Lecture seule, pas d'UPDATE.
+  // 4. Enrichit chaque membership avec email (via /members) + plan.
+  const enriched: EnrichedMembership[] = whopList.memberships.map(m => {
+    const email = m.whopUserId ? memberEmails.emailsByUserId.get(m.whopUserId) ?? null : null
+    const plan = m.planId ? plans.plansById.get(m.planId) ?? null : null
+    return {
+      ...m,
+      email,
+      planName: plan?.name ?? null,
+      kind: plan?.kind && plan.kind !== 'unknown' ? plan.kind : m.kind,
+      plan: plan ? {
+        id: plan.id,
+        name: plan.name,
+        kind: plan.kind,
+        billingPeriodDays: plan.billingPeriodDays,
+      } : null,
+    }
+  })
+
+  // 5. Lecture profiles via admin client — bypass RLS (lecture seule).
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceKey) {
@@ -103,8 +140,7 @@ export async function GET(request: NextRequest) {
   }
   const profiles = (profilesRaw ?? []) as ProfileRow[]
 
-  // 5. Index profils pour lookup O(1). Email en lower-case pour matcher
-  //    de la même façon que le callback OAuth (.ilike côté SQL).
+  // 6. Index profils (O(1) lookup). Email lower-case — comme .ilike SQL.
   const byWhopId = new Map<string, ProfileRow>()
   const byEmail = new Map<string, ProfileRow>()
   for (const p of profiles) {
@@ -112,36 +148,23 @@ export async function GET(request: NextRequest) {
     if (p.email) byEmail.set(p.email.toLowerCase(), p)
   }
 
-  // 6. Croise les memberships Whop avec les profils.
-  //    - Si match whop_user_id OU email → on note l'ID profil.
-  //    - Sinon → missing (candidat rattrapage).
+  // 7. Croise Whop → profils. matchedProfileIds = source de vérité pour
+  //    "ce profil a un abonnement Whop actif".
   const matchedProfileIds = new Set<string>()
-  const missingDashboardAccounts: Array<{
-    whopUserId: string | null
-    email: string | null
-    status: string | null
-    createdAt: string | null
-    membershipId: string
-  }> = []
+  const missingDashboardAccounts: Array<EnrichedMembership & { reason: 'no_match_whop_id_nor_email' }> = []
 
-  for (const m of whopList.memberships) {
+  for (const m of enriched) {
     let match: ProfileRow | undefined
     if (m.whopUserId) match = byWhopId.get(m.whopUserId)
     if (!match && m.email) match = byEmail.get(m.email.toLowerCase())
     if (match) {
       matchedProfileIds.add(match.id)
     } else {
-      missingDashboardAccounts.push({
-        whopUserId: m.whopUserId,
-        email: m.email,
-        status: m.status,
-        createdAt: m.createdAt,
-        membershipId: m.membershipId,
-      })
+      missingDashboardAccounts.push({ ...m, reason: 'no_match_whop_id_nor_email' })
     }
   }
 
-  // 7. Divergences de flag.
+  // 8. Divergences de flag.
   const flagMismatches: Array<{
     kind: 'flagged_as_active_but_not_on_whop' | 'active_on_whop_but_flag_false'
     profileId: string
@@ -171,18 +194,38 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // 9. Agrégats (par statut, par plan).
+  const byStatus: Record<string, number> = {}
+  const byPlan: Record<string, { name: string; count: number }> = {}
+  for (const m of enriched) {
+    const s = m.status ?? '(null)'
+    byStatus[s] = (byStatus[s] ?? 0) + 1
+    const key = m.planId ?? '(no_plan)'
+    if (!byPlan[key]) byPlan[key] = { name: m.planName ?? m.planId ?? 'Inconnu', count: 0 }
+    byPlan[key].count++
+  }
+
   return NextResponse.json({
     ok: true,
     generatedAt: new Date().toISOString(),
-    whop: {
-      activeMembershipsCount: whopList.memberships.length,
-      pagesChecked: whopList.pagesChecked,
-      truncated: whopList.truncated,
-      deprecationHeader: whopList.deprecationHeader,
-    },
-    profiles: {
-      total: profiles.length,
-      matchedCount: matchedProfileIds.size,
+    summary: {
+      totals: {
+        whopMemberships: enriched.length,
+        matched: matchedProfileIds.size,
+        missing: missingDashboardAccounts.length,
+        flagMismatches: flagMismatches.length,
+        profilesTotal: profiles.length,
+      },
+      byStatus,
+      byPlan,
+      emailsPermissionMissing: memberEmails.emailsPermissionMissing,
+      membersEndpointError: memberEmails.errorMessage,
+      plansEndpointError: plans.errorMessage,
+      whop: {
+        pagesChecked: whopList.pagesChecked,
+        truncated: whopList.truncated,
+        deprecationHeader: whopList.deprecationHeader,
+      },
     },
     missingDashboardAccounts,
     flagMismatches,

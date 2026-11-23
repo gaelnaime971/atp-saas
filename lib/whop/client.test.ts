@@ -12,6 +12,8 @@ import {
   fetchEliteProAccess,
   hasActiveEliteProMembership,
   listActiveEliteProMemberships,
+  fetchActiveEliteProMemberEmails,
+  fetchEliteProPlans,
 } from './client'
 
 const WHOP_USER_ID = 'user_abc123'
@@ -329,20 +331,90 @@ describe('fetchEliteProAccess — observabilité', () => {
 })
 
 // ─── listActiveEliteProMemberships ───────────────────────────────────
+//
+// Les payloads utilisent le FORMAT RÉEL de /api/v1/memberships, capturé
+// le 23/11/2026 sur le compte prod et confirmé contre
+// https://api.whop.com/api/v1/openapi.json. Points clés :
+//   - user_id, product_id, plan_id, billing_period_days sont au
+//     TOP-LEVEL (pas dans user.id / product.id).
+//   - product est aussi présent en nested, mais le canonique est
+//     product_id top-level.
+//   - member est null côté lecture serveur (clé API).
+//   - email n'est PAS dans /memberships (il faut /members).
+
+function membershipFixture(overrides: Record<string, unknown>) {
+  return {
+    id: 'mem_FIXTURE',
+    status: 'active',
+    user_id: 'user_FIXTURE',
+    product_id: PRODUCT_ID,
+    plan_id: 'plan_mensuel',
+    product: { id: PRODUCT_ID, title: 'ÉLITE PRO 🥷' },
+    member: null,
+    billing_period_days: 30,
+    current_period_start: '2026-10-07T15:50:35.825Z',
+    current_period_end: '2026-12-06T15:50:36.148Z',
+    expires_at: null,
+    cancel_at_period_end: false,
+    canceled_at: null,
+    created_at: '2026-10-07T15:50:35.825Z',
+    ...overrides,
+  }
+}
 
 describe('listActiveEliteProMemberships', () => {
+  it('lit user_id, product_id et plan_id au TOP-LEVEL (format réel Whop)', async () => {
+    stubFetch([mockFetchResponse({
+      data: [membershipFixture({
+        id: 'mem_tIoZQUFFNwp5Ks',
+        user_id: 'user_FPoin0981uR4r',
+        plan_id: 'plan_V6NwEJbBAI5a6',
+      })],
+      page_info: { has_next_page: false },
+    })])
+    const r = await listActiveEliteProMemberships()
+    expect(r.memberships).toHaveLength(1)
+    const m = r.memberships[0]
+    expect(m.membershipId).toBe('mem_tIoZQUFFNwp5Ks')
+    expect(m.whopUserId).toBe('user_FPoin0981uR4r')   // ← PAS `null`
+    expect(m.planId).toBe('plan_V6NwEJbBAI5a6')
+    expect(m.email).toBeNull()                        // enrichi côté route via /members
+  })
+
+  it('enrichit kind/renewsOrExpiresAt depuis le format réel', async () => {
+    stubFetch([mockFetchResponse({
+      data: [
+        membershipFixture({ id: 'mem_sub', billing_period_days: 30, current_period_end: '2026-12-06T00:00:00Z' }),
+        membershipFixture({
+          id: 'mem_oneshot', billing_period_days: 0,
+          current_period_end: null, expires_at: '2027-01-01T00:00:00Z', cancel_at_period_end: true,
+        }),
+      ],
+      page_info: { has_next_page: false },
+    })])
+    const r = await listActiveEliteProMemberships()
+    const sub = r.memberships.find(m => m.membershipId === 'mem_sub')!
+    const one = r.memberships.find(m => m.membershipId === 'mem_oneshot')!
+    expect(sub.kind).toBe('subscription')
+    expect(sub.renewsOrExpiresAt).toBe('2026-12-06T00:00:00Z')
+    expect(sub.cancelAtPeriodEnd).toBe(false)
+    expect(one.kind).toBe('one_time')
+    expect(one.renewsOrExpiresAt).toBe('2027-01-01T00:00:00Z')
+    expect(one.cancelAtPeriodEnd).toBe(true)
+  })
+
   it('ne pose PAS user_id, parcourt plusieurs pages via curseur', async () => {
     const fetchMock = stubFetch([
       mockFetchResponse({
         data: [
-          { id: 'mem_a', status: 'active', product: { id: PRODUCT_ID }, user: { id: 'user_a', email: 'a@x.com' } },
-          { id: 'mem_b', status: 'trialing', product: { id: PRODUCT_ID }, user: { id: 'user_b', email: 'b@x.com' } },
+          membershipFixture({ id: 'mem_a', user_id: 'user_a' }),
+          membershipFixture({ id: 'mem_b', status: 'trialing', user_id: 'user_b' }),
         ],
         page_info: { has_next_page: true, end_cursor: 'c2' },
       }),
       mockFetchResponse({
         data: [
-          { id: 'mem_c', status: 'past_due', product: { id: PRODUCT_ID }, user: { id: 'user_c', email: 'c@x.com' } },
+          membershipFixture({ id: 'mem_c', status: 'past_due', user_id: 'user_c' }),
         ],
         page_info: { has_next_page: false },
       }),
@@ -355,11 +427,11 @@ describe('listActiveEliteProMemberships', () => {
     expect(fetchMock.mock.calls[1][0]).toContain('after=c2')
   })
 
-  it('exclut une membership d\'un autre produit (défense en profondeur) même si Whop la renvoie', async () => {
+  it('exclut une membership d\'un autre produit (défense en profondeur)', async () => {
     stubFetch([mockFetchResponse({
       data: [
-        { id: 'mem_ok', status: 'active', product: { id: PRODUCT_ID }, user: { id: 'u1', email: 'ok@x.com' } },
-        { id: 'mem_bad', status: 'active', product: { id: 'prod_OTHER' }, user: { id: 'u2', email: 'bad@x.com' } },
+        membershipFixture({ id: 'mem_ok', user_id: 'u1' }),
+        membershipFixture({ id: 'mem_bad', user_id: 'u2', product_id: 'prod_OTHER', product: { id: 'prod_OTHER' } }),
       ],
       page_info: { has_next_page: false },
     })])
@@ -371,8 +443,8 @@ describe('listActiveEliteProMemberships', () => {
   it('exclut une membership au status non-actif (défense en profondeur)', async () => {
     stubFetch([mockFetchResponse({
       data: [
-        { id: 'mem_ok', status: 'active', product: { id: PRODUCT_ID }, user: { id: 'u1' } },
-        { id: 'mem_exp', status: 'expired', product: { id: PRODUCT_ID }, user: { id: 'u2' } },
+        membershipFixture({ id: 'mem_ok', user_id: 'u1' }),
+        membershipFixture({ id: 'mem_exp', user_id: 'u2', status: 'expired' }),
       ],
       page_info: { has_next_page: false },
     })])
@@ -384,7 +456,7 @@ describe('listActiveEliteProMemberships', () => {
   it('truncated=true quand on atteint le plafond maxPages', async () => {
     stubFetch([
       mockFetchResponse({
-        data: [{ id: 'mem_1', status: 'active', product: { id: PRODUCT_ID }, user: { id: 'u1' } }],
+        data: [membershipFixture({ id: 'mem_1', user_id: 'u1' })],
         page_info: { has_next_page: true, end_cursor: 'c2' },
       }),
     ])
@@ -407,5 +479,150 @@ describe('listActiveEliteProMemberships', () => {
     const r = await listActiveEliteProMemberships()
     expect(r.errorMessage).toContain('WHOP_COMPANY_ID')
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+// ─── fetchActiveEliteProMemberEmails (/members) ─────────────────────
+
+function memberFixture(overrides: Record<string, unknown>) {
+  return {
+    id: 'mber_FIXTURE',
+    email: 'someone@example.com',
+    access_level: 'customer',
+    status: 'joined',
+    user: { id: 'user_FIXTURE', username: 'someone' },
+    ...overrides,
+  }
+}
+
+describe('fetchActiveEliteProMemberEmails', () => {
+  it('appelle /members avec product_ids + membership_status=active (singulier string)', async () => {
+    const fetchMock = stubFetch([mockFetchResponse({
+      data: [memberFixture({ id: 'mber_1', user: { id: 'user_1' }, email: 'User.ONE@X.com' })],
+      page_info: { has_next_page: false },
+    })])
+    const r = await fetchActiveEliteProMemberEmails()
+    expect(fetchMock.mock.calls[0][0]).toContain('/api/v1/members')
+    expect(fetchMock.mock.calls[0][0]).toContain('membership_status=active')
+    expect(fetchMock.mock.calls[0][0]).toContain(`product_ids%5B%5D=${PRODUCT_ID}`)
+    // Email en lowercase, par user_id
+    expect(r.emailsByUserId.get('user_1')).toBe('user.one@x.com')
+    expect(r.emailsPermissionMissing).toBe(false)
+  })
+
+  it('pagination via curseur', async () => {
+    stubFetch([
+      mockFetchResponse({
+        data: [memberFixture({ user: { id: 'user_a' }, email: 'a@x.com' })],
+        page_info: { has_next_page: true, end_cursor: 'cp2' },
+      }),
+      mockFetchResponse({
+        data: [memberFixture({ user: { id: 'user_b' }, email: 'b@x.com' })],
+        page_info: { has_next_page: false },
+      }),
+    ])
+    const r = await fetchActiveEliteProMemberEmails()
+    expect(r.pagesChecked).toBe(2)
+    expect(r.emailsByUserId.size).toBe(2)
+    expect(r.emailsByUserId.get('user_a')).toBe('a@x.com')
+    expect(r.emailsByUserId.get('user_b')).toBe('b@x.com')
+  })
+
+  it('emailsPermissionMissing=true quand /members renvoie des rangées sans email', async () => {
+    stubFetch([mockFetchResponse({
+      data: [
+        memberFixture({ user: { id: 'user_1' }, email: null }),
+        memberFixture({ user: { id: 'user_2' }, email: null }),
+      ],
+      page_info: { has_next_page: false },
+    })])
+    const r = await fetchActiveEliteProMemberEmails()
+    expect(r.emailsByUserId.size).toBe(0)
+    expect(r.emailsPermissionMissing).toBe(true)
+  })
+
+  it('HTTP 403 → fail-closed + errorMessage mentionne member:email:read', async () => {
+    stubFetch([mockFetchResponse({}, { ok: false, status: 403 })])
+    const r = await fetchActiveEliteProMemberEmails()
+    expect(r.errorStatus).toBe(403)
+    expect(r.errorMessage).toContain('member:email:read')
+  })
+})
+
+// ─── fetchEliteProPlans (/plans) ─────────────────────────────────────
+
+describe('fetchEliteProPlans', () => {
+  it('dérive un nom lisible depuis billing_period quand title est null', async () => {
+    stubFetch([mockFetchResponse({
+      data: [
+        { id: 'plan_mens', title: null, description: null, plan_type: 'renewal', billing_period: 30, renewal_price: 74.9, currency: 'eur' },
+        { id: 'plan_sem', title: null, description: null, plan_type: 'renewal', billing_period: 180, renewal_price: 399, currency: 'eur' },
+        { id: 'plan_an', title: null, description: null, plan_type: 'renewal', billing_period: 365, renewal_price: 749, currency: 'eur' },
+      ],
+    })])
+    const r = await fetchEliteProPlans()
+    expect(r.plansById.get('plan_mens')?.name).toBe('Mensuel')
+    expect(r.plansById.get('plan_sem')?.name).toBe('Semestriel')
+    expect(r.plansById.get('plan_an')?.name).toBe('Annuel')
+    expect(r.plansById.get('plan_mens')?.kind).toBe('subscription')
+  })
+
+  it('utilise title si Whop l\'a défini', async () => {
+    stubFetch([mockFetchResponse({
+      data: [
+        { id: 'plan_x', title: 'Pack Premium Spécial', plan_type: 'renewal', billing_period: 30 },
+      ],
+    })])
+    const r = await fetchEliteProPlans()
+    expect(r.plansById.get('plan_x')?.name).toBe('Pack Premium Spécial')
+  })
+
+  it('plan_type=one_time → kind=one_time', async () => {
+    stubFetch([mockFetchResponse({
+      data: [{ id: 'plan_oneshot', title: 'Achat unique', plan_type: 'one_time', billing_period: null }],
+    })])
+    const r = await fetchEliteProPlans()
+    expect(r.plansById.get('plan_oneshot')?.kind).toBe('one_time')
+  })
+
+  it('HTTP error → map vide + errorStatus propagé', async () => {
+    stubFetch([mockFetchResponse({}, { ok: false, status: 500 })])
+    const r = await fetchEliteProPlans()
+    expect(r.plansById.size).toBe(0)
+    expect(r.errorStatus).toBe(500)
+  })
+})
+
+// ─── Rapprochement : les 4 cas réels cités par l'utilisateur ─────────
+//
+// La preuve donnée en prod : les memberships de gael.naime,
+// eugene.yoan, laurent.aymes, omega apparaissaient dans
+// missingDashboardAccounts (whopUserId=null, email=null), ET leurs
+// profils dans flagMismatches. Avec le fix top-level, chaque membership
+// porte le bon user_id → match direct par whop_user_id, les deux listes
+// se vident, matchedProfileIds compte 4.
+
+describe('Rapprochement membership → profil (régression prod)', () => {
+  it('gael / eugene / laurent / omega : user_id top-level permet le match 1:1', async () => {
+    stubFetch([mockFetchResponse({
+      data: [
+        membershipFixture({ id: 'mem_utYdlu6WNnFGsI',   user_id: 'user_K9k1EGhrCSs0Y' }),
+        membershipFixture({ id: 'mem_aEYAuRs8i7XG0C',   user_id: 'user_G0uY0Y6ivUahx' }),
+        membershipFixture({ id: 'mem_PqRve0OUHrcpv8',   user_id: 'user_D2tWboMRbTuOJ' }),
+        membershipFixture({ id: 'mem_UJktTTSWTIo7cb',   user_id: 'user_EXfKjY0oZKe7D' }),
+      ],
+      page_info: { has_next_page: false },
+    })])
+    const r = await listActiveEliteProMemberships()
+    expect(r.memberships).toHaveLength(4)
+    const ids = r.memberships.map(m => m.whopUserId).sort()
+    expect(ids).toEqual([
+      'user_D2tWboMRbTuOJ', // laurent.aymes
+      'user_EXfKjY0oZKe7D', // omega
+      'user_G0uY0Y6ivUahx', // eugene.yoan
+      'user_K9k1EGhrCSs0Y', // gael.naime
+    ])
+    // Chaque membership doit avoir un user_id non-null → zéro regression
+    expect(r.memberships.every(m => m.whopUserId !== null)).toBe(true)
   })
 })

@@ -208,15 +208,39 @@ export async function fetchWhopUserInfo(accessToken: string): Promise<WhopUserIn
 
 // ─── Vérif abonnement ÉLITE PRO (Current API) ──────────────────────
 
-/** Shape item Current API. */
+/**
+ * Shape REELLE renvoyée par GET /api/v1/memberships (Current API).
+ * Confirmé par capture d'une page brute + schéma OpenAPI officiel :
+ *   https://api.whop.com/api/v1/openapi.json  →  components.schemas.Membership
+ *
+ * ATTENTION — plusieurs champs sont présents DEUX fois dans la réponse :
+ *   `product_id` (string top-level)  +  `product: {id, title, logo_url}`
+ *   `user_id`    (string top-level, peut être null si membership orpheline)
+ *   `plan_id`    (string top-level, "plan_xxx" — correspond au variant acheté)
+ *
+ * Il n'y a PAS de champ `user: {id, email}` (c'était une fausse hypothèse).
+ * L'email n'est PAS retourné par /memberships ; il faut taper /members
+ * en parallèle pour le résoudre (cf. fetchActiveEliteProMemberEmails).
+ *
+ * `member` est toujours null côté lecture serveur (clé API) — il n'est
+ * peuplé que sur les lectures côté acheteur ("caller-side reads"). On
+ * continue à le typer pour ne rien perdre si Whop le remplit un jour,
+ * mais aucune décision ne repose dessus.
+ */
 interface WhopMembership {
   id: string
   status?: string
-  product?: { id?: string; title?: string }
-  user?: { id?: string; email?: string }
-  /** Global au MEMBRE (toutes offres confondues) — plus utilisé pour
-   *  décider de l'accès à un produit précis, cf. evaluateMembershipAccess. */
-  member?: { access_level?: 'customer' | 'admin' | 'no_access' }
+  user_id?: string | null
+  product_id?: string
+  plan_id?: string
+  product?: { id?: string; title?: string; logo_url?: string }
+  member?: { access_level?: 'customer' | 'admin' | 'no_access' } | null
+  current_period_start?: string | null
+  current_period_end?: string | null
+  expires_at?: string | null
+  canceled_at?: string | null
+  cancel_at_period_end?: boolean
+  billing_period_days?: number | null
   created_at?: string
 }
 
@@ -275,7 +299,12 @@ function evaluateMembershipAccess(
   m: WhopMembership,
   productId: string,
 ): 'status' | null {
-  if (m.product?.id !== productId) return null
+  // product_id est le champ canonique (string top-level, OpenAPI) ; la clé
+  // product.id est l'objet nested — les deux sont renvoyés avec la même
+  // valeur. On tolère les deux pour rester robuste à un futur changement
+  // de shape côté Whop.
+  const linked = m.product_id ?? m.product?.id
+  if (linked !== productId) return null
   if (isMembershipActive(m.status)) return 'status'
   return null
 }
@@ -400,12 +429,28 @@ export async function hasActiveEliteProMembership(whopUserId: string): Promise<b
 
 // ─── Rapport de sync admin — liste toutes les ÉLITE PRO actives ────
 
+export type MembershipKind = 'subscription' | 'one_time' | 'unknown'
+
 export interface SyncMembership {
   membershipId: string
   whopUserId: string | null
+  /** Rempli post-fetch via fetchActiveEliteProMemberEmails. Reste null si
+   *  le user n'est pas dans la liste /members (membership orpheline),
+   *  ou si la permission member:email:read manque (voir le flag
+   *  emailsPermissionMissing du retour). */
   email: string | null
   status: string | null
   createdAt: string | null
+  planId: string | null
+  /** Nom lisible dérivé (Mensuel/Semestriel/Annuel) ou title du plan si
+   *  Whop l'a défini. Rempli après lookup via fetchEliteProPlans. */
+  planName: string | null
+  /** 'subscription' si billing_period_days > 0, 'one_time' sinon. */
+  kind: MembershipKind
+  /** Date de prochain renouvellement (abonnement) ou d'expiration
+   *  (achat unique à durée limitée). Null = sans expiration (lifetime). */
+  renewsOrExpiresAt: string | null
+  cancelAtPeriodEnd: boolean
 }
 
 export interface SyncReportFetch {
@@ -424,6 +469,10 @@ export interface SyncReportFetch {
  * Même filtres que fetchEliteProAccess (product_ids[], statuses[]), mais
  * sans user_id → on tire TOUT le set. Plafonné à `maxPages` pour éviter
  * une dérive runtime ; `truncated=true` indique qu'il reste des pages.
+ *
+ * NB : l'email et planName sont laissés à null ici — ils sont enrichis
+ * par l'appelant via fetchActiveEliteProMemberEmails (/members) et
+ * fetchEliteProPlans (/plans). /memberships ne les renvoie pas.
  *
  * Fail-closed sur erreur réseau — renvoie ce qu'on a lu jusque-là + le
  * détail d'erreur, pas d'exception.
@@ -513,14 +562,33 @@ export async function listActiveEliteProMemberships(
     for (const m of items) {
       // Même défense en profondeur que fetchEliteProAccess : on ne garde
       // que les memberships qui matchent STRICTEMENT product + status.
-      if (m.product?.id !== productId) continue
+      const linkedProduct = m.product_id ?? m.product?.id
+      if (linkedProduct !== productId) continue
       if (!isMembershipActive(m.status)) continue
+
+      const bpd = typeof m.billing_period_days === 'number' ? m.billing_period_days : null
+      const kind: MembershipKind = bpd !== null
+        ? (bpd > 0 ? 'subscription' : 'one_time')
+        : 'unknown'
+      // Date qu'un humain veut voir : renouvellement si abonnement en
+      // cours, expiration si achat unique à durée limitée. Les deux
+      // peuvent coexister dans la réponse — current_period_end prime
+      // sur expires_at côté abonnement car il reflète le prochain cycle.
+      const renewsOrExpiresAt = kind === 'subscription'
+        ? (m.current_period_end ?? null)
+        : (m.expires_at ?? m.current_period_end ?? null)
+
       result.memberships.push({
         membershipId: m.id,
-        whopUserId: m.user?.id ?? null,
-        email: m.user?.email ?? null,
+        whopUserId: m.user_id ?? null,
+        email: null,
         status: typeof m.status === 'string' ? m.status : null,
         createdAt: m.created_at ?? null,
+        planId: m.plan_id ?? null,
+        planName: null,
+        kind,
+        renewsOrExpiresAt,
+        cancelAtPeriodEnd: m.cancel_at_period_end === true,
       })
     }
 
@@ -530,6 +598,283 @@ export async function listActiveEliteProMemberships(
     cursor = endCursor
   }
   result.truncated = true
+  return result
+}
+
+// ─── /members : résolution user_id → email ─────────────────────────
+
+export interface MemberEmailFetch {
+  /** Map `user_id` → email (lowercased). Vide sur erreur. */
+  emailsByUserId: Map<string, string>
+  /** true si /members a renvoyé 200 mais TOUS les emails étaient null ou
+   *  absents — symptomatique d'un scope `member:email:read` manquant
+   *  côté App Whop. */
+  emailsPermissionMissing: boolean
+  pagesChecked: number
+  errorStatus: number | null
+  errorMessage: string | null
+}
+
+interface WhopMember {
+  id?: string
+  email?: string | null
+  user?: { id?: string | null }
+}
+
+interface WhopMembersListResponse {
+  data?: WhopMember[]
+  page_info?: { has_next_page?: boolean; end_cursor?: string | null }
+}
+
+/**
+ * Récupère la table user_id → email pour TOUS les membres ÉLITE PRO
+ * actifs (membership_status=active, product_ids=[WHOP_PRODUCT_ID]).
+ *
+ * L'endpoint /memberships ne renvoie pas d'email (confirmé page brute +
+ * OpenAPI). /members, lui, expose `email` top-level + `user.id` — on
+ * construit la map côté serveur et on la join côté appelant.
+ *
+ * Si le scope `member:email:read` manque sur l'App Whop, l'API répond
+ * 200 mais `email: null` sur toutes les lignes → on le signale via
+ * `emailsPermissionMissing` pour que l'admin corrige côté dashboard
+ * Whop sans deviner.
+ */
+export async function fetchActiveEliteProMemberEmails(
+  opts: { maxPages?: number } = {},
+): Promise<MemberEmailFetch> {
+  const result: MemberEmailFetch = {
+    emailsByUserId: new Map(),
+    emailsPermissionMissing: false,
+    pagesChecked: 0,
+    errorStatus: null,
+    errorMessage: null,
+  }
+
+  let apiKey: string
+  let productId: string
+  try {
+    apiKey = requireEnv('WHOP_API_KEY')
+    productId = requireEnv('WHOP_PRODUCT_ID')
+  } catch (err) {
+    result.errorMessage = err instanceof Error ? err.message : 'env missing'
+    return result
+  }
+  const apiVersionDate =
+    (process.env.WHOP_API_VERSION_DATE || '').trim() || WHOP_API_VERSION_DATE_DEFAULT
+
+  const maxPages = Math.min(
+    SYNC_REPORT_HARD_MAX_PAGES,
+    Math.max(1, Math.floor(opts.maxPages ?? SYNC_REPORT_DEFAULT_MAX_PAGES)),
+  )
+
+  let cursor: string | null = null
+  let totalRows = 0
+  let rowsWithEmail = 0
+
+  for (let page = 1; page <= maxPages; page++) {
+    const params = new URLSearchParams()
+    params.set('first', String(PAGE_SIZE))
+    params.append('product_ids[]', productId)
+    // /members accepte `membership_status` SINGULIER avec les valeurs
+    // "active" ou "inactive" (vérifié par expérience : l'array
+    // membership_status[]=active renvoie 400). C'est différent des
+    // filtres /memberships qui attendent un tableau statuses[].
+    params.set('membership_status', 'active')
+    if (cursor) params.set('after', cursor)
+    const url = `${WHOP_API_BASE}/members?${params.toString()}`
+
+    let r: Response
+    try {
+      r = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Api-Version-Date': apiVersionDate,
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      })
+    } catch (err) {
+      result.errorStatus = 0
+      result.errorMessage = err instanceof Error ? err.message : 'network/timeout'
+      return result
+    }
+
+    result.pagesChecked = page
+
+    if (!r.ok) {
+      result.errorStatus = r.status
+      result.errorMessage = r.status === 403
+        ? 'permissions insuffisantes (403) sur /members — cocher member:email:read'
+        : r.status === 401
+          ? 'clé Whop refusée (401)'
+          : `HTTP ${r.status}`
+      return result
+    }
+
+    let payload: WhopMembersListResponse
+    try {
+      payload = await r.json() as WhopMembersListResponse
+    } catch {
+      result.errorStatus = r.status
+      result.errorMessage = 'JSON parse failed'
+      return result
+    }
+
+    const items = Array.isArray(payload.data) ? payload.data : []
+    for (const mb of items) {
+      totalRows++
+      const userId = mb.user?.id ?? null
+      const email = typeof mb.email === 'string' && mb.email.length > 0
+        ? mb.email.toLowerCase()
+        : null
+      if (email) rowsWithEmail++
+      if (userId && email) result.emailsByUserId.set(userId, email)
+    }
+
+    const hasNext = payload.page_info?.has_next_page === true
+    const endCursor = payload.page_info?.end_cursor ?? null
+    if (!hasNext || !endCursor) break
+    cursor = endCursor
+  }
+
+  // Signal explicite si /members répond 200 mais aucun email : le scope
+  // Whop est probablement manquant — l'admin doit le voir sans deviner.
+  if (totalRows > 0 && rowsWithEmail === 0) {
+    result.emailsPermissionMissing = true
+  }
+  return result
+}
+
+// ─── /plans : table plan_id → nom lisible ──────────────────────────
+
+export interface PlanInfo {
+  id: string
+  name: string
+  kind: MembershipKind
+  billingPeriodDays: number | null
+  renewalPrice: number | null
+  currency: string | null
+}
+
+export interface PlansFetch {
+  plansById: Map<string, PlanInfo>
+  errorStatus: number | null
+  errorMessage: string | null
+}
+
+interface WhopPlan {
+  id: string
+  title?: string | null
+  description?: string | null
+  plan_type?: string | null
+  billing_period?: number | null
+  renewal_price?: number | string | null
+  currency?: string | null
+}
+
+interface WhopPlansListResponse {
+  data?: WhopPlan[]
+}
+
+/** Dérive un nom humain depuis la durée de facturation quand le plan Whop
+ *  n'a ni title ni description (cas réel observé sur ÉLITE PRO). */
+function derivePlanName(p: WhopPlan): string {
+  const title = (p.title ?? '').trim()
+  if (title) return title
+  const desc = (p.description ?? '').trim()
+  if (desc) return desc
+  const bp = typeof p.billing_period === 'number' ? p.billing_period : null
+  if (bp === null) return p.id
+  if (bp === 30) return 'Mensuel'
+  if (bp === 90) return 'Trimestriel'
+  if (bp === 180) return 'Semestriel'
+  if (bp === 365) return 'Annuel'
+  return `${bp} jours`
+}
+
+/**
+ * Catalogue plans du produit ÉLITE PRO. Un seul appel HTTP (tous les
+ * plans tiennent largement sur une page). Appelé une fois en entrée du
+ * rapport de sync, puis joint côté appelant via plan_id.
+ */
+export async function fetchEliteProPlans(): Promise<PlansFetch> {
+  const result: PlansFetch = {
+    plansById: new Map(),
+    errorStatus: null,
+    errorMessage: null,
+  }
+
+  let apiKey: string
+  let productId: string
+  try {
+    apiKey = requireEnv('WHOP_API_KEY')
+    productId = requireEnv('WHOP_PRODUCT_ID')
+  } catch (err) {
+    result.errorMessage = err instanceof Error ? err.message : 'env missing'
+    return result
+  }
+  const apiVersionDate =
+    (process.env.WHOP_API_VERSION_DATE || '').trim() || WHOP_API_VERSION_DATE_DEFAULT
+
+  const params = new URLSearchParams()
+  params.append('product_ids[]', productId)
+  params.set('first', '100')
+  const url = `${WHOP_API_BASE}/plans?${params.toString()}`
+
+  let r: Response
+  try {
+    r = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Api-Version-Date': apiVersionDate,
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+    })
+  } catch (err) {
+    result.errorStatus = 0
+    result.errorMessage = err instanceof Error ? err.message : 'network/timeout'
+    return result
+  }
+
+  if (!r.ok) {
+    result.errorStatus = r.status
+    result.errorMessage = `HTTP ${r.status}`
+    return result
+  }
+
+  let payload: WhopPlansListResponse
+  try {
+    payload = await r.json() as WhopPlansListResponse
+  } catch {
+    result.errorStatus = r.status
+    result.errorMessage = 'JSON parse failed'
+    return result
+  }
+
+  const items = Array.isArray(payload.data) ? payload.data : []
+  for (const p of items) {
+    if (!p?.id) continue
+    const bp = typeof p.billing_period === 'number' ? p.billing_period : null
+    const price = typeof p.renewal_price === 'number'
+      ? p.renewal_price
+      : typeof p.renewal_price === 'string' && p.renewal_price.length > 0
+        ? Number.parseFloat(p.renewal_price)
+        : null
+    const kind: MembershipKind = p.plan_type === 'renewal' || (bp !== null && bp > 0)
+      ? 'subscription'
+      : p.plan_type === 'one_time'
+        ? 'one_time'
+        : 'unknown'
+    result.plansById.set(p.id, {
+      id: p.id,
+      name: derivePlanName(p),
+      kind,
+      billingPeriodDays: bp,
+      renewalPrice: Number.isFinite(price as number) ? (price as number) : null,
+      currency: typeof p.currency === 'string' ? p.currency : null,
+    })
+  }
   return result
 }
 
