@@ -679,6 +679,15 @@ export async function fetchActiveEliteProMemberEmails(
     // "active" ou "inactive" (vérifié par expérience : l'array
     // membership_status[]=active renvoie 400). C'est différent des
     // filtres /memberships qui attendent un tableau statuses[].
+    //
+    // IMPORTANT — couverture vérifiée sur le compte prod le 23/11/2026 :
+    // "active" sur /members est l'UNION des 5 statuts actifs côté
+    // /memberships (active + trialing + completed + canceling + past_due),
+    // pas le seul status literal "active". Preuve empirique : 67
+    // memberships (16 active + 50 completed + 1 trialing) → 60 user_ids
+    // distincts → tous les 60 présents dans /members?membership_status=
+    // active → 67/67 memberships joignables à un email. Pas besoin de
+    // taper /members?membership_status=inactive en plus.
     params.set('membership_status', 'active')
     if (cursor) params.set('after', cursor)
     const url = `${WHOP_API_BASE}/members?${params.toString()}`
