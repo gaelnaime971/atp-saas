@@ -30,14 +30,35 @@ import { isMembershipActive } from '@/lib/whop/status'
 
 const WEBHOOK_TIMESTAMP_TOLERANCE_SEC = 5 * 60
 
+/**
+ * Shape du webhook Whop (type: "membership.*"). Validé le 23/11/2026
+ * contre le schéma OpenAPI officiel (openapi.json → webhooks).
+ *
+ * BUG HISTORIQUE (corrigé ici) : le payload a MIGRÉ vers le même shape
+ * que /api/v1/memberships :
+ *   - `data.user_id` est maintenant une STRING TOP-LEVEL (avant : `data.user.id`)
+ *   - `data.product_id` est aussi TOP-LEVEL (en plus de `data.product.id`)
+ *   - `data.member` est null côté serveur (pas d'`access_level` utilisable)
+ *
+ * Mon code lisait encore `data.user?.id`. Résultat : whopUserId=undefined,
+ * profile introuvable, "skipped: no_profile" → le flag whop_subscription_
+ * active du profil NE REPASSAIT JAMAIS à false quand Whop envoyait la
+ * fin d'accès via membership.updated (status:canceled/expired). C'est
+ * l'explication des 3 cas pens_fouine / vincent-veron / guillaumeblondan2.
+ *
+ * On lit maintenant les DEUX chemins (top-level + nested) pour être
+ * robuste à un éventuel retour en arrière de Whop.
+ */
 interface WhopWebhookPayload {
   action?: string
   event?: string
-  type?: string
+  type?: string                      // Current API : "membership.updated" etc.
   data?: {
-    // Format webhook (vérifié sur payload réel) : objets enrichis, PAS des strings
-    // comme sur l'API v2/memberships. Différence volontaire côté Whop pour éviter
-    // au consommateur un re-fetch à chaque event.
+    // Les trois identifiants canoniques au TOP-LEVEL (Current API shape).
+    user_id?: string | null
+    product_id?: string
+    member_id?: string
+    // Objets nested encore présents — fallback pour les anciens formats.
     product?: {
       id?: string
       title?: string
@@ -49,9 +70,10 @@ interface WhopWebhookPayload {
       name?: string
       username?: string
     }
-    status?: string                // "active" | "trialing" | "completed" | "canceling" | "canceled" | "expired" | "past_due" | "unresolved" | "drafted"
-    cancel_at_period_end?: boolean // info annexe, pas utilisé pour l'accès
-    plan?: unknown
+    status?: string                  // "active" | "trialing" | "completed" | "canceling" | "canceled" | "expired" | "past_due" | "unresolved" | "drafted"
+    cancel_at_period_end?: boolean
+    current_period_end?: string | null
+    expires_at?: string | null
     member?: unknown
   }
 }
@@ -166,10 +188,11 @@ export async function POST(request: NextRequest) {
   const data = payload?.data ?? {}
 
   // 7. Filtre strict produit ÉLITE PRO — tout autre produit = skip silencieux.
-  //    data.product est un OBJET { id, title, metadata } dans les webhooks,
-  //    vérifié payload réel. Même format que ce que renvoie la Current API
-  //    côté lecture (/api/v1/memberships).
-  if (data.product?.id !== productId) {
+  //    Current API : product_id est top-level string ; product.id nested
+  //    reste présent par compat. On lit le top-level en priorité (c'est
+  //    le champ canonique de la Membership côté OpenAPI) + fallback nested.
+  const eventProductId = data.product_id ?? data.product?.id
+  if (eventProductId !== productId) {
     return NextResponse.json({ received: true, skipped: 'other_product' })
   }
 
@@ -220,9 +243,18 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient(supabaseUrl, serviceKey)
 
   // 10. Lookup profile : whop_user_id en priorité, email .ilike en fallback.
-  //     data.user est un OBJET { id, email, name, username } — l'id est le
-  //     whopUserId, l'email est à data.user.email (PAS data.email qui est undefined).
-  const whopUserId = data.user?.id
+  //
+  //     CORRECTIF 23/11/2026 : la Current API met user_id au TOP-LEVEL
+  //     (Membership.user_id, string). L'ancien chemin data.user?.id
+  //     ne matche plus → whopUserId était undefined et les événements
+  //     membership.updated avec status=canceled passaient en silence.
+  //     On lit les DEUX chemins (top-level d'abord, nested fallback)
+  //     pour rester robuste.
+  //
+  //     Email : plus présent au top-level non plus. data.user?.email
+  //     est conservé comme fallback historique mais ne doit plus être
+  //     attendu — le lookup par email est désormais surtout un filet.
+  const whopUserId = data.user_id ?? data.user?.id
   const whopEmail = data.user?.email
 
   let profileId: string | null = null
