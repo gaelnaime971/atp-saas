@@ -70,8 +70,12 @@ export async function proxy(request: NextRequest) {
       )
     }
 
-    // Admin trying to access trader area
-    if (pathname.startsWith('/dashboard') && isAdmin) {
+    // Admin trying to access trader area. Exception : l'espace Marchés
+    // (/dashboard/marches et ses sous-pages) reste ouvert à l'admin pour
+    // qu'il voie ses propres écrans. Le reste de /dashboard redirige.
+    const isMarketsSpace =
+      pathname === '/dashboard/marches' || pathname.startsWith('/dashboard/marches/')
+    if (pathname.startsWith('/dashboard') && isAdmin && !isMarketsSpace) {
       return NextResponse.redirect(new URL('/admin/dashboard', request.url))
     }
 

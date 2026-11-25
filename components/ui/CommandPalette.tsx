@@ -12,13 +12,16 @@ export interface CommandItem<Id extends string> {
   /** Nom du groupe d'origine (ex "Aujourd'hui") — affiché en badge discret à droite. */
   groupLabel?: string
   icon?: ReactNode
+  /** Optionnel. URL de destination quand l'item vit hors de l'écran courant. */
+  href?: string
 }
 
 export interface CommandPaletteProps<Id extends string> {
   open: boolean
   onClose: () => void
   items: CommandItem<Id>[]
-  onSelect: (id: Id) => void
+  /** Reçoit aussi l'item complet (utile pour naviguer vers `item.href`). */
+  onSelect: (id: Id, item: CommandItem<Id>) => void
   /** Placeholder de l'input. Défaut : "Aller à…" */
   placeholder?: string
 }
@@ -82,7 +85,7 @@ export default function CommandPalette<Id extends string>({
   const commit = useCallback((index: number) => {
     const item = filtered[index]
     if (!item) return
-    onSelect(item.id)
+    onSelect(item.id, item)
     onClose()
   }, [filtered, onSelect, onClose])
 
@@ -272,28 +275,37 @@ const kbdStyle: React.CSSProperties = {
 
 interface GroupLike<Id extends string> {
   label: string
-  items: { id: Id; label: string; icon?: ReactNode }[]
+  items: { id: Id; label: string; icon?: ReactNode; href?: string; soon?: boolean }[]
 }
 
 interface FooterItemLike<Id extends string> {
   id: Id
   label: string
   icon?: ReactNode
+  href?: string
 }
 
+/**
+ * Aplatis groupes + footer. `spaceLabel` (optionnel) préfixe le badge de
+ * groupe : « Marchés · Positionnement ». Les items `soon` (sans page)
+ * sont exclus.
+ */
 export function flattenNavForPalette<Id extends string>(
   groups: GroupLike<Id>[],
   footerItems: FooterItemLike<Id>[] = [],
   footerGroupLabel: string = 'Compte',
+  spaceLabel?: string,
 ): CommandItem<Id>[] {
+  const prefix = (label: string) => (spaceLabel ? `${spaceLabel} · ${label}` : label)
   const out: CommandItem<Id>[] = []
   for (const g of groups) {
     for (const item of g.items) {
-      out.push({ id: item.id, label: item.label, icon: item.icon, groupLabel: g.label })
+      if (item.soon) continue
+      out.push({ id: item.id, label: item.label, icon: item.icon, groupLabel: prefix(g.label), href: item.href })
     }
   }
   for (const item of footerItems) {
-    out.push({ id: item.id, label: item.label, icon: item.icon, groupLabel: footerGroupLabel })
+    out.push({ id: item.id, label: item.label, icon: item.icon, groupLabel: prefix(footerGroupLabel), href: item.href })
   }
   return out
 }

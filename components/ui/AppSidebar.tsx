@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import Link from 'next/link'
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -11,6 +12,13 @@ export interface NavItem<Id extends string> {
   label: string
   icon: ReactNode
   badge?: number | string
+  /**
+   * Optionnel. Présent → l'item est un vrai lien (<Link>) vers cette URL,
+   * `onPageChange` n'est pas appelé. Absent → comportement historique (id).
+   */
+  href?: string
+  /** Optionnel. `true` → visible mais non cliquable, badge « Bientôt ». */
+  soon?: boolean
 }
 
 export interface NavGroup<Id extends string> {
@@ -33,6 +41,11 @@ export interface AppSidebarProps<Id extends string> {
   storageKey: string
   /** Contenu injecté en bas du rail. Typiquement : avatar + logout du hook `useSidebarProfile`. */
   footer?: ReactNode
+  /**
+   * Optionnel. Contenu injecté entre le logo et la nav (sélecteur
+   * d'espace, bouton de recherche). Fonction → reçoit l'état du rail.
+   */
+  header?: ReactNode | ((railCollapsed: boolean) => ReactNode)
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -90,69 +103,129 @@ interface NavItemProps<Id extends string> {
 
 function NavItemButton<Id extends string>({ item, isActive, railCollapsed, onClick }: NavItemProps<Id>) {
   const [hover, setHover] = useState(false)
+  const isSoon = !!item.soon
+  const highlight = hover && !isSoon
+
+  const style: CSSProperties = {
+    width: '100%',
+    display: 'flex', alignItems: 'center',
+    gap: railCollapsed ? 0 : '0.75rem',
+    justifyContent: railCollapsed ? 'center' : 'flex-start',
+    padding: railCollapsed ? '0.625rem 0' : '0.5rem 0.75rem',
+    borderRadius: 'var(--radius-lg)',
+    fontFamily: 'var(--font-display)',
+    fontSize: 'var(--text-body)',       // 14px
+    fontWeight: isActive ? 600 : 500,
+    textAlign: 'left',
+    textDecoration: 'none',
+    background: isActive
+      ? 'rgba(var(--color-accent-rgb), 0.10)'
+      : highlight ? 'var(--color-surface-2)' : 'transparent',
+    color: isActive ? 'var(--color-accent)' : isSoon ? 'var(--color-text-3)' : 'var(--color-text-2)',
+    borderLeft: railCollapsed ? 'none' : `3px solid ${isActive ? 'var(--color-accent)' : 'transparent'}`,
+    paddingLeft: railCollapsed ? '0' : '0.625rem',
+    cursor: isSoon ? 'default' : 'pointer',
+    transition: 'background 0.15s, color 0.15s',
+    position: 'relative',
+  }
+
+  const content = (
+    <>
+      <span
+        aria-hidden
+        style={{
+          color: isActive ? 'var(--color-accent)' : 'var(--color-text-3)',
+          display: 'inline-flex', flexShrink: 0,
+        }}
+      >
+        {item.icon}
+      </span>
+      {!railCollapsed && (
+        <>
+          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {item.label}
+          </span>
+          {isSoon && (
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '0.625rem',     // 10px : tient à côté d'un libellé de 15 caractères
+                fontWeight: 600,
+                lineHeight: 1.4,
+                padding: '0 4px',
+                marginLeft: '-0.5rem',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--color-border-subtle)',
+                color: 'var(--color-text-3)',
+                flexShrink: 0,
+              }}
+            >
+              Bientôt
+            </span>
+          )}
+          {item.badge != null && (
+            <span
+              style={{
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-full)',
+                background: 'var(--color-accent-soft)',
+                color: 'var(--color-accent)',
+                minWidth: 18, textAlign: 'center',
+              }}
+            >
+              {item.badge}
+            </span>
+          )}
+        </>
+      )}
+    </>
+  )
+
+  const title = railCollapsed ? (isSoon ? `${item.label} (bientôt)` : item.label) : undefined
+  const hoverHandlers = {
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => setHover(false),
+  }
+
+  if (isSoon) {
+    return (
+      <li>
+        <div aria-disabled="true" title={title} style={style}>
+          {content}
+        </div>
+      </li>
+    )
+  }
+
+  if (item.href) {
+    return (
+      <li>
+        <Link
+          href={item.href}
+          {...hoverHandlers}
+          title={title}
+          aria-current={isActive ? 'page' : undefined}
+          style={style}
+        >
+          {content}
+        </Link>
+      </li>
+    )
+  }
 
   return (
     <li>
       <button
         type="button"
         onClick={onClick}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        title={railCollapsed ? item.label : undefined}
+        {...hoverHandlers}
+        title={title}
         aria-current={isActive ? 'page' : undefined}
-        style={{
-          width: '100%',
-          display: 'flex', alignItems: 'center',
-          gap: railCollapsed ? 0 : '0.75rem',
-          justifyContent: railCollapsed ? 'center' : 'flex-start',
-          padding: railCollapsed ? '0.625rem 0' : '0.5rem 0.75rem',
-          borderRadius: 'var(--radius-lg)',
-          fontFamily: 'var(--font-display)',
-          fontSize: 'var(--text-body)',       // 14px
-          fontWeight: isActive ? 600 : 500,
-          textAlign: 'left',
-          background: isActive
-            ? 'rgba(var(--color-accent-rgb), 0.10)'
-            : hover ? 'var(--color-surface-2)' : 'transparent',
-          color: isActive ? 'var(--color-accent)' : 'var(--color-text-2)',
-          borderLeft: railCollapsed ? 'none' : `3px solid ${isActive ? 'var(--color-accent)' : 'transparent'}`,
-          paddingLeft: railCollapsed ? '0' : '0.625rem',
-          cursor: 'pointer',
-          transition: 'background 0.15s, color 0.15s',
-          position: 'relative',
-        }}
+        style={style}
       >
-        <span
-          aria-hidden
-          style={{
-            color: isActive ? 'var(--color-accent)' : 'var(--color-text-3)',
-            display: 'inline-flex', flexShrink: 0,
-          }}
-        >
-          {item.icon}
-        </span>
-        {!railCollapsed && (
-          <>
-            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {item.label}
-            </span>
-            {item.badge != null && (
-              <span
-                style={{
-                  fontSize: '0.6875rem',
-                  fontWeight: 700,
-                  padding: '2px 6px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'var(--color-accent-soft)',
-                  color: 'var(--color-accent)',
-                  minWidth: 18, textAlign: 'center',
-                }}
-              >
-                {item.badge}
-              </span>
-            )}
-          </>
-        )}
+        {content}
       </button>
     </li>
   )
@@ -268,7 +341,7 @@ function NavGroupSection<Id extends string>({
 // ═══════════════════════════════════════════════════════════════
 
 export default function AppSidebar<Id extends string>({
-  groups, activePage, onPageChange, banner, storageKey, footer,
+  groups, activePage, onPageChange, banner, storageKey, footer, header,
 }: AppSidebarProps<Id>) {
   // Init state from localStorage; fallback = { rail expanded, groups per defaultCollapsed }
   const [state, setState] = useState<SidebarState>(() => {
@@ -354,6 +427,18 @@ export default function AppSidebar<Id extends string>({
           </span>
         )}
       </div>
+
+      {/* Slot optionnel : sélecteur d'espace, recherche */}
+      {header && (
+        <div
+          style={{
+            padding: state.railCollapsed ? '0.75rem 0.5rem 0' : '0.75rem 0.75rem 0',
+            display: 'flex', flexDirection: 'column', gap: '0.5rem',
+          }}
+        >
+          {typeof header === 'function' ? header(state.railCollapsed) : header}
+        </div>
+      )}
 
       {/* Nav */}
       <nav

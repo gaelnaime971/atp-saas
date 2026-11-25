@@ -30,6 +30,9 @@ const IconUser      = <svg className="w-4 h-4" fill="none" stroke="currentColor"
 // Nav
 // ═══════════════════════════════════════════════════════════════
 
+// Structure : docs/design/terminal/00-menu.html (espace « Mon trading »).
+// Analyse d'action est passée dans l'espace Marchés (lib/nav/markets-nav).
+// Formation reste dans Coaching (absente de la maquette, gardée).
 export const TRADER_NAV: NavGroup<DashboardPage>[] = [
   {
     id: 'today',
@@ -42,9 +45,8 @@ export const TRADER_NAV: NavGroup<DashboardPage>[] = [
   },
   {
     id: 'journal',
-    label: 'Mon journal',
+    label: 'Journal',
     items: [
-      { id: 'bilan-2027',       label: 'Bilan perso 2027', icon: IconClipboard },
       { id: 'sessions-history', label: 'Sessions',       icon: IconList },
       { id: 'notebook',         label: 'Mon cahier',     icon: IconBook },
       { id: 'progression',      label: 'Ma progression', icon: IconTrending },
@@ -52,22 +54,21 @@ export const TRADER_NAV: NavGroup<DashboardPage>[] = [
     ],
   },
   {
-    id: 'analyse',
-    label: 'Analyse',
+    id: 'performance',
+    label: 'Performance',
     items: [
-      { id: 'stats',              label: 'Stats',             icon: IconChart },
-      { id: 'analyse-ia',         label: 'Analyse IA',        icon: IconSparkles },
-      { id: 'analyse-graphique',  label: 'Analyse graphique', icon: IconChart },
-      { id: 'backtest',           label: 'Backtest',          icon: IconBacktest },
-      { id: 'stock-analysis',     label: 'Analyse d\'action', icon: IconTrending },
+      { id: 'stats',      label: 'Stats',      icon: IconChart },
+      { id: 'analyse-ia', label: 'Analyse IA', icon: IconSparkles },
+      { id: 'propfirm',   label: 'Prop Firm',  icon: IconBank },
     ],
   },
   {
-    id: 'capital',
-    label: 'Capital',
+    id: 'outils',
+    label: 'Outils',
     items: [
-      { id: 'propfirm',    label: 'Prop Firm',   icon: IconBank },
-      { id: 'calculateur', label: 'Calculateur', icon: IconCalc },
+      { id: 'backtest',          label: 'Backtest',          icon: IconBacktest },
+      { id: 'analyse-graphique', label: 'Analyse graphique', icon: IconChart },
+      { id: 'calculateur',       label: 'Calculateur',       icon: IconCalc },
     ],
   },
   {
@@ -77,6 +78,7 @@ export const TRADER_NAV: NavGroup<DashboardPage>[] = [
       { id: 'coaching',   label: 'Sessions coaching', icon: IconCoaching },
       { id: 'recap-live', label: 'Trades Live Coach', icon: IconBacktest },
       { id: 'formation',  label: 'Formation',         icon: IconPlay },
+      { id: 'bilan-2027', label: 'Bilan perso 2027',  icon: IconClipboard },
     ],
   },
 ]

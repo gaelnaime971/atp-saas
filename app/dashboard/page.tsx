@@ -1,12 +1,21 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import Avatar from '@/components/ui/Avatar'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import AppSidebar from '@/components/ui/AppSidebar'
 import AppTopbar from '@/components/ui/AppTopbar'
-import CommandPalette, { flattenNavForPalette } from '@/components/ui/CommandPalette'
+import CommandPalette from '@/components/ui/CommandPalette'
 import { useSidebarProfile } from '@/lib/hooks/useSidebarProfile'
-import { TRADER_NAV, TRADER_FOOTER_ITEMS } from '@/lib/nav/trader-nav'
+import { TRADER_NAV } from '@/lib/nav/trader-nav'
+import { MARKETS_NAV } from '@/lib/nav/markets-nav'
+import { buildPaletteItems, type AnyNavId } from '@/lib/nav/palette'
+import {
+  isDashboardPage, MARKETS_BASE_PATH, parsePageParam, searchWithoutPage, spaceOfSpaPage,
+} from '@/lib/nav/spaces'
+import type { NavGroup } from '@/components/ui/AppSidebar'
+import TraderSidebarFooter from '@/components/dashboard/TraderSidebarFooter'
+import SpaceSwitcher from '@/components/terminal/SpaceSwitcher'
+import MarketsClocks from '@/components/terminal/MarketsClocks'
 import type { DashboardPage } from '@/components/dashboard/DashboardSidebar'
 import Dashboard from '@/components/dashboard/pages/Dashboard'
 import Session from '@/components/dashboard/pages/Session'
@@ -97,11 +106,33 @@ export default function TraderDashboard() {
   const [sessionLive, setSessionLive] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const { name, avatarUrl, logout } = useSidebarProfile()
+  const router = useRouter()
 
-  const paletteItems = useMemo(
-    () => flattenNavForPalette(TRADER_NAV, TRADER_FOOTER_ITEMS, 'Compte'),
-    [],
-  )
+  // Espace dérivé de la page active (Analyse d'action vit dans Marchés).
+  const space = spaceOfSpaPage(activePage)
+  const navGroups: NavGroup<AnyNavId>[] = space === 'marches' ? MARKETS_NAV : TRADER_NAV
+
+  const paletteItems = useMemo(() => buildPaletteItems('spa', space), [space])
+
+  // ?page=<id> : ouvert depuis l'espace Marchés (⌘K, sélecteur, menu).
+  // Lu une fois au montage, avant le premier paint, puis retiré de l'URL
+  // pour qu'un rechargement ne rouvre pas une page périmée. Sans
+  // paramètre (ou id inconnu) : comportement d'origine, Dashboard.
+  useLayoutEffect(() => {
+    const page = parsePageParam(window.location.search)
+    if (!page) return
+    // Lecture unique d'un système externe (l'URL) au montage : le SSR ne
+    // la connaît pas, un initialiseur de useState casserait l'hydratation.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActivePage(page)
+    const { pathname, hash } = window.location
+    window.history.replaceState(null, '',`${pathname}${searchWithoutPage(window.location.search)}${hash}`)
+  }, [])
+
+  const goTo = (id: AnyNavId, href?: string) => {
+    if (isDashboardPage(id)) setActivePage(id)
+    else if (href) router.push(href)
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -143,83 +174,37 @@ export default function TraderDashboard() {
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--color-surface-0)' }}>
-      <AppSidebar
-        groups={TRADER_NAV}
+      <AppSidebar<AnyNavId>
+        groups={navGroups}
         activePage={activePage}
-        onPageChange={setActivePage}
+        onPageChange={id => goTo(id)}
         storageKey="atp.sidebar.trader"
+        header={railCollapsed => (
+          <SpaceSwitcher
+            active={space}
+            targets={{
+              trading: { onClick: () => setActivePage('dashboard') },
+              marches: { href: MARKETS_BASE_PATH },
+            }}
+            onSearch={() => setPaletteOpen(true)}
+            railCollapsed={railCollapsed}
+          />
+        )}
         footer={
-          <>
-            {name && (
-              <div className="mb-2 flex items-center gap-3 px-1">
-                <Avatar url={avatarUrl} name={name} size={32} />
-                <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-1)' }}>
-                  {name}
-                </p>
-              </div>
-            )}
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {TRADER_FOOTER_ITEMS.map(item => {
-                const isActive = activePage === item.id
-                return (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      onClick={() => setActivePage(item.id)}
-                      aria-current={isActive ? 'page' : undefined}
-                      style={{
-                        width: '100%',
-                        display: 'flex', alignItems: 'center', gap: '0.75rem',
-                        padding: '0.375rem 0.75rem',
-                        borderRadius: 'var(--radius-md)',
-                        background: isActive ? 'rgba(var(--color-accent-rgb), 0.10)' : 'transparent',
-                        color: isActive ? 'var(--color-accent)' : 'var(--color-text-3)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-display)',
-                        fontSize: '0.8125rem',    // 13px, plus discret que la nav principale
-                        fontWeight: isActive ? 600 : 500,
-                        textAlign: 'left',
-                        transition: 'background 0.15s, color 0.15s',
-                      }}
-                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = 'var(--color-text-1)' }}
-                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--color-text-3)' }}
-                    >
-                      <span aria-hidden style={{ display: 'inline-flex', flexShrink: 0, color: 'inherit' }}>
-                        {item.icon}
-                      </span>
-                      {item.label}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-              style={{ color: 'var(--color-text-3)', marginTop: '0.25rem', fontSize: '0.8125rem' }}
-              onMouseEnter={e => {
-                e.currentTarget.style.color = 'var(--color-loss)'
-                e.currentTarget.style.background = 'rgba(var(--color-loss-rgb), 0.05)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.color = 'var(--color-text-3)'
-                e.currentTarget.style.background = 'transparent'
-              }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Déconnexion
-            </button>
-          </>
+          <TraderSidebarFooter
+            name={name}
+            avatarUrl={avatarUrl}
+            logout={logout}
+            activePage={activePage}
+            onSelect={setActivePage}
+          />
         }
       />
 
       <div className="flex-1 flex flex-col" style={{ marginLeft: 'var(--app-sidebar-width, 240px)', transition: 'margin-left 0.18s ease' }}>
         <AppTopbar
           title={pageTitles[activePage]}
-          actions={
+          actions={space === 'marches' ? <MarketsClocks /> : (
             <>
               <button
                 onClick={() => setSessionLive(true)}
@@ -242,7 +227,7 @@ export default function TraderDashboard() {
               <div className="h-5 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
               <TopbarDate />
             </>
-          }
+          )}
         />
 
         <main className="flex-1 p-7">
@@ -254,7 +239,7 @@ export default function TraderDashboard() {
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         items={paletteItems}
-        onSelect={id => setActivePage(id)}
+        onSelect={(id, item) => goTo(id, item.href)}
       />
       {sessionLive && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }}>
