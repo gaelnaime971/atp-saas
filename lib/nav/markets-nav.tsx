@@ -1,5 +1,6 @@
 import type { NavGroup } from '@/components/ui/AppSidebar'
 import { MARKETS_BASE_PATH } from '@/lib/nav/spaces'
+import type { TerminalViewer } from '@/lib/terminal/access'
 
 // ═══════════════════════════════════════════════════════════════
 // Espace « Marchés » — vraies routes sous /dashboard/marches/*.
@@ -84,3 +85,12 @@ export const MARKETS_NAV: NavGroup<MarketsNavId>[] = [
     ],
   },
 ]
+
+/**
+ * Menu Marchés selon le spectateur. L'admin n'a pas Analyse d'action :
+ * c'est une page du SPA /dashboard, d'où proxy.ts le redirige.
+ */
+export function marketsNavFor(viewer: Exclude<TerminalViewer, 'hidden'>): NavGroup<MarketsNavId>[] {
+  if (viewer === 'member') return MARKETS_NAV
+  return MARKETS_NAV.map(g => ({ ...g, items: g.items.filter(i => i.id !== 'stock-analysis') }))
+}

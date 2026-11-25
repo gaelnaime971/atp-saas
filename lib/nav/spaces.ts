@@ -65,9 +65,12 @@ export function isMarketsPath(pathname: string): boolean {
   return pathname === MARKETS_BASE_PATH || pathname.startsWith(`${MARKETS_BASE_PATH}/`)
 }
 
-/** Espace d'un écran du SPA. */
-export function spaceOfSpaPage(id: DashboardPage): SpaceId {
-  return MARKETS_SPA_PAGES.includes(id) ? 'marches' : 'trading'
+/**
+ * Espace d'un écran du SPA. Marchés masqué (TERMINAL_ACCESS) → tout est
+ * dans Mon trading, Analyse d'action comprise.
+ */
+export function spaceOfSpaPage(id: DashboardPage, terminalVisible: boolean): SpaceId {
+  return terminalVisible && MARKETS_SPA_PAGES.includes(id) ? 'marches' : 'trading'
 }
 
 // ─── Transformations de groupes de nav ────────────────────────

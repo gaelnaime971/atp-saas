@@ -73,5 +73,24 @@ FRED, Fed d'Atlanta, Shiller, CFTC. La mention FRED exacte : « This product use
 - **Analyse d'action est passée dans Marchés › Analyse.** C'était simple : elle reste un écran du SPA (`/dashboard?page=stock-analysis`), et quand elle est ouverte le SPA affiche le menu et la barre du haut de l'espace Marchés.
 - **Éléments « bientôt »** (Récap de séance, Actus & Squawk) : visibles dans le menu, non cliquables, sans page, absents de ⌘K.
 - **Horloges Marchés** : « Ton heure » (fuseau du navigateur en attendant `profiles.timezone` à l'étape 2), Londres, New York, Tokyo. Rendues côté client uniquement (piège d'hydratation #418). Pas de pastille ouvert/fermé : elle dépend des fériés et des clôtures anticipées, elle arrive avec Sessions & horaires.
-- **Admin** : exception dans `proxy.ts` pour `/dashboard/marches` (et ses sous-pages). Le reste de `/dashboard` redirige toujours un admin vers `/admin/dashboard`, y compris le bouton « Mon trading » et Analyse d'action.
+- **Admin** : exception dans `proxy.ts` pour `/dashboard/marches` (et ses sous-pages). Le reste de `/dashboard` redirige toujours un admin vers `/admin/dashboard`.
 - **Gate Whop** : inchangé. `/dashboard/marches/*` est couvert par le `startsWith('/dashboard')` existant.
+
+## Interrupteur TERMINAL_ACCESS (étape 1 bis)
+
+Variable **serveur** (jamais `NEXT_PUBLIC_`), pour pouvoir pousser en prod sans montrer un espace Marchés vide aux membres.
+
+| Valeur | Qui voit Marchés |
+|---|---|
+| absente, vide, ou toute valeur autre que `all` (`ALL`, `true`, `1`… compris) | les admins seulement |
+| `all` (exactement) | tous les membres + les admins |
+
+- **Défaut sûr : rien à configurer en prod**, l'espace reste réservé aux admins. Pour l'ouvrir : `TERMINAL_ACCESS=all` sur Vercel, puis redéployer (Vercel n'applique un changement de variable qu'au déploiement suivant).
+- **Contrôle côté serveur, à 2 niveaux** : `proxy.ts` (chaque requête, y compris les navigations client) puis le layout `app/dashboard/marches/layout.tsx`. Un membre qui tape `/dashboard/marches/*` alors que l'espace est masqué est renvoyé sur `/dashboard`. Fail-closed : profil illisible → traité comme membre.
+- **Règle** : `lib/terminal/access.ts` (`terminalViewer`, `canSeeTerminal`), testée dans `lib/terminal/access.test.ts`.
+- **SPA `/dashboard`** : il ne peut pas lire une variable serveur ; `app/dashboard/layout.tsx` la lit à chaque requête (`connection()`) et la transmet par contexte (`components/terminal/TerminalAccess.tsx`). Conséquence : `/dashboard` est rendu à la demande et n'est plus prérendu au build.
+- **Membre, espace masqué** : pas de sélecteur Mon trading / Marchés, rien de Marchés dans ⌘K, Analyse d'action revient dans Mon trading › Outils (dernière position). Le menu Mon trading réorganisé reste pour tout le monde.
+- **Membre, `all`** : comportement de l'étape 1 (Analyse d'action dans Marchés › Analyse).
+- **Admin dans Marchés** : « Retour admin » (vers `/admin/dashboard`) à la place du sélecteur, pas d'Analyse d'action, pas de liens Mon compte / Contrat / Documents, ⌘K limité à Marchés, pas de bulle de messagerie coach. Tous ces liens le renvoyaient vers `/admin/dashboard`.
+- **Menu admin** : groupe « Terminal » avec le lien « Terminal Marchés » vers `/dashboard/marches`.
+- Pas de `.env.example` dans le repo (`.env*` est ignoré par git) : la variable est documentée ici.

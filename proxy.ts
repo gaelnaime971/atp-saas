@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { canSeeTerminal } from '@/lib/terminal/access'
 
 export async function proxy(request: NextRequest) {
   // Jarvis (POC gated par JARVIS_ENABLED + JARVIS_ALLOWED_EMAILS) gère
@@ -81,6 +82,14 @@ export async function proxy(request: NextRequest) {
 
     // Trader trying to access admin area
     if (pathname.startsWith('/admin') && !isAdmin) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    // Interrupteur de l'espace Marchés (TERMINAL_ACCESS, lib/terminal/access).
+    // Absent ou ≠ "all" → réservé aux admins ; un membre est renvoyé sur
+    // /dashboard. Fail-closed : profile null → pas admin → redirigé (sauf
+    // "all"). Doublé dans app/dashboard/marches/layout.tsx.
+    if (isMarketsSpace && !canSeeTerminal({ isAdmin, access: process.env.TERMINAL_ACCESS })) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 

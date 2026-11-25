@@ -14,6 +14,8 @@ import { spaHref } from '@/lib/nav/spaces'
  *
  * - Dans le SPA : `onSelect` fourni → boutons qui changent de page.
  * - Hors SPA (espace Marchés) : pas de `onSelect` → liens /dashboard?page=…
+ * - `accountLinks={false}` (admin dans Marchés) : avatar + déconnexion
+ *   seulement, ces liens le renverraient vers /admin/dashboard.
  */
 export interface TraderSidebarFooterProps {
   name: string
@@ -21,9 +23,10 @@ export interface TraderSidebarFooterProps {
   logout: () => void
   activePage?: DashboardPage | null
   onSelect?: (id: DashboardPage) => void
+  accountLinks?: boolean
 }
 
-export default function TraderSidebarFooter({ name, avatarUrl, logout, activePage, onSelect }: TraderSidebarFooterProps) {
+export default function TraderSidebarFooter({ name, avatarUrl, logout, activePage, onSelect, accountLinks = true }: TraderSidebarFooterProps) {
   return (
     <>
       {name && (
@@ -34,7 +37,7 @@ export default function TraderSidebarFooter({ name, avatarUrl, logout, activePag
           </p>
         </div>
       )}
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {accountLinks && <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
         {TRADER_FOOTER_ITEMS.map(item => {
           const isActive = activePage === item.id
           const style: CSSProperties = {
@@ -85,7 +88,7 @@ export default function TraderSidebarFooter({ name, avatarUrl, logout, activePag
             </li>
           )
         })}
-      </ul>
+      </ul>}
       <button
         onClick={logout}
         className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"

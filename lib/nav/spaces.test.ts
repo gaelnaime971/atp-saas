@@ -39,9 +39,12 @@ describe('spaHref / isMarketsPath / spaceOfSpaPage', () => {
     expect(isMarketsPath('/marches')).toBe(false)
     expect(isMarketsPath('/dashboard')).toBe(false)
   })
-  it('range Analyse d’action dans Marchés, le reste dans Mon trading', () => {
-    expect(spaceOfSpaPage('stock-analysis')).toBe('marches')
-    expect(spaceOfSpaPage('dashboard')).toBe('trading')
+  it('range Analyse d’action dans Marchés quand il est visible, le reste dans Mon trading', () => {
+    expect(spaceOfSpaPage('stock-analysis', true)).toBe('marches')
+    expect(spaceOfSpaPage('dashboard', true)).toBe('trading')
+  })
+  it('Marchés masqué : tout est dans Mon trading', () => {
+    expect(spaceOfSpaPage('stock-analysis', false)).toBe('trading')
   })
 })
 
@@ -101,22 +104,22 @@ describe('menu Marchés', () => {
 
 describe('palette ⌘K', () => {
   it('cherche dans les 2 espaces avec un badge « espace · groupe »', () => {
-    const items = buildPaletteItems('routes', 'marches')
+    const items = buildPaletteItems('routes', 'marches', 'member')
     expect(items.find(i => i.id === 'marches-cot')!.groupLabel).toBe('Marchés · Positionnement')
     expect(items.find(i => i.id === 'coaching')!.groupLabel).toBe('Mon trading · Coaching')
     expect(items.find(i => i.id === 'compte')!.groupLabel).toBe('Mon trading · Compte')
     expect(items[0].groupLabel?.startsWith('Marchés')).toBe(true)
   })
   it('exclut les éléments « bientôt » et n’a pas de doublon', () => {
-    const items = buildPaletteItems('spa', 'trading')
+    const items = buildPaletteItems('spa', 'trading', 'member')
     const ids = items.map(i => i.id)
     expect(ids).not.toContain('marches-recap')
     expect(ids).not.toContain('marches-squawk')
     expect(new Set(ids).size).toBe(ids.length)
   })
   it('host routes : tout a un href ; host spa : les pages SPA restent par id', () => {
-    for (const i of buildPaletteItems('routes', 'marches')) expect(i.href, i.id).toBeTruthy()
-    const spa = buildPaletteItems('spa', 'trading')
+    for (const i of buildPaletteItems('routes', 'marches', 'member')) expect(i.href, i.id).toBeTruthy()
+    const spa = buildPaletteItems('spa', 'trading', 'member')
     for (const i of spa) {
       if (isDashboardPage(i.id)) expect(i.href, i.id).toBeUndefined()
       else expect(i.href, i.id).toMatch(/^\/dashboard\/marches/)

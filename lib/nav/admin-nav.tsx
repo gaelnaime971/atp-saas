@@ -39,7 +39,12 @@ const IconSettings = <svg className="w-4 h-4" fill="none" stroke="currentColor" 
 // utilisateur : tunnel entrant avant les traders existants).
 // ═══════════════════════════════════════════════════════════════
 
-export const ADMIN_NAV: NavGroup<AdminPage>[] = [
+/** Ids du menu admin : pages du SPA admin + liens vers d'autres routes. */
+export type AdminNavId = AdminPage | 'terminal-marches'
+
+const IconGlobe = <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3M3.5 9h17M3.5 15h17" /></svg>
+
+export const ADMIN_NAV: NavGroup<AdminNavId>[] = [
   {
     id: 'today',
     label: 'Aujourd\'hui',
@@ -79,6 +84,15 @@ export const ADMIN_NAV: NavGroup<AdminPage>[] = [
       { id: 'reports', label: 'Rapports',      icon: IconReport },
       { id: 'crm',     label: 'Vue CRM',       icon: IconCRM },
       { id: 'notes',   label: 'Notes privées', icon: IconNote },
+    ],
+  },
+  {
+    // Espace Marchés (ATP Terminal) : vraie route, ouverte à l'admin même
+    // quand TERMINAL_ACCESS le masque aux membres.
+    id: 'terminal',
+    label: 'Terminal',
+    items: [
+      { id: 'terminal-marches', label: 'Terminal Marchés', icon: IconGlobe, href: '/dashboard/marches' },
     ],
   },
 ]

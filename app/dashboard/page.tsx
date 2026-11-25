@@ -6,7 +6,7 @@ import AppSidebar from '@/components/ui/AppSidebar'
 import AppTopbar from '@/components/ui/AppTopbar'
 import CommandPalette from '@/components/ui/CommandPalette'
 import { useSidebarProfile } from '@/lib/hooks/useSidebarProfile'
-import { TRADER_NAV } from '@/lib/nav/trader-nav'
+import { traderNavFor } from '@/lib/nav/trader-nav'
 import { MARKETS_NAV } from '@/lib/nav/markets-nav'
 import { buildPaletteItems, type AnyNavId } from '@/lib/nav/palette'
 import {
@@ -14,8 +14,9 @@ import {
 } from '@/lib/nav/spaces'
 import type { NavGroup } from '@/components/ui/AppSidebar'
 import TraderSidebarFooter from '@/components/dashboard/TraderSidebarFooter'
-import SpaceSwitcher from '@/components/terminal/SpaceSwitcher'
+import SpaceSwitcher, { SearchButton } from '@/components/terminal/SpaceSwitcher'
 import MarketsClocks from '@/components/terminal/MarketsClocks'
+import { useMembersSeeTerminal } from '@/components/terminal/TerminalAccess'
 import type { DashboardPage } from '@/components/dashboard/DashboardSidebar'
 import Dashboard from '@/components/dashboard/pages/Dashboard'
 import Session from '@/components/dashboard/pages/Session'
@@ -108,11 +109,19 @@ export default function TraderDashboard() {
   const { name, avatarUrl, logout } = useSidebarProfile()
   const router = useRouter()
 
-  // Espace dérivé de la page active (Analyse d'action vit dans Marchés).
-  const space = spaceOfSpaPage(activePage)
-  const navGroups: NavGroup<AnyNavId>[] = space === 'marches' ? MARKETS_NAV : TRADER_NAV
+  // Espace Marchés visible pour les membres ? (TERMINAL_ACCESS, lu côté
+  // serveur par app/dashboard/layout.tsx). Masqué : pas de sélecteur, rien
+  // de Marchés dans ⌘K, Analyse d'action revient dans Mon trading › Outils.
+  const terminalVisible = useMembersSeeTerminal()
 
-  const paletteItems = useMemo(() => buildPaletteItems('spa', space), [space])
+  // Espace dérivé de la page active (Analyse d'action vit dans Marchés).
+  const space = spaceOfSpaPage(activePage, terminalVisible)
+  const navGroups: NavGroup<AnyNavId>[] = space === 'marches' ? MARKETS_NAV : traderNavFor(terminalVisible)
+
+  const paletteItems = useMemo(
+    () => buildPaletteItems('spa', space, terminalVisible ? 'member' : 'hidden'),
+    [space, terminalVisible],
+  )
 
   // ?page=<id> : ouvert depuis l'espace Marchés (⌘K, sélecteur, menu).
   // Lu une fois au montage, avant le premier paint, puis retiré de l'URL
@@ -180,15 +189,19 @@ export default function TraderDashboard() {
         onPageChange={id => goTo(id)}
         storageKey="atp.sidebar.trader"
         header={railCollapsed => (
-          <SpaceSwitcher
-            active={space}
-            targets={{
-              trading: { onClick: () => setActivePage('dashboard') },
-              marches: { href: MARKETS_BASE_PATH },
-            }}
-            onSearch={() => setPaletteOpen(true)}
-            railCollapsed={railCollapsed}
-          />
+          <>
+            {terminalVisible && (
+              <SpaceSwitcher
+                active={space}
+                targets={{
+                  trading: { onClick: () => setActivePage('dashboard') },
+                  marches: { href: MARKETS_BASE_PATH },
+                }}
+                railCollapsed={railCollapsed}
+              />
+            )}
+            <SearchButton onSearch={() => setPaletteOpen(true)} railCollapsed={railCollapsed} />
+          </>
         )}
         footer={
           <TraderSidebarFooter

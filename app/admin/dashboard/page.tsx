@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Avatar from '@/components/ui/Avatar'
 import AppSidebar from '@/components/ui/AppSidebar'
 import AppTopbar from '@/components/ui/AppTopbar'
 import CommandPalette, { flattenNavForPalette } from '@/components/ui/CommandPalette'
 import { useSidebarProfile } from '@/lib/hooks/useSidebarProfile'
-import { ADMIN_NAV, ADMIN_FOOTER_ITEMS, type AdminPage } from '@/lib/nav/admin-nav'
+import { ADMIN_NAV, ADMIN_FOOTER_ITEMS, type AdminNavId, type AdminPage } from '@/lib/nav/admin-nav'
 import Overview from '@/components/admin/pages/Overview'
 import Traders from '@/components/admin/pages/Traders'
 import Results from '@/components/admin/pages/Results'
@@ -58,11 +59,18 @@ export default function AdminDashboard() {
   const [openNewTrader, setOpenNewTrader] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const { name, avatarUrl, logout } = useSidebarProfile()
+  const router = useRouter()
 
   const paletteItems = useMemo(
-    () => flattenNavForPalette(ADMIN_NAV, ADMIN_FOOTER_ITEMS, 'Outils'),
+    () => flattenNavForPalette<AdminNavId>(ADMIN_NAV, ADMIN_FOOTER_ITEMS, 'Outils'),
     [],
   )
+
+  // Items avec href (Terminal Marchés) : vraie navigation ; sinon page du SPA.
+  const goTo = (id: AdminNavId, href?: string) => {
+    if (href) router.push(href)
+    else if (id !== 'terminal-marches') setActivePage(id)
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -113,10 +121,10 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--color-surface-0)' }}>
-      <AppSidebar
+      <AppSidebar<AdminNavId>
         groups={ADMIN_NAV}
         activePage={activePage}
-        onPageChange={setActivePage}
+        onPageChange={id => goTo(id)}
         banner={{ label: 'Admin', tone: 'loss' }}
         storageKey="atp.sidebar.admin"
         footer={
@@ -223,7 +231,7 @@ export default function AdminDashboard() {
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         items={paletteItems}
-        onSelect={id => setActivePage(id)}
+        onSelect={(id, item) => goTo(id, item.href)}
       />
     </div>
   )

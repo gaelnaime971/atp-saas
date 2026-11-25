@@ -42,3 +42,6 @@ next-env.d.ts
 
 .claude/settings.local.json
 supabase/.temp/
+
+# Playwright MCP (captures et journaux locaux)
+.playwright-mcp/
