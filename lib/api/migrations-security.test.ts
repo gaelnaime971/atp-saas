@@ -91,3 +91,18 @@ describe('migration has_dashboard_access (accès côté base)', () => {
     expect(open.map(([k]) => k)).toEqual([])
   })
 })
+
+describe('migration 0007 (règles créées à la main sur les créneaux)', () => {
+  const sql = read('20261126000007_drop_manual_coaching_policies.sql')
+  const prev = read('20261126000006_has_dashboard_access.sql')
+  const verif = (s: string) => s.slice(s.indexOf('-- ─── Vérification'))
+
+  it('supprime les 2 règles ouvertes, sans en créer', () => {
+    expect(sql).toMatch(/DROP POLICY IF EXISTS "View active availability" ON public\.coaching_availability;/)
+    expect(sql).toMatch(/DROP POLICY IF EXISTS "View overrides" ON public\.coaching_date_overrides;/)
+    expect(sql).not.toMatch(/CREATE POLICY/)
+  })
+  it('relance exactement la vérification du script 0006', () => {
+    expect(verif(sql)).toBe(verif(prev))
+  })
+})
