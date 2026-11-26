@@ -18,7 +18,7 @@ Failles trouvées et corrigées. Aucune donnée personnelle ici : seulement des 
 | 9 | 26/11/2026 | Route de connexion admin révélant les comptes admin | Faible | `ec8cd2c` (route supprimée) | 26/11/2026 |
 | 10 | 26/11/2026 | HTML non échappé dans les e-mails (alerte prospect, modèles) | Faible à moyenne | `936be26`, `ec8cd2c` | 26/11/2026 |
 | 11 | 26/11/2026 | Envois réels d'e-mails absents du journal | Angle mort | `237ed16` + SQL `20261126000001` | 26/11/2026 |
-| 12 | 26/11/2026 | Contenu partagé lisible dans la base par un ancien membre (et parfois sans session) | Moyenne | SQL `20261126000006` + `20261126000007` | 06 : 27/11/2026 · 07 : **pas encore** |
+| 12 | 26/11/2026 | Contenu partagé lisible dans la base par un ancien membre (et parfois sans session) | Moyenne | SQL `20261126000006` + `20261126000007` | 27/11/2026 |
 
 ## Détail
 
@@ -96,7 +96,7 @@ Failles trouvées et corrigées. Aucune donnée personnelle ici : seulement des 
   Ces lectures étaient possibles pour un ancien membre resté connecté, et même sans session pour `live_trades`, `skill_items` et `app_settings`.
 - **Correction** : la fonction `has_dashboard_access()`, même règle que le code, remplace ces règles. Les règles « ses propres lignes » sont inchangées.
 - **Règles créées à la main** : la vérification du script 06 a trouvé 2 autres lectures ouvertes, absentes du repo (« View active availability », « View overrides » sur les créneaux de coaching). Elles sont supprimées par `20261126000007`. Rien de public ne lit ces tables.
-- **En prod** : 06 appliqué le 27/11/2026 ; 07 pas encore.
+- **En prod** : 06 et 07 appliqués le 27/11/2026 ; vérification « lecture encore ouverte » à « aucune ».
 
 ## Points ouverts
 - `/api/padel/{parse,submit}` : relais public, limité aux URL Google Forms. Risque faible, non corrigé.
