@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { rankPaletteItems } from '@/lib/nav/palette-search'
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -26,15 +27,6 @@ export interface CommandPaletteProps<Id extends string> {
   placeholder?: string
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Fuzzy-ish filter (substring case-insensitive, ordre préservé)
-// ═══════════════════════════════════════════════════════════════
-
-function filterItems<Id extends string>(items: CommandItem<Id>[], query: string): CommandItem<Id>[] {
-  const q = query.trim().toLowerCase()
-  if (!q) return items
-  return items.filter(i => i.label.toLowerCase().includes(q) || (i.groupLabel?.toLowerCase().includes(q) ?? false))
-}
 
 // ═══════════════════════════════════════════════════════════════
 // CommandPalette
@@ -49,7 +41,8 @@ export default function CommandPalette<Id extends string>({
   const triggerElRef = useRef<HTMLElement | null>(null)
   const listRef = useRef<HTMLUListElement>(null)
 
-  const filtered = useMemo(() => filterItems(items, query), [items, query])
+  // Filtre + classement par pertinence (nom d'abord, groupe en dernier).
+  const filtered = useMemo(() => rankPaletteItems(items, query), [items, query])
 
   // Reset state on open, save trigger, lock body scroll
   useEffect(() => {

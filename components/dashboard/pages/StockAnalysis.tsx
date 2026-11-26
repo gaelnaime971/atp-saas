@@ -554,7 +554,8 @@ function SearchBar({ onSelect }: { onSelect: (s: SearchResult) => void }) {
 
 function EmptyState({ onPick }: { onPick: (sym: string, name: string) => void }) {
   const groups = [
-    { label: 'US Tech', items: [['AAPL', 'Apple'], ['NVDA', 'Nvidia'], ['MSFT', 'Microsoft'], ['GOOGL', 'Alphabet'], ['META', 'Meta'], ['AMZN', 'Amazon']] },
+    { label: 'Nasdaq-100', items: [['AAPL', 'Apple'], ['NVDA', 'Nvidia'], ['MSFT', 'Microsoft'], ['GOOGL', 'Alphabet'], ['META', 'Meta'], ['AMZN', 'Amazon']] },
+    { label: 'Dow Jones', items: [['GS', 'Goldman Sachs'], ['CAT', 'Caterpillar'], ['HD', 'Home Depot'], ['V', 'Visa'], ['JPM', 'JPMorgan'], ['AMGN', 'Amgen']] },
     { label: 'France', items: [['MC.PA', 'LVMH'], ['OR.PA', "L'Oréal"], ['AIR.PA', 'Airbus'], ['SAN.PA', 'Sanofi'], ['BNP.PA', 'BNP Paribas'], ['TTE.PA', 'TotalEnergies']] },
     { label: 'Europe', items: [['ASML.AS', 'ASML'], ['SAP.DE', 'SAP'], ['SIE.DE', 'Siemens'], ['ADYEN.AS', 'Adyen'], ['NESN.SW', 'Nestlé'], ['NOVN.SW', 'Novartis']] },
   ]

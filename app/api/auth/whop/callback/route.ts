@@ -11,6 +11,8 @@
  *   7. Si pas de profile → AUTO-CRÉATION via admin.createUser (le trigger
  *      SQL handle_new_user crée automatiquement la ligne profiles)
  *   8. Si pas d'abonnement → /whop/subscription-required
+ *      (variable de config absente → refus aussi, mais NOM loggé et page
+ *      /whop/unavailable « Connexion momentanément indisponible »)
  *   9. Si OK → lie whop_user_id + flag TRUE, génère un hashed_token admin,
  *      le consomme server-side via verifyOtp (pose les cookies sb-* en
  *      direct, pas de hash fragment via /auth/v1/verify) → /dashboard
@@ -28,9 +30,16 @@ import { createClient as createSSRClient } from '@/lib/supabase/server'
 import {
   exchangeCodeForToken,
   fetchWhopUserInfo,
-  hasActiveEliteProMembership,
+  fetchEliteProAccess,
   decodeJwtPayload,
+  WhopConfigError,
 } from '@/lib/whop/client'
+import {
+  accessRedirect,
+  firstMissingEnv,
+  logMissingConfig,
+  WHOP_UNAVAILABLE_PATH,
+} from '@/lib/whop/callback'
 
 const PKCE_COOKIE = 'whop_pkce_verifier'
 const STATE_COOKIE = 'whop_oauth_state'
@@ -98,16 +107,22 @@ export async function GET(request: NextRequest) {
     // 3. Vérif abonnement ÉLITE PRO — paginé curseur, early-return,
     //    fail-closed. Tape la Current API (/api/v1) ; la v2 a été arrêtée
     //    le 13/11/2026 et le code correspondant a été retiré.
-    const hasAccess = await hasActiveEliteProMembership(whopUserId)
-    if (!hasAccess) {
-      return toPage('/whop/subscription-required')
+    //    Même vérif que hasActiveEliteProMembership (qui ne renvoie que
+    //    `granted`) ; le détail sert seulement à distinguer une variable
+    //    de config absente d'un vrai refus. Refus dans les deux cas.
+    const access = await fetchEliteProAccess(whopUserId)
+    const denied = accessRedirect(access)
+    if (denied) {
+      if (denied.missingEnv) logMissingConfig(denied.missingEnv)
+      return toPage(denied.path)
     }
 
     // 4. Supabase admin — bypass RLS pour chercher + update le profile.
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!supabaseUrl || !serviceKey) {
-      return toPage('/whop/request-access?error=supabase_env')
+      logMissingConfig(firstMissingEnv(['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']) ?? 'NEXT_PUBLIC_SUPABASE_URL')
+      return toPage(WHOP_UNAVAILABLE_PATH)
     }
     const admin = createAdminClient(supabaseUrl, serviceKey)
 
@@ -226,7 +241,13 @@ export async function GET(request: NextRequest) {
     // 10. Session Supabase posée en cookies — redirect propre vers /dashboard.
     //     Les cookies OAuth Whop temporaires sont nettoyés par clearOAuthCookies.
     return clearOAuthCookies(NextResponse.redirect(`${origin}/dashboard`))
-  } catch {
+  } catch (err) {
+    // Variable de config absente plus haut (ex. NEXT_PUBLIC_WHOP_APP_ID à
+    // l'échange du code) : même traitement que ci-dessus.
+    if (err instanceof WhopConfigError) {
+      logMissingConfig(err.envName)
+      return toPage(WHOP_UNAVAILABLE_PATH)
+    }
     return toPage('/whop/request-access?error=exception')
   }
 }

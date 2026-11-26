@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import Link from 'next/link'
+import { scrollTopToReveal } from '@/lib/nav/sidebar-scroll'
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -364,6 +365,34 @@ export default function AppSidebar<Id extends string>({
     document.documentElement.style.setProperty('--app-sidebar-width', `${w}px`)
   }, [state.railCollapsed])
 
+  // L'élément actif hors de vue (menu long, petit écran) : la nav défile
+  // jusqu'à lui, au chargement (sans animation) puis à chaque changement
+  // de page (défilement doux, sauf « réduire les animations »).
+  const navRef = useRef<HTMLElement>(null)
+  const firstRevealRef = useRef(true)
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const instant = firstRevealRef.current
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    firstRevealRef.current = false
+    const frame = requestAnimationFrame(() => {
+      const item = nav.querySelector<HTMLElement>('[aria-current="page"]')
+      if (!item) return  // groupe replié ou page hors menu
+      const navRect = nav.getBoundingClientRect()
+      const itemRect = item.getBoundingClientRect()
+      const top = scrollTopToReveal({
+        containerTop: navRect.top,
+        containerHeight: nav.clientHeight,
+        scrollTop: nav.scrollTop,
+        itemTop: itemRect.top,
+        itemHeight: itemRect.height,
+      })
+      if (top !== null) nav.scrollTo({ top, behavior: instant ? 'auto' : 'smooth' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [activePage])
+
   const toggleRail = useCallback(() => {
     setState(s => ({ ...s, railCollapsed: !s.railCollapsed }))
   }, [])
@@ -442,6 +471,7 @@ export default function AppSidebar<Id extends string>({
 
       {/* Nav */}
       <nav
+        ref={navRef}
         style={{
           flex: 1,
           overflowY: 'auto',

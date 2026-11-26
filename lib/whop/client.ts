@@ -87,10 +87,24 @@ export interface WhopTokenResponse {
 
 // ─── Env getter ────────────────────────────────────────────────────
 
+/**
+ * Variable de config absente. Porte le NOM de la variable (jamais sa
+ * valeur) pour que le callback OAuth puisse le logger et distinguer une
+ * panne de config d'un vrai refus d'abonnement.
+ */
+export class WhopConfigError extends Error {
+  readonly envName: string
+  constructor(envName: string) {
+    super(`[Whop] Variable d'env ${envName} manquante`)
+    this.name = 'WhopConfigError'
+    this.envName = envName
+  }
+}
+
 function requireEnv(name: string): string {
   const v = process.env[name]
   if (!v || v.length === 0) {
-    throw new Error(`[Whop] Variable d'env ${name} manquante`)
+    throw new WhopConfigError(name)
   }
   return v
 }
@@ -275,6 +289,9 @@ export interface EliteProAccessDetail {
   errorStatus: number | null
   /** Libellé court pour logs/UI admin (403, timeout, parse…). */
   errorMessage: string | null
+  /** NOM de la variable de config absente (jamais sa valeur). Non-null →
+   *  refus pour cause de config, pas pour cause d'abonnement. */
+  missingEnv: string | null
 }
 
 /**
@@ -317,6 +334,7 @@ export async function fetchEliteProAccess(whopUserId: string): Promise<EliteProA
     deprecationHeader: null,
     errorStatus: null,
     errorMessage: null,
+    missingEnv: null,
   }
 
   let apiKey: string
@@ -328,6 +346,7 @@ export async function fetchEliteProAccess(whopUserId: string): Promise<EliteProA
     companyId = requireEnv('WHOP_COMPANY_ID')
   } catch (err) {
     detail.errorMessage = err instanceof Error ? err.message : 'env missing'
+    detail.missingEnv = err instanceof WhopConfigError ? err.envName : null
     return detail
   }
   const apiVersionDate =

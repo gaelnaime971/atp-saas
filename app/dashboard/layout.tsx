@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react'
-import { connection } from 'next/server'
 import { TerminalAccessProvider } from '@/components/terminal/TerminalAccess'
 import { terminalOpenToMembers } from '@/lib/terminal/access'
 
-// Lit TERMINAL_ACCESS à chaque requête (connection() : pas de valeur
-// figée au build) et dit au SPA /dashboard si l'espace Marchés est
-// ouvert aux membres. Un admin n'atteint jamais le SPA (proxy.ts).
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  await connection()
+// Dit au SPA /dashboard si l'espace Marchés est ouvert aux membres.
+// TERMINAL_ACCESS est lue AU BUILD : /dashboard reste pré-généré
+// (statique). Sans risque, car Vercel n'applique un changement de
+// variable qu'au déploiement suivant, qui refait le build. Le contrôle
+// d'accès réel reste à l'exécution (proxy.ts + layout Marchés).
+// Un admin n'atteint jamais le SPA (proxy.ts).
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   const membersSeeTerminal = terminalOpenToMembers(process.env.TERMINAL_ACCESS)
   return <TerminalAccessProvider membersSeeTerminal={membersSeeTerminal}>{children}</TerminalAccessProvider>
 }
