@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireUser } from '@/lib/ai/quota'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -11,6 +12,14 @@ function isValidEmail(email: string): boolean {
 }
 
 export async function POST(request: Request) {
+  // Réservé à l'admin : seule l'interface admin appelle cette route.
+  // Contrôle de rôle des routes /api/admin/* (session + profiles.role,
+  // via requireUser) ; refus AVANT toute lecture, écriture en base ou
+  // envoi d'e-mail. /api/* n'est pas filtré par proxy.ts.
+  const auth = await requireUser()
+  if (auth instanceof Response) return auth
+  if (!auth.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   try {
     const { prospects, source } = await request.json()
 

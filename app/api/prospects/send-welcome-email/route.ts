@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireUser } from '@/lib/ai/quota'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
@@ -34,6 +35,14 @@ function renderTemplate(template: string, vars: Record<string, string>): string 
 }
 
 export async function POST(request: Request) {
+  // Réservé à l'admin : seule l'interface admin appelle cette route.
+  // Contrôle de rôle des routes /api/admin/* (session + profiles.role,
+  // via requireUser) ; refus AVANT toute lecture, écriture en base ou
+  // envoi d'e-mail. /api/* n'est pas filtré par proxy.ts.
+  const auth = await requireUser()
+  if (auth instanceof Response) return auth
+  if (!auth.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   try {
     const body = (await request.json()) as Body
 
