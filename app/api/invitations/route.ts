@@ -5,12 +5,10 @@ import { Resend } from 'resend'
 import { render } from '@react-email/components'
 import InviteEmail from '@/emails/InviteEmail'
 import { InviteTraderPayload } from '@/lib/types'
+import { generateInvitationCode } from '@/lib/invitations/attempts'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-function generateCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,21 +46,19 @@ export async function POST(request: NextRequest) {
       .eq('email', email)
       .is('used_at', null)
 
-    // Generate unique code
-    let code = generateCode()
-    let attempts = 0
-    while (attempts < 5) {
+    // Code à 6 chiffres tiré avec crypto (lib/invitations/attempts). La
+    // colonne code est UNIQUE sur toute la table (invitations utilisées et
+    // expirées comprises) : on évite donc toute collision, pas seulement
+    // avec les invitations en cours.
+    let code = generateInvitationCode()
+    for (let attempt = 0; attempt < 10; attempt++) {
       const { data: existing } = await adminSupabase
         .from('invitations')
         .select('id')
         .eq('code', code)
-        .is('used_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .single()
-
+        .maybeSingle()
       if (!existing) break
-      code = generateCode()
-      attempts++
+      code = generateInvitationCode()
     }
 
     const { error: inviteError } = await adminSupabase
