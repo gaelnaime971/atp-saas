@@ -10,14 +10,29 @@
 --
 -- Run this in the Supabase SQL Editor.
 -- Idempotent : peut être rejoué sans effet de bord.
+-- Appliqué en prod le 26/11/2026 (script combiné Sécurité 3 + 4, avec
+-- 20261126000002 et 20261126000003).
 -- ═══════════════════════════════════════════════════════════════
 
 BEGIN;
 
-ALTER TABLE email_broadcasts
-  DROP CONSTRAINT IF EXISTS email_broadcasts_recipient_mode_check;
+-- Toute contrainte CHECK portant sur recipient_mode est retirée, quel que
+-- soit son nom (nom vérifié dynamiquement), puis la nouvelle est posée.
+DO $$
+DECLARE c record;
+BEGIN
+  FOR c IN
+    SELECT conname FROM pg_constraint
+    WHERE conrelid = 'public.email_broadcasts'::regclass
+      AND contype = 'c'
+      AND pg_get_constraintdef(oid) ILIKE '%recipient_mode%'
+  LOOP
+    RAISE NOTICE 'Contrainte remplacée : %', c.conname;
+    EXECUTE format('ALTER TABLE public.email_broadcasts DROP CONSTRAINT %I', c.conname);
+  END LOOP;
+END $$;
 
-ALTER TABLE email_broadcasts
+ALTER TABLE public.email_broadcasts
   ADD CONSTRAINT email_broadcasts_recipient_mode_check
   CHECK (recipient_mode IN ('source', 'manual', 'test', 'closing', 'welcome', 'payment_reminder'));
 

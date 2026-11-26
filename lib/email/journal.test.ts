@@ -49,7 +49,8 @@ describe('migration email_broadcasts', () => {
     for (const mode of [...modes, 'source']) expect(migration).toContain(`'${mode}'`)
   })
   it('remplace la contrainte existante dans une transaction', () => {
-    expect(migration).toMatch(/DROP CONSTRAINT IF EXISTS email_broadcasts_recipient_mode_check/)
+    expect(migration).toMatch(/pg_get_constraintdef\(oid\) ILIKE '%recipient_mode%'/)
+    expect(migration).toMatch(/ADD CONSTRAINT email_broadcasts_recipient_mode_check/)
     expect(migration).toMatch(/BEGIN;[\s\S]*COMMIT;/)
   })
 })
