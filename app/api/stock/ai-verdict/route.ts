@@ -28,15 +28,6 @@ interface VerdictBody {
   returnOnEquity?: number | null
   debtToEquity?: number | null
   freeCashflow?: number | null
-  // TipRanks
-  tipranksSmartScore?: number | null
-  tipranksAnalystConsensus?: string | null
-  tipranksPriceTarget?: number | null
-  tipranksBullish?: number | null
-  tipranksBearish?: number | null
-  tipranksInsiderSentiment?: string | null
-  tipranksHedgeFundSentiment?: string | null
-  tipranksNewsSentiment?: number | null
   // Recent news titles
   newsTitles?: string[]
   // Sector / industry
@@ -73,15 +64,6 @@ function buildPrompt(d: VerdictBody): string {
   if (d.recommendationKey) lines.push(`- Recommandation : ${d.recommendationKey} (note ${d.recommendationMean?.toFixed(2) ?? 'N/A'} ; 1=Strong Buy, 5=Strong Sell)`)
   if (d.numberOfAnalystOpinions != null) lines.push(`- Nombre d'analystes : ${d.numberOfAnalystOpinions}`)
   if (d.targetMeanPrice != null) lines.push(`- Objectif moyen : ${d.targetMeanPrice} (low ${d.targetLowPrice ?? 'N/A'}, high ${d.targetHighPrice ?? 'N/A'})`)
-  lines.push('')
-  lines.push('Données TipRanks :')
-  if (d.tipranksSmartScore != null) lines.push(`- Smart Score : ${d.tipranksSmartScore}/10`)
-  if (d.tipranksAnalystConsensus) lines.push(`- Consensus analystes : ${d.tipranksAnalystConsensus}`)
-  if (d.tipranksPriceTarget != null) lines.push(`- Price target TipRanks : ${d.tipranksPriceTarget}`)
-  if (d.tipranksBullish != null && d.tipranksBearish != null) lines.push(`- Bloggers : ${d.tipranksBullish}% bullish vs ${d.tipranksBearish}% bearish`)
-  if (d.tipranksInsiderSentiment) lines.push(`- Sentiment insiders : ${d.tipranksInsiderSentiment}`)
-  if (d.tipranksHedgeFundSentiment) lines.push(`- Sentiment hedge funds : ${d.tipranksHedgeFundSentiment}`)
-  if (d.tipranksNewsSentiment != null) lines.push(`- Sentiment news : ${d.tipranksNewsSentiment}`)
   if (d.newsTitles && d.newsTitles.length) {
     lines.push('')
     lines.push('Actualités récentes :')
@@ -108,7 +90,7 @@ function buildPrompt(d: VerdictBody): string {
   "qualite_business": "Une phrase sur la qualité opérationnelle (marges, ROE, croissance)",
   "sante_financiere": "Une phrase sur la santé financière (dette, cash flow)",
   "techniques": "Une phrase sur la dynamique de prix par rapport au range 52 semaines",
-  "consensus_global": "Une phrase synthétisant ce que disent analystes + insiders + hedge funds + bloggers",
+  "consensus_global": "Une phrase synthétisant ce que disent les analystes et les données fournies (insiders inclus si présents)",
   "profil_investisseur": "À qui s'adresse cette action : growth / value / dividend / spéculation / éviter"
 }
 

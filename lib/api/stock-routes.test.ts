@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Routes /api/stock/{data,search,tipranks} : réservées aux membres
+// Routes /api/stock/{data,search} : réservées aux membres
 // connectés via requireUser() (lib/ai/quota). On simule la session
 // Supabase et on espionne TOUS les appels sortants (fetch global +
 // client yahoo-finance2) pour prouver qu'aucun n'a lieu sans session.
@@ -32,7 +32,6 @@ vi.mock('yahoo-finance2', () => ({
 
 const { GET: getData } = await import('@/app/api/stock/data/route')
 const { GET: getSearch } = await import('@/app/api/stock/search/route')
-const { GET: getTipranks } = await import('@/app/api/stock/tipranks/route')
 
 const req = (path: string) => new Request(`http://localhost${path}`)
 let fetchSpy: ReturnType<typeof vi.fn>
@@ -44,7 +43,7 @@ beforeEach(() => {
   yf.search.mockResolvedValue({ quotes: [{ symbol: 'AAPL', longname: 'Apple Inc.', exchDisp: 'NASDAQ', typeDisp: 'Equity' }], news: [] })
   yf.chart.mockResolvedValue({ meta: { regularMarketPrice: 200, currency: 'USD' }, quotes: [] })
   yf.insights.mockResolvedValue(null)
-  // Réseau direct (crumb Yahoo, Finnhub, TipRanks) : réponse vide.
+  // Réseau direct (crumb Yahoo, Finnhub) : réponse vide.
   fetchSpy = vi.fn(async () => new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
   vi.stubGlobal('fetch', fetchSpy)
   vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -72,11 +71,6 @@ describe('sans session → 401, aucun appel externe', () => {
     expect(r.status).toBe(401)
     noOutboundCall()
   })
-  it('/api/stock/tipranks', async () => {
-    const r = await getTipranks(req('/api/stock/tipranks?ticker=AAPL'))
-    expect(r.status).toBe(401)
-    noOutboundCall()
-  })
 })
 
 describe('session membre → OK', () => {
@@ -96,10 +90,6 @@ describe('session membre → OK', () => {
     expect(body.symbol).toBe('AAPL')
     expect(body.quote.regularMarketPrice).toBe(200)
     expect(yf.chart).toHaveBeenCalledTimes(1)
-  })
-  it('/api/stock/tipranks répond (200)', async () => {
-    const r = await getTipranks(req('/api/stock/tipranks?ticker=AAPL'))
-    expect(r.status).toBe(200)
   })
   it('un admin connecté passe aussi', async () => {
     session.role = 'admin'

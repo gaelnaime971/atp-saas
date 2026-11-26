@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireUser } from '@/lib/ai/quota'
 
 interface FFEvent {
   title: string
@@ -20,6 +21,12 @@ function currenciesFor(symbol: string): string[] {
 interface Body { symbol: string }
 
 export async function POST(request: Request) {
+  // Réservé aux membres connectés : seule la page Analyse graphique (SPA
+  // /dashboard) appelle cette route. Sans session → 401, avant tout appel
+  // externe. /api/* n'est pas filtré par proxy.ts.
+  const auth = await requireUser()
+  if (auth instanceof Response) return auth
+
   try {
     const body = (await request.json()) as Body
     if (!body?.symbol) return NextResponse.json({ error: 'symbol requis' }, { status: 400 })

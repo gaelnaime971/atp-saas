@@ -8,15 +8,9 @@
 // ramené à une seule ligne. Logique pure, testée dans prospect-alert.test.ts.
 // ═══════════════════════════════════════════════════════════════
 
-/** Échappe & < > " ' pour un texte inséré dans du HTML (contenu ou attribut). */
-export function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
+import { escapeHtml } from '@/lib/email/escape'
+
+export { escapeHtml }
 
 /** Texte brut sur une ligne (sujet d'e-mail) : pas de retour à la ligne. */
 function oneLine(value: unknown): string {

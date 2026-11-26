@@ -122,6 +122,13 @@ describe('admin → fonctionne (envois simulés)', () => {
     expect(r.status).toBe(200)
     expect(writes()).toContain('prospects.insert')
   })
+  it('send-welcome-email : les variables du modèle sont échappées', async () => {
+    await routes.welcome(post({ recipient_prenom: '<img src=x onerror=1>', amount: '$& 997', date_paiement: '2026-11-26', reference: 'R"><b>', test_mode: true, test_email: 'moi@example.com' }))
+    const html = resend.send.mock.calls[0][0].html as string
+    expect(html).not.toContain('<img src=x')
+    expect(html).not.toContain('R"><b>')
+    expect(html).toContain('$&amp; 997')
+  })
   it('send-welcome-email en mode test : 200, un envoi simulé', async () => {
     const r = await routes.welcome(post({ amount: '997', date_paiement: '2026-11-26', reference: 'REF-1', test_mode: true, test_email: 'moi@example.com' }))
     expect(r.status).toBe(200)

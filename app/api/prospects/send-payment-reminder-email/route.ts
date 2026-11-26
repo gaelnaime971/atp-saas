@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireUser } from '@/lib/ai/quota'
+import { escapeHtml } from '@/lib/email/escape'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
@@ -63,8 +64,10 @@ function renderTemplate(
   }
 
   for (const [key, value] of Object.entries(vars)) {
-    const safe = (value ?? '').toString()
-    html = html.replace(new RegExp(`{{${key}}}`, 'g'), safe)
+    // Toute variable est échappée (prénom, note, IBAN, lien…) ; remplaçant
+    // passé en fonction pour que « $& » ou « $1 » saisis restent du texte.
+    const safe = escapeHtml(value)
+    html = html.replace(new RegExp(`{{${key}}}`, 'g'), () => safe)
   }
 
   return html

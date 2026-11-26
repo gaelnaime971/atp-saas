@@ -14,8 +14,9 @@ export default function AdminSetupPage() {
   const router = useRouter()
 
   useEffect(() => {
+    // 404 = un admin existe déjà : la création est fermée.
     fetch('/api/admin/setup')
-      .then(r => r.json())
+      .then(r => (r.status === 404 ? { adminExists: true } : r.json()))
       .then(({ adminExists }) => {
         if (adminExists) {
           setStatus('blocked')

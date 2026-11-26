@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireUser } from '@/lib/ai/quota'
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
@@ -69,6 +70,12 @@ function contrarianAlert(score: number): { triggered: boolean; direction: 'cauti
 }
 
 export async function POST(request: Request) {
+  // Réservé aux membres connectés : seule la page Analyse graphique (SPA
+  // /dashboard) appelle cette route. Sans session → 401, avant tout appel
+  // externe. /api/* n'est pas filtré par proxy.ts.
+  const auth = await requireUser()
+  if (auth instanceof Response) return auth
+
   try {
     const body = (await request.json()) as Body
     if (!body?.symbol) return NextResponse.json({ error: 'symbol requis' }, { status: 400 })

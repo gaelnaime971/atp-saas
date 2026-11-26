@@ -8,30 +8,33 @@ function adminSupabase() {
   )
 }
 
-// Check if an admin exists
-export async function GET() {
-  const supabase = adminSupabase()
-  const { count } = await supabase
+// Création du tout premier admin. Une fois un admin en place, la route
+// n'existe plus pour personne : 404 en GET comme en POST, sans rien
+// révéler. Fail-closed : si le comptage échoue, on répond 404 aussi
+// (avant, une erreur de lecture valait « aucun admin » et ouvrait la
+// création).
+async function setupClosed(supabase: ReturnType<typeof adminSupabase>): Promise<boolean> {
+  const { count, error } = await supabase
     .from('profiles')
     .select('*', { count: 'exact', head: true })
     .eq('role', 'admin')
+  return !!error || count == null || count > 0
+}
 
-  return NextResponse.json({ adminExists: (count ?? 0) > 0 })
+const NOT_FOUND = () => new NextResponse(null, { status: 404 })
+
+// Aucun admin → la page /admin/setup peut proposer la création.
+export async function GET() {
+  if (await setupClosed(adminSupabase())) return NOT_FOUND()
+  return NextResponse.json({ adminExists: false })
 }
 
 // Create the first admin
 export async function POST(request: NextRequest) {
   const supabase = adminSupabase()
 
-  // Guard: refuse if admin already exists
-  const { count } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .eq('role', 'admin')
-
-  if ((count ?? 0) > 0) {
-    return NextResponse.json({ error: 'Un administrateur existe déjà' }, { status: 409 })
-  }
+  // Un admin existe déjà (ou vérification impossible) → 404.
+  if (await setupClosed(supabase)) return NOT_FOUND()
 
   const { email, password, full_name } = await request.json()
 

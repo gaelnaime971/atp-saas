@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { adminLogin } from '@/lib/auth/admin-login'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -17,23 +18,21 @@ export default function AdminLoginPage() {
     setError('')
     setLoading(true)
 
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (authError || !data.user) {
-      setError('Email ou mot de passe incorrect.')
-      setLoading(false)
-      return
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      await supabase.auth.signOut()
-      setError('Accès réservé aux administrateurs.')
+    // Connexion Supabase puis rôle vérifié sur l'utilisateur connecté ;
+    // pas admin → déconnexion. Message identique pour tous les échecs.
+    const result = await adminLogin({
+      signIn: async (em, pw) => {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: em, password: pw })
+        return error || !data.user ? null : data.user.id
+      },
+      readRole: async userId => {
+        const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
+        return (data as { role?: string } | null)?.role ?? null
+      },
+      signOut: () => supabase.auth.signOut(),
+    }, email, password)
+    if (!result.ok) {
+      setError(result.error)
       setLoading(false)
       return
     }
