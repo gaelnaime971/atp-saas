@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireUser } from '@/lib/ai/quota'
 
 // Unofficial TipRanks JSON endpoints used by their own public website.
 // No API key required; treated as best-effort and may break.
@@ -32,6 +33,12 @@ async function safeFetch<T>(url: string): Promise<T | null> {
 }
 
 export async function GET(request: Request) {
+  // Réservé aux membres connectés (comme la page Analyse d'action) : sans
+  // session → 401, AVANT tout appel externe. /api/* n'est pas filtré par
+  // proxy.ts, chaque route fait donc son propre contrôle.
+  const auth = await requireUser()
+  if (auth instanceof Response) return auth
+
   const { searchParams } = new URL(request.url)
   const rawTicker = (searchParams.get('ticker') || '').trim().toUpperCase()
   if (!rawTicker) return NextResponse.json({ error: 'ticker requis' }, { status: 400 })
