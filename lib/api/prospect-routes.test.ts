@@ -24,11 +24,21 @@ vi.mock('@/lib/supabase/server', () => ({
 
 // Client service role : chaque appel est enregistré, toute chaîne se
 // résout sur { data: [], error: null }.
-const db = vi.hoisted(() => ({ calls: [] as string[] }))
+const db = vi.hoisted(() => ({
+  calls: [] as string[],
+  journal: 'ok' as 'ok' | 'error' | 'throw',
+}))
 vi.mock('@supabase/supabase-js', () => {
   const chain = (table: string): unknown => new Proxy(function () {}, {
     get(_t, prop) {
-      if (prop === 'then') return (res: (v: unknown) => void) => res({ data: [], error: null, count: 0 })
+      if (prop === 'then') {
+        if (table === 'email_broadcasts' && db.journal === 'throw') {
+          return (_res: unknown, rej: (e: unknown) => void) => rej(new Error('fetch failed'))
+        }
+        const error = table === 'email_broadcasts' && db.journal === 'error'
+          ? { code: '23514', message: 'violates check constraint' } : null
+        return (res: (v: unknown) => void) => res({ data: [], error, count: 0 })
+      }
       return () => { db.calls.push(`${table}.${String(prop)}`); return chain(table) }
     },
   })
@@ -60,6 +70,7 @@ beforeEach(() => {
   session.user = null
   session.role = 'trader'
   db.calls = []
+  db.journal = 'ok'
   resend.send.mockReset()
   resend.send.mockResolvedValue({ data: { id: 'email_test' }, error: null })
   fetchSpy = vi.fn(async () => new Response('{}', { status: 200 }))
@@ -131,6 +142,26 @@ describe('admin → fonctionne (envois simulés)', () => {
   })
   it('send-welcome-email en mode test : 200, un envoi simulé', async () => {
     const r = await routes.welcome(post({ amount: '997', date_paiement: '2026-11-26', reference: 'REF-1', test_mode: true, test_email: 'moi@example.com' }))
+    expect(r.status).toBe(200)
+    expect(resend.send).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('journal des e-mails : un échec ne bloque pas l’envoi', () => {
+  beforeEach(() => { session.user = { id: 'admin-1' }; session.role = 'admin' })
+
+  it('send-welcome-email hors test, journal refusé → 200, e-mail envoyé, erreur loggée', async () => {
+    db.journal = 'error'
+    const r = await routes.welcome(post({ recipient_email: 'client@example.com', amount: '997', date_paiement: '2026-11-26', reference: 'R' }))
+    expect(r.status).toBe(200)
+    expect(resend.send).toHaveBeenCalledTimes(1)
+    expect(db.calls).toContain('email_broadcasts.insert')
+    const logged = (console.error as unknown as { mock: { calls: unknown[][] } }).mock.calls.map(c => String(c[0]))
+    expect(logged.some(m => m.includes('[email-journal] send-welcome-email') && m.includes('welcome'))).toBe(true)
+  })
+  it('email-broadcast, journal en exception → 200 quand même (plus de 500 après envoi)', async () => {
+    db.journal = 'throw'
+    const r = await routes.broadcast(post({ subject: 'S', html: '<p>x</p>', testMode: true, testEmail: 'moi@example.com' }))
     expect(r.status).toBe(200)
     expect(resend.send).toHaveBeenCalledTimes(1)
   })

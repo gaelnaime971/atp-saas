@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireUser } from '@/lib/ai/quota'
+import { recordEmailSend } from '@/lib/email/journal'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
 import { Resend } from 'resend'
@@ -53,7 +54,8 @@ export async function POST(request: Request) {
       const sent = r.error ? 0 : 1
       const errors = r.error ? 1 : 0
 
-      await supabase.from('email_broadcasts').insert({
+      // Journal après l'envoi : un échec est loggé, jamais bloquant.
+      await recordEmailSend('email-broadcast', 'test', () => supabase.from('email_broadcasts').insert({
         sent_by: user?.id || null,
         subject, html,
         recipient_mode: 'test',
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
         sent, errors,
         test_email: testEmail,
         test_mode: true,
-      })
+      }))
 
       return NextResponse.json({ success: true, sent, errors, mode: 'test' })
     }
@@ -142,8 +144,9 @@ export async function POST(request: Request) {
       if (i < recipients.length - 1) await new Promise(r => setTimeout(r, 600))
     }
 
-    // Log broadcast
-    await supabase.from('email_broadcasts').insert({
+    // Journal après l'envoi : un échec est loggé, jamais bloquant (avant,
+    // une exception ici renvoyait 500 alors que les e-mails étaient partis).
+    await recordEmailSend('email-broadcast', recipientMode || 'manual', () => supabase.from('email_broadcasts').insert({
       sent_by: user?.id || null,
       subject, html,
       recipient_mode: recipientMode || 'manual',
@@ -153,7 +156,7 @@ export async function POST(request: Request) {
       sent, errors,
       failed_emails: failedEmails,
       test_mode: false,
-    })
+    }))
 
     return NextResponse.json({
       success: true,

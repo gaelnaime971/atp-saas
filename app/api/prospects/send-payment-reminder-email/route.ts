@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireUser } from '@/lib/ai/quota'
+import { recordEmailSend } from '@/lib/email/journal'
 import { escapeHtml } from '@/lib/email/escape'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
@@ -202,24 +203,21 @@ export async function POST(request: Request) {
       })
     }
 
-    try {
-      await supabase.from('email_broadcasts').insert({
-        sent_by: user?.id || null,
-        subject: finalSubject,
-        html,
-        recipient_mode: test_mode ? 'test' : 'payment_reminder',
-        recipient_count: 1,
-        sources: [],
-        recipient_ids: prospect_id ? [prospect_id] : [],
-        sent,
-        errors,
-        failed_emails: failedEmails,
-        test_email: test_mode ? test_email : null,
-        test_mode: !!test_mode,
-      })
-    } catch (logErr) {
-      console.warn('Payment reminder log failed:', logErr)
-    }
+    // Journal après l'envoi : un échec est loggé, jamais bloquant.
+    await recordEmailSend('send-payment-reminder-email', test_mode ? 'test' : 'payment_reminder', () => supabase.from('email_broadcasts').insert({
+      sent_by: user?.id || null,
+      subject: finalSubject,
+      html,
+      recipient_mode: test_mode ? 'test' : 'payment_reminder',
+      recipient_count: 1,
+      sources: [],
+      recipient_ids: prospect_id ? [prospect_id] : [],
+      sent,
+      errors,
+      failed_emails: failedEmails,
+      test_email: test_mode ? test_email : null,
+      test_mode: !!test_mode,
+    }))
 
     if (errors > 0) {
       return NextResponse.json(
