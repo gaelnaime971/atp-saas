@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 const read = (f: string) => readFileSync(path.resolve(__dirname, '../../supabase/migrations', f), 'utf8')
@@ -50,5 +50,44 @@ describe('migration accès manuel', () => {
   it('se termine par le tableau de vérification', () => {
     expect(sql.trim()).toMatch(/SELECT verification, valeur FROM lignes ORDER BY ordre;$/)
     expect(sql).toMatch(/perdraient l''accès avec la nouvelle règle/)
+  })
+})
+
+describe('migration has_dashboard_access (accès côté base)', () => {
+  const sql = read('20261126000006_has_dashboard_access.sql')
+  const fn = sql.slice(sql.indexOf('FUNCTION public.has_dashboard_access_for'), sql.indexOf('FUNCTION public.has_dashboard_access()'))
+
+  it('applique la même règle que lib/access/member-access.ts', () => {
+    expect(fn).toMatch(/p\.role = 'admin'/)
+    expect(fn).toMatch(/p\.whop_subscription_active IS TRUE/)
+    expect(fn).toMatch(/p\.manual_access IS TRUE/)
+    expect(fn).toMatch(/p\.manual_access_until IS NULL/)
+    expect(fn).toMatch(/p\.manual_access_until >= \(now\(\) AT TIME ZONE 'Europe\/Paris'\)::date/)
+    expect(fn).toMatch(/coalesce\(\([\s\S]*\), false\)/) // pas de profil / pas de session → non
+    expect(fn).toMatch(/SECURITY DEFINER/)
+  })
+  it('la variante par compte n’est pas exécutable par les comptes', () => {
+    expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.has_dashboard_access_for\(uuid\) FROM PUBLIC, anon, authenticated/)
+  })
+  it('chaque nouvelle règle de lecture passe par has_dashboard_access()', () => {
+    const creates = [...sql.matchAll(/CREATE POLICY "[^"]+" ON [\w.]+\s+FOR SELECT USING \(([^;]+)\);/g)]
+    expect(creates).toHaveLength(8)
+    for (const c of creates) expect(c[1]).toContain('(SELECT public.has_dashboard_access())')
+  })
+  it('plus aucune lecture « tout compte connecté » ou « tout le monde » dans les migrations', () => {
+    const dir = path.resolve(__dirname, '../../supabase/migrations')
+    const live = new Map<string, string>()
+    for (const f of readdirSync(dir).filter(f => f.endsWith('.sql')).sort()) {
+      const s = readFileSync(path.join(dir, f), 'utf8').replace(/--[^\n]*/g, '')
+      for (const m of s.matchAll(/\b(create|drop)\s+policy\s+(?:if\s+exists\s+)?"([^"]+)"\s+on\s+([\w.]+)([\s\S]*?);/gi)) {
+        const key = `${m[3].toLowerCase().replace('public.', '')}|${m[2]}`
+        if (m[1].toLowerCase() === 'drop') live.delete(key)
+        else live.set(key, m[4])
+      }
+    }
+    const open = [...live].filter(([, rest]) =>
+      !/for\s+(insert|update|delete)\b/i.test(rest)
+      && /using\s*\(\s*true\s*\)|auth\.uid\(\)\s+is\s+not\s+null|auth\.role\(\)\s*=\s*'authenticated'/i.test(rest))
+    expect(open.map(([k]) => k)).toEqual([])
   })
 })

@@ -14,6 +14,9 @@
  *   4. sinon (dont profil illisible)           → non
  *
  * Pur : aucune lecture réseau, la date du jour est passée en argument.
+ *
+ * Même règle côté base : public.has_dashboard_access() (migration
+ * 20261126000006, règles RLS). Toute modification se fait aux deux endroits.
  */
 
 export interface AccessProfile {
