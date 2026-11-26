@@ -1,6 +1,6 @@
 import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
-import { requireUser, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
+import { requireMember, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
 
 interface Body {
   symbol: string
@@ -82,7 +82,7 @@ Adapte les niveaux aux vraies données de la technique. Reste factuel.`
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireUser()
+    const auth = await requireMember()
     if (auth instanceof Response) return auth
     const { user, isAdmin } = auth
 

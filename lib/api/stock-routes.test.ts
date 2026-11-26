@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Routes /api/stock/{data,search} : réservées aux membres
-// connectés via requireUser() (lib/ai/quota). On simule la session
+// via requireMember() (lib/ai/quota) ; le membre simulé est abonné Whop. On simule la session
 // Supabase et on espionne TOUS les appels sortants (fetch global +
 // client yahoo-finance2) pour prouver qu'aucun n'a lieu sans session.
 
@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase/server', () => ({
     auth: { getUser: async () => ({ data: { user: session.user } }) },
     from: () => ({
       select: () => ({
-        eq: () => ({ maybeSingle: async () => ({ data: { role: session.role } }) }),
+        eq: () => ({ maybeSingle: async () => ({ data: { role: session.role, whop_subscription_active: true }, error: null }) }),
       }),
     }),
   }),

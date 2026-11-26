@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
+import { requireMember } from '@/lib/ai/quota'
 
 export const runtime = 'nodejs'
 
@@ -25,10 +26,9 @@ interface OptionRow { id: string; category_id: string; origin: 'atp' | 'custom' 
 
 async function requireOwnedOption(id: string) {
   const supabase = await createSsrClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return { supabase, user: null, option: null, err: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
-  }
+  const auth = await requireMember()
+  if (auth instanceof Response) return { supabase, user: null, option: null, err: auth }
+  const { user } = auth
   const { data: option } = await supabase
     .from('trader_criteria_options')
     .select('id, category_id, origin, trader_criteria_categories!inner(trader_id)')

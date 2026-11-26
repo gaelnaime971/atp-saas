@@ -15,6 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { requireMember } from '@/lib/ai/quota'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
@@ -34,8 +35,9 @@ function slugify(input: string): string {
 
 export async function GET() {
   const supabase = await createSsrClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireMember()
+  if (auth instanceof Response) return auth
+  const { user } = auth
 
   // Si rien en base, seed (idempotent côté SQL).
   const { data: existing } = await supabase
@@ -71,8 +73,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const supabase = await createSsrClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireMember()
+  if (auth instanceof Response) return auth
+  const { user } = auth
 
   const body = await request.json().catch(() => null)
   if (!body || typeof body !== 'object') {

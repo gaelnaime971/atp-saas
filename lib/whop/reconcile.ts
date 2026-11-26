@@ -14,8 +14,8 @@
  *        (le set true précédent couvre l'activation ; link traité séparément)
  *     4. Si pas de match + flag=true        → set false + journal
  *
- *   Les profils ADMIN sont IGNORÉS — ils passent par la whitelist
- *   WHOP_BYPASS_EMAILS côté middleware (proxy.ts), pas par ce flag.
+ *   Les profils ADMIN sont IGNORÉS — la règle d'accès
+ *   (lib/access/member-access) les laisse passer par leur rôle.
  *
  *   JAMAIS de suppression. JAMAIS d'écriture sur l'auth.users.
  *

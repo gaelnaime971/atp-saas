@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireMember } from '@/lib/ai/quota'
 import { createClient } from '@/lib/supabase/server'
 import { computeStats, type SessionRow, type BacktestRow, type MetricsOptions } from '@/lib/trader-metrics'
 
@@ -14,8 +15,9 @@ interface RequestBody {
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireMember()
+    if (auth instanceof Response) return auth
+    const { user } = auth
 
     let body: RequestBody = {}
     try { body = (await request.json()) as RequestBody } catch { /* empty body OK */ }

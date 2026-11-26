@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireMember } from '@/lib/ai/quota'
 import { createClient } from '@/lib/supabase/server'
 
 interface AvailabilityRow {
@@ -40,8 +41,8 @@ function addMinutes(d: Date, mins: number): Date {
 export async function GET() {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireMember()
+    if (auth instanceof Response) return auth
 
     const [availRes, overrideRes, bookedRes] = await Promise.all([
       supabase.from('coaching_availability').select('*').eq('is_active', true),

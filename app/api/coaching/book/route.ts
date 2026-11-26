@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireMember } from '@/lib/ai/quota'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createCoachingRoom } from '@/lib/daily'
@@ -14,8 +15,9 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireMember()
+    if (auth instanceof Response) return auth
+    const { user } = auth
 
     const { scheduled_at, duration_minutes = 60, notes } = await request.json()
 

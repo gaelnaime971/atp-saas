@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createSsrClient } from '@/lib/supabase/server'
+import { requireMember } from '@/lib/ai/quota'
 
 export const runtime = 'nodejs'
 
@@ -22,8 +23,9 @@ type Params = { params: Promise<{ id: string }> }
 
 async function requireOwnedCategory(id: string) {
   const supabase = await createSsrClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { supabase, user: null, cat: null, err: new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }) }
+  const auth = await requireMember()
+  if (auth instanceof Response) return { supabase, user: null, cat: null, err: auth }
+  const { user } = auth
   const { data: cat } = await supabase
     .from('trader_criteria_categories')
     .select('id, trader_id')

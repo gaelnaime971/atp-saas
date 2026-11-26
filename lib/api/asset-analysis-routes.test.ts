@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // /api/asset-analysis/{correlations,macro,news,sentiment} : réservées aux
-// membres connectés (requireUser). Session Supabase simulée ; Yahoo
+// membres (requireMember ; le membre simulé est abonné Whop). Session Supabase simulée ; Yahoo
 // (yahoo-finance2) et fetch (ForexFactory, CNN, alternative.me) espionnés.
 
 const session = vi.hoisted(() => ({ user: null as null | { id: string } }))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: session.user } }) },
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role: 'trader' } }) }) }) }),
+    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role: 'trader', whop_subscription_active: true }, error: null }) }) }) }),
   }),
 }))
 

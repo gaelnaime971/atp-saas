@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireUser } from '@/lib/ai/quota'
+import { requireMember } from '@/lib/ai/quota'
 
 interface FFEvent {
   title: string
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   // Réservé aux membres connectés : seule la page Analyse graphique (SPA
   // /dashboard) appelle cette route. Sans session → 401, avant tout appel
   // externe. /api/* n'est pas filtré par proxy.ts.
-  const auth = await requireUser()
+  const auth = await requireMember()
   if (auth instanceof Response) return auth
 
   try {

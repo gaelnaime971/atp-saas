@@ -1,6 +1,6 @@
 import { NextResponse, after } from 'next/server'
 import { GROQ_VISION_MODEL } from '@/lib/ai/groq-models'
-import { requireUser, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
+import { requireMember, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
 
 interface ChartInput {
   slot: 'HTF' | 'MTF' | 'LTF' | 'Exec'
@@ -84,7 +84,7 @@ Ne mets QUE les TFs présents (ne mets pas Exec si pas uploadé). Si une donnée
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireUser()
+    const auth = await requireMember()
     if (auth instanceof Response) return auth
     const { user, isAdmin } = auth
 

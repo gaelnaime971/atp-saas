@@ -13,12 +13,19 @@ import Badge from '@/components/ui/Badge'
 import { fmtUsd, fmtPct, fmtCompact, fmtNumber, toneForPnl, toneForRate, TONE_COLOR_VAR } from '@/lib/format'
 import NewTraderModal from '@/components/admin/modals/NewTraderModal'
 import TraderProfileModal from '@/components/admin/modals/TraderProfileModal'
+import ManualAccessModal from '@/components/admin/modals/ManualAccessModal'
+import { accessTone } from '@/components/admin/access-tone'
+import { accessLabel, memberAccess, parisToday, type ManualAccessPatch } from '@/lib/access/member-access'
 
 interface TraderRow extends Profile {
   session_count?: number
   total_pnl?: number
   win_rate?: number
   status: 'active' | 'pending'
+  // Accès au dashboard (lib/access/member-access)
+  whop_subscription_active?: boolean | null
+  manual_access?: boolean | null
+  manual_access_until?: string | null
 }
 
 interface PendingInvitation {
@@ -64,6 +71,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
   const [showNewModal, setShowNewModal] = useState(false)
   const [selectedTrader, setSelectedTrader] = useState<TraderRow | null>(null)
   const [blurNames, setBlurNames] = useState(false)
+  const [accessTrader, setAccessTrader] = useState<TraderRow | null>(null)
 
   // Date filter state
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
@@ -162,6 +170,12 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
     const nb = Number((t as any).nb_accounts) || 1
     return s + (cap * nb)
   }, 0)
+
+  function applyAccessPatch(id: string, patch: ManualAccessPatch) {
+    setTraders(rows => rows.map(r => (r.id === id ? { ...r, ...patch } : r)))
+  }
+
+  const today = parisToday()
 
   if (loading) {
     return (
@@ -377,6 +391,20 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
                 {t.status === 'pending' ? 'En attente' : 'Actif'}
               </Badge>
             ) },
+          { id: 'access', header: 'Accès',
+            sortable: true, sortValue: t => (t.status === 'pending' ? '' : accessLabel(memberAccess(t, today))),
+            accessor: t => {
+              if (t.status === 'pending') return <span style={{ color: 'var(--color-neutral)' }}>—</span>
+              const access = memberAccess(t, today)
+              return (
+                <div className="flex items-center gap-2">
+                  <Badge tone={accessTone(access.kind)} size="sm" bordered>{accessLabel(access)}</Badge>
+                  <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); setAccessTrader(t) }}>
+                    Gérer
+                  </Button>
+                </div>
+              )
+            } },
           { id: 'plan', header: 'Plan',
             accessor: t => (
               <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-2)' }}>
@@ -426,6 +454,14 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
         <NewTraderModal
           onClose={() => setShowNewModal(false)}
           onSuccess={() => fetchTraders()}
+        />
+      )}
+
+      {accessTrader && (
+        <ManualAccessModal
+          trader={accessTrader}
+          onClose={() => setAccessTrader(null)}
+          onSaved={applyAccessPatch}
         />
       )}
 

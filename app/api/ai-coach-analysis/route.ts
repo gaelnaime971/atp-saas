@@ -2,7 +2,7 @@ import { NextResponse, after } from 'next/server'
 import { GROQ_TEXT_MODEL } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { computeStats, compactContext, type SessionRow, type BacktestRow, type MetricsOptions } from '@/lib/trader-metrics'
-import { requireUser, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
+import { requireMember, checkAndCount, recordUsage, buildQuotaResponse, buildProviderErrorResponse } from '@/lib/ai/quota'
 
 interface RequestBody {
   from?: string
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) return buildProviderErrorResponse({ route: '/api/ai-coach-analysis', detail: 'GROQ_API_KEY missing' })
 
-    const auth = await requireUser()
+    const auth = await requireMember()
     if (auth instanceof Response) return auth
     const { user, isAdmin } = auth
     const supabase = await createClient()

@@ -45,11 +45,12 @@ import {
   type AiFeature,
 } from './quota-limits'
 import { maybeAlertProviderFailure } from './provider-alerts'
+import { INACTIVE_API_ERROR, memberAccess, readAccessProfile } from '@/lib/access/member-access'
 
 // ─── requireUser : auth + role en 1 helper ──────────────────────────────
 
 export interface AuthedUser {
-  user: { id: string }
+  user: { id: string; email?: string }
   isAdmin: boolean
 }
 
@@ -81,6 +82,35 @@ export async function requireUser(): Promise<AuthedUser | Response> {
     .maybeSingle()
   const isAdmin = (profile as { role?: string } | null)?.role === 'admin'
   return { user: { id: user.id }, isAdmin }
+}
+
+/**
+ * Comme requireUser(), mais réservé aux comptes qui ont accès au
+ * dashboard (règle unique lib/access/member-access : admin, abonnement
+ * Whop actif, accès manuel valide). À mettre en tête de toute route
+ * réservée aux membres.
+ *
+ *   - pas de session          → 401
+ *   - session sans accès      → 403 { error: 'subscription_inactive' }
+ *   - profil illisible        → 403 (fail-closed)
+ *
+ * Une seule lecture de profiles (role + colonnes d'accès), comme
+ * requireUser().
+ */
+export async function requireMember(): Promise<AuthedUser | Response> {
+  const supabase = await createSsrClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const profile = await readAccessProfile(cols =>
+    supabase.from('profiles').select(cols).eq('id', user.id).maybeSingle(),
+  )
+  const access = memberAccess(profile)
+  if (!access.granted) {
+    return NextResponse.json({ error: INACTIVE_API_ERROR }, { status: 403 })
+  }
+  return { user: { id: user.id, email: user.email }, isAdmin: access.kind === 'admin' }
 }
 
 export interface QuotaResult {

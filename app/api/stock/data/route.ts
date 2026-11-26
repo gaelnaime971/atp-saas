@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireUser } from '@/lib/ai/quota'
+import { requireMember } from '@/lib/ai/quota'
 import YahooFinance from 'yahoo-finance2'
 
 // yahoo-finance2 v3 requires instantiation. Types are partly broken,
@@ -348,7 +348,7 @@ export async function GET(request: Request) {
   // Réservé aux membres connectés (comme la page Analyse d'action) : sans
   // session → 401, AVANT tout appel externe. /api/* n'est pas filtré par
   // proxy.ts, chaque route fait donc son propre contrôle.
-  const auth = await requireUser()
+  const auth = await requireMember()
   if (auth instanceof Response) return auth
 
   const { searchParams } = new URL(request.url)

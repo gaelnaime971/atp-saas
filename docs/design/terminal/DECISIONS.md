@@ -94,3 +94,24 @@ Variable **serveur** (jamais `NEXT_PUBLIC_`), pour pouvoir pousser en prod sans 
 - **Admin dans Marchés** : « Retour admin » (vers `/admin/dashboard`) à la place du sélecteur, pas d'Analyse d'action, pas de liens Mon compte / Contrat / Documents, ⌘K limité à Marchés, pas de bulle de messagerie coach. Tous ces liens le renvoyaient vers `/admin/dashboard`.
 - **Menu admin** : groupe « Terminal » avec le lien « Terminal Marchés » vers `/dashboard/marches`.
 - Pas de `.env.example` dans le repo (`.env*` est ignoré par git) : la variable est documentée ici.
+
+## Accès membres : une seule règle, toujours active
+
+Arrêté le 26/11/2026. Avant, aucune page ni route ne vérifiait l'abonnement après la connexion : le filtre de `proxy.ts` dépendait de `WHOP_GATE_ENABLED`, absente en prod.
+
+**Règle** (`lib/access/member-access.ts`, testée dans `member-access.test.ts`) :
+
+| Compte | Accès au dashboard |
+|---|---|
+| admin | oui |
+| `whop_subscription_active` (tenu à jour par le webhook et le cron) | oui |
+| accès manuel (`manual_access`), sans date de fin | oui |
+| accès manuel avec date de fin (`manual_access_until`, jour de Paris, **incluse**) | oui jusqu'à cette date |
+| tout le reste, profil illisible compris | non (fail-closed) |
+
+- **`WHOP_GATE_ENABLED` et `WHOP_BYPASS_EMAILS` sont supprimées** (inutilisées en prod) : plus d'interrupteur, plus de liste d'e-mails. Un compte qui doit passer sans Whop reçoit un accès manuel.
+- **Pages** : `proxy.ts` applique la règle à toutes les pages `/dashboard` (espace Marchés compris). Sans accès → `/whop/abonnement-inactif` (« Ton abonnement n'est plus actif », bouton de réabonnement Whop `NEXT_PUBLIC_WHOP_CHECKOUT_URL`, à défaut le lien de la page d'accueil, et bouton de déconnexion). Préfixe `/whop` public : pas de boucle.
+- **API** : `requireMember()` (`lib/ai/quota.ts`, à côté de `requireUser()`) sur toutes les routes membres : 401 sans session, 403 `{ error: 'subscription_inactive' }` sans accès, avant tout appel externe. Hors périmètre : Jarvis (sa liste d'autorisation), admin, cron, webhook, routes publiques et d'authentification, `backtest/is-tester` (simple indicateur d'affichage). `lib/api/member-routes.test.ts` oblige à classer toute nouvelle route.
+- **Admin › Traders** : colonne « Accès » (Whop, Manuel jusqu'au …, Manuel sans fin, Manuel expiré, Aucun) et bouton « Gérer » pour accorder ou retirer un accès manuel, date de fin facultative. Seul un admin peut écrire ces colonnes (déclencheur `protect_profile_privileged_columns`).
+- **Migration** `20261126000004_manual_access.sql` : à appliquer **avant** de déployer. À la création des colonnes, et une seule fois, les comptes créés par invitation sans lien Whop reçoivent un accès manuel sans fin. Tant qu'elle n'est pas appliquée, le code relit les seules colonnes historiques (admin + Whop gardent l'accès, les comptes invités le perdent).
+- **Limite connue** : la règle protège les pages et les routes `/api`, pas les requêtes directes à Supabase (clé publique + session). Un ancien membre resté connecté peut encore y lire ses propres données et ce que les règles RLS ouvrent à tout compte connecté (ex. `resources`, `live_trades`, `skill_items`). Pas de coût fournisseur ; pour fermer aussi cette porte, il faudra une fonction SQL `has_dashboard_access()` dans ces règles RLS.
