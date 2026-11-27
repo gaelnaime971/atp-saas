@@ -8,6 +8,8 @@ export interface Profile {
   avatar_url: string | null
   plan_type: string | null
   propfirm_name: string | null
+  /** Fuseau IANA du membre (lib/time.ts). NULL = navigateur. */
+  timezone?: string | null
   created_at: string
 }
 

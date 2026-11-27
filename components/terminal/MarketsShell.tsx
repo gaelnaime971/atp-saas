@@ -76,7 +76,7 @@ export default function MarketsShell({ viewer, children }: { viewer: Exclude<Ter
       />
 
       <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: 'var(--app-sidebar-width, 240px)', transition: 'margin-left 0.18s ease' }}>
-        <AppTopbar title={title} actions={<MarketsClocks />} />
+        <AppTopbar title={title} actions={<MarketsClocks settingsHref={isAdmin ? undefined : '/dashboard?page=compte#fuseau'} />} />
         <main className="flex-1 p-7">
           {children}
         </main>

@@ -72,7 +72,7 @@ FRED, Fed d'Atlanta, Shiller, CFTC. La mention FRED exacte : « This product use
 - **Passage d'un espace à l'autre : `/dashboard?page=<id>`.** Le SPA lit ce paramètre au montage, ouvre la page si l'id est connu, puis retire le paramètre de l'URL (`history.replaceState`) pour qu'un rechargement ultérieur ne rouvre pas une page périmée. Un id inconnu est ignoré, le Dashboard s'ouvre comme avant.
 - **Analyse d'action est passée dans Marchés › Analyse.** C'était simple : elle reste un écran du SPA (`/dashboard?page=stock-analysis`), et quand elle est ouverte le SPA affiche le menu et la barre du haut de l'espace Marchés.
 - **Éléments « bientôt »** (Récap de séance, Actus & Squawk) : visibles dans le menu, non cliquables, sans page, absents de ⌘K.
-- **Horloges Marchés** : « Ton heure » (fuseau du navigateur en attendant `profiles.timezone` à l'étape 2), Londres, New York, Tokyo. Rendues côté client uniquement (piège d'hydratation #418). Pas de pastille ouvert/fermé : elle dépend des fériés et des clôtures anticipées, elle arrive avec Sessions & horaires.
+- **Horloges Marchés** : « Ton heure » (fuseau du membre, voir « Fuseau horaire »), Londres, New York, Tokyo. Rendues côté client uniquement (piège d'hydratation #418).
 - **Admin** : exception dans `proxy.ts` pour `/dashboard/marches` (et ses sous-pages). Le reste de `/dashboard` redirige toujours un admin vers `/admin/dashboard`.
 - **Gate Whop** : inchangé. `/dashboard/marches/*` est couvert par le `startsWith('/dashboard')` existant.
 
@@ -116,3 +116,20 @@ Arrêté le 26/11/2026. Avant, aucune page ni route ne vérifiait l'abonnement a
 - **Migration** `20261126000004_manual_access.sql` : à appliquer **avant** de déployer. À la création des colonnes, et une seule fois, les comptes créés par invitation sans lien Whop reçoivent un accès manuel sans fin. Tant qu'elle n'est pas appliquée, le code relit les seules colonnes historiques (admin + Whop gardent l'accès, les comptes invités le perdent).
 - **Côté base** : `public.has_dashboard_access()` (migration `20261126000006`) applique la même règle dans les règles RLS. Les lectures autrefois ouvertes à tout compte connecté ou à tous (`resources`, `live_trades`, `skill_items`, `app_settings`, créneaux de coaching, profil du coach, bucket `docs`) passent par elle. Les règles « ses propres lignes » ne changent pas : un ancien membre garde l'accès à ses propres données. Toute modification de la règle se fait aux deux endroits (TypeScript et SQL) ; `lib/api/migrations-security.test.ts` vérifie qu'il ne reste aucune lecture « tout compte connecté » dans les migrations.
 - **Futures tables du Terminal** (COT, macro, calendrier, banques centrales…) : leurs règles de lecture utilisent `(SELECT public.has_dashboard_access())`, jamais « tout compte connecté » (`auth.uid() IS NOT NULL`, `auth.role() = 'authenticated'`) ni `USING (true)`.
+
+## Fuseau horaire (lot A, partie 1)
+
+Arrêté le 27/11/2026.
+
+- **Référence unique : `lib/time.ts`** (Intl natif, aucune dépendance). Toute heure affichée dans Marchés passe par lui.
+- **Fuseau du membre** : `profiles.timezone` (IANA), sinon le navigateur, sinon `Europe/Paris`.
+  - Profil vide (NULL ou blanc) → navigateur.
+  - Profil rempli mais invalide → `Europe/Paris`, jamais d'exception. Tous les formats passent par `safeTimeZone()`.
+- **Première visite** : `MemberTimeZoneProvider` (monté dans `app/dashboard/layout.tsx`, donc Mon trading et Marchés) enregistre le fuseau du navigateur si le profil est vide et le fuseau valide, sans écraser une valeur posée entre-temps. Une valeur invalide en base n'est pas réécrite.
+- **Serveur** : `getMemberTimeZone()` (`lib/time-server.ts`) pour les Server Components. Il ne connaît pas le navigateur : profil valide, sinon Paris.
+- **Heures de marché** : définies dans le fuseau de leur place (`America/New_York`, `America/Chicago`, `Europe/London`, `Asia/Tokyo`) pour une date de cette place, puis converties (`zonedTimeToUtc`, `marketTimeIn`). Les changements d'heure viennent de la base IANA : États-Unis et Europe ne changent pas le même jour, la Guadeloupe jamais.
+- **Formats** : `14:30`, « mer. 25 nov. », « UTC−4 » (signe moins typographique).
+- **Mon compte › Fuseau horaire** (ancre `#fuseau`) : Paris, Guadeloupe, Martinique, Guyane, La Réunion, Bruxelles, Genève (`Europe/Zurich`), Montréal (`America/Toronto`) en tête, puis toute la liste du moteur, avec recherche sans accents et décalage actuel.
+- **Barre Marchés** : un clic sur « Ton heure » mène au réglage (membre seulement : l'admin n'a pas Mon compte). Si le membre est à Londres, New York ou Tokyo, cette place n'est pas affichée en double (`lib/terminal/clocks.ts`).
+- **Colonne** : migration `20261127000001_profiles_timezone.sql` (appliquée le 27/11/2026). Non protégée par `protect_profile_privileged_columns` : le membre la règle lui-même.
+- **Pas encore fait** : la dédup des `TZ` locaux (`America/Guadeloupe` dans les deux `Coaching.tsx`, `Europe/Paris` inline ailleurs) reste à faire, hors Marchés.

@@ -16,6 +16,7 @@ import type { NavGroup } from '@/components/ui/AppSidebar'
 import TraderSidebarFooter from '@/components/dashboard/TraderSidebarFooter'
 import SpaceSwitcher, { SearchButton } from '@/components/terminal/SpaceSwitcher'
 import MarketsClocks from '@/components/terminal/MarketsClocks'
+import { useMinuteNow } from '@/lib/hooks/useMinuteNow'
 import { useMembersSeeTerminal } from '@/components/terminal/TerminalAccess'
 import type { DashboardPage } from '@/components/dashboard/DashboardSidebar'
 import Dashboard from '@/components/dashboard/pages/Dashboard'
@@ -79,14 +80,14 @@ const pageTitles: Record<DashboardPage, string> = {
  * et padding), remplacé par la date après hydratation.
  */
 function TopbarDate() {
-  const [label, setLabel] = useState<string>('')
-  useEffect(() => {
-    setLabel(new Date().toLocaleDateString('fr-FR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-    }))
-  }, [])
+  // useMinuteNow : null au SSR et à l'hydratation, puis l'heure du
+  // navigateur (et la date change à minuit sans recharger).
+  const now = useMinuteNow()
+  const label = now === null ? '' : new Date(now).toLocaleDateString('fr-FR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
   return (
     <span
       className="text-xs px-3 py-1.5 rounded-lg font-mono shrink-0"
@@ -137,6 +138,12 @@ export default function TraderDashboard() {
     const { pathname, hash } = window.location
     window.history.replaceState(null, '',`${pathname}${searchWithoutPage(window.location.search)}${hash}`)
   }, [])
+
+  // « Ton heure » (barre Marchés) : Mon compte, ancre du réglage du fuseau.
+  const openTimeZoneSettings = () => {
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#fuseau`)
+    setActivePage('compte')
+  }
 
   const goTo = (id: AnyNavId, href?: string) => {
     if (isDashboardPage(id)) setActivePage(id)
@@ -217,7 +224,7 @@ export default function TraderDashboard() {
       <div className="flex-1 flex flex-col" style={{ marginLeft: 'var(--app-sidebar-width, 240px)', transition: 'margin-left 0.18s ease' }}>
         <AppTopbar
           title={pageTitles[activePage]}
-          actions={space === 'marches' ? <MarketsClocks /> : (
+          actions={space === 'marches' ? <MarketsClocks onSettings={openTimeZoneSettings} /> : (
             <>
               <button
                 onClick={() => setSessionLive(true)}

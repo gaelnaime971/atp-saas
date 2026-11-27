@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import AvatarUpload from '@/components/ui/AvatarUpload'
+import TimeZoneSettings from '@/components/time/TimeZoneSettings'
 import type { Profile } from '@/lib/types'
 
 const experienceOptions = [
@@ -51,7 +52,8 @@ export default function Compte() {
   // Reset
   const [resetInput, setResetInput] = useState('')
 
-  const supabase = createClient()
+  // Client stable entre deux rendus (dépendance de l'effet ci-dessous).
+  const [supabase] = useState(createClient)
 
   useEffect(() => {
     async function fetchProfile() {
@@ -68,18 +70,25 @@ export default function Compte() {
           .single()
 
         if (prof) {
-          const p = prof as Profile
+          const p = prof as Profile & {
+            billing_company?: string | null
+            billing_address?: string | null
+            billing_siren?: string | null
+            billing_vat?: string | null
+            whop_link?: string | null
+            whop_email?: string | null
+          }
           setProfile(p)
           setAvatarUrl(p.avatar_url)
           const parts = (p.full_name ?? '').split(' ')
           setFirstName(parts[0] ?? '')
           setLastName(parts.slice(1).join(' '))
-          setBillingCompany((p as any).billing_company ?? '')
-          setBillingAddress((p as any).billing_address ?? '')
-          setBillingSiren((p as any).billing_siren ?? '')
-          setBillingVat((p as any).billing_vat ?? '')
-          setWhopLink((p as any).whop_link ?? '')
-          setWhopEmail((p as any).whop_email ?? '')
+          setBillingCompany(p.billing_company ?? '')
+          setBillingAddress(p.billing_address ?? '')
+          setBillingSiren(p.billing_siren ?? '')
+          setBillingVat(p.billing_vat ?? '')
+          setWhopLink(p.whop_link ?? '')
+          setWhopEmail(p.whop_email ?? '')
         }
       } catch (err) {
         console.error('Compte fetch error:', err)
@@ -89,7 +98,7 @@ export default function Compte() {
     }
 
     fetchProfile()
-  }, [])
+  }, [supabase])
 
   async function handleSave() {
     if (!profile) return
@@ -228,6 +237,9 @@ export default function Compte() {
 
       {/* Right side */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Fuseau horaire (ancre #fuseau, lien « Ton heure » de Marchés) */}
+        <TimeZoneSettings />
+
         {/* Notifications */}
         <Card>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 12, borderBottom: '1px solid var(--border, rgba(255,255,255,0.07))' }}>
