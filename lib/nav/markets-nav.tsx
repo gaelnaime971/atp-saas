@@ -48,7 +48,7 @@ export const MARKETS_NAV: NavGroup<MarketsNavId>[] = [
     items: [
       { id: 'marches-overview', label: 'Vue d\'ensemble',     icon: IconGlobe, href: MARKETS_BASE_PATH },
       { id: 'marches-sessions', label: 'Sessions & horaires', icon: IconClock, href: `${MARKETS_BASE_PATH}/sessions` },
-      { id: 'marches-recap',    label: 'Récap de séance',     icon: IconReport, soon: true },
+      { id: 'marches-recap',    label: 'Récap de séance',     icon: IconReport, href: `${MARKETS_BASE_PATH}/recap` },
     ],
   },
   {

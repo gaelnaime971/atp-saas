@@ -73,7 +73,7 @@ describe('menu Marchés', () => {
   it('a les 5 groupes demandés', () => {
     expect(MARKETS_NAV.map(g => g.label)).toEqual(['Global', 'Agenda', 'Flux', 'Positionnement', 'Analyse'])
   })
-  it('expose exactement les 9 routes /dashboard/marches/*', () => {
+  it('expose exactement les 10 routes /dashboard/marches/*', () => {
     expect(items.filter(i => i.href).map(i => i.href).sort()).toEqual([
       '/dashboard/marches',
       '/dashboard/marches/actus',
@@ -81,15 +81,15 @@ describe('menu Marchés', () => {
       '/dashboard/marches/calendrier',
       '/dashboard/marches/cot',
       '/dashboard/marches/macro',
+      '/dashboard/marches/recap',
       '/dashboard/marches/saisonnalite',
       '/dashboard/marches/sentiment',
       '/dashboard/marches/sessions',
     ])
   })
-  it('les éléments « bientôt » n’ont pas de page', () => {
-    const soon = items.filter(i => i.soon)
-    expect(soon.map(i => i.label)).toEqual(['Récap de séance'])
-    for (const i of soon) expect(i.href).toBeUndefined()
+  it('plus aucun élément « bientôt » : chaque entrée a sa page', () => {
+    expect(items.filter(i => i.soon)).toEqual([])
+    for (const i of items) expect(i.href, i.id).toBeTruthy()
   })
   it('hors SPA, une page du SPA sans href devient un lien /dashboard?page=', () => {
     const groups: { items: { id: string; href?: string; soon?: boolean }[] }[] = [{ items: [{ id: 'stock-analysis' }, { id: 'marches-recap', soon: true }] }]
@@ -115,7 +115,7 @@ describe('palette ⌘K', () => {
   it('exclut les éléments « bientôt » et n’a pas de doublon', () => {
     const items = buildPaletteItems('spa', 'trading', 'member')
     const ids = items.map(i => i.id)
-    expect(ids).not.toContain('marches-recap')
+    expect(ids).toContain('marches-recap')
     expect(ids).toContain('marches-actus')
     expect(new Set(ids).size).toBe(ids.length)
   })
