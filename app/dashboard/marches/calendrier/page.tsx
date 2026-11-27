@@ -79,9 +79,9 @@ export default async function CalendrierPage({ searchParams }: { searchParams: P
 
       <Card>
         <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <Link href={calendarHref(p, { from: addDays(p.from, p.view === 'semaine' ? -7 : -1) })} aria-label={p.view === 'semaine' ? 'Semaine précédente' : 'Jour précédent'} className="inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0" style={chip(false)}>‹</Link>
-            <span style={{ ...mono, fontSize: 13, color: 'var(--color-text-1)', fontWeight: 600 }}>
+            <span className="flex-1 md:flex-none min-w-0 text-center md:text-left" style={{ ...mono, fontSize: 13, color: 'var(--color-text-1)', fontWeight: 600 }}>
               {p.view === 'semaine' ? `${formatDateKey(p.from)} → ${formatDateKey(p.to, { year: true })}` : formatDateKey(p.from, { long: true, year: true })}
             </span>
             <Link href={calendarHref(p, { from: addDays(p.from, p.view === 'semaine' ? 7 : 1) })} aria-label={p.view === 'semaine' ? 'Semaine suivante' : 'Jour suivant'} className="inline-flex items-center justify-center min-h-11 min-w-11 md:min-h-0" style={chip(false)}>›</Link>
@@ -146,7 +146,7 @@ export default async function CalendrierPage({ searchParams }: { searchParams: P
                               {e.title}
                             </span>
                             <span style={{ display: 'block', fontSize: 11, color: 'var(--color-text-3)' }}>
-                              {[KIND_LABEL[e.kind], e.agency, e.figure?.label, e.detail, e.timeOfficial ? null : 'heure habituelle'].filter(Boolean).join(' · ')}
+                              {[...new Set([KIND_LABEL[e.kind], e.agency, e.figure?.label, e.detail, e.timeOfficial ? null : 'heure habituelle'].filter(Boolean))].join(' · ')}
                             </span>
                           </td>
                           <td style={{ verticalAlign: 'top', paddingTop: 8 }}>
