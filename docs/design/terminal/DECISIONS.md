@@ -198,3 +198,10 @@ Arrêté le 27/11/2026. Page `/dashboard/marches/cot` (`?m=NQ|ES|YM|ZN`), d'apr�
 - **Calculs** (`lib/market/cot.ts`, testés) : nette = longs − shorts ; % de l'OI = nette / open interest ; variation = nette − nette du rapport précédent ; **percentile sur 3 ans de la nette en % de l'OI** (l'open interest varie trop en 3 ans pour comparer des contrats bruts). Lecture : ≤ 20 très vendeur, ≥ 80 très acheteur, extrême sous 10 et au-dessus de 90.
 - **Dates** : positions du mardi ; publication affichée = le vendredi suivant (règle habituelle). La date de première réception est stockée (`received_at`).
 - **Pas repris de la maquette** : RTY, GC, CL, 6E (hors périmètre NQ/YM/ES/ZN), « Lecture Jarvis ».
+
+## Macro US (lot C, partie 3)
+
+Arrêté le 27/11/2026. Page `/dashboard/marches/macro`, sans maquette : langage des maquettes 07 et 08 (cartes, chiffres en police data, mini-graphiques).
+
+- **Séries FRED** : DGS2, DGS10, T10Y2Y, DFII10, T10YIE, liquidité de la Fed, ICSA, UNRATE, GDPNOW. Par série : dernière valeur, date (ou mois, ou trimestre), variation par rapport à la publication précédente (en points de base pour les taux), mini-graphique sur 1 an, source.
+- **Liquidité de la Fed** (`lib/market/macro.ts`, testée) = WALCL − WTREGEN − RRPONTSYD, en **milliards de dollars**, une valeur par mercredi du bilan. WALCL et WTREGEN sont en millions (÷ 1 000) et hebdomadaires ; RRPONTSYD est en milliards et quotidien (valeur du mercredi, ou la dernière connue avant). Une date sans l'une des trois valeurs est ignorée.
