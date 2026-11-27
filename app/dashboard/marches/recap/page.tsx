@@ -126,6 +126,8 @@ export default async function RecapPage({ searchParams }: { searchParams: Promis
   })
 
   const closeAt = cashCloseAt(day, days)
+  // Fermetures de Wall Street (hors week-end) entre cette séance et la suivante.
+  const closedBefore = cal.specialDays.filter(s => s.date > day && s.date < next && s.nyse === 'closed')
   const special = cal.specialDays.find(d => d.date === day)
   const highCount = releases.filter(r => r.impact === 'high').length
 
@@ -176,7 +178,7 @@ export default async function RecapPage({ searchParams }: { searchParams: Promis
               <Tile label="Publications" value={String(releases.length)} />
               <Tile label="Fort impact" value={String(highCount)} />
               <Tile label="Textes de la Fed" value={String(fomc.length + fedNews.length)} />
-              <Tile label="Sentiment" value={score === null ? '—' : String(score)} sub={score !== null && scorePrev !== null ? `${fmtNumber(score - scorePrev, 0, { sign: true })} sur la séance` : undefined} />
+              <Tile label="Sentiment" value={score === null ? '—' : String(score)} sub={score !== null && scorePrev !== null ? (score === scorePrev ? 'stable sur la séance' : `${fmtNumber(score - scorePrev, 0, { sign: true })} sur la séance`) : undefined} />
             </div>
           </Card>
 
@@ -273,7 +275,9 @@ export default async function RecapPage({ searchParams }: { searchParams: Promis
             <h2 style={sectionTitle}>Particularités</h2>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, fontSize: 12, color: 'var(--color-text-2)', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <li>{special ? `${special.name}${special.nyse === 'early' ? ' : clôture anticipée du cash US' : ''}.` : 'Séance aux horaires habituels.'}</li>
-              {addDays(day, 1) !== next && <li>Wall Street fermée jusqu’au {formatDateKey(next, { long: true })}{cal.specialDays.find(s => s.date > day && s.date < next && s.nyse === 'closed') ? ` (${cal.specialDays.find(s => s.date > day && s.date < next && s.nyse === 'closed')!.name})` : ''}.</li>}
+              {closedBefore.map(s => (
+                <li key={s.date}>Wall Street fermée le {formatDateKey(s.date, { long: true })} ({s.name}).</li>
+              ))}
               {nextEvents.length > 0 && (
                 <li>Séance suivante : {nextEvents.map(e => `${e.title} à ${formatTime(e.at as number, tz)}`).join(', ')}.</li>
               )}
