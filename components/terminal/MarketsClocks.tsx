@@ -1,20 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { useSyncExternalStore } from 'react'
 import { useMemberTimeZone } from '@/components/time/MemberTimeZone'
 import { formatTime, offsetLabel, timeZoneLabel } from '@/lib/time'
 import { placesFor } from '@/lib/terminal/clocks'
+import { sessionState } from '@/lib/terminal/sessions'
+import { useMinuteNow } from '@/lib/hooks/useMinuteNow'
 
 /**
  * Horloges de la barre du haut Marchés : ton heure + Londres, New York,
  * Tokyo. Pas de cotations (cf. docs/design/terminal/DECISIONS.md).
  *
- * Rendu UNIQUEMENT côté client, comme TopbarDate dans app/dashboard :
- * au SSR le serveur (UTC chez Vercel) et le navigateur n'ont pas la même
- * heure → HTML différent → React hydration mismatch #418. Ici via
- * useSyncExternalStore : le snapshot serveur vaut null, React hydrate
- * avec des cases vides (largeur réservée) puis passe à l'heure client.
+ * Rendu UNIQUEMENT côté client (useMinuteNow : piège d'hydratation #418),
+ * cases vides de largeur réservée au premier rendu.
+ *
+ * Pastille ouvert/fermé de chaque place : sessions de
+ * lib/terminal/sessions.ts (Londres 08:00–17:00, New York 08:00–17:00 hors
+ * fériés NYSE, Tokyo 09:00–18:00, heures locales, week-ends fermés).
  *
  * « Ton heure » = fuseau du membre (lib/time.ts : profil, sinon
  * navigateur, sinon Paris). Un clic mène au réglage dans Mon compte
@@ -22,22 +24,6 @@ import { placesFor } from '@/lib/terminal/clocks'
  * fuseau du membre est celui d'une des places, cette place n'est pas
  * affichée en double.
  */
-
-// Store « minute courante » : le snapshot (n° de minute) ne change
-// qu'une fois par minute, le tic est calé sur le changement de minute.
-function subscribeMinute(onChange: () => void) {
-  let interval: ReturnType<typeof setInterval> | undefined
-  const timeout = setTimeout(() => {
-    onChange()
-    interval = setInterval(onChange, 60_000)
-  }, 60_000 - (Date.now() % 60_000) + 50)
-  return () => {
-    clearTimeout(timeout)
-    if (interval) clearInterval(interval)
-  }
-}
-const getMinute = () => Math.floor(Date.now() / 60_000)
-const getServerMinute = () => null
 
 const labelStyle: React.CSSProperties = {
   fontFamily: 'var(--font-data)',
@@ -74,9 +60,9 @@ export interface MarketsClocksProps {
 }
 
 export default function MarketsClocks({ settingsHref, onSettings }: MarketsClocksProps) {
-  const minute = useSyncExternalStore(subscribeMinute, getMinute, getServerMinute)
+  const minute = useMinuteNow()
   const { timeZone, ready } = useMemberTimeZone()
-  const now = minute === null || !ready ? null : new Date(minute * 60_000)
+  const now = minute === null || !ready ? null : new Date(minute)
   const places = placesFor(timeZone)
   const ownTitle = now ? `${timeZoneLabel(timeZone)} (${offsetLabel(now, timeZone)})` : undefined
 
@@ -116,12 +102,27 @@ export default function MarketsClocks({ settingsHref, onSettings }: MarketsClock
           <span title={ownTitle} style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>{own}</span>
         )}
       </li>
-      {places.map(place => (
+      {places.map(place => {
+        const open = now ? sessionState(place.id, now.getTime()).status === 'open' : null
+        return (
         <li key={place.label} style={itemStyle(false)}>
-          <span style={labelStyle}>{place.label}</span>
+          <span
+            aria-hidden
+            title={open === null ? undefined : open ? 'Ouverte' : 'Fermée'}
+            style={{
+              width: 6, height: 6, borderRadius: 'var(--radius-full)', alignSelf: 'center',
+              background: open ? 'var(--color-profit)' : 'var(--color-text-3)',
+              visibility: open === null ? 'hidden' : 'visible',
+            }}
+          />
+          <span style={labelStyle}>
+            {place.label}
+            {open !== null && <span className="sr-only">{open ? ', ouverte' : ', fermée'}</span>}
+          </span>
           <span style={timeStyle(false)}>{now ? formatTime(now, place.timeZone) : ' '}</span>
         </li>
-      ))}
+        )
+      })}
     </ul>
   )
 }

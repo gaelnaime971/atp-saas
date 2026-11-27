@@ -133,3 +133,23 @@ Arrêté le 27/11/2026.
 - **Barre Marchés** : un clic sur « Ton heure » mène au réglage (membre seulement : l'admin n'a pas Mon compte). Si le membre est à Londres, New York ou Tokyo, cette place n'est pas affichée en double (`lib/terminal/clocks.ts`).
 - **Colonne** : migration `20261127000001_profiles_timezone.sql` (appliquée le 27/11/2026). Non protégée par `protect_profile_privileged_columns` : le membre la règle lui-même.
 - **Pas encore fait** : la dédup des `TZ` locaux (`America/Guadeloupe` dans les deux `Coaching.tsx`, `Europe/Paris` inline ailleurs) reste à faire, hors Marchés.
+
+## Sessions & horaires (lot A, partie 2)
+
+Arrêté le 27/11/2026. Page `/dashboard/marches/sessions`, d'après la maquette 03, tout en heure du membre.
+
+- **Calcul pur, sans réseau** : `lib/terminal/sessions.ts`. Chaque horaire est défini dans le fuseau de sa place pour une date de cette place, puis converti (`lib/time.ts`).
+  - Sessions : Asie (Tokyo 09:00–18:00), Europe (Londres 08:00–17:00), US (New York 08:00–17:00), heures locales, du lundi au vendredi.
+  - Cash US : 09:30–16:00 ET, fermé les jours fériés NYSE, 13:00 ET les jours de clôture anticipée.
+  - NQ et YM sur CME Globex : dimanche 18:00 → vendredi 17:00 ET, pause quotidienne 17:00–18:00 ET. État : ouvert, pause (coupure d'une heure) ou fermé.
+  - Rendez-vous fixes de la journée US : 8:30, 9:30, 10:00, 16:00 (13:00 si clôture anticipée), 17:00 ET, avec la fenêtre ATP ±15 min.
+  - Échéances trimestrielles (3e vendredi de mars, juin, septembre, décembre, la veille si la bourse est fermée), roll conseillé 8 jours avant, OPEX mensuelles (3e vendredi). Les quatre prochaines de chaque.
+  - Changements d'heure vus du membre : chaque date où l'ouverture du cash US change d'heure chez lui.
+- **Fériés et clôtures anticipées** : table statique `lib/terminal/market-holidays.ts`, 2026-2027, source en commentaire.
+  - Cash US : calendrier officiel NYSE, relevé le 27/11/2026. Confirmé.
+  - CME Globex : les horaires des fêtes ne sont publiés qu'environ deux semaines avant chaque fête. La table suit le schéma habituel des futures indices US, marqué `cmeConfirmed: false` et signalé « à confirmer » à l'écran. À vérifier sur cmegroup.com avant chaque fête, puis passer `cmeConfirmed` à `true`.
+  - Tokyo et Londres : seuls les week-ends sont pris en compte, pas leurs fériés locaux.
+  - À prolonger chaque année (fin de table : 31/12/2027).
+- **Barre du haut** : pastille ouvert/fermé sur Londres, New York (session US, fériés NYSE compris) et Tokyo.
+- **Rendu** : côté client après hydratation (`useMinuteNow`), mis à jour chaque minute. Le serveur passe le fuseau du profil (`getMemberTimeZone()`) en attendant celui du navigateur.
+- **Pas repris de la maquette** : Sydney, et « Tes meilleures heures » (données d'exemple, à brancher sur le journal plus tard).

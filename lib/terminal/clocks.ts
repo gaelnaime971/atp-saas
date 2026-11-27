@@ -5,7 +5,7 @@ export const CLOCK_PLACES = [
   { id: 'london', label: 'Londres', timeZone: MARKET_ZONES.london },
   { id: 'newYork', label: 'New York', timeZone: MARKET_ZONES.newYork },
   { id: 'tokyo', label: 'Tokyo', timeZone: MARKET_ZONES.tokyo },
-] as const
+] as const satisfies readonly { id: 'london' | 'newYork' | 'tokyo'; label: string; timeZone: string }[]
 
 export type ClockPlace = (typeof CLOCK_PLACES)[number]
 

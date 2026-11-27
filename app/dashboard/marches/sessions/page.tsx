@@ -1,16 +1,21 @@
 import type { Metadata } from 'next'
-import MarketsPlaceholder from '@/components/terminal/MarketsPlaceholder'
+import SessionsBoard from '@/components/terminal/sessions/SessionsBoard'
+import { getMemberTimeZone } from '@/lib/time-server'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Sessions & horaires · Marchés · ATP' }
 
-export default function SessionsPage() {
-  return (
-    <MarketsPlaceholder
-      group={"Global"}
-      title={"Sessions & horaires"}
-      subtitle={"Asie, Londres, New York, à ton heure."}
-      description={"Les sessions et leurs chevauchements, les échéances trimestrielles, le roll NQ et YM, les OPEX mensuelles, les jours fériés et les clôtures anticipées."}
-      sources={"calendriers officiels des places de marché"}
-    />
-  )
+// Horaires calculés dans le navigateur (heure du membre). Le serveur
+// fournit le fuseau du profil, utilisé jusqu'à la résolution côté client.
+export default async function SessionsPage() {
+  const { timeZone } = await getMemberTimeZone()
+  // Le réglage du fuseau est dans Mon compte, que l'admin n'a pas.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    : { data: null }
+  const isAdmin = profile?.role === 'admin'
+
+  return <SessionsBoard serverTimeZone={timeZone} settingsHref={isAdmin ? undefined : '/dashboard?page=compte#fuseau'} />
 }
