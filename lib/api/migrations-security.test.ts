@@ -106,3 +106,25 @@ describe('migration 0007 (règles créées à la main sur les créneaux)', () =>
     expect(verif(sql)).toBe(verif(prev))
   })
 })
+
+describe('migration données Terminal (lot C)', () => {
+  const sql = read('20261127000002_market_data.sql')
+  const policies = [...sql.matchAll(/CREATE POLICY "[^"]+" ON public\.(\w+)\s+FOR (\w+) USING \(([^;]+)\);/g)]
+  it('lecture des 3 tables de données réservée aux membres (has_dashboard_access)', () => {
+    expect(policies.map(p => p[1]).sort()).toEqual(['market_cot_reports', 'market_series', 'market_series_observations'])
+    for (const p of policies) {
+      expect(p[2]).toBe('SELECT')
+      expect(p[3]).toContain('(SELECT public.has_dashboard_access())')
+    }
+  })
+  it('aucune règle d’écriture, aucune règle sur le journal', () => {
+    expect(sql).not.toMatch(/FOR (INSERT|UPDATE|DELETE|ALL)/)
+    expect(sql).not.toMatch(/ON public\.market_ingest_journal\s+FOR/)
+    expect(sql).toMatch(/ALTER TABLE public\.market_ingest_journal\s+ENABLE ROW LEVEL SECURITY/)
+  })
+  it('relançable et sans destruction', () => {
+    const code = sql.replace(/--[^\n]*/g, '')
+    expect(code.match(/CREATE TABLE IF NOT EXISTS/g)).toHaveLength(4)
+    expect(code).not.toMatch(/DROP TABLE|DELETE FROM|TRUNCATE/i)
+  })
+})

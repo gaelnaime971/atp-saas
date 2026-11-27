@@ -20,6 +20,7 @@ const MEMBER_ROUTES = [
 // Hors périmètre : admin (contrôle admin propre), cron, webhook, Jarvis
 // (liste d'autorisation), routes publiques ou d'authentification.
 const OUT_OF_SCOPE = [
+  // cron/market-data (données Terminal) : Bearer CRON_SECRET, cf. market-cron.test.ts.
   /^admin\//, /^cron\//, /^webhooks\//, /^jarvis\//, /^auth\//, /^google\//,
   /^invitations(\/|$)/, /^invoices\//, /^padel\//, /^prospects(\/|$)/, /^unsubscribe$/,
   /^backtest\/is-tester$/, // indicateur d'affichage seulement, répond sans session
@@ -48,6 +49,11 @@ describe('classement des routes /api', () => {
       expect(src, r).toContain('requireMember()')
       expect(src, r).not.toContain('requireUser(')
     }
+  })
+  it('le cron des données Terminal est classé hors périmètre', () => {
+    expect(all).toContain('cron/market-data')
+    expect(OUT_OF_SCOPE.some(re => re.test('cron/market-data'))).toBe(true)
+    expect(OUT_OF_SCOPE.some(re => re.test('admin/market-data'))).toBe(true)
   })
   it('Jarvis, admin, cron et webhook ne passent pas par requireMember()', () => {
     for (const r of all.filter(r => /^(jarvis|admin|cron|webhooks)\//.test(r))) {

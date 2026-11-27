@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button'
 import AvatarUpload from '@/components/ui/AvatarUpload'
 import PageHeader from '@/components/ui/PageHeader'
 import Modal from '@/components/ui/Modal'
+import MarketDataCard from '@/components/admin/MarketDataCard'
 
 interface TraderInfo {
   id: string
@@ -365,6 +366,7 @@ export default function Settings() {
       {/* CONFIG TAB */}
       {tab === 'config' && (
         <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2"><MarketDataCard /></div>
           <Card>
             <h3 className="text-sm font-semibold text-[#e8edf5] mb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', paddingBottom: 8 }}>
               Coaching

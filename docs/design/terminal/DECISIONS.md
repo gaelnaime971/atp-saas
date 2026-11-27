@@ -171,3 +171,18 @@ Arrêté le 27/11/2026. Concerne tout le dashboard : Mon trading, Marchés et ad
 - **À partir de 1280 px** : inchangé, sauf la barre du haut : le titre ne touche plus les actions (écart fixe), et les statistiques membre qui ne tiennent pas se masquent (une seule rangée visible).
 - **Finitions (lot C, partie 0)** : rail replié = symbole du logo seul ; grilles du Dashboard sans case isolée sur tablette (chiffres en 2×2, cartes Insight en pleine largeur jusqu'à 1023 px) ; dans le tiroir mobile, le pied de menu est une ligne compacte qui se déplie ; Saisie de session propose le dernier instrument du membre, sinon NQ (`lib/session/instrument.ts`).
 - **Mise en page en CSS** (classes `md:` de Tailwind, pas de flash au chargement) ; le JS (`useViewportKind`) ne sert qu'aux comportements (repli par défaut, fermeture du tiroir).
+
+## Socle de données (lot C, partie 1)
+
+Arrêté le 27/11/2026.
+
+- **Tables** (migration `20261127000002_market_data.sql`) : `market_series` (catalogue FRED), `market_series_observations` (série, date, valeur), `market_cot_reports` (COT par marché et par mardi), `market_ingest_journal` (source, déclencheur, début, fin, statut, lignes, erreur).
+  - Lecture des 3 tables de données : `(SELECT public.has_dashboard_access())`. Journal : aucune règle (lu par la route admin avec le service-role). Aucune règle d'écriture : seul le service-role écrit.
+- **Client service-role** : `lib/supabase/admin.ts`, côté serveur uniquement (lève une erreur dans le navigateur).
+- **Ingestion** (`lib/market/ingest.ts`, testée) : incrémentale (depuis la dernière date en base, moins un recouvrement de 14 jours pour FRED et 21 pour le COT, pour capter les révisions) et idempotente (upsert sur série + date, marché + date). Une série en erreur n'arrête pas les autres (statut « partiel »).
+- **Historique initial**, une seule fois, en local : `npx vite-node --config vitest.config.ts scripts/terminal-backfill.ts` (10 ans pour FRED, depuis 2010 pour le COT). `--dry-run` : appels réels, rien n'est écrit en base.
+- **Cron unique** `/api/cron/market-data` à `30 22 * * *` UTC (17:30 ou 18:30 à New York, après la clôture et après la publication du COT de 15:30 ET). Plan Hobby : 1 exécution par jour au plus, à ±59 min ([doc Vercel](https://vercel.com/docs/cron-jobs/usage-and-pricing)). Protégé comme `whop-reconcile` (Bearer `CRON_SECRET`, 404 sinon), `lib/api/cron-auth.ts`. Classé hors périmètre dans `member-routes.test.ts`.
+- **Admin › Paramètres › Config** : carte « Données Terminal » (dernière mise à jour, statut, lignes, donnée la plus récente) et bouton « Mettre à jour maintenant » (`/api/admin/market-data`, admin uniquement).
+- **Lecture des pages** (`lib/market/read.ts`) : côté serveur, service-role, cache PARTAGÉ de 15 min invalidé par le cron et le bouton admin (tag `market-data`), toujours après `requireMarketsViewer()` (`lib/terminal/viewer-server.ts`, accès membre compris, partagé avec le layout). Chaque page affiche la date de ses données, avec un avertissement si elles sont en retard (`lib/market/freshness.ts`).
+- **Licences FRED** relevées le 27/11/2026 dans les métadonnées de chaque série : toutes « public domain » ou « copyrighted: citation required » (séries produites par la Fed), aucun copyright de tiers. Aucune série écartée.
+- **Mentions** : texte exact exigé par les conditions de l'API FRED (« This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis. »), lien vers ces conditions et phrase d'acceptation ; organismes producteurs cités ; CFTC citée. **À faire côté CGU** : les conditions FRED demandent que les conditions d'utilisation de l'application disent que l'utiliser vaut acceptation des conditions de l'API FRED.
