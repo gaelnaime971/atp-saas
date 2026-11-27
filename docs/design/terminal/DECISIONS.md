@@ -215,3 +215,26 @@ Arrêté le 27/11/2026. Page `/dashboard/marches/sentiment`, d'après la maquett
 - **Historique** : un point par semaine sur 1 an, chaque point calculé avec les seules données connues à sa date (dernière valeur ≤ date).
 - **Composante écartée ou sans donnée** : le score se calcule sans elle et la page le dit. Aucune écartée à ce jour (licences vérifiées, partie 1).
 - **Différences avec la maquette** : les composantes de la maquette (VIX, S&P 500, spread haut rendement, AUD/JPY, dollar, bitcoin) sont remplacées par les séries publiques de la Fed et de la CFTC (arbitrage de l'étape 0). Pas de « Lecture Jarvis ».
+
+## Calendrier économique (lot D, partie 1)
+
+Arrêté le 27/11/2026. Page `/dashboard/marches/calendrier` (`?vue=jour|semaine&du=AAAA-MM-JJ&impact=fort,moyen,faible&type=publications,fed,adjudications,resultats,feries`), d'après la maquette 04, en heure du membre.
+
+- **Sources** (fichiers et API officiels uniquement, aucun HTML analysé, aucun consensus) :
+  | Événements | Source | Conditions |
+  |---|---|---|
+  | Dates des publications BLS, BEA, Census, DOL, Fed | API FRED `releases/dates` (calendrier officiel des agences) | conditions de l'API FRED, déjà respectées (mention, lien) |
+  | Heures des publications du BEA | fichier iCalendar officiel du BEA | gouvernement fédéral US, domaine public |
+  | Chiffre publié | API FRED `series/observations` (champ `realtime_start` = date de mise en ligne) | séries « public domain » (vérifié pour chacune) |
+  | Adjudications à 10 et 30 ans (et réouvertures), résultat | API TreasuryDirect (`upcoming`, `auctioned`) | Trésor américain, domaine public |
+  | FOMC (décision, conférence, minutes) | table officielle de la Fed (`lib/market/central-banks.ts`) | domaine public |
+  | Fériés et clôtures anticipées | table de la page Sessions + confirmations de l'admin | — |
+  | Résultats d'entreprises, discours de la Fed | saisis par l'admin (Agenda Terminal) | — |
+  - Écartés : fichier iCalendar du BLS (refusé aux clients automatiques, HTTP 403) ; le Census n'en publie pas ; aucune source officielle des discours **à venir** des gouverneurs (le flux RSS de la Fed ne couvre que les discours prononcés) → saisie admin ; ISM, Conference Board, Université du Michigan (sous licence) ; consensus (sous licence).
+- **Heures** : celles du fichier du BEA quand il les donne ; sinon l'heure habituelle de l'agence (BLS et Census 8:30 ou 10:00 ET, Fed G.17 9:15 ET), signalée « heure habituelle ». Adjudications : heure de clôture des offres compétitives (13:00 ET). Fed : décision 14:00, conférence 14:30, minutes 14:00 ET.
+- **Impact « fort »** (ce qui fait bouger NQ et YM) : IPC, rapport sur l'emploi (NFP), PCE (revenus et dépenses), PIB, ventes au détail, décision de la Fed et conférence de presse. **Moyen** : PPI, inscriptions au chômage, JOLTS, coût de l'emploi, minutes de la Fed, discours de la Fed, adjudications à 10 et 30 ans, résultats des grosses capitalisations. **Faible** : production industrielle, mises en chantier, ventes de logements neufs, balance commerciale, prix à l'importation, dépenses de construction.
+- **Chiffre publié** : affiché dès que FRED l'a mis en ligne (date de mise en ligne ≥ date de la publication), avec le précédent, sans consensus. Lu à la consultation, sans cron : rien avant l'annonce, cache partagé de 60 s pendant les 3 h qui suivent, puis 1 h (`lib/market/calendar/figure.ts`). Taux des adjudications : cache de 5 min.
+- **Ingestion** : source « calendar » dans le cron quotidien (fenêtre de 90 jours passés à 180 jours à venir) ; une publication déplacée par l'agence disparaît de la table (upsert puis suppression des absents de la fenêtre). Dédoublonnage par clé `release:<id>:<date>` : l'heure officielle du BEA l'emporte sur l'heure habituelle.
+- **Fenêtres ATP** : ±15 min autour des événements à fort impact, fusionnées quand elles se touchent (décision 14:00 + conférence 14:30 → 13:45–14:45 ET).
+- **Page Sessions & horaires** : les créneaux 8:30 et 10:00 des « rendez-vous de la journée US » affichent les vraies publications du jour, ou « Aucune publication ».
+- **Résultats : liste de départ (pondérations du Nasdaq-100 et du Dow)** : Apple, Microsoft, Nvidia, Amazon, Alphabet, Meta, Broadcom, Tesla, Costco, Netflix, AMD, Goldman Sachs, UnitedHealth, Home Depot, Caterpillar, Visa, JPMorgan, Salesforce, McDonald's, Boeing.

@@ -128,3 +128,23 @@ describe('migration données Terminal (lot C)', () => {
     expect(code).not.toMatch(/DROP TABLE|DELETE FROM|TRUNCATE/i)
   })
 })
+
+describe('migration calendrier, agenda, confirmations CME (lot D)', () => {
+  const sql = read('20261127000003_market_calendar.sql')
+  const code = sql.replace(/--[^\n]*/g, '')
+  const policies = [...code.matchAll(/CREATE POLICY "[^"]+" ON public\.(\w+)\s+FOR (\w+) USING \(([^;]+)\);/g)]
+  it('lecture des 3 nouvelles tables réservée aux membres, aucune règle d’écriture', () => {
+    expect(policies.map(p => p[1]).sort()).toEqual(['market_agenda_items', 'market_calendar_events', 'market_holiday_confirmations'])
+    for (const p of policies) {
+      expect(p[2]).toBe('SELECT')
+      expect(p[3]).toContain('(SELECT public.has_dashboard_access())')
+    }
+    expect(code).not.toMatch(/FOR (INSERT|UPDATE|DELETE|ALL)/)
+  })
+  it('relançable, sans destruction, sources ecb et calendar autorisées', () => {
+    expect(code.match(/CREATE TABLE IF NOT EXISTS/g)).toHaveLength(3)
+    expect(code).not.toMatch(/DROP TABLE|DELETE FROM|TRUNCATE/i)
+    expect(code).toMatch(/CHECK \(source IN \('fred', 'ecb'\)\)/)
+    expect(code).toMatch(/CHECK \(source IN \('fred', 'cftc', 'ecb', 'calendar'\)\)/)
+  })
+})

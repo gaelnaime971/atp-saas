@@ -17,8 +17,10 @@
 import { COT_MARKETS, COT_HISTORY_SINCE, FRED_HISTORY_YEARS, FRED_SERIES, type CotMarketCode } from '@/lib/market/catalog'
 import type { Observation } from '@/lib/market/fred'
 import type { CotRow } from '@/lib/market/cftc'
+import type { CalendarEvent } from '@/lib/market/calendar/events'
+import { ECB_SERIES } from '@/lib/market/ecb'
 
-export type IngestSource = 'fred' | 'cftc'
+export type IngestSource = 'fred' | 'cftc' | 'calendar' | 'ecb'
 export type IngestTrigger = 'cron' | 'admin' | 'backfill'
 export type IngestStatus = 'ok' | 'partial' | 'error'
 
@@ -28,6 +30,12 @@ export interface MarketStore {
   upsertObservations(code: string, rows: Observation[]): Promise<number>
   lastCotDate(market: CotMarketCode): Promise<string | null>
   upsertCot(rows: CotRow[]): Promise<number>
+  /**
+   * Calendrier : upsert des événements (publications, adjudications) et
+   * suppression de ceux de la fenêtre qui ont disparu de la source
+   * (date déplacée). Renvoie le nombre de lignes écrites.
+   */
+  replaceCalendarEvents(fromDate: string, rows: CalendarEvent[]): Promise<number>
   journalStart(source: IngestSource, trigger: IngestTrigger): Promise<string>
   journalFinish(id: string, result: { status: IngestStatus; rows: number; error: string | null }): Promise<void>
 }
@@ -35,6 +43,9 @@ export interface MarketStore {
 export interface MarketFetchers {
   fred(code: string, start: string): Promise<Observation[]>
   cot(market: CotMarketCode, since: string): Promise<CotRow[]>
+  /** Publications et adjudications depuis `from` (à venir comprises). */
+  calendar(from: string, to: string): Promise<CalendarEvent[]>
+  ecb(code: string, start: string): Promise<Observation[]>
 }
 
 export interface SourceResult {
@@ -45,7 +56,13 @@ export interface SourceResult {
 }
 
 /** Recouvrement pour capter les révisions récentes. */
-export const OVERLAP_DAYS = { fred: 14, cftc: 21 } as const
+export const OVERLAP_DAYS = { fred: 14, cftc: 21, ecb: 14 } as const
+
+/** Calendrier : fenêtre gardée à jour (passé utile pour les vues semaine, et à venir). */
+export const CALENDAR_WINDOW = { pastDays: 90, futureDays: 180 } as const
+
+/** Historique initial des taux de la BCE. */
+export const ECB_HISTORY_SINCE = '2016-01-01'
 
 const DAY = 86_400_000
 
@@ -123,11 +140,47 @@ export async function ingestCot(store: MarketStore, fetchers: MarketFetchers, op
   return { source: 'cftc', status, rows, errors }
 }
 
+export async function ingestCalendar(store: MarketStore, fetchers: MarketFetchers, opts: RunOptions): Promise<SourceResult> {
+  const journalId = await store.journalStart('calendar', opts.trigger)
+  const errors: string[] = []
+  let rows = 0
+  try {
+    const from = shiftDays(opts.today, -CALENDAR_WINDOW.pastDays)
+    const to = shiftDays(opts.today, CALENDAR_WINDOW.futureDays)
+    const events = (await fetchers.calendar(from, to)).filter(e => e.date >= from && e.date <= to)
+    rows = await store.replaceCalendarEvents(from, events)
+  } catch (e) {
+    errors.push((e as Error).message)
+  }
+  const status: IngestStatus = errors.length ? 'error' : 'ok'
+  await store.journalFinish(journalId, { status, rows, error: errors.length ? errors.join(' | ').slice(0, 1000) : null })
+  return { source: 'calendar', status, rows, errors }
+}
+
+export async function ingestEcb(store: MarketStore, fetchers: MarketFetchers, opts: RunOptions): Promise<SourceResult> {
+  const journalId = await store.journalStart('ecb', opts.trigger)
+  const errors: string[] = []
+  let rows = 0
+  for (const s of ECB_SERIES) {
+    try {
+      const start = incrementalStart(await store.lastObservationDate(s.code), ECB_HISTORY_SINCE, OVERLAP_DAYS.ecb)
+      rows += await store.upsertObservations(s.code, sinceDate(await fetchers.ecb(s.code, start), start, o => o.date))
+    } catch (e) {
+      errors.push(`${s.code} : ${(e as Error).message}`)
+    }
+  }
+  const status = statusOf(errors, ECB_SERIES.length)
+  await store.journalFinish(journalId, { status, rows, error: errors.length ? errors.join(' | ').slice(0, 1000) : null })
+  return { source: 'ecb', status, rows, errors }
+}
+
 /** Toutes les sources, l'une après l'autre (un seul cron quotidien). */
 export async function ingestAll(store: MarketStore, fetchers: MarketFetchers, opts: RunOptions): Promise<SourceResult[]> {
   const fred = await ingestFred(store, fetchers, opts)
   const cftc = await ingestCot(store, fetchers, opts)
-  return [fred, cftc]
+  const ecb = await ingestEcb(store, fetchers, opts)
+  const calendar = await ingestCalendar(store, fetchers, opts)
+  return [fred, cftc, ecb, calendar]
 }
 
 export function todayUtc(now = Date.now()): string {

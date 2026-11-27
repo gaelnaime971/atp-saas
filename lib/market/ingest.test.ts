@@ -28,6 +28,19 @@ function fakeFetchers(until: { fred: string; cot: string }, fail: string[] = [])
       }
       return out
     },
+    async calendar(from, to) {
+      calls.push({ kind: 'cot', id: 'calendar', start: from })
+      if (fail.includes('calendar')) throw new Error('HTTP 502')
+      return [
+        { id: 'release:10:2026-12-10', kind: 'release', title: 'IPC', agency: 'BLS', at: 0, date: '2026-12-10', impact: 'high', timeOfficial: false },
+        { id: 'release:50:2026-12-04', kind: 'release', title: 'Emploi', agency: 'BLS', at: 0, date: '2026-12-04', impact: 'high', timeOfficial: false },
+      ].filter(e => e.date >= from && e.date <= to) as Awaited<ReturnType<MarketFetchers['calendar']>>
+    },
+    async ecb(code, start) {
+      calls.push({ kind: 'fred', id: code, start })
+      if (fail.includes(code)) throw new Error('HTTP 500')
+      return [{ date: start, value: 2.5 }]
+    },
   }
   return { fetchers, calls }
 }
@@ -82,15 +95,17 @@ describe('ingestion incrémentale et idempotente', () => {
     expect(fred.errors).toEqual(['ICSA : HTTP 500'])
     expect(cftc.status).toBe('partial')
     expect(mem.observationCount('DGS10')).toBeGreaterThan(0)
-    expect(mem.journal.map(j => [j.source, j.trigger, j.status])).toEqual([['fred', 'cron', 'partial'], ['cftc', 'cron', 'partial']])
+    expect(mem.journal.map(j => [j.source, j.trigger, j.status])).toEqual([
+      ['fred', 'cron', 'partial'], ['cftc', 'cron', 'partial'], ['ecb', 'cron', 'ok'], ['calendar', 'cron', 'ok'],
+    ])
     expect(mem.journal[0].error).toContain('ICSA')
   })
 
   it('toutes les séries en erreur → « échec »', async () => {
     const mem = memoryMarketStore()
-    const src = fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' }, [...FRED_SERIES.map(s => s.code), ...COT_MARKETS.map(m => m.code)])
+    const src = fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' }, [...FRED_SERIES.map(s => s.code), ...COT_MARKETS.map(m => m.code), 'ECB_DFR', 'ECB_MRO', 'calendar'])
     const results = await ingestAll(mem.store, src.fetchers, { trigger: 'admin', today: TODAY })
-    expect(results.map(r => r.status)).toEqual(['error', 'error'])
+    expect(results.map(r => r.status)).toEqual(['error', 'error', 'error', 'error'])
   })
 
   it('le catalogue est enregistré à chaque passage FRED', async () => {
@@ -98,5 +113,22 @@ describe('ingestion incrémentale et idempotente', () => {
     const spy = vi.spyOn(mem.store, 'ensureCatalog')
     await ingestAll(mem.store, fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' }).fetchers, { trigger: 'cron', today: TODAY })
     expect(spy).toHaveBeenCalledTimes(1)
+  })
+  it('calendrier : remplace la fenêtre (un événement déplacé disparaît), idempotent', async () => {
+    const mem = memoryMarketStore()
+    const src = fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' })
+    await ingestAll(mem.store, src.fetchers, { trigger: 'cron', today: TODAY })
+    expect(mem.calendarEvents().map(e => e.id)).toEqual(['release:10:2026-12-10', 'release:50:2026-12-04'])
+    // La source ne renvoie plus l'emploi du 4 déc. (date déplacée) : retiré.
+    await mem.store.replaceCalendarEvents('2026-08-29', [mem.calendarEvents()[0]])
+    expect(mem.calendarEvents().map(e => e.id)).toEqual(['release:10:2026-12-10'])
+    await mem.store.replaceCalendarEvents('2026-08-29', [mem.calendarEvents()[0]])
+    expect(mem.calendarEvents()).toHaveLength(1)
+  })
+  it('BCE : historique depuis 2016, puis incrémental', async () => {
+    const mem = memoryMarketStore()
+    const src = fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' })
+    await ingestAll(mem.store, src.fetchers, { trigger: 'backfill', today: TODAY })
+    expect(src.calls.find(c => c.id === 'ECB_DFR')?.start).toBe('2016-01-01')
   })
 })

@@ -36,6 +36,8 @@ export const FRED_SERIES: FredSeriesDef[] = [
   { code: 'ICSA', label: 'Inscriptions hebdomadaires au chômage', unit: 'count', frequency: 'W', provider: 'U.S. Employment and Training Administration', license: 'public domain: citation requested' },
   { code: 'UNRATE', label: 'Taux de chômage', unit: 'pct', frequency: 'M', provider: 'U.S. Bureau of Labor Statistics', license: 'public domain: citation requested' },
   { code: 'GDPNOW', label: 'GDPNow (croissance du trimestre)', unit: 'pct', frequency: 'Q', provider: 'Federal Reserve Bank of Atlanta', license: 'copyrighted: citation required' },
+  { code: 'DFEDTARL', label: 'Fed funds, borne basse de la fourchette', unit: 'pct', frequency: 'D', provider: 'Board of Governors of the Federal Reserve System', license: 'public domain: citation requested' },
+  { code: 'DFEDTARU', label: 'Fed funds, borne haute de la fourchette', unit: 'pct', frequency: 'D', provider: 'Board of Governors of the Federal Reserve System', license: 'public domain: citation requested' },
   { code: 'STLFSI4', label: 'Stress financier', unit: 'index', frequency: 'W', provider: 'Federal Reserve Bank of St. Louis', license: 'copyrighted: citation required' },
   { code: 'NFCIRISK', label: 'Risque de marché', unit: 'index', frequency: 'W', provider: 'Federal Reserve Bank of Chicago', license: 'copyrighted: citation required' },
   { code: 'NFCICREDIT', label: 'Conditions de crédit', unit: 'index', frequency: 'W', provider: 'Federal Reserve Bank of Chicago', license: 'copyrighted: citation required' },

@@ -9,7 +9,10 @@
 import {
   MARKET_ZONES, addDays, dateKey, formatTime, parseDateKey, weekdayOf, zonedTimeToUtc,
 } from '@/lib/time'
-import { isNyseHoliday, specialDay, type HHMM, type MarketSpecialDay, MARKET_SPECIAL_DAYS } from '@/lib/terminal/market-holidays'
+import { isNyseHoliday, specialDayIn, type HHMM, type MarketSpecialDay, MARKET_SPECIAL_DAYS } from '@/lib/terminal/market-holidays'
+
+/** Table des jours spéciaux (code + confirmations de l'admin). Défaut : la table du code. */
+export type SpecialDays = readonly MarketSpecialDay[]
 
 const ET = MARKET_ZONES.newYork
 const MIN = 60_000
@@ -49,9 +52,9 @@ function at(date: string, time: HHMM | string, zone: string): number {
 const isWeekday = (date: string) => { const w = weekdayOf(date); return w >= 1 && w <= 5 }
 
 /** Plages (heure murale) d'une session pour une date civile de sa place. */
-function wallRanges(id: SessionId, date: string): [string, string][] {
+function wallRanges(id: SessionId, date: string, days: SpecialDays): [string, string][] {
   const w = weekdayOf(date)
-  const special = specialDay(date)
+  const special = specialDayIn(days, date)
   switch (id) {
     case 'tokyo': return isWeekday(date) ? [['09:00', '18:00']] : []
     case 'london': return isWeekday(date) ? [['08:00', '17:00']] : []
@@ -71,13 +74,13 @@ function wallRanges(id: SessionId, date: string): [string, string][] {
 }
 
 /** Plages ouvertes d'une session, fusionnées, qui recoupent [from, to]. */
-export function sessionIntervals(id: SessionId, from: number, to: number): Interval[] {
+export function sessionIntervals(id: SessionId, from: number, to: number, days: SpecialDays = MARKET_SPECIAL_DAYS): Interval[] {
   const zone = SESSION_BY_ID[id].zone
   const first = addDays(dateKey(from, zone), -1)
   const last = addDays(dateKey(to, zone), 1)
   const raw: Interval[] = []
   for (let d = first; d <= last; d = addDays(d, 1)) {
-    for (const [s, e] of wallRanges(id, d)) raw.push({ start: at(d, s, zone), end: at(d, e, zone) })
+    for (const [s, e] of wallRanges(id, d, days)) raw.push({ start: at(d, s, zone), end: at(d, e, zone) })
   }
   raw.sort((a, b) => a.start - b.start)
   const merged: Interval[] = []
@@ -104,11 +107,11 @@ export interface SessionState {
 
 const LOOKAHEAD = 10 * 24 * HOUR
 
-export function sessionState(id: SessionId, now: number): SessionState {
-  const ivs = sessionIntervals(id, now - 3 * 24 * HOUR, now + LOOKAHEAD)
+export function sessionState(id: SessionId, now: number, days: SpecialDays = MARKET_SPECIAL_DAYS): SessionState {
+  const ivs = sessionIntervals(id, now - 3 * 24 * HOUR, now + LOOKAHEAD, days)
   const current = ivs.find(iv => iv.start <= now && now < iv.end)
   const etDate = dateKey(now, ET)
-  const special = id === 'tokyo' || id === 'london' ? undefined : specialDay(etDate)
+  const special = id === 'tokyo' || id === 'london' ? undefined : specialDayIn(days, etDate)
   if (current) return { id, status: 'open', nextChange: current.end, special }
   const next = ivs.find(iv => iv.start > now) ?? null
   const prev = [...ivs].reverse().find(iv => iv.end <= now)
@@ -117,22 +120,22 @@ export function sessionState(id: SessionId, now: number): SessionState {
   return { id, status: isPause ? 'pause' : 'closed', nextChange: next?.start ?? null, special }
 }
 
-export function allSessionStates(now: number): Record<SessionId, SessionState> {
-  return Object.fromEntries(SESSIONS.map(s => [s.id, sessionState(s.id, now)])) as Record<SessionId, SessionState>
+export function allSessionStates(now: number, days: SpecialDays = MARKET_SPECIAL_DAYS): Record<SessionId, SessionState> {
+  return Object.fromEntries(SESSIONS.map(s => [s.id, sessionState(s.id, now, days)])) as Record<SessionId, SessionState>
 }
 
 /** Plages de « aujourd'hui » du membre (minuit à minuit chez lui), pour la frise et l'horloge. */
-export function dayRanges(id: SessionId, day: string, memberTz: string): { start: number; end: number; dayStart: number; dayEnd: number }[] {
+export function dayRanges(id: SessionId, day: string, memberTz: string, days: SpecialDays = MARKET_SPECIAL_DAYS): { start: number; end: number; dayStart: number; dayEnd: number }[] {
   const dayStart = zonedTimeToUtc(day, '00:00', memberTz).getTime()
   const dayEnd = zonedTimeToUtc(addDays(day, 1), '00:00', memberTz).getTime()
-  return sessionIntervals(id, dayStart, dayEnd).map(iv => ({
+  return sessionIntervals(id, dayStart, dayEnd, days).map(iv => ({
     start: Math.max(iv.start, dayStart), end: Math.min(iv.end, dayEnd), dayStart, dayEnd,
   }))
 }
 
 /** « 08:00–17:00 » de la session dans le fuseau du membre, pour sa prochaine séance (ou l'actuelle). */
-export function memberHours(id: SessionId, now: number, memberTz: string): string | null {
-  const iv = sessionIntervals(id, now, now + LOOKAHEAD)[0]
+export function memberHours(id: SessionId, now: number, memberTz: string, days: SpecialDays = MARKET_SPECIAL_DAYS): string | null {
+  const iv = sessionIntervals(id, now, now + LOOKAHEAD, days)[0]
   if (!iv) return null
   return `${formatTime(iv.start, memberTz)}–${formatTime(iv.end, memberTz)}`
 }
@@ -159,24 +162,35 @@ export function usTradingDay(now: number): string {
   return d
 }
 
-export function usAppointments(day: string): UsAppointment[] {
-  const special = specialDay(day)
+export function usAppointments(day: string, days: SpecialDays = MARKET_SPECIAL_DAYS): UsAppointment[] {
+  const special = specialDayIn(days, day)
   const early = special?.nyse === 'early'
+  // Clôture Globex d'un jour de clôture anticipée : fin de la plage du matin
+  // (confirmée par l'admin, sinon schéma habituel 13:15 ET, « à confirmer »).
+  const globexClose = early ? (special?.globex?.find(([s]) => s === '00:00')?.[1] ?? '13:15') : '17:00'
   const items: { id: string; label: string; etTime: string }[] = [
-    { id: 'stats-0830', label: 'Statistiques de 8:30 (emploi, inflation, ventes…)', etTime: '08:30' },
+    { id: 'stats-0830', label: 'Statistiques de 8:30', etTime: '08:30' },
     { id: 'cash-open', label: 'Ouverture du cash US', etTime: '09:30' },
-    { id: 'stats-1000', label: 'Statistiques de 10:00 (ISM, confiance, JOLTS…)', etTime: '10:00' },
+    { id: 'stats-1000', label: 'Statistiques de 10:00', etTime: '10:00' },
     early
       ? { id: 'cash-close', label: 'Clôture anticipée du cash US', etTime: '13:00' }
       : { id: 'cash-close', label: 'Clôture du cash US', etTime: '16:00' },
     early
-      ? { id: 'globex-pause', label: 'Clôture anticipée CME Globex (à confirmer)', etTime: '13:15' }
+      ? { id: 'globex-pause', label: `Clôture anticipée CME Globex${special?.cmeConfirmed ? '' : ' (à confirmer)'}`, etTime: globexClose }
       : { id: 'globex-pause', label: 'Pause quotidienne CME Globex', etTime: '17:00' },
   ]
   return items.map(it => {
     const t = at(day, it.etTime, ET)
     return { ...it, at: t, windowStart: t - 15 * MIN, windowEnd: t + 15 * MIN }
   })
+}
+
+/** Créneaux de statistiques du matin US (8:30, 10:00) : les publications réelles du calendrier. */
+export const STATS_SLOTS = ['stats-0830', 'stats-1000'] as const
+
+/** Publications prévues exactement à l'heure d'un créneau (même instant). */
+export function publicationsAt<T extends { at: number | null; kind: string }>(events: readonly T[], slotAt: number): T[] {
+  return events.filter(e => e.kind === 'release' && e.at === slotAt)
 }
 
 // ─── Échéances, roll et OPEX ────────────────────────────────────
@@ -267,9 +281,9 @@ export function addMonths(key: string, n: number): string {
 }
 
 /** Fériés et clôtures anticipées (table) entre aujourd'hui (ET) et `until` inclus, dans l'ordre. */
-export function upcomingHolidays(now: number, memberTz: string, until: string): UpcomingSpecial[] {
+export function upcomingHolidays(now: number, memberTz: string, until: string, days: SpecialDays = MARKET_SPECIAL_DAYS): UpcomingSpecial[] {
   const today = dateKey(now, ET)
-  return MARKET_SPECIAL_DAYS
+  return days
     .filter(d => d.date >= today && d.date <= until && d.nyse)
     .map(d => {
       if (d.nyse === 'early') {
@@ -323,8 +337,8 @@ export function upcomingClockShifts(now: number, memberTz: string, until: string
  * d'heure, sur un même horizon (les 4 prochains mois), dans l'ordre
  * chronologique, sans limite de nombre.
  */
-export function upcomingSpecialDays(now: number, memberTz: string, months = SPECIAL_DAYS_HORIZON_MONTHS): UpcomingSpecial[] {
+export function upcomingSpecialDays(now: number, memberTz: string, months = SPECIAL_DAYS_HORIZON_MONTHS, days: SpecialDays = MARKET_SPECIAL_DAYS): UpcomingSpecial[] {
   const until = addMonths(dateKey(now, ET), months)
-  return [...upcomingHolidays(now, memberTz, until), ...upcomingClockShifts(now, memberTz, until)]
+  return [...upcomingHolidays(now, memberTz, until, days), ...upcomingClockShifts(now, memberTz, until)]
     .sort((a, b) => a.date.localeCompare(b.date) || (a.kind === 'dst' ? 1 : 0) - (b.kind === 'dst' ? 1 : 0))
 }

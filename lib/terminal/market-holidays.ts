@@ -95,3 +95,50 @@ export function specialDay(date: string): MarketSpecialDay | undefined {
 export function isNyseHoliday(date: string): boolean {
   return BY_DATE.get(date)?.nyse === 'closed'
 }
+
+// ─── Confirmations de l'admin (Agenda Terminal) ─────────────────
+
+export interface HolidayConfirmation {
+  date: string
+  cmeConfirmed: boolean
+  /** Plages Globex saisies (« 00:00-13:15,18:00-24:00 ») ; '' = fermé ; null = schéma du code. */
+  globexRanges: string | null
+  note: string | null
+}
+
+const RANGE = /^([01]\d|2[0-4]):([0-5]\d)-([01]\d|2[0-4]):([0-5]\d)$/
+
+/** « 00:00-13:15,18:00-24:00 » → plages ; '' → [] (fermé) ; invalide → null. */
+export function parseGlobexRanges(text: string): [HHMM, HHMM][] | null {
+  const t = text.replace(/\s+/g, '')
+  if (t === '') return []
+  const out: [HHMM, HHMM][] = []
+  for (const part of t.split(',')) {
+    const m = RANGE.exec(part)
+    if (!m) return null
+    const [a, b] = part.split('-') as [HHMM, HHMM]
+    if (a >= b) return null
+    out.push([a, b])
+  }
+  return out.sort((x, y) => x[0].localeCompare(y[0]))
+}
+
+/** Table du code + confirmations de l'admin (horaires CME vérifiés, plages corrigées). */
+export function applyConfirmations(days: readonly MarketSpecialDay[], confirmations: readonly HolidayConfirmation[]): MarketSpecialDay[] {
+  const byDate = new Map(confirmations.map(c => [c.date, c]))
+  return days.map(d => {
+    const c = byDate.get(d.date)
+    if (!c) return d
+    const ranges = c.globexRanges === null ? null : parseGlobexRanges(c.globexRanges)
+    return { ...d, cmeConfirmed: c.cmeConfirmed, ...(ranges ? { globex: ranges } : {}) }
+  })
+}
+
+const lookups = new WeakMap<readonly MarketSpecialDay[], Map<string, MarketSpecialDay>>()
+
+/** Recherche par date dans une table (mémorisée). */
+export function specialDayIn(days: readonly MarketSpecialDay[], date: string): MarketSpecialDay | undefined {
+  let map = lookups.get(days)
+  if (!map) { map = new Map(days.map(d => [d.date, d])); lookups.set(days, map) }
+  return map.get(date)
+}

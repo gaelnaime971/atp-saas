@@ -12,11 +12,12 @@ import {
   timeZoneLabel, zonedTimeToUtc,
 } from '@/lib/time'
 import {
-  SESSION_BY_ID, allSessionStates, dayRanges, memberHours, monthlyOpex, quarterlyExpirations,
+  SESSION_BY_ID, STATS_SLOTS, allSessionStates, dayRanges, memberHours, monthlyOpex, publicationsAt, quarterlyExpirations,
+  type SpecialDays,
   SPECIAL_DAYS_HORIZON_MONTHS, upcomingSpecialDays, usAppointments, usTradingDay,
   type SessionId, type SessionState, type SessionStatus,
 } from '@/lib/terminal/sessions'
-import { SPECIAL_DAYS_UNTIL } from '@/lib/terminal/market-holidays'
+import { MARKET_SPECIAL_DAYS, SPECIAL_DAYS_UNTIL } from '@/lib/terminal/market-holidays'
 
 /**
  * Marchés › Sessions & horaires (maquette 03). Tout est calculé dans le
@@ -50,12 +51,23 @@ const sectionTitle: CSSProperties = {
 }
 const mono: CSSProperties = { fontFamily: 'var(--font-data)', fontVariantNumeric: 'tabular-nums' }
 
-export default function SessionsBoard({ serverTimeZone, settingsHref }: { serverTimeZone: string; settingsHref?: string }) {
+/** Publication du calendrier économique, transmise par la page serveur. */
+export interface BoardPublication { at: number; title: string; impact: string; kind: string }
+
+export default function SessionsBoard({ serverTimeZone, settingsHref, specialDays, publications = [] }: {
+  serverTimeZone: string
+  settingsHref?: string
+  /** Jours spéciaux avec les confirmations CME de l'admin (défaut : table du code). */
+  specialDays?: SpecialDays
+  /** Publications officielles des prochains jours (calendrier économique). */
+  publications?: BoardPublication[]
+}) {
+  const days = specialDays ?? MARKET_SPECIAL_DAYS
   const now = useMinuteNow()
   const { timeZone: clientTz, ready } = useMemberTimeZone()
   const tz = ready ? clientTz : serverTimeZone
 
-  const states = now === null ? null : allSessionStates(now)
+  const states = now === null ? null : allSessionStates(now, days)
   const openPlaces = states
     ? (['tokyo', 'london', 'newYork'] as const).filter(id => states[id].status === 'open').map(id => SESSION_BY_ID[id].short)
     : []
@@ -91,26 +103,26 @@ export default function SessionsBoard({ serverTimeZone, settingsHref }: { server
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)]">
             <Card>
               <h2 style={sectionTitle}>Ton horloge · {timeZoneLabel(tz)}</h2>
-              <RadialClock now={now} tz={tz} />
+              <RadialClock now={now} tz={tz} days={days} />
             </Card>
             <Card>
               <h2 style={sectionTitle}>Frise 24 h · heure de {timeZoneLabel(tz)}</h2>
-              <Timeline now={now} tz={tz} />
+              <Timeline now={now} tz={tz} days={days} />
             </Card>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {(['tokyo', 'london', 'newYork', 'globex'] as const).map(id => (
-              <SessionCard key={id} id={id} state={states![id]} now={now} tz={tz} cash={id === 'newYork' ? states!.cashUs : undefined} />
+              <SessionCard key={id} id={id} state={states![id]} now={now} tz={tz} days={days} cash={id === 'newYork' ? states!.cashUs : undefined} />
             ))}
           </div>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <UsDay now={now} tz={tz} />
+            <UsDay now={now} tz={tz} days={days} publications={publications} />
             <Expirations now={now} />
           </div>
 
-          <SpecialDays now={now} tz={tz} />
+          <SpecialDays now={now} tz={tz} days={days} />
 
           <p style={{ ...mono, fontSize: 'var(--text-label)', color: 'var(--color-text-3)', margin: 0, lineHeight: 1.6 }}>
             Horaires calculés en direct dans ton fuseau, changements d’heure compris. Fériés et clôtures anticipées du cash US :
@@ -132,7 +144,7 @@ function joinFr(items: string[]): string {
 
 const RING_SESSIONS: SessionId[] = ['tokyo', 'london', 'newYork', 'cashUs']
 
-function RadialClock({ now, tz }: { now: number; tz: string }) {
+function RadialClock({ now, tz, days }: { now: number; tz: string; days: SpecialDays }) {
   const size = 280
   const c = size / 2
   const today = dateKey(now, tz)
@@ -158,7 +170,7 @@ function RadialClock({ now, tz }: { now: number; tz: string }) {
           return (
             <g key={id}>
               <circle cx={c} cy={c} r={r} fill="none" stroke="var(--color-surface-3)" strokeWidth={7} />
-              {dayRanges(id, today, tz).map((rg, k) => (
+              {dayRanges(id, today, tz, days).map((rg, k) => (
                 <path key={k} d={arc(c, c, r, frac(rg.start) * 360, frac(rg.end) * 360)} fill="none"
                   stroke={SESSION_COLOR[id]} strokeWidth={7} strokeLinecap="round" />
               ))}
@@ -218,9 +230,9 @@ function arc(cx: number, cy: number, r: number, a1: number, a2: number): string 
 
 const TIMELINE_SESSIONS: SessionId[] = ['tokyo', 'london', 'newYork', 'cashUs', 'globex']
 
-function Timeline({ now, tz }: { now: number; tz: string }) {
+function Timeline({ now, tz, days }: { now: number; tz: string; days: SpecialDays }) {
   const today = dateKey(now, tz)
-  const ranges = Object.fromEntries(TIMELINE_SESSIONS.map(id => [id, dayRanges(id, today, tz)])) as Record<SessionId, ReturnType<typeof dayRanges>>
+  const ranges = Object.fromEntries(TIMELINE_SESSIONS.map(id => [id, dayRanges(id, today, tz, days)])) as Record<SessionId, ReturnType<typeof dayRanges>>
   const any = ranges.globex[0] ?? ranges.tokyo[0]
   const dayStart = any?.dayStart ?? zonedTimeToUtc(today, '00:00', tz).getTime()
   const dayEnd = any?.dayEnd ?? zonedTimeToUtc(nextDay(today), '00:00', tz).getTime()
@@ -296,12 +308,12 @@ const CARD_GROUP: Record<SessionId, string> = {
   tokyo: 'Session Asie', london: 'Session Europe', newYork: 'Session US', cashUs: 'NYSE', globex: 'CME Globex',
 }
 
-function SessionCard({ id, state, now, tz, cash }: { id: SessionId; state: SessionState; now: number; tz: string; cash?: SessionState }) {
+function SessionCard({ id, state, now, tz, days, cash }: { id: SessionId; state: SessionState; now: number; tz: string; days: SpecialDays; cash?: SessionState }) {
   const placeTz = PLACE_TZ[id]
   const status = STATUS[state.status]
   const next = state.nextChange
   const countdown = next === null ? null : formatDuration(next - now)
-  const hours = memberHours(id, now, tz)
+  const hours = memberHours(id, now, tz, days)
   const isOpen = state.status === 'open'
 
   return (
@@ -352,9 +364,9 @@ function SessionCard({ id, state, now, tz, cash }: { id: SessionId; state: Sessi
 
 // ─── Journée US ─────────────────────────────────────────────────
 
-function UsDay({ now, tz }: { now: number; tz: string }) {
+function UsDay({ now, tz, days, publications }: { now: number; tz: string; days: SpecialDays; publications: BoardPublication[] }) {
   const day = usTradingDay(now)
-  const items = usAppointments(day)
+  const items = usAppointments(day, days)
   const todayUs = dateKey(now, 'America/New_York') === day
 
   return (
@@ -381,6 +393,16 @@ function UsDay({ now, tz }: { now: number; tz: string }) {
               </span>
               <span>
                 <span style={{ display: 'block', fontSize: 13, color: 'var(--color-text-1)' }}>{it.label}</span>
+                {(STATS_SLOTS as readonly string[]).includes(it.id) && (() => {
+                  // Vraies publications du créneau (calendrier économique), sinon « aucune publication ».
+                  const pubs = publicationsAt(publications, it.at)
+                  return (
+                    <span style={{ display: 'block', fontSize: 12, color: pubs.length ? 'var(--color-text-1)' : 'var(--color-text-3)', marginTop: 1 }}>
+                      {pubs.length ? pubs.map(p => p.title).join(' · ') : 'Aucune publication'}
+                      {pubs.some(p => p.impact === 'high') && <Badge tone="loss" size="sm" className="ml-2">fort</Badge>}
+                    </span>
+                  )
+                })()}
                 <span style={{ ...mono, fontSize: 11, color: 'var(--color-text-3)' }}>
                   {it.etTime.replace(/^0/, '')} à New York · fenêtre ATP {formatTime(it.windowStart, tz)}–{formatTime(it.windowEnd, tz)}
                 </span>
@@ -461,8 +483,8 @@ function Expirations({ now }: { now: number }) {
 
 // ─── Jours spéciaux ─────────────────────────────────────────────
 
-function SpecialDays({ now, tz }: { now: number; tz: string }) {
-  const items = upcomingSpecialDays(now, tz)
+function SpecialDays({ now, tz, days }: { now: number; tz: string; days: SpecialDays }) {
+  const items = upcomingSpecialDays(now, tz, undefined, days)
 
   return (
     <Card>

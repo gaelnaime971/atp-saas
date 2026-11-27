@@ -6,6 +6,7 @@ import type { CotMarketCode } from '@/lib/market/catalog'
 import type { CotRow } from '@/lib/market/cftc'
 import type { Observation } from '@/lib/market/fred'
 import type { IngestSource, IngestStatus, IngestTrigger, MarketStore } from '@/lib/market/ingest'
+import type { CalendarEvent } from '@/lib/market/calendar/events'
 
 export interface MemoryJournalRow {
   id: string
@@ -20,6 +21,7 @@ export function memoryMarketStore() {
   const observations = new Map<string, Map<string, number>>()
   const cot = new Map<string, CotRow>()
   const journal: MemoryJournalRow[] = []
+  const calendar = new Map<string, CalendarEvent>()
   let catalogCalls = 0
 
   const store: MarketStore = {
@@ -42,6 +44,12 @@ export function memoryMarketStore() {
       for (const r of rows) cot.set(`${r.market}|${r.reportDate}`, r)
       return rows.length
     },
+    async replaceCalendarEvents(fromDate: string, rows: CalendarEvent[]) {
+      const keep = new Set(rows.map(r => r.id))
+      for (const [id, e] of calendar) if (e.date >= fromDate && !keep.has(id)) calendar.delete(id)
+      for (const r of rows) calendar.set(r.id, r)
+      return rows.length
+    },
     async journalStart(source, trigger) {
       const id = String(journal.length + 1)
       journal.push({ id, source, trigger, status: 'running', rows: 0, error: null })
@@ -61,5 +69,6 @@ export function memoryMarketStore() {
     observations: (code: string) => [...(observations.get(code)?.entries() ?? [])].sort(([a], [b]) => a.localeCompare(b)).map(([date, value]) => ({ date, value })),
     cotRows: () => [...cot.values()].sort((a, b) => a.reportDate.localeCompare(b.reportDate)),
     catalogCalls: () => catalogCalls,
+    calendarEvents: () => [...calendar.values()].sort((a, b) => a.id.localeCompare(b.id)),
   }
 }

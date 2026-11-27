@@ -17,6 +17,10 @@ import type { Observation } from '@/lib/market/fred'
 import type { CotRow } from '@/lib/market/cftc'
 import type { CotMarketCode } from '@/lib/market/catalog'
 import type { IngestSource } from '@/lib/market/ingest'
+import type { CalendarEvent, AgendaItem } from '@/lib/market/calendar/events'
+import type { HolidayConfirmation } from '@/lib/terminal/market-holidays'
+import { fetchVintageObservations, figureCacheKey, publishedFigure, type PublishedFigure } from '@/lib/market/calendar/figure'
+import { fetchTreasuryAuctions } from '@/lib/market/calendar/sources'
 
 const PAGE = 1000
 const REVALIDATE_SECONDS = 900
@@ -73,13 +77,11 @@ async function loadCot(since: string): Promise<CotRow[]> {
 async function loadLastSuccess(): Promise<Record<IngestSource, string | null>> {
   const db = createAdminClient()
   const { data, error } = await db.from('market_ingest_journal').select('source, finished_at')
-    .eq('status', 'ok').order('finished_at', { ascending: false }).limit(20)
+    .eq('status', 'ok').order('finished_at', { ascending: false }).limit(40)
   if (error) throw new Error(error.message)
   const rows = (data ?? []) as { source: IngestSource; finished_at: string | null }[]
-  return {
-    fred: rows.find(r => r.source === 'fred')?.finished_at ?? null,
-    cftc: rows.find(r => r.source === 'cftc')?.finished_at ?? null,
-  }
+  const last = (s: IngestSource) => rows.find(r => r.source === s)?.finished_at ?? null
+  return { fred: last('fred'), cftc: last('cftc'), ecb: last('ecb'), calendar: last('calendar') }
 }
 
 const cachedSeries = unstable_cache(loadSeries, ['market-series-v1'], { revalidate: REVALIDATE_SECONDS, tags: [MARKET_CACHE_TAG] })
@@ -110,4 +112,95 @@ export function readCot(since: string) {
 /** Dernière ingestion réussie par source (avertissement de retard). */
 export function readLastSuccess() {
   return safe(() => cachedLastSuccess())
+}
+
+// ─── Calendrier, agenda admin, confirmations CME ────────────────
+
+
+interface CalendarRecord {
+  id: string; kind: 'release' | 'auction'; title: string; detail: string | null; agency: string
+  scheduled_at: string | null; event_date: string; impact: 'high' | 'medium' | 'low'; time_official: boolean
+  figure: CalendarEvent['figure'] | null; auction: CalendarEvent['auction'] | null
+}
+
+async function loadCalendar(from: string, to: string): Promise<CalendarEvent[]> {
+  const db = createAdminClient()
+  const rows = await readAll<CalendarRecord>((a, b) => db.from('market_calendar_events')
+    .select('id, kind, title, detail, agency, scheduled_at, event_date, impact, time_official, figure, auction')
+    .gte('event_date', from).lte('event_date', to).order('event_date', { ascending: true }).range(a, b))
+  return rows.map(r => ({
+    id: r.id, kind: r.kind, title: r.title, detail: r.detail ?? undefined, agency: r.agency,
+    at: r.scheduled_at ? Date.parse(r.scheduled_at) : null, date: r.event_date, impact: r.impact,
+    timeOfficial: r.time_official, figure: r.figure ?? undefined, auction: r.auction ?? undefined,
+  }))
+}
+
+async function loadAgenda(from: string, to: string): Promise<AgendaItem[]> {
+  const db = createAdminClient()
+  const { data, error } = await db.from('market_agenda_items').select('id, kind, event_date, time_et, timing, ticker, title')
+    .gte('event_date', from).lte('event_date', to).order('event_date', { ascending: true }).limit(1000)
+  if (error) throw new Error(error.message)
+  return ((data ?? []) as { id: string; kind: 'earnings' | 'speech'; event_date: string; time_et: string | null; timing: 'bmo' | 'amc' | null; ticker: string | null; title: string }[])
+    .map(r => ({ id: r.id, kind: r.kind, date: r.event_date, timeEt: r.time_et, timing: r.timing, ticker: r.ticker, title: r.title }))
+}
+
+async function loadConfirmations(): Promise<HolidayConfirmation[]> {
+  const db = createAdminClient()
+  const { data, error } = await db.from('market_holiday_confirmations').select('holiday_date, cme_confirmed, globex_ranges, note').limit(500)
+  if (error) throw new Error(error.message)
+  return ((data ?? []) as { holiday_date: string; cme_confirmed: boolean; globex_ranges: string | null; note: string | null }[])
+    .map(r => ({ date: r.holiday_date, cmeConfirmed: r.cme_confirmed, globexRanges: r.globex_ranges, note: r.note }))
+}
+
+const cachedCalendar = unstable_cache(loadCalendar, ['market-calendar-v1'], { revalidate: REVALIDATE_SECONDS, tags: [MARKET_CACHE_TAG] })
+const cachedAgenda = unstable_cache(loadAgenda, ['market-agenda-v1'], { revalidate: REVALIDATE_SECONDS, tags: [MARKET_CACHE_TAG] })
+const cachedConfirmations = unstable_cache(loadConfirmations, ['market-holiday-confirmations-v1'], { revalidate: REVALIDATE_SECONDS, tags: [MARKET_CACHE_TAG] })
+
+/** Publications et adjudications stockées, dates (New York) entre `from` et `to`. */
+export function readCalendar(from: string, to: string) {
+  return safe(() => cachedCalendar(from, to))
+}
+
+/** Agenda saisi par l'admin (résultats, discours). */
+export function readAgenda(from: string, to: string) {
+  return safe(() => cachedAgenda(from, to))
+}
+
+/** Confirmations des horaires CME des jours de fête. */
+export function readHolidayConfirmations() {
+  return safe(() => cachedConfirmations())
+}
+
+/**
+ * Chiffre publié d'une publication, lu à la consultation : rien avant
+ * l'annonce ; cache de 60 s dans les 3 h qui suivent, puis 1 h
+ * (lib/market/calendar/figure.ts). Partagé entre tous les membres.
+ */
+export async function readFigure(e: CalendarEvent, now: number): Promise<PublishedFigure | null> {
+  if (!e.figure || e.at === null) return null
+  const key = figureCacheKey(e.figure.series, e.date, e.at, now)
+  if (!key) return { status: 'pending' }
+  try {
+    const figure = e.figure
+    const load = unstable_cache(
+      async () => publishedFigure(await fetchVintageObservations(figure.series), e.date, figure.transform),
+      ['market-figure-v1', key],
+      { revalidate: 3600 },
+    )
+    return await load()
+  } catch (err) {
+    console.error('[market figure]', (err as Error).message)
+    return null
+  }
+}
+
+const cachedAuctionResults = unstable_cache(
+  async () => (await fetchTreasuryAuctions(21)).filter(a => a.highYield !== null).map(a => ({ cusip: a.cusip, date: a.closeDate, highYield: a.highYield as number })),
+  ['market-auction-results-v1'],
+  { revalidate: 300 },
+)
+
+/** Résultats des adjudications récentes (taux retenu), cache de 5 min. */
+export function readAuctionResults() {
+  return safe(() => cachedAuctionResults())
 }

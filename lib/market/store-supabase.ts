@@ -7,6 +7,8 @@ import { FRED_SERIES, type CotMarketCode } from '@/lib/market/catalog'
 import type { CotRow } from '@/lib/market/cftc'
 import type { Observation } from '@/lib/market/fred'
 import type { IngestSource, IngestStatus, IngestTrigger, MarketStore } from '@/lib/market/ingest'
+import type { CalendarEvent } from '@/lib/market/calendar/events'
+import { ECB_SERIES } from '@/lib/market/ecb'
 
 const CHUNK = 1000
 
@@ -32,14 +34,30 @@ export function cotRowToRecord(r: CotRow) {
   }
 }
 
+export function calendarEventToRecord(e: CalendarEvent) {
+  return {
+    id: e.id, kind: e.kind, title: e.title, detail: e.detail ?? null, agency: e.agency,
+    scheduled_at: e.at === null ? null : new Date(e.at).toISOString(), event_date: e.date,
+    impact: e.impact, time_official: e.timeOfficial,
+    figure: e.figure ?? null, auction: e.auction ?? null, updated_at: new Date().toISOString(),
+  }
+}
+
 export function supabaseMarketStore(db: SupabaseClient): MarketStore {
   return {
     async ensureCatalog() {
+      const now = new Date().toISOString()
       const { error } = await db.from('market_series').upsert(
-        FRED_SERIES.map(s => ({
-          code: s.code, source: 'fred', label: s.label, unit: s.unit, frequency: s.frequency,
-          provider: s.provider, license: s.license, updated_at: new Date().toISOString(),
-        })),
+        [
+          ...FRED_SERIES.map(s => ({
+            code: s.code, source: 'fred', label: s.label, unit: s.unit, frequency: s.frequency,
+            provider: s.provider, license: s.license, updated_at: now,
+          })),
+          ...ECB_SERIES.map(s => ({
+            code: s.code, source: 'ecb', label: s.label, unit: 'pct', frequency: 'D',
+            provider: 'European Central Bank', license: 'ESCB statistics reuse policy (source cited)', updated_at: now,
+          })),
+        ],
         { onConflict: 'code' },
       )
       if (error) throw new Error(error.message)
@@ -79,6 +97,22 @@ export function supabaseMarketStore(db: SupabaseClient): MarketStore {
         if (error) throw new Error(error.message)
         n += part.length
       }
+      return n
+    },
+
+    async replaceCalendarEvents(fromDate: string, rows: CalendarEvent[]) {
+      let n = 0
+      for (const part of chunks(rows)) {
+        const { error } = await db.from('market_calendar_events').upsert(part.map(calendarEventToRecord), { onConflict: 'id' })
+        if (error) throw new Error(error.message)
+        n += part.length
+      }
+      // Événements de la fenêtre disparus de la source (date déplacée, annulation).
+      const ids = rows.map(r => `"${r.id.replace(/"/g, '')}"`).join(',')
+      let del = db.from('market_calendar_events').delete().gte('event_date', fromDate)
+      if (rows.length) del = del.not('id', 'in', `(${ids})`)
+      const { error } = await del
+      if (error) throw new Error(error.message)
       return n
     },
 
