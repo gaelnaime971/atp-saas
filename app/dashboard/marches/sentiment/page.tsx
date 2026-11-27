@@ -7,11 +7,9 @@ import { DataStamp, SourceMentions } from '@/components/terminal/data/DataNotice
 import { requireMarketsViewer } from '@/lib/terminal/viewer-server'
 import { readCot, readLastSuccess, readSeries } from '@/lib/market/read'
 import { FRED_BY_CODE, FRED_EXCLUDED } from '@/lib/market/catalog'
-import { fedLiquidity, yieldCurve } from '@/lib/market/macro'
-import { marketRows, netOf, pctOfOi } from '@/lib/market/cot'
 import {
-  SENTIMENT_COMPONENTS, SENTIMENT_YEARS, ZONE_LABEL, sentimentAt, sentimentHistory,
-  type SentimentComponentDef, type SentimentInputs, type SentimentZone,
+  SENTIMENT_COMPONENTS, SENTIMENT_FRED_CODES, SENTIMENT_YEARS, ZONE_LABEL, buildSentimentInputs, sentimentAt, sentimentHistory,
+  type SentimentComponentDef, type SentimentZone,
 } from '@/lib/market/sentiment'
 import { isIngestLate, requestClock } from '@/lib/market/freshness'
 import { minusDays, minusYears } from '@/lib/market/stats'
@@ -20,7 +18,6 @@ import { formatDateKey } from '@/lib/time'
 
 export const metadata: Metadata = { title: 'Sentiment de risque · Marchés · ATP' }
 
-const FRED_CODES = ['STLFSI4', 'NFCIRISK', 'NFCICREDIT', 'DFII10', 'WALCL', 'WTREGEN', 'RRPONTSYD', 'DGS10', 'DGS2']
 
 const ZONE_COLOR: Record<SentimentZone, string> = {
   aversion: 'var(--color-loss)',
@@ -48,7 +45,7 @@ export default async function SentimentPage() {
   await requireMarketsViewer()
   const { now, today } = requestClock()
   const since = minusYears(today, SENTIMENT_YEARS + 2)
-  const [series, cot, lastOk] = await Promise.all([readSeries(FRED_CODES, since), readCot(since), readLastSuccess()])
+  const [series, cot, lastOk] = await Promise.all([readSeries(SENTIMENT_FRED_CODES, since), readCot(since), readLastSuccess()])
 
   const header = (
     <PageHeader
@@ -68,16 +65,8 @@ export default async function SentimentPage() {
     )
   }
 
-  const d = series.data
-  const positioningOf = (m: 'ES' | 'NQ') => marketRows(cot.data, m)
-    .map(r => ({ date: r.reportDate, value: pctOfOi(netOf(r, 'assetMgr'), r.openInterest) }))
-    .filter((o): o is { date: string; value: number } => o.value !== null)
-  const inputs: SentimentInputs = {
-    stress: d.STLFSI4 ?? [], marketRisk: d.NFCIRISK ?? [], credit: d.NFCICREDIT ?? [], realRate: d.DFII10 ?? [],
-    liquidity: fedLiquidity(d.WALCL ?? [], d.WTREGEN ?? [], d.RRPONTSYD ?? []),
-    curve: yieldCurve(d.DGS10 ?? [], d.DGS2 ?? []),
-    positioning: { ES: positioningOf('ES'), NQ: positioningOf('NQ') },
-  }
+  const inputs = buildSentimentInputs(series.data, cot.data)
+
   // Composantes écartées pour copyright : aucune à ce jour (catalogue FRED).
   const excluded = SENTIMENT_COMPONENTS.filter(c => FRED_EXCLUDED.some(x => c.source.includes(x.code))).map(c => c.id)
   const current = sentimentAt(inputs, today, excluded)
@@ -190,7 +179,7 @@ export default async function SentimentPage() {
         </Card>
       </div>
 
-      <SourceMentions fred cftc providers={[...new Set(FRED_CODES.map(c => FRED_BY_CODE[c].provider))]} />
+      <SourceMentions fred cftc providers={[...new Set(SENTIMENT_FRED_CODES.map(c => FRED_BY_CODE[c].provider))]} />
     </div>
   )
 }

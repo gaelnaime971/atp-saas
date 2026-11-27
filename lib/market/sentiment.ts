@@ -16,7 +16,13 @@
  * - Zones : aversion sous 40, neutre de 40 à 60, appétit au-dessus de 60.
  */
 import type { Observation } from '@/lib/market/fred'
+import type { CotRow } from '@/lib/market/cftc'
 import { minusDays, percentileAt } from '@/lib/market/stats'
+import { fedLiquidity, yieldCurve } from '@/lib/market/macro'
+import { marketRows, netOf, pctOfOi } from '@/lib/market/cot'
+
+/** Séries FRED du score (lecture partagée : pages Sentiment et Vue d'ensemble). */
+export const SENTIMENT_FRED_CODES = ['STLFSI4', 'NFCIRISK', 'NFCICREDIT', 'DFII10', 'WALCL', 'WTREGEN', 'RRPONTSYD', 'DGS10', 'DGS2']
 
 export const SENTIMENT_YEARS = 3
 
@@ -52,6 +58,19 @@ export interface SentimentInputs {
   curve: Observation[]
   /** Nette des asset managers en % de l'OI, par marché. */
   positioning: { ES: Observation[]; NQ: Observation[] }
+}
+
+/** Entrées du score à partir des séries FRED lues et des rapports COT. */
+export function buildSentimentInputs(d: Readonly<Record<string, Observation[]>>, cot: readonly CotRow[]): SentimentInputs {
+  const positioningOf = (m: 'ES' | 'NQ') => marketRows(cot, m)
+    .map(r => ({ date: r.reportDate, value: pctOfOi(netOf(r, 'assetMgr'), r.openInterest) }))
+    .filter((o): o is Observation => o.value !== null)
+  return {
+    stress: d.STLFSI4 ?? [], marketRisk: d.NFCIRISK ?? [], credit: d.NFCICREDIT ?? [], realRate: d.DFII10 ?? [],
+    liquidity: fedLiquidity(d.WALCL ?? [], d.WTREGEN ?? [], d.RRPONTSYD ?? []),
+    curve: yieldCurve(d.DGS10 ?? [], d.DGS2 ?? []),
+    positioning: { ES: positioningOf('ES'), NQ: positioningOf('NQ') },
+  }
 }
 
 export interface ComponentScore {
