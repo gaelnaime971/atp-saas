@@ -78,7 +78,7 @@ export const MARKET_SPECIAL_DAYS: MarketSpecialDay[] = [
   { date: '2027-11-25', name: 'Thanksgiving', nyse: 'closed', globex: HALT, cmeConfirmed: false },
   { date: '2027-11-26', name: 'Lendemain de Thanksgiving', nyse: 'early', globex: EARLY, cmeConfirmed: false },
   // Noël observé le vendredi 24/12/2027 (25 = samedi). NYSE : pas de clôture anticipée le 23.
-  { date: '2027-12-23', name: 'Veille de Noël (observé)', globex: NO_EVENING, cmeConfirmed: false },
+  { date: '2027-12-23', name: 'Veille du jour férié de Noël', globex: NO_EVENING, cmeConfirmed: false },
   { date: '2027-12-24', name: 'Noël (observé)', nyse: 'closed', globex: [], cmeConfirmed: false },
 ]
 

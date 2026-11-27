@@ -87,6 +87,34 @@ export default async function BanquesCentralesPage() {
   const ingestLate = lastOk.ok && (isIngestLate(lastOk.data.fred, now) || isIngestLate(lastOk.data.ecb, now))
   const missing = !series.ok || upper.length === 0 || dfr.length === 0
 
+  const rows = views.map(v => {
+    const b = BANKS[v.code]
+    const lastChange = v.changes.at(-1)
+    const outcome = v.last ? meetingOutcome(v.last, v.changes) : null
+    const at = v.next ? decisionAt(v.code, v.next) : null
+    const days = v.next ? Math.round((Date.parse(`${v.next.decisionDate}T00:00:00Z`) - Date.parse(`${dateKey(now, b.zone)}T00:00:00Z`)) / 86_400_000) : null
+    return {
+      code: v.code,
+      bank: <><strong style={{ color: 'var(--color-text-1)' }}>{b.label}</strong> <span style={{ ...mono, fontSize: 11, color: 'var(--color-text-3)' }}>{b.currency}</span></>,
+      rate: <>{v.rate ?? '—'}<span style={{ display: 'block', fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: 11, color: 'var(--color-text-3)' }}>{b.rateLabel}</span></>,
+      change: lastChange
+        ? <><span style={{ ...mono, color: lastChange.to > lastChange.from ? 'var(--color-loss)' : 'var(--color-profit)' }}>{pts(lastChange)}</span> en vigueur le {formatDateKey(lastChange.date, { year: true })}</>
+        : '—',
+      last: v.last && outcome
+        ? <>{outcome.kind === 'hold' ? 'Maintien' : outcome.kind === 'hike' ? 'Hausse' : 'Baisse'} le {formatDateKey(v.last.decisionDate)}</>
+        : v.code === 'ECB' ? <span style={{ color: 'var(--color-text-3)' }}>calendrier suivi à partir du {formatDateKey(ECB_MEETINGS[0].decisionDate)}</span> : '—',
+      next: v.next ? (
+        <>
+          {formatDateKey(v.next.decisionDate)} <span style={{ ...mono, color: 'var(--color-accent)' }}>J−{days}</span>
+          <span style={{ display: 'block', ...mono, fontSize: 11, color: 'var(--color-text-3)' }}>
+            {at ? `décision à ${formatTime(at, tz)} chez toi` : 'heure de décision non fixée'}
+            {v.next.projections ? ' · avec projections' : ''}{v.next.tentative ? ' · date à confirmer' : ''}
+          </span>
+        </>
+      ) : '—',
+    }
+  })
+
   return (
     <div className="flex flex-col gap-5" style={{ maxWidth: '84rem' }}>
       <PageHeader
@@ -113,7 +141,23 @@ export default async function BanquesCentralesPage() {
 
       <Card>
         <h2 style={sectionTitle}>Les 3 suivies</h2>
-        <div style={{ overflowX: 'auto', overscrollBehaviorX: 'contain' }}>
+        {/* Mobile : une carte par banque ; à partir de md : tableau. */}
+        <ul className="md:hidden flex flex-col" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+          {rows.map((r, i) => (
+            <li key={r.code} style={{ borderTop: i ? '1px solid var(--color-border-subtle)' : 'none', padding: i ? '0.875rem 0 0 0' : 0, marginBottom: '0.875rem' }}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span>{r.bank}</span>
+                <span style={{ ...mono, color: 'var(--color-text-1)', fontWeight: 600, textAlign: 'right' }}>{r.rate}</span>
+              </div>
+              <dl className="grid gap-x-3 gap-y-1.5" style={{ gridTemplateColumns: 'auto 1fr', margin: '0.625rem 0 0 0', fontSize: 12 }}>
+                <dt style={{ color: 'var(--color-text-3)' }}>Dernier changement</dt><dd style={{ margin: 0, color: 'var(--color-text-2)' }}>{r.change}</dd>
+                <dt style={{ color: 'var(--color-text-3)' }}>Dernière réunion</dt><dd style={{ margin: 0, color: 'var(--color-text-2)' }}>{r.last}</dd>
+                <dt style={{ color: 'var(--color-text-3)' }}>Prochaine réunion</dt><dd style={{ margin: 0, color: 'var(--color-text-1)' }}>{r.next}</dd>
+              </dl>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden md:block" style={{ overflowX: 'auto', overscrollBehaviorX: 'contain' }}>
           <table style={{ width: '100%', minWidth: 760, borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ ...mono, fontSize: 10, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'left' }}>
@@ -125,39 +169,15 @@ export default async function BanquesCentralesPage() {
               </tr>
             </thead>
             <tbody className="[&_td]:py-2.5">
-              {views.map(v => {
-                const b = BANKS[v.code]
-                const lastChange = v.changes.at(-1)
-                const outcome = v.last ? meetingOutcome(v.last, v.changes) : null
-                const at = v.next ? decisionAt(v.code, v.next) : null
-                const days = v.next ? Math.round((Date.parse(`${v.next.decisionDate}T00:00:00Z`) - Date.parse(`${dateKey(now, b.zone)}T00:00:00Z`)) / 86_400_000) : null
-                return (
-                  <tr key={v.code} style={{ borderTop: '1px solid var(--color-border-subtle)', verticalAlign: 'top' }}>
-                    <td><strong style={{ color: 'var(--color-text-1)' }}>{b.label}</strong> <span style={{ ...mono, fontSize: 11, color: 'var(--color-text-3)' }}>{b.currency}</span></td>
-                    <td style={{ ...mono, color: 'var(--color-text-1)', fontWeight: 600 }}>
-                      {v.rate ?? '—'}
-                      <span style={{ display: 'block', fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: 11, color: 'var(--color-text-3)' }}>{b.rateLabel}</span>
-                    </td>
-                    <td style={{ color: 'var(--color-text-2)' }}>
-                      {lastChange ? <><span style={{ ...mono, color: lastChange.to > lastChange.from ? 'var(--color-loss)' : 'var(--color-profit)' }}>{pts(lastChange)}</span> en vigueur le {formatDateKey(lastChange.date, { year: true })}</> : '—'}
-                    </td>
-                    <td style={{ color: 'var(--color-text-2)' }}>
-                      {v.last && outcome ? <>{outcome.kind === 'hold' ? 'Maintien' : outcome.kind === 'hike' ? 'Hausse' : 'Baisse'} le {formatDateKey(v.last.decisionDate)}</> : v.code === 'ECB' ? <span style={{ color: 'var(--color-text-3)' }}>calendrier suivi à partir du {formatDateKey(ECB_MEETINGS[0].decisionDate)}</span> : '—'}
-                    </td>
-                    <td style={{ color: 'var(--color-text-1)' }}>
-                      {v.next ? (
-                        <>
-                          {formatDateKey(v.next.decisionDate)} <span style={{ ...mono, color: 'var(--color-accent)' }}>J−{days}</span>
-                          <span style={{ display: 'block', ...mono, fontSize: 11, color: 'var(--color-text-3)' }}>
-                            {at ? `décision à ${formatTime(at, tz)} chez toi` : 'heure de décision non fixée'}
-                            {v.next.projections ? ' · avec projections' : ''}{v.next.tentative ? ' · date à confirmer' : ''}
-                          </span>
-                        </>
-                      ) : '—'}
-                    </td>
-                  </tr>
-                )
-              })}
+              {rows.map(r => (
+                <tr key={r.code} style={{ borderTop: '1px solid var(--color-border-subtle)', verticalAlign: 'top' }}>
+                  <td>{r.bank}</td>
+                  <td style={{ ...mono, color: 'var(--color-text-1)', fontWeight: 600 }}>{r.rate}</td>
+                  <td style={{ color: 'var(--color-text-2)' }}>{r.change}</td>
+                  <td style={{ color: 'var(--color-text-2)' }}>{r.last}</td>
+                  <td style={{ color: 'var(--color-text-1)' }}>{r.next}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -185,6 +205,7 @@ export default async function BanquesCentralesPage() {
                     {formatDateKey(m.decisionDate, { year: m.decisionDate.slice(0, 4) !== today.slice(0, 4) })}
                     {m.projections && <span style={{ color: 'var(--color-accent)' }}> · projections</span>}
                     {m.tentative && <span style={{ color: 'var(--color-text-3)' }}> · à confirmer</span>}
+                    {m.note && <span style={{ color: 'var(--color-text-3)' }}> · {m.note}</span>}
                   </li>
                 ))}
               </ul>

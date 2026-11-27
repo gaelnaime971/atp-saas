@@ -20,15 +20,20 @@ export interface Meeting {
   minutesDate?: string
   /** Date à confirmer par la banque (ex. calendrier FOMC de l'année suivante). */
   tentative?: boolean
+  /** Mention officielle attachée à la réunion (ex. « Monetary Policy Strategy Meeting »). */
+  note?: string
 }
 
 /**
  * FOMC — https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
- * (relevé le 27/11/2026, « Last Update: November 18, 2026 »). Réunions avec
- * projections marquées d'un astérisque. 2027 : « Each meeting date is
- * tentative until confirmed at the meeting immediately preceding it »,
- * projections 2027 non indiquées. Minutes du 9 déc. 2026 : 30 déc. (page
- * calendrier de décembre de la Fed).
+ * (relevé le 27/11/2026, « Last Update: November 18, 2026 »). Dates
+ * reprises telles quelles. Réunions avec projections marquées d'un
+ * astérisque. 2027 : 8 réunions publiées, sans réunion en décembre ;
+ * celle des 26-27 octobre est annotée « Monetary Policy Strategy
+ * Meeting » ; « A two-day meeting is scheduled for January 25-26,
+ * 2028 » ; « Each meeting date is tentative until confirmed at the
+ * meeting immediately preceding it » ; projections 2027 non indiquées.
+ * Minutes du 9 déc. 2026 : 30 déc. (page calendrier de décembre de la Fed).
  */
 export const FOMC_MEETINGS: Meeting[] = [
   { bank: 'FED', startDate: '2026-01-27', decisionDate: '2026-01-28', minutesDate: '2026-02-18' },
@@ -45,8 +50,9 @@ export const FOMC_MEETINGS: Meeting[] = [
   { bank: 'FED', startDate: '2027-06-08', decisionDate: '2027-06-09', tentative: true },
   { bank: 'FED', startDate: '2027-07-27', decisionDate: '2027-07-28', tentative: true },
   { bank: 'FED', startDate: '2027-09-14', decisionDate: '2027-09-15', tentative: true },
-  { bank: 'FED', startDate: '2027-10-26', decisionDate: '2027-10-27', tentative: true },
+  { bank: 'FED', startDate: '2027-10-26', decisionDate: '2027-10-27', tentative: true, note: 'réunion sur la stratégie de politique monétaire' },
   { bank: 'FED', startDate: '2027-11-16', decisionDate: '2027-11-17', tentative: true },
+  { bank: 'FED', startDate: '2028-01-25', decisionDate: '2028-01-26', tentative: true },
 ]
 
 /**

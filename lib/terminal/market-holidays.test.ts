@@ -44,3 +44,9 @@ describe('rendez-vous US : vraies publications', () => {
     expect(publicationsAt(events, ny('2026-12-11', '08:30'))).toEqual([])
   })
 })
+
+describe('jours spéciaux : libellés', () => {
+  it('jeudi 23 déc. 2027 : veille du jour férié de Noël (Noël observé le 24)', () => {
+    expect(MARKET_SPECIAL_DAYS.find(d => d.date === '2027-12-23')?.name).toBe('Veille du jour férié de Noël')
+  })
+})

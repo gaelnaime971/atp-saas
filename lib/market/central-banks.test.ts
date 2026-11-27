@@ -49,3 +49,16 @@ describe('banques centrales : décisions', () => {
     ])
   })
 })
+
+describe('banques centrales : FOMC 2027 (page officielle de la Fed)', () => {
+  it('les 8 réunions publiées, puis janvier 2028, toutes à confirmer', () => {
+    const y2027 = FOMC_MEETINGS.filter(m => m.decisionDate.startsWith('2027'))
+    expect(y2027.map(m => `${m.startDate}/${m.decisionDate}`)).toEqual([
+      '2027-01-26/2027-01-27', '2027-03-16/2027-03-17', '2027-04-27/2027-04-28', '2027-06-08/2027-06-09',
+      '2027-07-27/2027-07-28', '2027-09-14/2027-09-15', '2027-10-26/2027-10-27', '2027-11-16/2027-11-17',
+    ])
+    expect(y2027.every(m => m.tentative)).toBe(true)
+    expect(y2027.find(m => m.decisionDate === '2027-10-27')?.note).toMatch(/stratégie/)
+    expect(nextMeeting('FED', '2027-11-18')?.decisionDate).toBe('2028-01-26')
+  })
+})
