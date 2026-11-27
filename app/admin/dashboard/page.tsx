@@ -16,6 +16,7 @@ import AdminCoaching from '@/components/admin/pages/Coaching'
 import Revenus from '@/components/admin/pages/Revenus'
 import Bibliotheque from '@/components/admin/pages/Bibliotheque'
 import Settings from '@/components/admin/pages/Settings'
+import TerminalAgenda from '@/components/admin/pages/TerminalAgenda'
 import CRM from '@/components/admin/pages/CRM'
 import Notes from '@/components/admin/pages/Notes'
 import Reports from '@/components/admin/pages/Reports'
@@ -51,6 +52,7 @@ const pageTitles: Record<AdminPage, string> = {
   'recap-live': 'Récap Trade Live',
   'trading-perso': 'Trading Perso',
   settings: 'Paramètres',
+  'terminal-agenda': 'Agenda Terminal',
 }
 
 export default function AdminDashboard() {
@@ -114,6 +116,7 @@ export default function AdminDashboard() {
       case 'recap-live': return <RecapTradeLive />
       case 'trading-perso': return <TradingPerso />
       case 'settings': return <Settings />
+      case 'terminal-agenda': return <TerminalAgenda />
       default: return <Overview />
     }
   }

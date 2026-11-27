@@ -8,6 +8,7 @@ export type AdminPage =
   | 'tasks' | 'broadcast' | 'bibliotheque' | 'bilan'
   | 'prospects' | 'pipeline' | 'content'
   | 'recap-live' | 'trading-perso' | 'settings'
+  | 'terminal-agenda'
 
 // ═══════════════════════════════════════════════════════════════
 // Icons (16×16 = w-4 h-4) — chemins SVG conservés à l'identique
@@ -94,6 +95,7 @@ export const ADMIN_NAV: NavGroup<AdminNavId>[] = [
     label: 'Terminal',
     items: [
       { id: 'terminal-marches', label: 'Terminal Marchés', icon: IconGlobe, href: '/dashboard/marches' },
+      { id: 'terminal-agenda', label: 'Agenda Terminal', icon: IconCalendar },
     ],
   },
 ]

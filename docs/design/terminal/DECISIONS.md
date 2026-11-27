@@ -238,3 +238,11 @@ Arrêté le 27/11/2026. Page `/dashboard/marches/calendrier` (`?vue=jour|semaine
 - **Fenêtres ATP** : ±15 min autour des événements à fort impact, fusionnées quand elles se touchent (décision 14:00 + conférence 14:30 → 13:45–14:45 ET).
 - **Page Sessions & horaires** : les créneaux 8:30 et 10:00 des « rendez-vous de la journée US » affichent les vraies publications du jour, ou « Aucune publication ».
 - **Résultats : liste de départ (pondérations du Nasdaq-100 et du Dow)** : Apple, Microsoft, Nvidia, Amazon, Alphabet, Meta, Broadcom, Tesla, Costco, Netflix, AMD, Goldman Sachs, UnitedHealth, Home Depot, Caterpillar, Visa, JPMorgan, Salesforce, McDonald's, Boeing.
+
+## Agenda Terminal (admin, lot D, partie 2)
+
+Page admin « Agenda Terminal » (groupe Terminal), route `/api/admin/terminal-agenda` (admin uniquement, 404 sinon ; saisies validées par `lib/market/agenda-admin.ts`, testé ; écriture par le service-role ; cache partagé des pages Terminal invalidé après chaque écriture).
+
+- **Résultats d'entreprises** : date (New York), ticker, avant l'ouverture ou après la clôture (heure indicative 8:00 ou 16:05 ET dans le calendrier), nom proposé d'après la liste de départ. Impact moyen.
+- **Discours de la Fed** : date, heure de New York facultative, intitulé. Saisie manuelle faute de source officielle des discours à venir.
+- **Horaires CME des jours de fête** : pour chaque jour de la table, plages Globex (schéma du code par défaut, corrigeables) et confirmation. Table `market_holiday_confirmations`, appliquée par `applyConfirmations` aux pages Sessions & horaires et Calendrier : « à confirmer » disparaît, les plages corrigées remplacent celles du code.
