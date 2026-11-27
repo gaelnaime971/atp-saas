@@ -117,7 +117,8 @@ export default async function RecapPage({ searchParams }: { searchParams: Promis
 
   const summary = recapSummary({
     day, tz, specialDays: cal.specialDays, releases,
-    fed: [...fomc.map(e => ({ title: e.title, kind: 'fomc' })), ...fedNews.map(n => ({ title: n.title, kind: n.kind }))],
+    // Synthèse : décisions FOMC et textes de la Fed d'impact moyen ou fort (pas les communiqués réglementaires).
+    fed: [...fomc.map(e => ({ title: e.title, kind: 'fomc' })), ...fedNews.filter(n => n.impact !== 'low').map(n => ({ title: n.title, kind: n.kind }))],
     auctions: auctionLines,
     sentiment: score === null ? null : { score, previous: scorePrev },
     cot: cotToday.length ? { reportDate: cotToday[0].snap.reportDate, extremes: cotExtremes } : null,
