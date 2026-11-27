@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { canSeeTerminal, terminalOpenToMembers, terminalViewer } from '@/lib/terminal/access'
 import { buildPaletteItems } from '@/lib/nav/palette'
-import { traderNavFor, TRADER_NAV } from '@/lib/nav/trader-nav'
-import { marketsNavFor } from '@/lib/nav/markets-nav'
+import { TRADER_NAV } from '@/lib/nav/trader-nav'
+import { MARKETS_NAV } from '@/lib/nav/markets-nav'
 import { ADMIN_NAV } from '@/lib/nav/admin-nav'
 
 // Les 3 cas de l'interrupteur TERMINAL_ACCESS : membre sans la variable,
@@ -34,14 +34,11 @@ describe('membre, TERMINAL_ACCESS absente', () => {
     expect(items.some(i => i.groupLabel?.includes('Marchés'))).toBe(false)
     expect(items.find(i => i.id === 'stats')!.groupLabel).toBe('Performance')
   })
-  it('Analyse d’action revient dans Mon trading › Outils (une seule fois)', () => {
-    expect(outils(traderNavFor(false))).toEqual(['backtest', 'analyse-graphique', 'calculateur', 'stock-analysis'])
+  it('Analyse d’action dans Mon trading › Outils (une seule fois)', () => {
+    expect(outils(TRADER_NAV)).toEqual(['backtest', 'analyse-graphique', 'calculateur', 'stock-analysis'])
     const items = buildPaletteItems('spa', 'trading', 'hidden')
     expect(items.filter(i => i.id === 'stock-analysis')).toHaveLength(1)
     expect(items.find(i => i.id === 'stock-analysis')!.groupLabel).toBe('Outils')
-  })
-  it('garde le menu Mon trading réorganisé', () => {
-    expect(traderNavFor(false).map(g => g.label)).toEqual(TRADER_NAV.map(g => g.label))
   })
 })
 
@@ -52,10 +49,12 @@ describe('membre, TERMINAL_ACCESS=all', () => {
     expect(terminalViewer(opts)).toBe('member')
     expect(canSeeTerminal(opts)).toBe(true)
   })
-  it('Analyse d’action est dans Marchés, pas dans Outils', () => {
-    expect(traderNavFor(true)).toBe(TRADER_NAV)
-    expect(outils(traderNavFor(true))).not.toContain('stock-analysis')
-    expect(ids(marketsNavFor('member'))).toContain('stock-analysis')
+  it('Analyse d’action reste dans Mon trading › Outils, jamais dans Marchés (données Yahoo)', () => {
+    expect(outils(TRADER_NAV)).toContain('stock-analysis')
+    expect(ids(MARKETS_NAV)).not.toContain('stock-analysis')
+    const items = buildPaletteItems('spa', 'trading', 'member')
+    expect(items.filter(i => i.id === 'stock-analysis')).toHaveLength(1)
+    expect(items.find(i => i.id === 'stock-analysis')!.groupLabel).toBe('Mon trading · Outils')
   })
   it('⌘K cherche dans les 2 espaces', () => {
     const labels = buildPaletteItems('spa', 'trading', 'member').map(i => i.groupLabel ?? '')
@@ -71,9 +70,10 @@ describe('admin', () => {
       expect(canSeeTerminal({ isAdmin: true, access })).toBe(true)
     }
   })
-  it('Marchés sans Analyse d’action (page du SPA, fermée à l’admin)', () => {
-    expect(ids(marketsNavFor('admin'))).not.toContain('stock-analysis')
-    expect(ids(marketsNavFor('admin'))).toContain('marches-cot')
+  it('Marchés sans Analyse d’action', () => {
+    expect(ids(MARKETS_NAV)).not.toContain('stock-analysis')
+    expect(ids(MARKETS_NAV)).toContain('marches-cot')
+    expect(buildPaletteItems('routes', 'marches', 'admin').some(i => i.id === 'stock-analysis')).toBe(false)
   })
   it('⌘K : Marchés seulement, aucun lien vers le SPA /dashboard', () => {
     const items = buildPaletteItems('routes', 'marches', 'admin')

@@ -1,7 +1,7 @@
 import { flattenNavForPalette, type CommandItem } from '@/components/ui/CommandPalette'
 import type { DashboardPage } from '@/components/dashboard/DashboardSidebar'
-import { traderNavFor, TRADER_FOOTER_ITEMS } from '@/lib/nav/trader-nav'
-import { marketsNavFor, type MarketsNavId } from '@/lib/nav/markets-nav'
+import { TRADER_FOOTER_ITEMS, TRADER_NAV } from '@/lib/nav/trader-nav'
+import { MARKETS_NAV, type MarketsNavId } from '@/lib/nav/markets-nav'
 import { SPACE_LABELS, spaHref, withSpaHrefs, type SpaceId } from '@/lib/nav/spaces'
 import type { TerminalViewer } from '@/lib/terminal/access'
 
@@ -25,7 +25,7 @@ export function buildPaletteItems(
   currentSpace: SpaceId,
   viewer: TerminalViewer,
 ): CommandItem<AnyNavId>[] {
-  const tradingNav = traderNavFor(viewer !== 'hidden')
+  const tradingNav = TRADER_NAV
   const trading = host === 'routes' ? withSpaHrefs(tradingNav) : tradingNav
   const footer = host === 'routes'
     ? TRADER_FOOTER_ITEMS.map(i => ({ ...i, href: spaHref(i.id) }))
@@ -35,7 +35,7 @@ export function buildPaletteItems(
     return flattenNavForPalette<AnyNavId>(trading, footer, 'Compte')
   }
 
-  const marketsNav = marketsNavFor(viewer)
+  const marketsNav = MARKETS_NAV
   const markets = host === 'routes' ? withSpaHrefs(marketsNav) : marketsNav
   const marketsItems = flattenNavForPalette<AnyNavId>(markets, [], 'Compte', SPACE_LABELS.marches)
   if (viewer === 'admin') return marketsItems

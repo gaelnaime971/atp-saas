@@ -32,8 +32,10 @@ const IconUser      = <svg className="w-4 h-4" fill="none" stroke="currentColor"
 // ═══════════════════════════════════════════════════════════════
 
 // Structure : docs/design/terminal/00-menu.html (espace « Mon trading »).
-// Analyse d'action vit dans l'espace Marchés (lib/nav/markets-nav) quand
-// il est visible ; sinon elle revient dans Outils (traderNavFor).
+// Analyse d'action reste dans Outils, même quand l'espace Marchés est
+// visible : elle utilise des données Yahoo non autorisées en usage
+// commercial, et le Terminal ne garde que des sources officielles
+// (DECISIONS.md, lot E2).
 // Formation reste dans Coaching (absente de la maquette, gardée).
 export const TRADER_NAV: NavGroup<DashboardPage>[] = [
   {
@@ -71,6 +73,7 @@ export const TRADER_NAV: NavGroup<DashboardPage>[] = [
       { id: 'backtest',          label: 'Backtest',          icon: IconBacktest },
       { id: 'analyse-graphique', label: 'Analyse graphique', icon: IconChart },
       { id: 'calculateur',       label: 'Calculateur',       icon: IconCalc },
+      { id: 'stock-analysis',    label: 'Analyse d\'action',  icon: IconTrending },
     ],
   },
   {
@@ -84,19 +87,6 @@ export const TRADER_NAV: NavGroup<DashboardPage>[] = [
     ],
   },
 ]
-
-/**
- * Menu Mon trading selon la visibilité de l'espace Marchés
- * (TERMINAL_ACCESS) : masqué → Analyse d'action revient en fin d'Outils.
- */
-export function traderNavFor(terminalVisible: boolean): NavGroup<DashboardPage>[] {
-  if (terminalVisible) return TRADER_NAV
-  return TRADER_NAV.map(g =>
-    g.id === 'outils'
-      ? { ...g, items: [...g.items, { id: 'stock-analysis' as const, label: 'Analyse d\'action', icon: IconTrending }] }
-      : g,
-  )
-}
 
 // Items admin (compte trader) hors nav — vivent dans le footer sidebar.
 // Ne participent pas aux groupes ni au ⌘K de navigation courante.

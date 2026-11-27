@@ -67,9 +67,9 @@ FRED, Fed d'Atlanta, Shiller, CFTC. La mention FRED exacte : « This product use
 ## Décisions d'implémentation (étape 1, menu)
 
 - **Deux espaces, deux mécanismes.** « Mon trading » reste le SPA de `/dashboard` (un `switch` sur `activePage`). « Marchés » est fait de vraies routes App Router sous `/dashboard/marches/*`, avec leur propre layout.
-- **L'espace actif se dérive de l'URL**, rien n'est persisté : `/dashboard/marches/*` = Marchés ; dans le SPA, Marchés si la page active appartient à l'espace Marchés (aujourd'hui : Analyse d'action).
+- **L'espace actif se dérive de l'URL**, rien n'est persisté : `/dashboard/marches/*` = Marchés ; dans le SPA, Marchés si la page active appartient à l'espace Marchés (aucune depuis le lot E2).
 - **Passage d'un espace à l'autre : `/dashboard?page=<id>`.** Le SPA lit ce paramètre au montage, ouvre la page si l'id est connu, puis retire le paramètre de l'URL (`history.replaceState`) pour qu'un rechargement ultérieur ne rouvre pas une page périmée. Un id inconnu est ignoré, le Dashboard s'ouvre comme avant.
-- **Analyse d'action est passée dans Marchés › Analyse.** C'était simple : elle reste un écran du SPA (`/dashboard?page=stock-analysis`), et quand elle est ouverte le SPA affiche le menu et la barre du haut de l'espace Marchés.
+- ~~**Analyse d'action est passée dans Marchés › Analyse.**~~ Annulé au lot E2 : elle reste dans Mon trading › Outils (voir « Analyse d'action hors du Terminal »).
 - **Éléments « bientôt »** (Récap de séance, Actus & Squawk) : visibles dans le menu, non cliquables, sans page, absents de ⌘K.
 - **Horloges Marchés** : « Ton heure » (fuseau du membre, voir « Fuseau horaire »), Londres, New York, Tokyo. Rendues côté client uniquement (piège d'hydratation #418).
 - **Admin** : exception dans `proxy.ts` pour `/dashboard/marches` (et ses sous-pages). Le reste de `/dashboard` redirige toujours un admin vers `/admin/dashboard`.
@@ -88,8 +88,8 @@ Variable **serveur** (jamais `NEXT_PUBLIC_`), pour pouvoir pousser en prod sans 
 - **Contrôle côté serveur, à 2 niveaux** : `proxy.ts` (chaque requête, y compris les navigations client) puis le layout `app/dashboard/marches/layout.tsx`. Un membre qui tape `/dashboard/marches/*` alors que l'espace est masqué est renvoyé sur `/dashboard`. Fail-closed : profil illisible → traité comme membre.
 - **Règle** : `lib/terminal/access.ts` (`terminalViewer`, `canSeeTerminal`), testée dans `lib/terminal/access.test.ts`.
 - **SPA `/dashboard`** : il ne peut pas lire une variable serveur ; `app/dashboard/layout.tsx` la lit **au build** et la transmet par contexte (`components/terminal/TerminalAccess.tsx`). `/dashboard` reste donc pré-généré (statique). C'est sans risque : Vercel n'applique un changement de variable qu'au déploiement suivant, qui refait le build. Le contrôle d'accès, lui, se fait à l'exécution (proxy + layout Marchés). En local, après un changement de `TERMINAL_ACCESS`, il faut relancer `next build` pour `next start` ; `next dev` relit la variable tout seul.
-- **Membre, espace masqué** : pas de sélecteur Mon trading / Marchés, rien de Marchés dans ⌘K, Analyse d'action revient dans Mon trading › Outils (dernière position). Le menu Mon trading réorganisé reste pour tout le monde.
-- **Membre, `all`** : comportement de l'étape 1 (Analyse d'action dans Marchés › Analyse).
+- **Membre, espace masqué** : pas de sélecteur Mon trading / Marchés, rien de Marchés dans ⌘K, Le menu Mon trading réorganisé reste pour tout le monde, Analyse d'action en dernière position d'Outils.
+- **Membre, `all`** : comportement de l'étape 1 ; Analyse d'action reste dans Mon trading › Outils (lot E2).
 - **Admin dans Marchés** : « Retour admin » (vers `/admin/dashboard`) à la place du sélecteur, pas d'Analyse d'action, pas de liens Mon compte / Contrat / Documents, ⌘K limité à Marchés, pas de bulle de messagerie coach. Tous ces liens le renvoyaient vers `/admin/dashboard`.
 - **Menu admin** : groupe « Terminal » avec le lien « Terminal Marchés » vers `/dashboard/marches`.
 - Pas de `.env.example` dans le repo (`.env*` est ignoré par git) : la variable est documentée ici.
@@ -286,3 +286,10 @@ Page `/dashboard/marches`, d'après la maquette 01, dans le fuseau du membre. Ra
   - Lignes : agenda (3 prochaines annonces fortes sur 7 jours, avec fenêtre ATP), taux (prochaine décision Fed / BCE / BoJ), sentiment (score et il y a une semaine), positionnement (positions extrêmes du COT, percentile ≤ 10 ou ≥ 90 sur 3 ans), saisonnalité du mois, prochain roll.
 - **Blocs** : sentiment (score, jauge, 1 semaine et 1 mois), annonces fortes à venir avec fenêtres ATP, prochaine décision de chaque banque centrale (taux, J−n, heure), état des sessions et de NQ/YM au chargement de la page avec prochain changement, prochain roll (vers le contrat suivant), échéance et OPEX, COT (institutionnels et spéculateurs sur NQ, ES, YM, ZN, extrêmes en couleur), Macro (taux 10 ans, taux réel 10 ans, liquidité de la Fed), saisonnalité du mois (S&P 500 et année du cycle).
 - **Pas de cotations ni de mouvements de prix** ; pas de squawk, de Jarvis ni de probabilités de marché (exclus ou pour plus tard). Le score de sentiment est partagé avec sa page (`buildSentimentInputs`, mêmes composantes écartées).
+
+## Analyse d'action hors du Terminal (lot E2, partie 0)
+
+Arrêté le 27/11/2026. **Analyse d'action reste dans Mon trading › Outils, même quand `TERMINAL_ACCESS` est à « all ».** Elle utilise des données Yahoo, non autorisées en usage commercial ; le Terminal ne garde que des sources officielles et autorisées.
+
+- Retirée de Marchés › Analyse (`lib/nav/markets-nav.tsx`), toujours en fin d'Outils (`lib/nav/trader-nav.tsx`) ; ⌘K la range dans Mon trading › Outils.
+- Aucune page du SPA n'est plus rangée dans Marchés (`MARKETS_SPA_PAGES` vide) : le mécanisme reste, sans usage.

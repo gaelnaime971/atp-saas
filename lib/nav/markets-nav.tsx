@@ -1,13 +1,12 @@
 import type { NavGroup } from '@/components/ui/AppSidebar'
 import type { ShellTab } from '@/lib/ui/shell'
 import { MARKETS_BASE_PATH } from '@/lib/nav/spaces'
-import type { TerminalViewer } from '@/lib/terminal/access'
 
 // ═══════════════════════════════════════════════════════════════
 // Espace « Marchés » — vraies routes sous /dashboard/marches/*.
 // Les items `soon` sont visibles mais sans page (ni lien, ni ⌘K).
-// `stock-analysis` est une page du SPA : sans href ici, le SPA la
-// gère par id ; hors SPA, withSpaHrefs() lui donne son URL.
+// Analyse d'action n'est pas dans Marchés (données Yahoo, voir
+// trader-nav) : le Terminal ne garde que des sources officielles.
 // Icônes : SVG inline 16×16, même format que trader-nav.
 // ═══════════════════════════════════════════════════════════════
 
@@ -23,7 +22,7 @@ export type MarketsPageId =
   | 'marches-macro'
   | 'marches-saisonnalite'
 
-export type MarketsNavId = MarketsPageId | 'stock-analysis'
+export type MarketsNavId = MarketsPageId
 
 const svg = (d: string) => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,7 +40,6 @@ const IconPositions = svg('M3.75 6h10.5M3.75 12h16.5M3.75 18h7.5')
 const IconGauge     = svg('M3.75 16.5a8.25 8.25 0 0116.5 0M12 16.5l3.75-4.5M12 16.5h.008')
 const IconMacro     = svg('M4 19.5h16M7 15.75V12m5 3.75V7.5m5 8.25v-5.25')
 const IconWave      = svg('M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0')
-const IconTrending  = svg('M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941')
 
 export const MARKETS_NAV: NavGroup<MarketsNavId>[] = [
   {
@@ -82,19 +80,9 @@ export const MARKETS_NAV: NavGroup<MarketsNavId>[] = [
     items: [
       { id: 'marches-macro',        label: 'Macro US',          icon: IconMacro,    href: `${MARKETS_BASE_PATH}/macro` },
       { id: 'marches-saisonnalite', label: 'Saisonnalité',      icon: IconWave,     href: `${MARKETS_BASE_PATH}/saisonnalite` },
-      { id: 'stock-analysis',       label: 'Analyse d\'action', icon: IconTrending },
     ],
   },
 ]
-
-/**
- * Menu Marchés selon le spectateur. L'admin n'a pas Analyse d'action :
- * c'est une page du SPA /dashboard, d'où proxy.ts le redirige.
- */
-export function marketsNavFor(viewer: Exclude<TerminalViewer, 'hidden'>): NavGroup<MarketsNavId>[] {
-  if (viewer === 'member') return MARKETS_NAV
-  return MARKETS_NAV.map(g => ({ ...g, items: g.items.filter(i => i.id !== 'stock-analysis') }))
-}
 
 /** Barre d'onglets mobile (< 768 px) de Marchés : 4 raccourcis + Menu. */
 export const MARKETS_TABS: ShellTab<MarketsNavId>[] = [

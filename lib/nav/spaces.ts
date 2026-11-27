@@ -36,8 +36,11 @@ export function isDashboardPage(id: string): id is DashboardPage {
   return DASHBOARD_PAGE_SET.has(id)
 }
 
-/** Pages du SPA rangées dans l'espace Marchés. */
-export const MARKETS_SPA_PAGES: readonly DashboardPage[] = ['stock-analysis']
+/**
+ * Pages du SPA rangées dans l'espace Marchés : aucune aujourd'hui
+ * (Analyse d'action est restée dans Mon trading › Outils, lot E2).
+ */
+export const MARKETS_SPA_PAGES: readonly DashboardPage[] = []
 
 /** URL qui ouvre une page du SPA depuis l'extérieur (⌘K, sélecteur d'espace). */
 export function spaHref(id: DashboardPage): string {

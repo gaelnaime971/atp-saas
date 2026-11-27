@@ -39,8 +39,8 @@ describe('spaHref / isMarketsPath / spaceOfSpaPage', () => {
     expect(isMarketsPath('/marches')).toBe(false)
     expect(isMarketsPath('/dashboard')).toBe(false)
   })
-  it('range Analyse d’action dans Marchés quand il est visible, le reste dans Mon trading', () => {
-    expect(spaceOfSpaPage('stock-analysis', true)).toBe('marches')
+  it('toutes les pages du SPA sont dans Mon trading, Analyse d’action comprise', () => {
+    expect(spaceOfSpaPage('stock-analysis', true)).toBe('trading')
     expect(spaceOfSpaPage('dashboard', true)).toBe('trading')
   })
   it('Marchés masqué : tout est dans Mon trading', () => {
@@ -90,8 +90,9 @@ describe('menu Marchés', () => {
     expect(soon.map(i => i.label)).toEqual(['Récap de séance', 'Actus & Squawk'])
     for (const i of soon) expect(i.href).toBeUndefined()
   })
-  it('hors SPA, Analyse d’action devient un lien /dashboard?page=', () => {
-    const routed = withSpaHrefs(MARKETS_NAV).flatMap(g => g.items)
+  it('hors SPA, une page du SPA sans href devient un lien /dashboard?page=', () => {
+    const groups: { items: { id: string; href?: string; soon?: boolean }[] }[] = [{ items: [{ id: 'stock-analysis' }, { id: 'marches-recap', soon: true }] }]
+    const routed = withSpaHrefs(groups).flatMap(g => g.items)
     expect(routed.find(i => i.id === 'stock-analysis')!.href).toBe('/dashboard?page=stock-analysis')
     expect(routed.find(i => i.id === 'marches-recap')!.href).toBeUndefined()
   })

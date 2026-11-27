@@ -9,7 +9,7 @@ import TraderChatWidget from '@/components/chat/TraderChatWidget'
 import SpaceSwitcher, { AdminBackLink, SearchButton } from '@/components/terminal/SpaceSwitcher'
 import MarketsClocks from '@/components/terminal/MarketsClocks'
 import { useSidebarProfile } from '@/lib/hooks/useSidebarProfile'
-import { MARKETS_TABS, marketsNavFor, type MarketsNavId } from '@/lib/nav/markets-nav'
+import { MARKETS_NAV, MARKETS_TABS, type MarketsNavId } from '@/lib/nav/markets-nav'
 import { buildPaletteItems } from '@/lib/nav/palette'
 import { findItemByHref, MARKETS_BASE_PATH, withSpaHrefs } from '@/lib/nav/spaces'
 import type { TerminalViewer } from '@/lib/terminal/access'
@@ -21,8 +21,8 @@ import type { TerminalViewer } from '@/lib/terminal/access'
  *
  * `viewer` vient du layout serveur (rôle + TERMINAL_ACCESS) :
  * - 'member' : sélecteur d'espace, ⌘K sur les 2 espaces, pied de menu complet ;
- * - 'admin'  : « Retour admin » à la place du sélecteur, ni Analyse
- *   d'action ni liens du SPA (/dashboard le renvoie vers /admin/dashboard).
+ * - 'admin'  : « Retour admin » à la place du sélecteur, aucun lien du
+ *   SPA (/dashboard le renvoie vers /admin/dashboard).
  */
 export default function MarketsShell({ viewer, children }: { viewer: Exclude<TerminalViewer, 'hidden'>; children: ReactNode }) {
   const pathname = usePathname()
@@ -31,8 +31,8 @@ export default function MarketsShell({ viewer, children }: { viewer: Exclude<Ter
   const { name, avatarUrl, logout } = useSidebarProfile()
   const isAdmin = viewer === 'admin'
 
-  // Hors SPA, Analyse d'action devient un lien /dashboard?page=stock-analysis.
-  const nav = useMemo(() => withSpaHrefs(marketsNavFor(viewer)), [viewer])
+  // Hors SPA, une page du SPA rangée dans Marchés deviendrait un lien /dashboard?page=… (aucune aujourd'hui).
+  const nav = useMemo(() => withSpaHrefs(MARKETS_NAV), [])
   const activeItem = findItemByHref(nav, pathname)
   const activeId = (activeItem?.id ?? 'marches-overview') as MarketsNavId
   const title = activeItem?.label ?? 'Marchés'

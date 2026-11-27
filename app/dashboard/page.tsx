@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import AppShell from '@/components/ui/AppShell'
 import CommandPalette from '@/components/ui/CommandPalette'
 import { useSidebarProfile } from '@/lib/hooks/useSidebarProfile'
-import { TRADING_TABS, traderNavFor } from '@/lib/nav/trader-nav'
+import { TRADING_TABS, TRADER_NAV } from '@/lib/nav/trader-nav'
 import { MARKETS_NAV, MARKETS_TABS } from '@/lib/nav/markets-nav'
 import { buildPaletteItems, type AnyNavId } from '@/lib/nav/palette'
 import {
@@ -111,12 +111,12 @@ export default function TraderDashboard() {
 
   // Espace Marchés visible pour les membres ? (TERMINAL_ACCESS, lu côté
   // serveur par app/dashboard/layout.tsx). Masqué : pas de sélecteur, rien
-  // de Marchés dans ⌘K, Analyse d'action revient dans Mon trading › Outils.
+  // de Marchés dans ⌘K. Analyse d'action est toujours dans Mon trading › Outils.
   const terminalVisible = useMembersSeeTerminal()
 
-  // Espace dérivé de la page active (Analyse d'action vit dans Marchés).
+  // Espace dérivé de la page active (aucune page du SPA n'est rangée dans Marchés aujourd'hui).
   const space = spaceOfSpaPage(activePage, terminalVisible)
-  const navGroups: NavGroup<AnyNavId>[] = space === 'marches' ? MARKETS_NAV : traderNavFor(terminalVisible)
+  const navGroups: NavGroup<AnyNavId>[] = space === 'marches' ? MARKETS_NAV : TRADER_NAV
 
   const paletteItems = useMemo(
     () => buildPaletteItems('spa', space, terminalVisible ? 'member' : 'hidden'),
