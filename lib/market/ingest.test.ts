@@ -41,6 +41,11 @@ function fakeFetchers(until: { fred: string; cot: string }, fail: string[] = [])
       if (fail.includes(code)) throw new Error('HTTP 500')
       return [{ date: start, value: 2.5 }]
     },
+    async news() {
+      if (fail.includes('news')) throw new Error('HTTP 503')
+      const item = { id: 'fed:https://www.federalreserve.gov/a.htm', source: 'fed' as const, kind: 'press' as const, title: 'A', summary: null, url: 'https://www.federalreserve.gov/a.htm', category: null, impact: 'low' as const, publishedAt: 1 }
+      return { items: [item, item], errors: fail.includes('news-partial') ? ['BCE : HTTP 500'] : [] }
+    },
   }
   return { fetchers, calls }
 }
@@ -96,16 +101,25 @@ describe('ingestion incrémentale et idempotente', () => {
     expect(cftc.status).toBe('partial')
     expect(mem.observationCount('DGS10')).toBeGreaterThan(0)
     expect(mem.journal.map(j => [j.source, j.trigger, j.status])).toEqual([
-      ['fred', 'cron', 'partial'], ['cftc', 'cron', 'partial'], ['ecb', 'cron', 'ok'], ['calendar', 'cron', 'ok'],
+      ['fred', 'cron', 'partial'], ['cftc', 'cron', 'partial'], ['ecb', 'cron', 'ok'], ['calendar', 'cron', 'ok'], ['news', 'cron', 'ok'],
     ])
     expect(mem.journal[0].error).toContain('ICSA')
   })
 
   it('toutes les séries en erreur → « échec »', async () => {
     const mem = memoryMarketStore()
-    const src = fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' }, [...FRED_SERIES.map(s => s.code), ...COT_MARKETS.map(m => m.code), 'ECB_DFR', 'ECB_MRO', 'calendar'])
+    const src = fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' }, [...FRED_SERIES.map(s => s.code), ...COT_MARKETS.map(m => m.code), 'ECB_DFR', 'ECB_MRO', 'calendar', 'news'])
     const results = await ingestAll(mem.store, src.fetchers, { trigger: 'admin', today: TODAY })
-    expect(results.map(r => r.status)).toEqual(['error', 'error', 'error', 'error'])
+    expect(results.map(r => r.status)).toEqual(['error', 'error', 'error', 'error', 'error'])
+  })
+
+  it('actus : sans doublon (même clé deux fois = une ligne), relance idempotente, flux en panne = partiel', async () => {
+    const mem = memoryMarketStore()
+    await ingestAll(mem.store, fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' }).fetchers, { trigger: 'cron', today: TODAY })
+    await ingestAll(mem.store, fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' }).fetchers, { trigger: 'cron', today: TODAY })
+    expect(mem.news()).toHaveLength(1)
+    const partial = await ingestAll(memoryMarketStore().store, fakeFetchers({ fred: '2026-11-25', cot: '2026-11-17' }, ['news-partial']).fetchers, { trigger: 'cron', today: TODAY })
+    expect(partial.at(-1)).toMatchObject({ source: 'news', status: 'partial', errors: ['BCE : HTTP 500'] })
   })
 
   it('le catalogue est enregistré à chaque passage FRED', async () => {

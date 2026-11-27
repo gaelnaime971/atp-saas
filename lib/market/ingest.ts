@@ -19,8 +19,9 @@ import type { Observation } from '@/lib/market/fred'
 import type { CotRow } from '@/lib/market/cftc'
 import type { CalendarEvent } from '@/lib/market/calendar/events'
 import { ECB_SERIES } from '@/lib/market/ecb'
+import type { NewsItem } from '@/lib/market/news/news'
 
-export type IngestSource = 'fred' | 'cftc' | 'calendar' | 'ecb'
+export type IngestSource = 'fred' | 'cftc' | 'calendar' | 'ecb' | 'news'
 export type IngestTrigger = 'cron' | 'admin' | 'backfill'
 export type IngestStatus = 'ok' | 'partial' | 'error'
 
@@ -36,6 +37,8 @@ export interface MarketStore {
    * (date déplacée). Renvoie le nombre de lignes écrites.
    */
   replaceCalendarEvents(fromDate: string, rows: CalendarEvent[]): Promise<number>
+  /** Actus officielles : upsert par clé (aucun doublon), première vue conservée. */
+  upsertNews(rows: NewsItem[]): Promise<number>
   journalStart(source: IngestSource, trigger: IngestTrigger): Promise<string>
   journalFinish(id: string, result: { status: IngestStatus; rows: number; error: string | null }): Promise<void>
 }
@@ -46,6 +49,8 @@ export interface MarketFetchers {
   /** Publications et adjudications depuis `from` (à venir comprises). */
   calendar(from: string, to: string): Promise<CalendarEvent[]>
   ecb(code: string, start: string): Promise<Observation[]>
+  /** Actus officielles récentes (Fed, BCE, adjudications), erreurs par flux. */
+  news(): Promise<{ items: NewsItem[]; errors: string[] }>
 }
 
 export interface SourceResult {
@@ -174,13 +179,32 @@ export async function ingestEcb(store: MarketStore, fetchers: MarketFetchers, op
   return { source: 'ecb', status, rows, errors }
 }
 
+export async function ingestNews(store: MarketStore, fetchers: MarketFetchers, opts: RunOptions): Promise<SourceResult> {
+  const journalId = await store.journalStart('news', opts.trigger)
+  const errors: string[] = []
+  let rows = 0
+  let fetched = 0
+  try {
+    const { items, errors: feedErrors } = await fetchers.news()
+    errors.push(...feedErrors)
+    fetched = items.length
+    rows = await store.upsertNews(items)
+  } catch (e) {
+    errors.push((e as Error).message)
+  }
+  const status: IngestStatus = errors.length === 0 ? 'ok' : fetched > 0 ? 'partial' : 'error'
+  await store.journalFinish(journalId, { status, rows, error: errors.length ? errors.join(' | ').slice(0, 1000) : null })
+  return { source: 'news', status, rows, errors }
+}
+
 /** Toutes les sources, l'une après l'autre (un seul cron quotidien). */
 export async function ingestAll(store: MarketStore, fetchers: MarketFetchers, opts: RunOptions): Promise<SourceResult[]> {
   const fred = await ingestFred(store, fetchers, opts)
   const cftc = await ingestCot(store, fetchers, opts)
   const ecb = await ingestEcb(store, fetchers, opts)
   const calendar = await ingestCalendar(store, fetchers, opts)
-  return [fred, cftc, ecb, calendar]
+  const news = await ingestNews(store, fetchers, opts)
+  return [fred, cftc, ecb, calendar, news]
 }
 
 export function todayUtc(now = Date.now()): string {

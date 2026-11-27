@@ -7,6 +7,7 @@ import type { CotRow } from '@/lib/market/cftc'
 import type { Observation } from '@/lib/market/fred'
 import type { IngestSource, IngestStatus, IngestTrigger, MarketStore } from '@/lib/market/ingest'
 import type { CalendarEvent } from '@/lib/market/calendar/events'
+import type { NewsItem } from '@/lib/market/news/news'
 
 export interface MemoryJournalRow {
   id: string
@@ -22,6 +23,8 @@ export function memoryMarketStore() {
   const cot = new Map<string, CotRow>()
   const journal: MemoryJournalRow[] = []
   const calendar = new Map<string, CalendarEvent>()
+  const news = new Map<string, NewsItem & { firstSeen: number }>()
+  let clock = 0
   let catalogCalls = 0
 
   const store: MarketStore = {
@@ -50,6 +53,10 @@ export function memoryMarketStore() {
       for (const r of rows) calendar.set(r.id, r)
       return rows.length
     },
+    async upsertNews(rows: NewsItem[]) {
+      for (const r of rows) news.set(r.id, { ...r, firstSeen: news.get(r.id)?.firstSeen ?? ++clock })
+      return rows.length
+    },
     async journalStart(source, trigger) {
       const id = String(journal.length + 1)
       journal.push({ id, source, trigger, status: 'running', rows: 0, error: null })
@@ -70,5 +77,6 @@ export function memoryMarketStore() {
     cotRows: () => [...cot.values()].sort((a, b) => a.reportDate.localeCompare(b.reportDate)),
     catalogCalls: () => catalogCalls,
     calendarEvents: () => [...calendar.values()].sort((a, b) => a.id.localeCompare(b.id)),
+    news: () => [...news.values()].sort((a, b) => b.publishedAt - a.publishedAt),
   }
 }

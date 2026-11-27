@@ -16,7 +16,7 @@ export type MarketsPageId =
   | 'marches-recap'
   | 'marches-calendrier'
   | 'marches-banques-centrales'
-  | 'marches-squawk'
+  | 'marches-actus'
   | 'marches-cot'
   | 'marches-sentiment'
   | 'marches-macro'
@@ -63,7 +63,7 @@ export const MARKETS_NAV: NavGroup<MarketsNavId>[] = [
     id: 'marches-flux',
     label: 'Flux',
     items: [
-      { id: 'marches-squawk', label: 'Actus & Squawk', icon: IconSignal, soon: true },
+      { id: 'marches-actus', label: 'Actus officielles', icon: IconSignal, href: `${MARKETS_BASE_PATH}/actus` },
     ],
   },
   {

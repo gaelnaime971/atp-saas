@@ -38,17 +38,19 @@ async function status(): Promise<MarketDataStatus[]> {
     .order('started_at', { ascending: false }).limit(50)
   if (error) throw new Error(error.message)
   const rows = (journal ?? []) as JournalRow[]
-  const [{ data: fredLatest }, { data: cotLatest }, { data: ecbLatest }, { data: calLatest }] = await Promise.all([
+  const [{ data: fredLatest }, { data: cotLatest }, { data: ecbLatest }, { data: calLatest }, { data: newsLatest }] = await Promise.all([
     db.from('market_series_observations').select('obs_date').not('series_code', 'like', 'ECB_%').order('obs_date', { ascending: false }).limit(1).maybeSingle(),
     db.from('market_cot_reports').select('report_date').order('report_date', { ascending: false }).limit(1).maybeSingle(),
     db.from('market_series_observations').select('obs_date').eq('series_code', 'ECB_DFR').order('obs_date', { ascending: false }).limit(1).maybeSingle(),
     db.from('market_calendar_events').select('event_date').order('event_date', { ascending: false }).limit(1).maybeSingle(),
+    db.from('market_news').select('published_at').order('published_at', { ascending: false }).limit(1).maybeSingle(),
   ])
   const sources: { source: IngestSource; label: string; latestData: string | null }[] = [
     { source: 'fred', label: 'FRED (séries de la Fed)', latestData: (fredLatest as { obs_date?: string } | null)?.obs_date ?? null },
     { source: 'cftc', label: 'CFTC (COT, futures seuls)', latestData: (cotLatest as { report_date?: string } | null)?.report_date ?? null },
     { source: 'ecb', label: 'BCE (taux directeurs)', latestData: (ecbLatest as { obs_date?: string } | null)?.obs_date ?? null },
     { source: 'calendar', label: 'Calendrier (FRED, BEA, Trésor)', latestData: (calLatest as { event_date?: string } | null)?.event_date ?? null },
+    { source: 'news', label: 'Actus officielles (Fed, BCE, Trésor)', latestData: (newsLatest as { published_at?: string } | null)?.published_at?.slice(0, 10) ?? null },
   ]
   return sources.map(s => ({
     ...s,

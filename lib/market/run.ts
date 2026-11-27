@@ -8,6 +8,7 @@ import { fetchCotRows } from '@/lib/market/cftc'
 import { fetchFredObservations } from '@/lib/market/fred'
 import { ECB_SERIES, fetchEcbSeries } from '@/lib/market/ecb'
 import { auctionEvents, dedupe, releaseEvents } from '@/lib/market/calendar/events'
+import { fetchOfficialNews } from '@/lib/market/news/sources'
 import { fetchBeaIcs, fetchFredReleaseDates, fetchTreasuryAuctions } from '@/lib/market/calendar/sources'
 import { ingestAll, todayUtc, type IngestTrigger, type MarketFetchers, type SourceResult } from '@/lib/market/ingest'
 import { supabaseMarketStore } from '@/lib/market/store-supabase'
@@ -28,6 +29,8 @@ export const liveFetchers: MarketFetchers = {
     const [dates, bea, auctions] = await Promise.all([fetchFredReleaseDates(from, to), fetchBeaIcs(), fetchTreasuryAuctions()])
     return dedupe([...releaseEvents(dates, bea), ...auctionEvents(auctions)])
   },
+  // Actus officielles : Fed, BCE (RSS) et résultats d'adjudications (TreasuryDirect).
+  news: () => fetchOfficialNews(),
 }
 
 export async function runIngestion(trigger: IngestTrigger): Promise<SourceResult[]> {

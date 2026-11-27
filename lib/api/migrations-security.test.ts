@@ -148,3 +148,21 @@ describe('migration calendrier, agenda, confirmations CME (lot D)', () => {
     expect(code).toMatch(/CHECK \(source IN \('fred', 'cftc', 'ecb', 'calendar'\)\)/)
   })
 })
+
+describe('migration actus officielles (lot E2)', () => {
+  const sql = read('20261127000004_market_news.sql')
+  const code = sql.replace(/--[^\n]*/g, '')
+  const policies = [...code.matchAll(/CREATE POLICY "[^"]+" ON public\.(\w+)\s+FOR (\w+) USING \(([^;]+)\);/g)]
+  it('lecture de market_news réservée aux membres, aucune règle d’écriture', () => {
+    expect(policies.map(p => [p[1], p[2]])).toEqual([['market_news', 'SELECT']])
+    expect(policies[0][3]).toContain('(SELECT public.has_dashboard_access())')
+    expect(code).not.toMatch(/FOR (INSERT|UPDATE|DELETE|ALL)/)
+    expect(code).toMatch(/ENABLE ROW LEVEL SECURITY/)
+  })
+  it('relançable, sans destruction, clé unique, source news autorisée au journal', () => {
+    expect(code.match(/CREATE TABLE IF NOT EXISTS/g)).toHaveLength(1)
+    expect(code).toMatch(/id\s+text PRIMARY KEY/)
+    expect(code).not.toMatch(/DROP TABLE|DELETE FROM|TRUNCATE/i)
+    expect(code).toMatch(/CHECK \(source IN \('fred', 'cftc', 'ecb', 'calendar', 'news'\)\)/)
+  })
+})

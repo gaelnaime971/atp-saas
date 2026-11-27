@@ -8,6 +8,7 @@ import type { CotRow } from '@/lib/market/cftc'
 import type { Observation } from '@/lib/market/fred'
 import type { IngestSource, IngestStatus, IngestTrigger, MarketStore } from '@/lib/market/ingest'
 import type { CalendarEvent } from '@/lib/market/calendar/events'
+import type { NewsItem } from '@/lib/market/news/news'
 import { ECB_SERIES } from '@/lib/market/ecb'
 
 const CHUNK = 1000
@@ -40,6 +41,15 @@ export function calendarEventToRecord(e: CalendarEvent) {
     scheduled_at: e.at === null ? null : new Date(e.at).toISOString(), event_date: e.date,
     impact: e.impact, time_official: e.timeOfficial,
     figure: e.figure ?? null, auction: e.auction ?? null, updated_at: new Date().toISOString(),
+  }
+}
+
+export function newsItemToRecord(n: NewsItem) {
+  return {
+    id: n.id, source: n.source, kind: n.kind, title: n.title.slice(0, 400), summary: n.summary?.slice(0, 2000) ?? null,
+    url: n.url, category: n.category, impact: n.impact, published_at: new Date(n.publishedAt).toISOString(),
+    updated_at: new Date().toISOString(),
+    // first_seen_at : valeur par défaut à la première insertion, jamais réécrite.
   }
 }
 
@@ -113,6 +123,16 @@ export function supabaseMarketStore(db: SupabaseClient): MarketStore {
       if (rows.length) del = del.not('id', 'in', `(${ids})`)
       const { error } = await del
       if (error) throw new Error(error.message)
+      return n
+    },
+
+    async upsertNews(rows: NewsItem[]) {
+      let n = 0
+      for (const part of chunks(rows)) {
+        const { error } = await db.from('market_news').upsert(part.map(newsItemToRecord), { onConflict: 'id' })
+        if (error) throw new Error(error.message)
+        n += part.length
+      }
       return n
     },
 

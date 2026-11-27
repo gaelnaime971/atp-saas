@@ -21,6 +21,9 @@ import type { CalendarEvent, AgendaItem } from '@/lib/market/calendar/events'
 import type { HolidayConfirmation } from '@/lib/terminal/market-holidays'
 import { fetchVintageObservations, figureCacheKey, publishedFigure, type PublishedFigure } from '@/lib/market/calendar/figure'
 import { fetchTreasuryAuctions } from '@/lib/market/calendar/sources'
+import { fetchOfficialNews } from '@/lib/market/news/sources'
+import { supabaseMarketStore } from '@/lib/market/store-supabase'
+import type { NewsItem } from '@/lib/market/news/news'
 
 const PAGE = 1000
 const REVALIDATE_SECONDS = 900
@@ -81,7 +84,7 @@ async function loadLastSuccess(): Promise<Record<IngestSource, string | null>> {
   if (error) throw new Error(error.message)
   const rows = (data ?? []) as { source: IngestSource; finished_at: string | null }[]
   const last = (s: IngestSource) => rows.find(r => r.source === s)?.finished_at ?? null
-  return { fred: last('fred'), cftc: last('cftc'), ecb: last('ecb'), calendar: last('calendar') }
+  return { fred: last('fred'), cftc: last('cftc'), ecb: last('ecb'), calendar: last('calendar'), news: last('news') }
 }
 
 const cachedSeries = unstable_cache(loadSeries, ['market-series-v1'], { revalidate: REVALIDATE_SECONDS, tags: [MARKET_CACHE_TAG] })
@@ -203,4 +206,62 @@ const cachedAuctionResults = unstable_cache(
 /** Résultats des adjudications récentes (taux retenu), cache de 5 min. */
 export function readAuctionResults() {
   return safe(() => cachedAuctionResults())
+}
+
+// ─── Actus officielles ──────────────────────────────────────────
+
+/** Rafraîchissement des flux à la consultation : au plus un passage toutes les 90 s (cache partagé). */
+export const NEWS_REFRESH_SECONDS = 90
+
+const refreshNews = unstable_cache(
+  async () => {
+    const { items, errors } = await fetchOfficialNews()
+    if (items.length) await supabaseMarketStore(createAdminClient()).upsertNews(items)
+    if (errors.length) console.error('[market news]', errors.join(' | '))
+    return { at: Date.now(), failedFeeds: errors.length }
+  },
+  ['market-news-refresh-v1'],
+  { revalidate: NEWS_REFRESH_SECONDS },
+)
+
+export interface StoredNews extends NewsItem { firstSeenAt: number }
+
+interface NewsRecord {
+  id: string; source: NewsItem['source']; kind: NewsItem['kind']; title: string; summary: string | null; url: string
+  category: string | null; impact: NewsItem['impact']; published_at: string; first_seen_at: string
+}
+
+async function loadNews(since: string): Promise<StoredNews[]> {
+  const db = createAdminClient()
+  const { data, error } = await db.from('market_news')
+    .select('id, source, kind, title, summary, url, category, impact, published_at, first_seen_at')
+    .gte('published_at', `${since}T00:00:00Z`).order('published_at', { ascending: false }).limit(500)
+  if (error) throw new Error(error.message)
+  return ((data ?? []) as NewsRecord[]).map(r => ({
+    id: r.id, source: r.source, kind: r.kind, title: r.title, summary: r.summary, url: r.url, category: r.category,
+    impact: r.impact, publishedAt: Date.parse(r.published_at), firstSeenAt: Date.parse(r.first_seen_at),
+  }))
+}
+
+const cachedNews = unstable_cache(
+  // `stamp` (dernier rafraîchissement) fait partie de la clé : relecture après chaque passage.
+  async (since: string, stamp: number) => { void stamp; return loadNews(since) },
+  ['market-news-v1'],
+  { revalidate: 60, tags: [MARKET_CACHE_TAG] },
+)
+
+/**
+ * Actus officielles publiées depuis `since` (AAAA-MM-JJ) : rafraîchit
+ * les flux si le dernier passage date de plus de 90 s (sans bloquer en
+ * cas de panne), puis lit la table. `refreshedAt` : dernier passage.
+ */
+export async function readNews(since: string): Promise<ReadResult<{ items: StoredNews[]; refreshedAt: number | null; failedFeeds: number }>> {
+  let refresh: { at: number; failedFeeds: number } | null = null
+  try {
+    refresh = await refreshNews()
+  } catch (e) {
+    console.error('[market news] rafraîchissement :', (e as Error).message)
+  }
+  const r = await safe(() => cachedNews(since, refresh?.at ?? 0))
+  return r.ok ? { ok: true, data: { items: r.data, refreshedAt: refresh?.at ?? null, failedFeeds: refresh?.failedFeeds ?? 0 } } : r
 }

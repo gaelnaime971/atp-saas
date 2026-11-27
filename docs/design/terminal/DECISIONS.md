@@ -293,3 +293,21 @@ Arrêté le 27/11/2026. **Analyse d'action reste dans Mon trading › Outils, m�
 
 - Retirée de Marchés › Analyse (`lib/nav/markets-nav.tsx`), toujours en fin d'Outils (`lib/nav/trader-nav.tsx`) ; ⌘K la range dans Mon trading › Outils.
 - Aucune page du SPA n'est plus rangée dans Marchés (`MARKETS_SPA_PAGES` vide) : le mécanisme reste, sans usage.
+
+## Actus officielles (lot E2, partie 1)
+
+Page `/dashboard/marches/actus` (menu Flux › « Actus officielles », ex-« Actus & Squawk »), d'après la maquette 06 sans squawk de prix, sans TV ni presse. Heures du membre.
+
+- **Sources et conditions** (vérifiées le 27/11/2026) :
+  | Source | Flux | Conditions |
+  |---|---|---|
+  | Fed : communiqués (dont politique monétaire), discours, témoignages | RSS officiels `federalreserve.gov/feeds/press_all.xml`, `speeches.xml`, `testimony.xml` | « information on Board's website is in the public domain and may be copied and distributed without permission » |
+  | BCE : communiqués, discours, conférences, comptes rendus | RSS officiel `ecb.europa.eu/rss/press.html` | libre réutilisation, texte exact, BCE citée, mention de la gratuité sur le site de la BCE ; seuls les documents signés (working papers) demandent une autorisation : ici titre + lien seulement |
+  | Trésor US : résultats d'adjudications (notes et obligations) | API TreasuryDirect `TA_WS/securities/auctioned` (déjà utilisée par le calendrier) | données publiques du gouvernement fédéral, crédit demandé. Les conditions du site mentionnent un usage « non commercial personnel » pour le contenu du site : ATP n'en reprend aucun texte, seulement des faits (taux retenu, ratio de couverture) rédigés par ATP, avec lien vers le communiqué officiel (PDF) |
+  | Agences US (BLS, BEA, Census, DOL, Fed) | lignes « flash » calculées depuis le calendrier et les chiffres FRED (non stockées) | conditions FRED, déjà respectées |
+  - **Écartés** : **BoJ** (sa page « Copyright » exclut la reproduction à des fins commerciales sans permission préalable ; un lien vers ses nouveautés seulement) ; **communiqués de presse du Trésor** (aucun flux officiel, il faudrait analyser le HTML) ; Fiscal Data (adjudications ouvertes à l'usage commercial mais avec un mois de retard et sans taux récents) ; presse, dépêches, squawk de prix.
+- **Impact** : Fed — communiqué FOMC, note d'application, projections : fort ; autres textes de politique monétaire (minutes…) : moyen ; témoignage sur le Monetary Policy Report : fort ; autres témoignages et discours : moyen ; reste : faible. BCE — décision de politique monétaire et conférence de presse : fort ; compte rendu de réunion et discours de la présidente : moyen ; reste : faible. Adjudications à 10 et 30 ans : moyen ; autres : faible. Flash : impact de la publication.
+- **Lignes flash** : « Inflation (IPC) publiée : +0,3 % sur un mois (précédent +0,2 %) », dès que FRED a mis le chiffre en ligne (même lecture que le calendrier), sans consensus.
+- **Stockage** : table `market_news` (migration `20261127000004`), une ligne par texte, clé = source + adresse canonique (https, sans requête, fragment ni doubles barres) : aucun doublon, `first_seen_at` jamais réécrit. Lecture via `has_dashboard_access()`, écriture service-role seulement.
+- **Mise à jour** : à la consultation, au plus un passage toutes les **90 s** (cache partagé `unstable_cache`), plus la source « news » du cron quotidien. Pas de cron supplémentaire. Un flux en panne n'empêche pas les autres (badge « flux indisponible »).
+- **Affichage** : 14 jours d'actus groupées par jour, titre (tel que publié, souvent en anglais), source, nature, impact, heure du membre, résumé officiel s'il apporte plus que le titre, lien vers le texte officiel ; « Nouveau » sous 24 h ; filtres source (Fed, BCE, Trésor US, Agences US) et impact dans l'URL (`?source=fed,bce&impact=fort`).
