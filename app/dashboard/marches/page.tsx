@@ -147,13 +147,13 @@ export default async function OverviewPage() {
             <span style={{ ...mono, fontSize: 10, color: 'var(--color-text-3)' }}>rédigé à {formatTime(now, tz)} par des règles simples</span>
           </div>
           <p style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.3, color: 'var(--color-text-1)', margin: '0 0 1rem 0' }}>{briefing.headline}</p>
-          <dl className="grid gap-x-5 gap-y-2.5" style={{ gridTemplateColumns: 'minmax(0, auto) minmax(0, 1fr)', margin: 0 }}>
+          <dl className="grid grid-cols-1 sm:grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-5 gap-y-1 sm:gap-y-2.5" style={{ margin: 0 }}>
             {briefing.lines.map(l => (
               <div key={l.key} className="contents">
                 <dt style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-3)', paddingTop: 3 }}>
                   <Link href={HREF[l.key]} style={{ color: 'inherit', textDecoration: 'none' }}>{l.label}</Link>
                 </dt>
-                <dd style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: 'var(--color-text-1)' }}>{l.text}</dd>
+                <dd className="pb-2 sm:pb-0" style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: 'var(--color-text-1)' }}>{l.text}</dd>
               </div>
             ))}
           </dl>
@@ -296,13 +296,13 @@ export default async function OverviewPage() {
             {macro.map(m => (
               <li key={m.id} style={row} className="flex items-baseline justify-between gap-3">
                 <span>
-                  <span style={{ fontSize: 13, color: 'var(--color-text-1)' }}>{m.label}</span>
+                  <span style={{ fontSize: 13, color: 'var(--color-text-1)', whiteSpace: 'nowrap' }}>{m.label}</span>
                   <span style={{ display: 'block', ...mono, fontSize: 11, color: 'var(--color-text-3)' }}>{m.fig.last ? `au ${formatDateKey(m.fig.last.date)}` : 'pas encore chargé'}</span>
                 </span>
                 <span style={{ textAlign: 'right' }}>
                   <span style={{ ...mono, fontSize: 16, fontWeight: 600, color: 'var(--color-text-1)' }}>{m.fig.last ? `${fmtNumber(m.fig.last.value, m.digits)} ${m.unit}` : '—'}</span>
                   {m.fig.change !== null && (
-                    <span style={{ display: 'block', ...mono, fontSize: 11, color: 'var(--color-text-3)' }}>{fmtNumber(m.fig.change, m.digits, { sign: true })} {m.deltaUnit} vs publication précédente</span>
+                    <span style={{ display: 'block', ...mono, fontSize: 11, color: 'var(--color-text-3)' }}>{fmtNumber(m.fig.change, m.digits, { sign: true })} {m.deltaUnit} vs précédent</span>
                   )}
                 </span>
               </li>
