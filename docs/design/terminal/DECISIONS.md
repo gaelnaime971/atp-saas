@@ -129,7 +129,7 @@ Arrêté le 27/11/2026.
 - **Serveur** : `getMemberTimeZone()` (`lib/time-server.ts`) pour les Server Components. Il ne connaît pas le navigateur : profil valide, sinon Paris.
 - **Heures de marché** : définies dans le fuseau de leur place (`America/New_York`, `America/Chicago`, `Europe/London`, `Asia/Tokyo`) pour une date de cette place, puis converties (`zonedTimeToUtc`, `marketTimeIn`). Les changements d'heure viennent de la base IANA : États-Unis et Europe ne changent pas le même jour, la Guadeloupe jamais.
 - **Formats** : `14:30`, « mer. 25 nov. », « UTC−4 » (signe moins typographique).
-- **Mon compte › Fuseau horaire** (ancre `#fuseau`) : Paris, Guadeloupe, Martinique, Guyane, La Réunion, Bruxelles, Genève (`Europe/Zurich`), Montréal (`America/Toronto`) en tête, puis toute la liste du moteur, avec recherche sans accents et décalage actuel.
+- **Mon compte › Fuseau horaire** (ancre `#fuseau`, liste `components/ui/Listbox` aux couleurs de l'app, motif ARIA listbox) : Paris, Guadeloupe, Martinique, Guyane, La Réunion, Bruxelles, Genève (`Europe/Zurich`), Montréal (`America/Toronto`) en tête, puis toute la liste du moteur, avec recherche sans accents et décalage actuel.
 - **Barre Marchés** : un clic sur « Ton heure » mène au réglage (membre seulement : l'admin n'a pas Mon compte). Si le membre est à Londres, New York ou Tokyo, cette place n'est pas affichée en double (`lib/terminal/clocks.ts`).
 - **Colonne** : migration `20261127000001_profiles_timezone.sql` (appliquée le 27/11/2026). Non protégée par `protect_profile_privileged_columns` : le membre la règle lui-même.
 - **Pas encore fait** : la dédup des `TZ` locaux (`America/Guadeloupe` dans les deux `Coaching.tsx`, `Europe/Paris` inline ailleurs) reste à faire, hors Marchés.
@@ -145,6 +145,7 @@ Arrêté le 27/11/2026. Page `/dashboard/marches/sessions`, d'après la maquette
   - Rendez-vous fixes de la journée US : 8:30, 9:30, 10:00, 16:00 (13:00 si clôture anticipée), 17:00 ET, avec la fenêtre ATP ±15 min.
   - Échéances trimestrielles (3e vendredi de mars, juin, septembre, décembre, la veille si la bourse est fermée), roll conseillé 8 jours avant, OPEX mensuelles (3e vendredi). Les quatre prochaines de chaque.
   - Changements d'heure vus du membre : chaque date où l'ouverture du cash US change d'heure chez lui.
+  - « Jours spéciaux à venir » : fériés, clôtures anticipées et changements d'heure sur un même horizon (les 4 prochains mois, `upcomingSpecialDays`), dans l'ordre chronologique, sans limite de nombre.
 - **Fériés et clôtures anticipées** : table statique `lib/terminal/market-holidays.ts`, 2026-2027, source en commentaire.
   - Cash US : calendrier officiel NYSE, relevé le 27/11/2026. Confirmé.
   - CME Globex : les horaires des fêtes ne sont publiés qu'environ deux semaines avant chaque fête. La table suit le schéma habituel des futures indices US, marqué `cmeConfirmed: false` et signalé « à confirmer » à l'écran. À vérifier sur cmegroup.com avant chaque fête, puis passer `cmeConfirmed` à `true`.

@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import Listbox from '@/components/ui/Listbox'
 import { useMemberTimeZone } from '@/components/time/MemberTimeZone'
 import { matchesTimeZone, offsetLabel, timeZoneLabel, timeZoneOptions } from '@/lib/time'
 
@@ -10,7 +11,8 @@ import { matchesTimeZone, offsetLabel, timeZoneLabel, timeZoneOptions } from '@/
  * Mon compte › Fuseau horaire. Les fuseaux des membres en tête (Paris,
  * Antilles, Guyane, Réunion, Bruxelles, Genève, Montréal), puis la liste
  * complète du moteur Intl, filtrable. Chaque libellé porte le décalage
- * actuel (« Guadeloupe · UTC−4 »).
+ * actuel (« Guadeloupe · UTC−4 »). Liste aux couleurs de l'app
+ * (components/ui/Listbox), pas de <select> natif.
  *
  * Ancre #fuseau : la barre du haut de Marchés y mène (« Ton heure »).
  */
@@ -22,7 +24,7 @@ export default function TimeZoneSettings() {
   const searchRef = useRef<HTMLInputElement>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
   const searchId = useId()
-  const listId = useId()
+  const listLabelId = useId()
 
   // Instant de référence des décalages, figé au montage (ils changent
   // 2 fois par an) : rendu pur.
@@ -98,28 +100,17 @@ export default function TimeZoneSettings() {
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label htmlFor={listId} style={labelStyle}>Fuseau</label>
-          <select
-            id={listId}
-            size={8}
-            value={filtered.some(o => o.id === current) ? current : ''}
-            onChange={e => { setSelected(e.target.value); setStatus('idle') }}
-            style={{ ...fieldStyle, padding: 4, fontFamily: 'var(--font-data)', fontSize: 12 }}
-          >
-            {featured.length > 0 && (
-              <optgroup label="Membres ATP">
-                {featured.map(o => <option key={o.id} value={o.id}>{o.label} · {o.offset}</option>)}
-              </optgroup>
-            )}
-            {others.length > 0 && (
-              <optgroup label="Tous les fuseaux">
-                {others.map(o => <option key={o.id} value={o.id}>{o.label} · {o.offset}</option>)}
-              </optgroup>
-            )}
-          </select>
-          {filtered.length === 0 && (
-            <p style={{ fontSize: 11, color: 'var(--color-text-3)', margin: '6px 0 0 0' }}>Aucun fuseau ne correspond.</p>
-          )}
+          <span id={listLabelId} style={labelStyle}>Fuseau</span>
+          <Listbox
+            labelledBy={listLabelId}
+            value={current}
+            onChange={v => { setSelected(v); setStatus('idle') }}
+            groups={[
+              { label: 'Membres ATP', options: featured.map(o => ({ value: o.id, label: o.label, hint: o.offset })) },
+              { label: 'Tous les fuseaux', options: others.map(o => ({ value: o.id, label: o.label, hint: o.offset })) },
+            ]}
+            emptyText="Aucun fuseau ne correspond."
+          />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -13,7 +13,7 @@ import {
 } from '@/lib/time'
 import {
   SESSION_BY_ID, allSessionStates, dayRanges, memberHours, monthlyOpex, quarterlyExpirations,
-  upcomingClockShifts, upcomingHolidays, usAppointments, usTradingDay,
+  SPECIAL_DAYS_HORIZON_MONTHS, upcomingSpecialDays, usAppointments, usTradingDay,
   type SessionId, type SessionState, type SessionStatus,
 } from '@/lib/terminal/sessions'
 import { SPECIAL_DAYS_UNTIL } from '@/lib/terminal/market-holidays'
@@ -456,15 +456,13 @@ function Expirations({ now }: { now: number }) {
 // ─── Jours spéciaux ─────────────────────────────────────────────
 
 function SpecialDays({ now, tz }: { now: number; tz: string }) {
-  const items = [...upcomingHolidays(now, tz, 6), ...upcomingClockShifts(now, tz, 150)]
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 8)
+  const items = upcomingSpecialDays(now, tz)
 
   return (
     <Card>
-      <h2 style={sectionTitle}>Jours spéciaux à venir</h2>
+      <h2 style={sectionTitle}>Jours spéciaux à venir · {SPECIAL_DAYS_HORIZON_MONTHS} prochains mois</h2>
       {items.length === 0 ? (
-        <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: 0 }}>Aucun jour spécial connu dans les mois qui viennent.</p>
+        <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: 0 }}>Aucun férié, clôture anticipée ni changement d’heure dans les 4 prochains mois.</p>
       ) : (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {items.map((it, i) => (

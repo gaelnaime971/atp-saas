@@ -7,7 +7,7 @@
  */
 
 import {
-  MARKET_ZONES, addDays, dateKey, formatTime, weekdayOf, zonedTimeToUtc,
+  MARKET_ZONES, addDays, dateKey, formatTime, parseDateKey, weekdayOf, zonedTimeToUtc,
 } from '@/lib/time'
 import { isNyseHoliday, specialDay, type HHMM, type MarketSpecialDay, MARKET_SPECIAL_DAYS } from '@/lib/terminal/market-holidays'
 
@@ -254,12 +254,23 @@ export interface UpcomingSpecial {
   cmeConfirmed?: boolean
 }
 
-/** Fériés et clôtures anticipées à venir (table), du plus proche au plus lointain. */
-export function upcomingHolidays(now: number, memberTz: string, count = 6): UpcomingSpecial[] {
+/** Horizon des « jours spéciaux à venir » : les 4 prochains mois. */
+export const SPECIAL_DAYS_HORIZON_MONTHS = 4
+
+/** Date civile + n mois (jour borné à la fin du mois : 31/01 + 1 mois = 28/02). */
+export function addMonths(key: string, n: number): string {
+  const { year, month, day } = parseDateKey(key)
+  const target = new Date(Date.UTC(year, month - 1 + n, 1))
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate()
+  target.setUTCDate(Math.min(day, lastDay))
+  return target.toISOString().slice(0, 10)
+}
+
+/** Fériés et clôtures anticipées (table) entre aujourd'hui (ET) et `until` inclus, dans l'ordre. */
+export function upcomingHolidays(now: number, memberTz: string, until: string): UpcomingSpecial[] {
   const today = dateKey(now, ET)
   return MARKET_SPECIAL_DAYS
-    .filter(d => d.date >= today && d.nyse)
-    .slice(0, count)
+    .filter(d => d.date >= today && d.date <= until && d.nyse)
     .map(d => {
       if (d.nyse === 'early') {
         const close = formatTime(at(d.date, '13:00', ET), memberTz)
@@ -283,17 +294,17 @@ export function upcomingHolidays(now: number, memberTz: string, count = 6): Upco
 }
 
 /**
- * Changements d'heure à venir vus du membre : chaque date à partir de
- * laquelle l'ouverture du cash US (9:30 ET) tombe à une autre heure chez
- * lui. Couvre les décalages US/Europe (2 à 3 semaines en mars, 1 en
- * octobre-novembre), et rien pour un membre en Guadeloupe hors
- * changement américain.
+ * Changements d'heure vus du membre entre aujourd'hui (ET) et `until`
+ * inclus : chaque date à partir de laquelle l'ouverture du cash US
+ * (9:30 ET) tombe à une autre heure chez lui. Couvre les décalages
+ * US/Europe (2 à 3 semaines en mars, 1 en octobre-novembre), et rien
+ * pour un membre en Guadeloupe hors changement américain.
  */
-export function upcomingClockShifts(now: number, memberTz: string, days = 150): UpcomingSpecial[] {
+export function upcomingClockShifts(now: number, memberTz: string, until: string): UpcomingSpecial[] {
   const out: UpcomingSpecial[] = []
   let d = dateKey(now, ET)
   let prev = formatTime(at(d, '09:30', ET), memberTz)
-  for (let i = 1; i <= days; i++) {
+  while (d < until) {
     d = addDays(d, 1)
     const cur = formatTime(at(d, '09:30', ET), memberTz)
     if (cur !== prev) {
@@ -305,4 +316,15 @@ export function upcomingClockShifts(now: number, memberTz: string, days = 150): 
     }
   }
   return out
+}
+
+/**
+ * Jours spéciaux à venir : fériés, clôtures anticipées et changements
+ * d'heure, sur un même horizon (les 4 prochains mois), dans l'ordre
+ * chronologique, sans limite de nombre.
+ */
+export function upcomingSpecialDays(now: number, memberTz: string, months = SPECIAL_DAYS_HORIZON_MONTHS): UpcomingSpecial[] {
+  const until = addMonths(dateKey(now, ET), months)
+  return [...upcomingHolidays(now, memberTz, until), ...upcomingClockShifts(now, memberTz, until)]
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.kind === 'dst' ? 1 : 0) - (b.kind === 'dst' ? 1 : 0))
 }

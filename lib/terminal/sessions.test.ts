@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { formatTime, zonedTimeToUtc } from '@/lib/time'
 import { MARKET_SPECIAL_DAYS } from './market-holidays'
 import {
-  memberHours, monthlyOpex, quarterlyExpirations, sessionState, thirdFriday, upcomingClockShifts,
-  upcomingHolidays, usAppointments, usTradingDay,
+  addMonths, memberHours, monthlyOpex, quarterlyExpirations, sessionState, thirdFriday, upcomingClockShifts,
+  upcomingHolidays, upcomingSpecialDays, usAppointments, usTradingDay,
 } from './sessions'
 
 const ny = (date: string, time: string) => zonedTimeToUtc(date, time, 'America/New_York').getTime()
@@ -117,21 +117,44 @@ describe('rendez-vous de la journée US', () => {
 
 describe('jours spéciaux à venir', () => {
   it('fériés et clôtures anticipées dans l’ordre, en heure du membre', () => {
-    const list = upcomingHolidays(ny('2026-11-27', '08:00'), PARIS, 4)
+    const list = upcomingHolidays(ny('2026-11-27', '08:00'), PARIS, '2027-01-01')
     expect(list.map(d => [d.date, d.kind])).toEqual([
       ['2026-11-27', 'early'], ['2026-12-24', 'early'], ['2026-12-25', 'closed'], ['2027-01-01', 'closed'],
     ])
     expect(list[0].detail).toContain('19:00 chez toi')
-    expect(upcomingHolidays(ny('2026-11-27', '08:00'), GPE, 1)[0].detail).toContain('14:00 chez toi')
+    expect(upcomingHolidays(ny('2026-11-27', '08:00'), GPE, '2026-11-27')[0].detail).toContain('14:00 chez toi')
+  })
+  it('horizon de 4 mois, sans limite de nombre : Presidents’ Day et Vendredi saint 2027 compris', () => {
+    const list = upcomingSpecialDays(ny('2026-11-27', '08:00'), PARIS)
+    expect(list.map(d => d.date)).toEqual([
+      '2026-11-27', '2026-12-24', '2026-12-25', '2027-01-01', '2027-01-18', '2027-02-15', '2027-03-14', '2027-03-26',
+    ])
+    // Au 1er décembre, l'horizon (1er avril) atteint aussi le 2e changement d'heure.
+    const later = upcomingSpecialDays(ny('2026-12-01', '08:00'), PARIS)
+    expect(later.map(d => [d.date, d.kind])).toEqual([
+      ['2026-12-24', 'early'], ['2026-12-25', 'closed'], ['2027-01-01', 'closed'], ['2027-01-18', 'closed'],
+      ['2027-02-15', 'closed'], ['2027-03-14', 'dst'], ['2027-03-26', 'closed'], ['2027-03-28', 'dst'],
+    ])
+    expect(later.find(d => d.date === '2027-02-15')?.title).toBe('Presidents’ Day')
+    expect(later.find(d => d.date === '2027-03-26')?.title).toBe('Vendredi saint')
+  })
+  it('rien au-delà de l’horizon', () => {
+    const list = upcomingSpecialDays(ny('2026-11-27', '08:00'), PARIS)
+    expect(list.every(d => d.date <= '2027-03-27')).toBe(true)
+  })
+  it('addMonths borne le jour à la fin du mois', () => {
+    expect(addMonths('2026-11-27', 4)).toBe('2027-03-27')
+    expect(addMonths('2027-01-31', 1)).toBe('2027-02-28')
+    expect(addMonths('2026-10-31', 4)).toBe('2027-02-28')
   })
   it('changements d’heure vus de Paris : mars 2027 (US le 14, Europe le 28)', () => {
-    const shifts = upcomingClockShifts(ny('2026-12-01', '12:00'), PARIS, 150)
+    const shifts = upcomingClockShifts(ny('2026-12-01', '12:00'), PARIS, '2027-04-30')
     expect(shifts.map(s => [s.date, s.detail.match(/ouvre à (\d\d:\d\d)/)?.[1]])).toEqual([
       ['2027-03-14', '14:30'], ['2027-03-28', '15:30'],
     ])
   })
   it('vus de Guadeloupe : un seul changement en mars 2027', () => {
-    const shifts = upcomingClockShifts(ny('2026-12-01', '12:00'), GPE, 150)
+    const shifts = upcomingClockShifts(ny('2026-12-01', '12:00'), GPE, '2027-04-30')
     expect(shifts.map(s => s.date)).toEqual(['2027-03-14'])
     expect(shifts[0].detail).toContain('09:30')
   })
