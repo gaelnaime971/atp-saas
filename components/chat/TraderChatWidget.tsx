@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useUnreadCount } from '@/lib/hooks/useUnreadCount'
 import ChatBubble from './ChatBubble'
@@ -10,7 +10,8 @@ export default function TraderChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [admin, setAdmin] = useState<{ id: string; full_name: string; avatar_url: string | null } | null>(null)
-  const supabase = useRef(createClient()).current
+  // Client stable entre deux rendus (sans lire une ref pendant le rendu).
+  const [supabase] = useState(createClient)
   const { total } = useUnreadCount(userId)
 
   useEffect(() => {
@@ -39,11 +40,13 @@ export default function TraderChatWidget() {
       {isOpen && (
         <div
           style={{
+            // Bureau : inchangé (90 / 24 / 380 / 520). Mobile : au-dessus de la
+            // barre d'onglets, sans dépasser l'écran.
             position: 'fixed',
-            bottom: 90,
-            right: 24,
-            width: 380,
-            height: 520,
+            bottom: 'calc(90px + var(--app-tabbar-offset, 0px) - (1.5rem - var(--app-chat-gap, 1.5rem)))',
+            right: 'var(--app-chat-gap, 1.5rem)',
+            width: 'min(380px, calc(100vw - 2 * var(--app-chat-gap, 1.5rem)))',
+            height: 'min(520px, calc(100dvh - 90px - var(--app-tabbar-offset, 0px) - 4rem))',
             background: 'var(--bg2)',
             border: '1px solid var(--border)',
             borderRadius: 12,

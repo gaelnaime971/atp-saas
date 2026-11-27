@@ -163,7 +163,8 @@ export default function CalendarPnl({ sessions, totalCapital }: Props) {
     <Card style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
+        {/* flex-wrap : sur mobile, « Aujourd'hui » passe à la ligne au lieu d'être coupé. */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => shiftMonth(-1)}

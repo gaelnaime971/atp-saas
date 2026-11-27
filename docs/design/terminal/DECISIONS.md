@@ -63,7 +63,6 @@ FRED, Fed d'Atlanta, Shiller, CFTC. La mention FRED exacte : « This product use
 - Lecture IA du ton de la Fed.
 - Jarvis branché sur les tables via `lib/jarvis/market-context.ts`.
 - Cotations sous licence.
-- Barre d'onglets mobile.
 
 ## Décisions d'implémentation (étape 1, menu)
 
@@ -154,3 +153,20 @@ Arrêté le 27/11/2026. Page `/dashboard/marches/sessions`, d'après la maquette
 - **Barre du haut** : pastille ouvert/fermé sur Londres, New York (session US, fériés NYSE compris) et Tokyo.
 - **Rendu** : côté client après hydratation (`useMinuteNow`), mis à jour chaque minute. Le serveur passe le fuseau du profil (`getMemberTimeZone()`) en attendant celui du navigateur.
 - **Pas repris de la maquette** : Sydney, et « Tes meilleures heures » (données d'exemple, à brancher sur le journal plus tard).
+
+## Mobile et tablette (lot B)
+
+Arrêté le 27/11/2026. Concerne tout le dashboard : Mon trading, Marchés et admin, via un shell commun `components/ui/AppShell.tsx` (règles pures et testées : `lib/ui/shell.ts`).
+
+- **Moins de 768 px** :
+  - pas de rail ; barre du haut compacte : bouton menu, titre de la page, actions en icônes (Assistant Trader en Mon trading ; « Ton heure » et la pastille NQ/YM en Marchés ; « Nouveau trader » en admin) ;
+  - le bouton menu ouvre le menu complet dans un tiroir (même `AppSidebar`, variante `drawer`) : sélecteur d'espace, recherche, groupes, pied de menu. Il se ferme avec Échap, en touchant le fond, en choisissant une page, ou en passant en tablette ou bureau ;
+  - barre d'onglets en bas, 4 raccourcis + « Menu » (`TRADING_TABS`, `MARKETS_TABS`, `ADMIN_TABS` dans `lib/nav`). Admin : Accueil (vue globale), Prospects, Pipeline, Traders ;
+  - bulle et panneau de messagerie au-dessus de la barre d'onglets (`--app-tabbar-offset`, `--app-chat-gap` dans `app/globals.css`) ;
+  - zones de toucher d'au moins 44 px ; marges de sécurité iPhone avec `env(safe-area-inset-*)` et `viewportFit: 'cover'` (layouts `/dashboard` et `/admin/dashboard` seulement) ;
+  - pas de défilement horizontal de page : grilles sur une colonne, la frise 24 h et les tableaux défilent dans leur carte.
+    Grilles des pages : `minmax(min(Npx, 100%), 1fr)` au lieu de `minmax(Npx, 1fr)` (identique dès que la place suffit), et colonnes fixes passées en classes responsives (`grid-cols-1 md:grid-cols-2`, `lg:grid-cols-4`…), au même nombre de colonnes qu'avant à partir de 1024 ou 1280 px.
+    Admin : Vue globale et Traders tiennent en 390 px ; **Prospects et Pipeline débordent encore** (tableaux et kanban denses), à reprendre à part.
+- **De 768 à 1279 px** : rail replié en icônes par défaut, nom au survol (et au focus clavier). Le choix « déplier » sur tablette est mémorisé à part de celui du bureau. Le pied de menu (compte, déconnexion) passe aussi en icônes. Barre Marchés : les horloges qui ne tiennent pas se masquent, en commençant par la dernière (« Ton heure » reste).
+- **À partir de 1280 px** : inchangé, sauf la barre du haut : le titre ne touche plus les actions (écart fixe), et les statistiques membre qui ne tiennent pas se masquent (une seule rangée visible).
+- **Mise en page en CSS** (classes `md:` de Tailwind, pas de flash au chargement) ; le JS (`useViewportKind`) ne sert qu'aux comportements (repli par défaut, fermeture du tiroir).

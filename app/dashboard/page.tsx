@@ -2,12 +2,11 @@
 
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import AppSidebar from '@/components/ui/AppSidebar'
-import AppTopbar from '@/components/ui/AppTopbar'
+import AppShell from '@/components/ui/AppShell'
 import CommandPalette from '@/components/ui/CommandPalette'
 import { useSidebarProfile } from '@/lib/hooks/useSidebarProfile'
-import { traderNavFor } from '@/lib/nav/trader-nav'
-import { MARKETS_NAV } from '@/lib/nav/markets-nav'
+import { TRADING_TABS, traderNavFor } from '@/lib/nav/trader-nav'
+import { MARKETS_NAV, MARKETS_TABS } from '@/lib/nav/markets-nav'
 import { buildPaletteItems, type AnyNavId } from '@/lib/nav/palette'
 import {
   isDashboardPage, MARKETS_BASE_PATH, parsePageParam, searchWithoutPage, spaceOfSpaPage,
@@ -188,14 +187,21 @@ export default function TraderDashboard() {
     }
   }
 
+  const assistantIcon = (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  )
+
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--color-surface-0)' }}>
-      <AppSidebar<AnyNavId>
-        groups={navGroups}
-        activePage={activePage}
-        onPageChange={id => goTo(id)}
-        storageKey="atp.sidebar.trader"
-        header={railCollapsed => (
+    <AppShell<AnyNavId>
+      sidebar={{
+        groups: navGroups,
+        activePage,
+        onPageChange: id => goTo(id),
+        storageKey: 'atp.sidebar.trader',
+        header: railCollapsed => (
           <>
             {terminalVisible && (
               <SpaceSwitcher
@@ -209,63 +215,74 @@ export default function TraderDashboard() {
             )}
             <SearchButton onSearch={() => setPaletteOpen(true)} railCollapsed={railCollapsed} />
           </>
-        )}
-        footer={
+        ),
+        footer: railCollapsed => (
           <TraderSidebarFooter
             name={name}
             avatarUrl={avatarUrl}
             logout={logout}
             activePage={activePage}
             onSelect={setActivePage}
+            railCollapsed={railCollapsed}
           />
-        }
-      />
-
-      <div className="flex-1 flex flex-col" style={{ marginLeft: 'var(--app-sidebar-width, 240px)', transition: 'margin-left 0.18s ease' }}>
-        <AppTopbar
-          title={pageTitles[activePage]}
-          actions={space === 'marches' ? <MarketsClocks onSettings={openTimeZoneSettings} /> : (
-            <>
-              <button
-                onClick={() => setSessionLive(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shrink-0 transition-all hover:scale-105"
-                style={{
-                  background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-strong))',
-                  color: '#000',
-                  boxShadow: '0 0 20px rgba(var(--color-accent-rgb), 0.3)',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Assistant Trader
-              </button>
-              <div className="h-5 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
-              <TopbarStats />
-              <div className="h-5 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
-              <TopbarDate />
-            </>
-          )}
-        />
-
-        <main className="flex-1 p-7">
-          {renderPage()}
-        </main>
-      </div>
-      <TraderChatWidget />
-      <CommandPalette
-        open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-        items={paletteItems}
-        onSelect={(id, item) => goTo(id, item.href)}
-      />
-      {sessionLive && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }}>
-          <SessionLive onExit={() => setSessionLive(false)} />
-        </div>
+        ),
+      }}
+      title={pageTitles[activePage]}
+      tabs={space === 'marches' ? MARKETS_TABS : TRADING_TABS}
+      topbarActions={space === 'marches' ? <MarketsClocks onSettings={openTimeZoneSettings} /> : (
+        <>
+          <button
+            onClick={() => setSessionLive(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider shrink-0 transition-all hover:scale-105"
+            style={{
+              background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-strong))',
+              color: '#000',
+              boxShadow: '0 0 20px rgba(var(--color-accent-rgb), 0.3)',
+              letterSpacing: '0.08em',
+            }}
+          >
+            {assistantIcon}
+            Assistant Trader
+          </button>
+          <div className="h-5 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
+          <TopbarStats />
+          <div className="h-5 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
+          <TopbarDate />
+        </>
       )}
-    </div>
+      mobileActions={space === 'marches' ? <MarketsClocks compact onSettings={openTimeZoneSettings} /> : (
+        <button
+          type="button"
+          onClick={() => setSessionLive(true)}
+          aria-label="Assistant Trader"
+          className="inline-flex items-center justify-center shrink-0"
+          style={{
+            width: 44, height: 44, borderRadius: 'var(--radius-lg)',
+            background: 'var(--color-accent-soft)', color: 'var(--color-accent)',
+            border: '1px solid rgba(var(--color-accent-rgb), 0.3)', cursor: 'pointer',
+          }}
+        >
+          {assistantIcon}
+        </button>
+      )}
+      overlays={
+        <>
+          <TraderChatWidget />
+          <CommandPalette
+            open={paletteOpen}
+            onClose={() => setPaletteOpen(false)}
+            items={paletteItems}
+            onSelect={(id, item) => goTo(id, item.href)}
+          />
+          {sessionLive && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }}>
+              <SessionLive onExit={() => setSessionLive(false)} />
+            </div>
+          )}
+        </>
+      }
+    >
+      {renderPage()}
+    </AppShell>
   )
 }

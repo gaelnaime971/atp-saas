@@ -347,3 +347,21 @@ select:focus-visible,
    au commit 3. Ils n'étaient utilisés que par les composants shadcn,
    eux-mêmes confinés à la route /test.
    ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   Shell mobile (components/ui/AppShell.tsx, lib/ui/shell.ts).
+   Sous 768 px, une barre d'onglets occupe le bas de l'écran :
+   --app-tabbar-offset = sa hauteur (56 px) + la marge de sécurité
+   iPhone. La bulle et le panneau de messagerie passent au-dessus, et
+   le contenu garde cette marge en bas. 0 à partir de 768 px : rien ne
+   bouge sur tablette et bureau.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --app-tabbar-offset: 0px;
+  --app-chat-gap: 1.5rem;
+}
+@media (max-width: 767.98px) {
+  :root {
+    --app-tabbar-offset: calc(56px + env(safe-area-inset-bottom));
+    --app-chat-gap: 0.75rem;
+  }
+}

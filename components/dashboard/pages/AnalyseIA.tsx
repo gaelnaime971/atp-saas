@@ -689,7 +689,7 @@ export default function AnalyseIA() {
   const renderForces = () => {
     if (!analysis) return null
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, animation: 'fadeIn 0.4s ease' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(360px, 100%), 1fr))', gap: 16, animation: 'fadeIn 0.4s ease' }}>
         {/* Forces column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -829,7 +829,7 @@ export default function AnalyseIA() {
         </Card>
 
         {/* Stop / Keep doing */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 14 }}>
           <Card style={{ borderLeft: '3px solid #ef4444' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <span style={{ fontSize: 18 }}>🛑</span>
@@ -868,7 +868,7 @@ export default function AnalyseIA() {
       return <Card><div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>Pas assez de données par instrument.</div></Card>
     }
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14, animation: 'fadeIn 0.4s ease' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 14, animation: 'fadeIn 0.4s ease' }}>
         {analysis.instruments_analysis.map((inst, i) => {
           const stat = stats?.instruments.find(s => s.instrument === inst.instrument)
           return (
@@ -1422,7 +1422,7 @@ export default function AnalyseIA() {
       <Card style={{ padding: 12 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
           {/* Period presets */}
-          <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg3)', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg3)', borderRadius: 8, border: '1px solid var(--border)', overflowX: 'auto', maxWidth: '100%' }}>
             {PERIOD_PRESETS.map(p => {
               const active = period === p.id
               return (
@@ -1552,7 +1552,7 @@ export default function AnalyseIA() {
           </Card>
 
           {/* Daily P&L bars + Rolling win rate */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(380px, 100%), 1fr))', gap: 12 }}>
             <Card style={{ padding: 14 }}>
               <SectionTitle icon="📊" label="P&L par session" />
               <div style={{ width: '100%', height: 200 }}>
@@ -1598,7 +1598,7 @@ export default function AnalyseIA() {
           </div>
 
           {/* Day of week + R-distribution + Instruments */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 12 }}>
             {instantStats.day_of_week.length > 0 && (
               <Card style={{ padding: 14 }}>
                 <SectionTitle icon="📅" label="Jour de la semaine" />

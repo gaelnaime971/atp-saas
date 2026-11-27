@@ -104,7 +104,7 @@ export default function BestWorstDay({ sessions, scopeLabel }: Props) {
   const { best, worst } = useMemo(() => computeBestWorst(sessions), [sessions])
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: 16 }}>
       <DayCard
         variant="best"
         icon="🏆"

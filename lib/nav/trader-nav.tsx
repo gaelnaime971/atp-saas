@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import type { NavGroup } from '@/components/ui/AppSidebar'
+import type { ShellTab } from '@/lib/ui/shell'
 import type { DashboardPage } from '@/components/dashboard/DashboardSidebar'
 
 // ═══════════════════════════════════════════════════════════════
@@ -103,4 +104,12 @@ export const TRADER_FOOTER_ITEMS: { id: DashboardPage; label: string; icon: Reac
   { id: 'compte',    label: 'Mon compte', icon: IconUser },
   { id: 'contrat',   label: 'Contrat',    icon: IconDoc },
   { id: 'documents', label: 'Documents',  icon: IconDoc },
+]
+
+/** Barre d'onglets mobile (< 768 px) de Mon trading : 4 raccourcis + Menu. */
+export const TRADING_TABS: ShellTab<DashboardPage>[] = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'session', label: 'Saisie' },
+  { id: 'sessions-history', label: 'Sessions' },
+  { id: 'stats', label: 'Stats' },
 ]

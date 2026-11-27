@@ -418,7 +418,7 @@ export default function ResultatsV2({ onEdit }: Props) {
             Il faut au moins {MIN_TRADES_FOR_SIGNAL} backtests sur une même combinaison.
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 12 }}>
             {combos.map((c) => (
               <div key={c.key} style={{
                 border: '1px solid var(--border)', borderRadius: 12, padding: 16,

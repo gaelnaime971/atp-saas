@@ -10,9 +10,10 @@ export default function ChatBubble({ unreadCount, onClick }: ChatBubbleProps) {
     <button
       onClick={onClick}
       style={{
+        // Au-dessus de la barre d'onglets sous 768 px (variables : app/globals.css).
         position: 'fixed',
-        bottom: '1.5rem',
-        right: '1.5rem',
+        bottom: 'calc(var(--app-chat-gap, 1.5rem) + var(--app-tabbar-offset, 0px))',
+        right: 'var(--app-chat-gap, 1.5rem)',
         width: 52,
         height: 52,
         background: 'var(--color-accent)',

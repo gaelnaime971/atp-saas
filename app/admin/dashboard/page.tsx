@@ -3,11 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Avatar from '@/components/ui/Avatar'
-import AppSidebar from '@/components/ui/AppSidebar'
-import AppTopbar from '@/components/ui/AppTopbar'
+import AppShell from '@/components/ui/AppShell'
 import CommandPalette, { flattenNavForPalette } from '@/components/ui/CommandPalette'
 import { useSidebarProfile } from '@/lib/hooks/useSidebarProfile'
-import { ADMIN_NAV, ADMIN_FOOTER_ITEMS, type AdminNavId, type AdminPage } from '@/lib/nav/admin-nav'
+import { ADMIN_NAV, ADMIN_FOOTER_ITEMS, ADMIN_TABS, type AdminNavId, type AdminPage } from '@/lib/nav/admin-nav'
 import Overview from '@/components/admin/pages/Overview'
 import Traders from '@/components/admin/pages/Traders'
 import Results from '@/components/admin/pages/Results'
@@ -120,21 +119,24 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--color-surface-0)' }}>
-      <AppSidebar<AdminNavId>
-        groups={ADMIN_NAV}
-        activePage={activePage}
-        onPageChange={id => goTo(id)}
-        banner={{ label: 'Admin', tone: 'loss' }}
-        storageKey="atp.sidebar.admin"
-        footer={
+    <AppShell<AdminNavId>
+      sidebar={{
+        groups: ADMIN_NAV,
+        activePage,
+        onPageChange: id => goTo(id),
+        banner: { label: 'Admin', tone: 'loss' },
+        storageKey: 'atp.sidebar.admin',
+        // Rail replié (tablette par défaut) : icônes seules, nom au survol.
+        footer: railCollapsed => (
           <>
             {name && (
-              <div className="mb-2 flex items-center gap-3 px-1">
+              <div className={`mb-2 flex items-center gap-3 ${railCollapsed ? 'justify-center' : 'px-1'}`} title={railCollapsed ? name : undefined}>
                 <Avatar url={avatarUrl} name={name} size={32} />
-                <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-1)' }}>
-                  {name}
-                </p>
+                {!railCollapsed && (
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-1)' }}>
+                    {name}
+                  </p>
+                )}
               </div>
             )}
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -146,10 +148,13 @@ export default function AdminDashboard() {
                       type="button"
                       onClick={() => setActivePage(item.id)}
                       aria-current={isActive ? 'page' : undefined}
+                      aria-label={railCollapsed ? item.label : undefined}
+                      title={railCollapsed ? item.label : undefined}
                       style={{
                         width: '100%',
                         display: 'flex', alignItems: 'center', gap: '0.75rem',
-                        padding: '0.375rem 0.75rem',
+                        justifyContent: railCollapsed ? 'center' : undefined,
+                        padding: railCollapsed ? '0.5rem 0' : '0.375rem 0.75rem',
                         borderRadius: 'var(--radius-md)',
                         background: isActive ? 'rgba(var(--color-accent-rgb), 0.10)' : 'transparent',
                         color: isActive ? 'var(--color-accent)' : 'var(--color-text-3)',
@@ -167,7 +172,7 @@ export default function AdminDashboard() {
                       <span aria-hidden style={{ display: 'inline-flex', flexShrink: 0, color: 'inherit' }}>
                         {item.icon}
                       </span>
-                      {item.label}
+                      {!railCollapsed && item.label}
                     </button>
                   </li>
                 )
@@ -175,7 +180,9 @@ export default function AdminDashboard() {
             </ul>
             <button
               onClick={logout}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+              aria-label={railCollapsed ? 'Déconnexion' : undefined}
+              title={railCollapsed ? 'Déconnexion' : undefined}
+              className={`w-full flex items-center gap-3 py-2 rounded-lg text-sm font-medium transition-all ${railCollapsed ? 'justify-center px-0' : 'px-3'}`}
               style={{ color: 'var(--color-text-3)', marginTop: '0.25rem', fontSize: '0.8125rem' }}
               onMouseEnter={e => {
                 e.currentTarget.style.color = 'var(--color-loss)'
@@ -189,16 +196,14 @@ export default function AdminDashboard() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Déconnexion
+              {!railCollapsed && 'Déconnexion'}
             </button>
           </>
-        }
-      />
-
-      <div className="flex-1 flex flex-col" style={{ marginLeft: 'var(--app-sidebar-width, 240px)', transition: 'margin-left 0.18s ease' }}>
-        <AppTopbar
-          title={pageTitles[activePage]}
-          actions={
+        ),
+      }}
+      title={pageTitles[activePage]}
+      tabs={ADMIN_TABS}
+      topbarActions={
             <>
               <AdminTopbarStats />
               <div className="h-5 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
@@ -219,20 +224,33 @@ export default function AdminDashboard() {
                 Nouveau trader
               </button>
             </>
-          }
-        />
-
-        <main className="flex-1 p-7">
-          {renderPage()}
-        </main>
-      </div>
-      <AdminChatWidget />
-      <CommandPalette
-        open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-        items={paletteItems}
-        onSelect={(id, item) => goTo(id, item.href)}
-      />
-    </div>
+      }
+      mobileActions={
+        <button
+          type="button"
+          onClick={handleNewTrader}
+          aria-label="Nouveau trader"
+          className="inline-flex items-center justify-center shrink-0"
+          style={{ width: 44, height: 44, borderRadius: 'var(--radius-lg)', background: 'var(--color-accent)', color: 'var(--color-surface-0)', border: 'none', cursor: 'pointer' }}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      }
+      overlays={
+        <>
+          <AdminChatWidget />
+          <CommandPalette
+            open={paletteOpen}
+            onClose={() => setPaletteOpen(false)}
+            items={paletteItems}
+            onSelect={(id, item) => goTo(id, item.href)}
+          />
+        </>
+      }
+    >
+      {renderPage()}
+    </AppShell>
   )
 }

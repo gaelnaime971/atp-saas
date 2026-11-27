@@ -205,9 +205,7 @@ export default function Session() {
       )}
 
       {/* LIVE PREVIEW BANNER */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
+      <div className="grid grid-cols-2 md:grid-cols-5" style={{
         gap: 10,
         marginBottom: 18,
       }}>
@@ -234,7 +232,7 @@ export default function Session() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 18 }}>
         {/* LEFT: Session data */}
         <Card>
           {/* Date + Instrument compact row */}
@@ -285,7 +283,7 @@ export default function Session() {
           </div>
 
           {/* Numeric inputs — stepper cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginBottom: 12 }}>
             {/* Nb trades */}
             <div style={{ background: 'var(--bg3)', borderRadius: 10, padding: '10px 12px' }}>
               <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 6 }}>Nb trades</div>
@@ -297,7 +295,7 @@ export default function Session() {
                   onChange={e => setTradesCount(Math.max(0, Number(e.target.value) || 0))}
                   onFocus={e => e.target.select()}
                   placeholder="0"
-                  style={{ flex: 1, background: 'transparent', border: 'none', color: '#e8edf5', fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none' }}
+                  style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', color: '#e8edf5', fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none' }}
                 />
                 <button onClick={() => setTradesCount(tradesCount + 1)} style={stepBtn}>+</button>
               </div>
@@ -315,7 +313,7 @@ export default function Session() {
                   onChange={e => setWinRate(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
                   onFocus={e => e.target.select()}
                   placeholder="0"
-                  style={{ flex: 1, background: 'transparent', border: 'none', color: '#e8edf5', fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none' }}
+                  style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', color: '#e8edf5', fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none' }}
                 />
                 <span style={{ fontSize: 14, color: '#6b7280', fontWeight: 600 }}>%</span>
               </div>
@@ -323,7 +321,7 @@ export default function Session() {
           </div>
 
           {/* P&L + R */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginBottom: 18 }}>
             {/* P&L */}
             <div style={{
               background: pnl > 0 ? 'rgba(var(--color-profit-rgb), 0.08)' : pnl < 0 ? 'rgba(var(--color-loss-rgb), 0.08)' : 'var(--bg3)',

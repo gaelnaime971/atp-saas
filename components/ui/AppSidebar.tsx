@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import Link from 'next/link'
 import { scrollTopToReveal } from '@/lib/nav/sidebar-scroll'
+import { effectiveRailCollapsed, toggleRail as nextRailPrefs } from '@/lib/ui/shell'
+import { useViewportKind } from '@/lib/hooks/useViewportKind'
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -40,13 +42,24 @@ export interface AppSidebarProps<Id extends string> {
   banner?: { label: string; tone?: 'accent' | 'loss' | 'profit' | 'neutral' }
   /** Clé localStorage pour persister rail + groupes collapse. Requis. */
   storageKey: string
-  /** Contenu injecté en bas du rail. Typiquement : avatar + logout du hook `useSidebarProfile`. */
-  footer?: ReactNode
+  /**
+   * Contenu injecté en bas du rail. Typiquement : avatar + logout du hook
+   * `useSidebarProfile`. Fonction → reçoit l'état du rail (replié : icônes).
+   */
+  footer?: ReactNode | ((railCollapsed: boolean) => ReactNode)
   /**
    * Optionnel. Contenu injecté entre le logo et la nav (sélecteur
    * d'espace, bouton de recherche). Fonction → reçoit l'état du rail.
    */
   header?: ReactNode | ((railCollapsed: boolean) => ReactNode)
+  /**
+   * 'rail' (défaut) : colonne fixe à gauche, masquée sous 768 px, repliée
+   * par défaut de 768 à 1279 px. 'drawer' : même contenu, toujours déplié,
+   * dans le tiroir du menu mobile (AppShell).
+   */
+  variant?: 'rail' | 'drawer'
+  /** Appelé quand un élément de navigation est choisi (ferme le tiroir). */
+  onNavigate?: () => void
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -69,6 +82,8 @@ const BANNER_TONE = {
 
 interface SidebarState {
   railCollapsed: boolean
+  /** Choix sur tablette (768-1279 px). Absent = replié par défaut. */
+  railCollapsedTablet?: boolean
   groups: Record<string, boolean> // true = collapsed
 }
 
@@ -80,6 +95,7 @@ function readState(key: string): SidebarState {
     const parsed = JSON.parse(raw) as Partial<SidebarState>
     return {
       railCollapsed: !!parsed.railCollapsed,
+      ...(typeof parsed.railCollapsedTablet === 'boolean' ? { railCollapsedTablet: parsed.railCollapsedTablet } : {}),
       groups: parsed.groups && typeof parsed.groups === 'object' ? parsed.groups : {},
     }
   } catch {
@@ -104,6 +120,9 @@ interface NavItemProps<Id extends string> {
 
 function NavItemButton<Id extends string>({ item, isActive, railCollapsed, onClick }: NavItemProps<Id>) {
   const [hover, setHover] = useState(false)
+  // Rail replié : nom de l'élément au survol (et au focus clavier), à
+  // droite de l'icône. Position fixe : la nav défile et masque ses bords.
+  const [tip, setTip] = useState<{ top: number; left: number } | null>(null)
   const isSoon = !!item.soon
   const highlight = hover && !isSoon
 
@@ -184,18 +203,42 @@ function NavItemButton<Id extends string>({ item, isActive, railCollapsed, onCli
     </>
   )
 
-  const title = railCollapsed ? (isSoon ? `${item.label} (bientôt)` : item.label) : undefined
-  const hoverHandlers = {
-    onMouseEnter: () => setHover(true),
-    onMouseLeave: () => setHover(false),
+  const tipLabel = isSoon ? `${item.label} (bientôt)` : item.label
+  const showTip = (el: HTMLElement) => {
+    if (!railCollapsed) return
+    const r = el.getBoundingClientRect()
+    setTip({ top: r.top + r.height / 2, left: r.right + 8 })
   }
+  const hoverHandlers = {
+    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => { setHover(true); showTip(e.currentTarget) },
+    onMouseLeave: () => { setHover(false); setTip(null) },
+    onFocus: (e: React.FocusEvent<HTMLElement>) => showTip(e.currentTarget),
+    onBlur: () => setTip(null),
+  }
+  const ariaLabel = railCollapsed ? tipLabel : undefined
+  const tooltip = railCollapsed && tip ? (
+    <span
+      role="tooltip"
+      style={{
+        position: 'fixed', top: tip.top, left: tip.left, transform: 'translateY(-50%)',
+        zIndex: 60, pointerEvents: 'none', whiteSpace: 'nowrap',
+        padding: '4px 8px', borderRadius: 'var(--radius-md)',
+        background: 'var(--color-surface-3)', border: '1px solid var(--color-border-subtle)',
+        color: 'var(--color-text-1)', fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 500,
+        boxShadow: 'var(--shadow-2)',
+      }}
+    >
+      {tipLabel}
+    </span>
+  ) : null
 
   if (isSoon) {
     return (
       <li>
-        <div aria-disabled="true" title={title} style={style}>
+        <div aria-disabled="true" aria-label={ariaLabel} tabIndex={railCollapsed ? 0 : undefined} {...hoverHandlers} style={style}>
           {content}
         </div>
+        {tooltip}
       </li>
     )
   }
@@ -206,12 +249,13 @@ function NavItemButton<Id extends string>({ item, isActive, railCollapsed, onCli
         <Link
           href={item.href}
           {...hoverHandlers}
-          title={title}
+          aria-label={ariaLabel}
           aria-current={isActive ? 'page' : undefined}
           style={style}
         >
           {content}
         </Link>
+        {tooltip}
       </li>
     )
   }
@@ -222,12 +266,13 @@ function NavItemButton<Id extends string>({ item, isActive, railCollapsed, onCli
         type="button"
         onClick={onClick}
         {...hoverHandlers}
-        title={title}
+        aria-label={ariaLabel}
         aria-current={isActive ? 'page' : undefined}
         style={style}
       >
         {content}
       </button>
+      {tooltip}
     </li>
   )
 }
@@ -275,6 +320,7 @@ function NavGroupSection<Id extends string>({
         type="button"
         onClick={onToggle}
         aria-expanded={!isCollapsed}
+        data-drawer-keep-open
         style={{
           width: '100%',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -342,12 +388,14 @@ function NavGroupSection<Id extends string>({
 // ═══════════════════════════════════════════════════════════════
 
 export default function AppSidebar<Id extends string>({
-  groups, activePage, onPageChange, banner, storageKey, footer, header,
+  groups, activePage, onPageChange, banner, storageKey, footer, header, variant = 'rail', onNavigate,
 }: AppSidebarProps<Id>) {
+  const isDrawer = variant === 'drawer'
+  const kind = useViewportKind()
   // Init state from localStorage; fallback = { rail expanded, groups per defaultCollapsed }
   const [state, setState] = useState<SidebarState>(() => {
     const stored = typeof window !== 'undefined' ? readState(storageKey) : { railCollapsed: false, groups: {} }
-    const initial: SidebarState = { railCollapsed: stored.railCollapsed, groups: { ...stored.groups } }
+    const initial: SidebarState = { ...stored, groups: { ...stored.groups } }
     // Seed defaultCollapsed for groups the user hasn't explicitly touched yet
     for (const g of groups) {
       if (!(g.id in initial.groups) && g.defaultCollapsed) initial.groups[g.id] = true
@@ -355,15 +403,21 @@ export default function AppSidebar<Id extends string>({
     return initial
   })
 
+  // Rail replié selon la taille d'écran (lib/ui/shell.ts) : tablette
+  // replié par défaut, bureau selon le choix du membre. Tiroir : déplié.
+  const railCollapsed = isDrawer ? false : effectiveRailCollapsed(kind, state)
+
   // Persist on any change
   useEffect(() => { writeState(storageKey, state) }, [state, storageKey])
 
   // Expose current rail width as CSS var so the shell can align its content
   // (marginLeft: 'var(--app-sidebar-width)') without prop drilling or coupling.
+  // Le tiroir ne pilote pas cette largeur.
   useEffect(() => {
-    const w = state.railCollapsed ? RAIL_WIDTH_COLLAPSED : RAIL_WIDTH_EXPANDED
+    if (isDrawer) return
+    const w = railCollapsed ? RAIL_WIDTH_COLLAPSED : RAIL_WIDTH_EXPANDED
     document.documentElement.style.setProperty('--app-sidebar-width', `${w}px`)
-  }, [state.railCollapsed])
+  }, [railCollapsed, isDrawer])
 
   // L'élément actif hors de vue (menu long, petit écran) : la nav défile
   // jusqu'à lui, au chargement (sans animation) puis à chaque changement
@@ -394,8 +448,8 @@ export default function AppSidebar<Id extends string>({
   }, [activePage])
 
   const toggleRail = useCallback(() => {
-    setState(s => ({ ...s, railCollapsed: !s.railCollapsed }))
-  }, [])
+    setState(s => ({ ...s, ...nextRailPrefs(kind, s) }))
+  }, [kind])
 
   const toggleGroup = useCallback((groupId: string) => {
     setState(s => ({ ...s, groups: { ...s.groups, [groupId]: !s.groups[groupId] } }))
@@ -408,15 +462,21 @@ export default function AppSidebar<Id extends string>({
     return map
   }, [groups, activePage])
 
-  const railWidth = state.railCollapsed ? RAIL_WIDTH_COLLAPSED : RAIL_WIDTH_EXPANDED
+  const railWidth = railCollapsed ? RAIL_WIDTH_COLLAPSED : RAIL_WIDTH_EXPANDED
+  const select = (id: Id) => { onPageChange(id); onNavigate?.() }
   const bannerStyle = banner ? BANNER_TONE[banner.tone ?? 'accent'] : null
 
   return (
     <aside
-      style={{
+      // Rail : masqué sous 768 px (menu dans le tiroir, AppShell).
+      className={isDrawer ? 'flex flex-col' : 'hidden md:flex md:flex-col'}
+      style={isDrawer ? {
+        width: '100%', height: '100%', minHeight: 0,
+        background: 'var(--color-surface-1)',
+      } : {
         position: 'fixed', left: 0, top: 0, bottom: 0,
         width: railWidth,
-        display: 'flex', flexDirection: 'column',
+        flexDirection: 'column',
         background: 'var(--color-surface-1)',
         borderRight: '1px solid var(--color-border-subtle)',
         zIndex: 40,
@@ -426,19 +486,19 @@ export default function AppSidebar<Id extends string>({
       {/* Logo + banner */}
       <div
         style={{
-          padding: state.railCollapsed ? '1rem 0.5rem' : '1rem 1.25rem',
+          padding: railCollapsed ? '1rem 0.5rem' : '1rem 1.25rem',
           borderBottom: '1px solid var(--color-border-subtle)',
           display: 'flex', flexDirection: 'column',
-          alignItems: state.railCollapsed ? 'center' : 'flex-start',
+          alignItems: railCollapsed ? 'center' : 'flex-start',
           gap: '0.5rem',
         }}
       >
         <img
           src="/logo-atp.png"
           alt="Alpha Trading Pro"
-          style={{ height: state.railCollapsed ? 28 : 32, transition: 'height 0.18s ease' }}
+          style={{ height: railCollapsed ? 28 : 32, transition: 'height 0.18s ease' }}
         />
-        {banner && bannerStyle && !state.railCollapsed && (
+        {banner && bannerStyle && !railCollapsed && (
           <span
             style={{
               fontSize: 9,
@@ -461,11 +521,11 @@ export default function AppSidebar<Id extends string>({
       {header && (
         <div
           style={{
-            padding: state.railCollapsed ? '0.75rem 0.5rem 0' : '0.75rem 0.75rem 0',
+            padding: railCollapsed ? '0.75rem 0.5rem 0' : '0.75rem 0.75rem 0',
             display: 'flex', flexDirection: 'column', gap: '0.5rem',
           }}
         >
-          {typeof header === 'function' ? header(state.railCollapsed) : header}
+          {typeof header === 'function' ? header(railCollapsed) : header}
         </div>
       )}
 
@@ -476,7 +536,7 @@ export default function AppSidebar<Id extends string>({
           flex: 1,
           overflowY: 'auto',
           overflowX: 'hidden',
-          padding: state.railCollapsed ? '0.75rem 0.5rem' : '0.75rem 0.75rem',
+          padding: railCollapsed ? '0.75rem 0.5rem' : '0.75rem 0.75rem',
         }}
       >
         {groups.map(group => (
@@ -485,24 +545,24 @@ export default function AppSidebar<Id extends string>({
             group={group}
             activePage={activePage}
             isCollapsed={!!state.groups[group.id]}
-            railCollapsed={state.railCollapsed}
+            railCollapsed={railCollapsed}
             containsActive={containsActiveByGroup[group.id]}
             onToggle={() => toggleGroup(group.id)}
-            onSelect={onPageChange}
+            onSelect={select}
           />
         ))}
       </nav>
 
-      {/* Rail collapse toggle */}
-      <button
+      {/* Rail collapse toggle (pas dans le tiroir) */}
+      {!isDrawer && <button
         type="button"
         onClick={toggleRail}
-        title={state.railCollapsed ? 'Déplier le rail' : 'Replier le rail'}
-        aria-label={state.railCollapsed ? 'Déplier le rail' : 'Replier le rail'}
+        title={railCollapsed ? 'Déplier le rail' : 'Replier le rail'}
+        aria-label={railCollapsed ? 'Déplier le rail' : 'Replier le rail'}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '0.5rem',
-          margin: state.railCollapsed ? '0 0.5rem' : '0 0.75rem 0.5rem',
+          margin: railCollapsed ? '0 0.5rem' : '0 0.75rem 0.5rem',
           borderRadius: 'var(--radius-md)',
           background: 'transparent',
           border: 'none',
@@ -520,16 +580,16 @@ export default function AppSidebar<Id extends string>({
         }}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          {state.railCollapsed
+          {railCollapsed
             ? <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M4 12h16" />
             : <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7M20 12H4" />}
         </svg>
-      </button>
+      </button>}
 
       {/* Footer (avatar + logout injecté par le shell) */}
       {footer && (
-        <div style={{ borderTop: '1px solid var(--color-border-subtle)', padding: state.railCollapsed ? '0.75rem 0.5rem' : '0.75rem' }}>
-          {footer}
+        <div style={{ borderTop: '1px solid var(--color-border-subtle)', padding: railCollapsed ? '0.75rem 0.5rem' : '0.75rem' }}>
+          {typeof footer === 'function' ? footer(railCollapsed) : footer}
         </div>
       )}
     </aside>

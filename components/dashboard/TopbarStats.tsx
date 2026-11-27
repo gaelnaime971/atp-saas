@@ -19,7 +19,8 @@ interface Stats {
 
 export default function TopbarStats() {
   const [stats, setStats] = useState<Stats | null>(null)
-  const supabase = createClient()
+  // Client stable entre deux rendus (dépendance de l'effet ci-dessous).
+  const [supabase] = useState(createClient)
 
   useEffect(() => {
     async function load() {
@@ -62,7 +63,7 @@ export default function TopbarStats() {
       setStats({ todayPnl, monthPnl, totalPnl, winRate, streak: { count: streakCount, type: streakType }, sessionsThisMonth: month.length, sessionsTotal: all.length, profitFactor, bestDay, avgPnl, unreadMessages: unread ?? 0 })
     }
     load()
-  }, [])
+  }, [supabase])
 
   if (!stats) return null
 
@@ -114,10 +115,16 @@ export default function TopbarStats() {
     },
   ]
 
+  // Masquage progressif : une seule rangée visible (hauteur fixe), les
+  // tuiles qui ne tiennent pas passent à la ligne et sont masquées. Le
+  // titre de la page et le bouton Assistant Trader gardent leur place.
   return (
-    <div className="flex items-center gap-0.5">
+    <div
+      className="flex flex-wrap items-center justify-end gap-0.5"
+      style={{ flex: '0 1 auto', minWidth: 0, height: 40, overflow: 'hidden', alignContent: 'flex-start' }}
+    >
       {items.map((item, i) => (
-        <div key={i} className="flex items-center">
+        <div key={i} className="flex items-center" style={{ height: 40 }}>
           <div
             className="flex flex-col items-center px-2.5 py-1 rounded-md"
             style={{ minWidth: 56 }}

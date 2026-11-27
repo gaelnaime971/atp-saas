@@ -2,15 +2,14 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import AppSidebar from '@/components/ui/AppSidebar'
-import AppTopbar from '@/components/ui/AppTopbar'
+import AppShell from '@/components/ui/AppShell'
 import CommandPalette from '@/components/ui/CommandPalette'
 import TraderSidebarFooter from '@/components/dashboard/TraderSidebarFooter'
 import TraderChatWidget from '@/components/chat/TraderChatWidget'
 import SpaceSwitcher, { AdminBackLink, SearchButton } from '@/components/terminal/SpaceSwitcher'
 import MarketsClocks from '@/components/terminal/MarketsClocks'
 import { useSidebarProfile } from '@/lib/hooks/useSidebarProfile'
-import { marketsNavFor, type MarketsNavId } from '@/lib/nav/markets-nav'
+import { MARKETS_TABS, marketsNavFor, type MarketsNavId } from '@/lib/nav/markets-nav'
 import { buildPaletteItems } from '@/lib/nav/palette'
 import { findItemByHref, MARKETS_BASE_PATH, withSpaHrefs } from '@/lib/nav/spaces'
 import type { TerminalViewer } from '@/lib/terminal/access'
@@ -51,14 +50,16 @@ export default function MarketsShell({ viewer, children }: { viewer: Exclude<Ter
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const settingsHref = isAdmin ? undefined : '/dashboard?page=compte#fuseau'
+
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--color-surface-0)' }}>
-      <AppSidebar<MarketsNavId>
-        groups={nav}
-        activePage={activeId}
-        onPageChange={() => { /* tous les items actifs sont des liens */ }}
-        storageKey="atp.sidebar.trader"
-        header={railCollapsed => (
+    <AppShell<MarketsNavId>
+      sidebar={{
+        groups: nav,
+        activePage: activeId,
+        onPageChange: () => { /* tous les items actifs sont des liens */ },
+        storageKey: 'atp.sidebar.trader',
+        header: railCollapsed => (
           <>
             {isAdmin
               ? <AdminBackLink railCollapsed={railCollapsed} />
@@ -71,24 +72,27 @@ export default function MarketsShell({ viewer, children }: { viewer: Exclude<Ter
               )}
             <SearchButton onSearch={() => setPaletteOpen(true)} railCollapsed={railCollapsed} />
           </>
-        )}
-        footer={<TraderSidebarFooter name={name} avatarUrl={avatarUrl} logout={logout} accountLinks={!isAdmin} />}
-      />
-
-      <div className="flex-1 flex flex-col min-w-0" style={{ marginLeft: 'var(--app-sidebar-width, 240px)', transition: 'margin-left 0.18s ease' }}>
-        <AppTopbar title={title} actions={<MarketsClocks settingsHref={isAdmin ? undefined : '/dashboard?page=compte#fuseau'} />} />
-        <main className="flex-1 p-7">
-          {children}
-        </main>
-      </div>
-      {/* Messagerie membre ↔ coach : sans objet pour l'admin. */}
-      {!isAdmin && <TraderChatWidget />}
-      <CommandPalette
-        open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-        items={paletteItems}
-        onSelect={(_id, item) => { if (item.href) router.push(item.href) }}
-      />
-    </div>
+        ),
+        footer: railCollapsed => <TraderSidebarFooter name={name} avatarUrl={avatarUrl} logout={logout} accountLinks={!isAdmin} railCollapsed={railCollapsed} />,
+      }}
+      title={title}
+      tabs={MARKETS_TABS}
+      topbarActions={<MarketsClocks settingsHref={settingsHref} />}
+      mobileActions={<MarketsClocks compact settingsHref={settingsHref} />}
+      overlays={
+        <>
+          {/* Messagerie membre ↔ coach : sans objet pour l'admin. */}
+          {!isAdmin && <TraderChatWidget />}
+          <CommandPalette
+            open={paletteOpen}
+            onClose={() => setPaletteOpen(false)}
+            items={paletteItems}
+            onSelect={(_id, item) => { if (item.href) router.push(item.href) }}
+          />
+        </>
+      }
+    >
+      {children}
+    </AppShell>
   )
 }

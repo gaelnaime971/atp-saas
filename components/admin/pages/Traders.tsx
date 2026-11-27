@@ -312,7 +312,7 @@ export default function Traders({ triggerNewModal, onNewModalHandled }: TradersP
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
         <KpiCard
           label="Traders actifs"
           value={fmtNumber(active.length)}

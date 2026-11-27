@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import type { NavGroup } from '@/components/ui/AppSidebar'
+import type { ShellTab } from '@/lib/ui/shell'
 
 export type AdminPage =
   | 'overview' | 'traders' | 'results' | 'crm' | 'notes'
@@ -105,4 +106,16 @@ export const ADMIN_FOOTER_ITEMS: { id: AdminPage; label: string; icon: ReactElem
   { id: 'trading-perso', label: 'Trading Perso',     icon: IconTrending },
   { id: 'recap-live',    label: 'Récap Trade Live',  icon: IconLive },
   { id: 'settings',      label: 'Paramètres',        icon: IconSettings },
+]
+
+/**
+ * Barre d'onglets mobile (< 768 px) de l'admin : 4 raccourcis + Menu.
+ * Les écrans du quotidien : vue globale, prospects, pipeline des calls,
+ * traders.
+ */
+export const ADMIN_TABS: ShellTab<AdminNavId>[] = [
+  { id: 'overview', label: 'Accueil' },
+  { id: 'prospects', label: 'Prospects' },
+  { id: 'pipeline', label: 'Pipeline' },
+  { id: 'traders', label: 'Traders' },
 ]

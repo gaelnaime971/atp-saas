@@ -25,13 +25,16 @@ import { useMinuteNow } from '@/lib/hooks/useMinuteNow'
  * affichée en double.
  */
 
-const labelStyle: React.CSSProperties = {
+const labelStyleFull: React.CSSProperties = {
   fontFamily: 'var(--font-data)',
   fontSize: '0.6875rem',
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
   color: 'var(--color-text-3)',
 }
+
+// Barre compacte : même style, plus serré, pour laisser la place au titre.
+const labelStyleCompact: React.CSSProperties = { ...labelStyleFull, fontSize: '0.625rem', letterSpacing: '0.02em' }
 
 function timeStyle(own: boolean): React.CSSProperties {
   return {
@@ -45,9 +48,9 @@ function timeStyle(own: boolean): React.CSSProperties {
   }
 }
 
-const itemStyle = (first: boolean): React.CSSProperties => ({
-  display: 'flex', alignItems: 'baseline', gap: '0.5rem',
-  padding: '0 0.875rem',
+const itemStyle = (first: boolean, compact = false): React.CSSProperties => ({
+  display: 'flex', alignItems: compact ? 'center' : 'baseline', gap: compact ? '0.3rem' : '0.5rem',
+  padding: compact ? (first ? '0 0.375rem 0 0' : '0 0 0 0.375rem') : '0 0.875rem',
   borderLeft: first ? 'none' : '1px solid var(--color-border-subtle)',
   whiteSpace: 'nowrap',
 })
@@ -57,14 +60,24 @@ export interface MarketsClocksProps {
   settingsHref?: string
   /** Variante SPA /dashboard : ouvre Mon compte sans changer de route. */
   onSettings?: () => void
+  /**
+   * Barre compacte (< 768 px) : seulement « Ton heure » et la pastille
+   * d'état de NQ/YM sur CME Globex (ouvert, pause, fermé).
+   */
+  compact?: boolean
 }
 
-export default function MarketsClocks({ settingsHref, onSettings }: MarketsClocksProps) {
+export default function MarketsClocks({ settingsHref, onSettings, compact = false }: MarketsClocksProps) {
+  const labelStyle = compact ? labelStyleCompact : labelStyleFull
   const minute = useMinuteNow()
   const { timeZone, ready } = useMemberTimeZone()
   const now = minute === null || !ready ? null : new Date(minute)
   const places = placesFor(timeZone)
   const ownTitle = now ? `${timeZoneLabel(timeZone)} (${offsetLabel(now, timeZone)})` : undefined
+
+  const globex = compact && now ? sessionState('globex', now.getTime()).status : null
+  const GLOBEX_LABEL = { open: 'ouvert', pause: 'en pause', closed: 'fermé' } as const
+  const GLOBEX_COLOR = { open: 'var(--color-profit)', pause: 'var(--color-warn)', closed: 'var(--color-text-3)' } as const
 
   const own = (
     <>
@@ -76,16 +89,23 @@ export default function MarketsClocks({ settingsHref, onSettings }: MarketsClock
   return (
     <ul
       aria-label="Horloges des places de marché"
-      style={{ display: 'flex', alignItems: 'center', listStyle: 'none', margin: 0, padding: 0 }}
+      // Place réduite (tablette) : une seule rangée visible, les horloges
+      // qui ne tiennent pas passent à la ligne et sont masquées, en
+      // commençant par la dernière. « Ton heure » reste toujours.
+      style={{
+        display: 'flex', alignItems: 'center', listStyle: 'none', margin: 0, padding: 0,
+        flexWrap: 'wrap', justifyContent: 'flex-end', minWidth: 0,
+        height: compact ? 44 : 20, overflow: 'hidden', alignContent: 'flex-start',
+      }}
     >
-      <li style={itemStyle(true)}>
+      <li style={itemStyle(true, compact)}>
         {onSettings ? (
           <button
             type="button"
             onClick={onSettings}
             title={ownTitle ? `${ownTitle} · changer de fuseau` : 'Changer de fuseau'}
             aria-label={ownTitle ? `Ton heure, ${ownTitle}. Changer de fuseau` : 'Changer de fuseau'}
-            style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: compact ? 'center' : 'baseline', gap: compact ? '0.3rem' : '0.5rem', background: 'none', border: 'none', padding: 0, cursor: 'pointer', minHeight: compact ? 44 : undefined }}
           >
             {own}
           </button>
@@ -94,7 +114,7 @@ export default function MarketsClocks({ settingsHref, onSettings }: MarketsClock
             href={settingsHref}
             title={ownTitle ? `${ownTitle} · changer de fuseau` : 'Changer de fuseau'}
             aria-label={ownTitle ? `Ton heure, ${ownTitle}. Changer de fuseau` : 'Changer de fuseau'}
-            style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', textDecoration: 'none' }}
+            style={{ display: 'flex', alignItems: compact ? 'center' : 'baseline', gap: compact ? '0.3rem' : '0.5rem', textDecoration: 'none', minHeight: compact ? 44 : undefined }}
           >
             {own}
           </Link>
@@ -102,7 +122,23 @@ export default function MarketsClocks({ settingsHref, onSettings }: MarketsClock
           <span title={ownTitle} style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>{own}</span>
         )}
       </li>
-      {places.map(place => {
+      {compact && (
+        <li style={itemStyle(false, true)} title={globex ? `NQ et YM : ${GLOBEX_LABEL[globex]}` : undefined}>
+          <span
+            aria-hidden
+            style={{
+              width: 6, height: 6, borderRadius: 'var(--radius-full)', alignSelf: 'center',
+              background: globex ? GLOBEX_COLOR[globex] : 'var(--color-text-3)',
+              visibility: globex ? 'visible' : 'hidden',
+            }}
+          />
+          <span style={labelStyle}>
+            {compact ? 'NQ·YM' : 'NQ · YM'}
+            {globex && <span className="sr-only">, {GLOBEX_LABEL[globex]}</span>}
+          </span>
+        </li>
+      )}
+      {!compact && places.map(place => {
         const open = now ? sessionState(place.id, now.getTime()).status === 'open' : null
         return (
         <li key={place.label} style={itemStyle(false)}>

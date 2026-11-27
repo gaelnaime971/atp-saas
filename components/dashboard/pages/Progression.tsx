@@ -242,7 +242,7 @@ export default function Progression() {
       </div>
 
       {/* Charts row 1 - grid-2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 16 }}>
         <Card>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>P&L mensuel</h2>
           <div style={{ height: 200 }}>
@@ -328,7 +328,7 @@ export default function Progression() {
       </div>
 
       {/* Charts row 2 - grid-2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 16 }}>
         <Card>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: '0 0 12px 0' }}>Profit Factor</h2>
           <div style={{ height: 200 }}>
@@ -342,7 +342,9 @@ export default function Progression() {
                   // les tokens résolus via t. Gradient vertical par barre pour cohérence.
                   backgroundColor: (ctx) => {
                     const { chart, parsed } = ctx
-                    const v = parsed.y ?? 0
+                    // Chart.js appelle aussi cette fonction pour la légende, sans
+                    // point de données : `parsed` est alors absent.
+                    const v = parsed?.y ?? 0
                     const rgb = v >= 1.5 ? t.profitRgb : v >= 1 ? t.warnRgb : t.lossRgb
                     if (!chart.chartArea) return `rgba(${rgb}, 0.7)`
                     return verticalGradient(chart.ctx, chart.chartArea, rgb, [[0, 0.9], [1, 0.5]])
@@ -519,7 +521,7 @@ export default function Progression() {
       </div>
 
       {/* Bottom grid-2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: 16 }}>
         {/* Axes de progression */}
         <Card>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 12, borderBottom: '1px solid var(--border, rgba(255,255,255,0.07))' }}>

@@ -24,17 +24,21 @@ export interface TraderSidebarFooterProps {
   activePage?: DashboardPage | null
   onSelect?: (id: DashboardPage) => void
   accountLinks?: boolean
+  /** Rail replié (tablette par défaut) : icônes seules, nom au survol. */
+  railCollapsed?: boolean
 }
 
-export default function TraderSidebarFooter({ name, avatarUrl, logout, activePage, onSelect, accountLinks = true }: TraderSidebarFooterProps) {
+export default function TraderSidebarFooter({ name, avatarUrl, logout, activePage, onSelect, accountLinks = true, railCollapsed = false }: TraderSidebarFooterProps) {
   return (
     <>
       {name && (
-        <div className="mb-2 flex items-center gap-3 px-1">
+        <div className={`mb-2 flex items-center gap-3 ${railCollapsed ? 'justify-center' : 'px-1'}`} title={railCollapsed ? name : undefined}>
           <Avatar url={avatarUrl} name={name} size={32} />
-          <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-1)' }}>
-            {name}
-          </p>
+          {!railCollapsed && (
+            <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-1)' }}>
+              {name}
+            </p>
+          )}
         </div>
       )}
       {accountLinks && <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -43,7 +47,8 @@ export default function TraderSidebarFooter({ name, avatarUrl, logout, activePag
           const style: CSSProperties = {
             width: '100%',
             display: 'flex', alignItems: 'center', gap: '0.75rem',
-            padding: '0.375rem 0.75rem',
+            justifyContent: railCollapsed ? 'center' : undefined,
+            padding: railCollapsed ? '0.5rem 0' : '0.375rem 0.75rem',
             borderRadius: 'var(--radius-md)',
             background: isActive ? 'rgba(var(--color-accent-rgb), 0.10)' : 'transparent',
             color: isActive ? 'var(--color-accent)' : 'var(--color-text-3)',
@@ -65,9 +70,10 @@ export default function TraderSidebarFooter({ name, avatarUrl, logout, activePag
               <span aria-hidden style={{ display: 'inline-flex', flexShrink: 0, color: 'inherit' }}>
                 {item.icon}
               </span>
-              {item.label}
+              {!railCollapsed && item.label}
             </>
           )
+          const a11y = railCollapsed ? { 'aria-label': item.label, title: item.label } : {}
           return (
             <li key={item.id}>
               {onSelect ? (
@@ -76,12 +82,13 @@ export default function TraderSidebarFooter({ name, avatarUrl, logout, activePag
                   onClick={() => onSelect(item.id)}
                   aria-current={isActive ? 'page' : undefined}
                   style={style}
+                  {...a11y}
                   {...handlers}
                 >
                   {content}
                 </button>
               ) : (
-                <Link href={spaHref(item.id)} style={style} {...handlers}>
+                <Link href={spaHref(item.id)} style={style} {...a11y} {...handlers}>
                   {content}
                 </Link>
               )}
@@ -91,7 +98,9 @@ export default function TraderSidebarFooter({ name, avatarUrl, logout, activePag
       </ul>}
       <button
         onClick={logout}
-        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+        aria-label={railCollapsed ? 'Déconnexion' : undefined}
+        title={railCollapsed ? 'Déconnexion' : undefined}
+        className={`w-full flex items-center gap-3 py-2 rounded-lg text-sm font-medium transition-all ${railCollapsed ? 'justify-center px-0' : 'px-3'}`}
         style={{ color: 'var(--color-text-3)', marginTop: '0.25rem', fontSize: '0.8125rem' }}
         onMouseEnter={e => {
           e.currentTarget.style.color = 'var(--color-loss)'
@@ -105,7 +114,7 @@ export default function TraderSidebarFooter({ name, avatarUrl, logout, activePag
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
         </svg>
-        Déconnexion
+        {!railCollapsed && 'Déconnexion'}
       </button>
     </>
   )

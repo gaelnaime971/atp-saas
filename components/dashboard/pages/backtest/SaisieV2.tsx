@@ -434,7 +434,7 @@ export default function SaisieV2({ onGoToCriteria, editingId, onEditDone }: Prop
           <span style={stepBadgeStyle}>3</span>
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Résultat</h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 22, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 22, alignItems: 'start' }}>
           {/* Issue */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={labelStyle}>Issue du trade</span>
@@ -503,7 +503,7 @@ export default function SaisieV2({ onGoToCriteria, editingId, onEditDone }: Prop
         </div>
 
         {/* Notes + Image */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 22 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 22 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label htmlFor="bt-notes" style={labelStyle}>Notes (facultatif)</label>
             <textarea id="bt-notes" rows={3}

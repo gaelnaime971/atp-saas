@@ -451,7 +451,7 @@ export default function Formation() {
             Aucune video dans cette categorie
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: 16 }}>
             {filteredVideos.map(v => (
               <VideoCard
                 key={v.id}

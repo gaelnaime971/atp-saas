@@ -533,7 +533,7 @@ export default function AnalyseGraphique() {
           <SectionHeader icon="📊" label="Résultats de l'analyse" />
           {aiError && <AiErrorBanner error={aiError} style={{ marginBottom: 10 }} />}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 10 }}>
             <PillarCard
               icon="⚡" title="Technique SMC" color="var(--color-profit)"
               state={technical}

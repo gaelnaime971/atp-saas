@@ -183,7 +183,7 @@ export default function Overview() {
           </div>
 
           {/* KPI cards skeleton */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
               <div
                 key={i}
@@ -237,7 +237,7 @@ export default function Overview() {
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiCards.map(kpi => (
           <KpiCard
             key={kpi.label}

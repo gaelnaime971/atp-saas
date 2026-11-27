@@ -303,7 +303,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           </div>
 
           {/* Charts skeleton */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 16 }}>
             {[1, 2].map(i => (
               <div
                 key={i}
@@ -447,7 +447,8 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           compact pour tenir dans la col étroite. Sous-stack en
           `auto auto 1fr` : ATP Score et Prop Firm gardent leur hauteur
           naturelle, le donut absorbe l'excédent. */}
-      <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'stretch' }}>
+      {/* Mobile et tablette étroite : une colonne ; à partir de 1024 px : 2/3 + 1/3. */}
+      <Reveal delay={120} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr]" style={{ gap: 16, alignItems: 'stretch' }}>
         <CalendarPnl sessions={filtered} totalCapital={totalCapital} />
         <div style={{ display: 'grid', gridTemplateRows: 'auto auto 1fr', gap: 16, minWidth: 0, minHeight: 0 }}>
           <AtpScoreCard sessions={filtered} routines={routines} scopeLabel={scopeLabelAtp} />
@@ -465,7 +466,7 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
       </Reveal>
 
       {/* Charts */}
-      <Reveal delay={160} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+      <Reveal delay={160} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 16 }}>
         {/* P&L Cumulé — zone témoin paquet 3 : count-up déjà en place
             sur les KPI ci-dessus, ici on ajoute (1) tuning de l'animation
             d'entrée Chart.js à 700ms easeOutQuart pour un "dessin de

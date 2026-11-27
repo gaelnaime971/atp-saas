@@ -16,9 +16,12 @@ export interface AppTopbarProps {
 export default function AppTopbar({ title, actions }: AppTopbarProps) {
   return (
     <header
+      // Bureau et tablette. Sous 768 px : barre compacte d'AppShell.
+      className="hidden md:flex"
       style={{
         position: 'sticky', top: 0, zIndex: 30,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        alignItems: 'center', justifyContent: 'space-between',
+        gap: '1.5rem',                       // le titre ne touche jamais les actions
         padding: '1rem 1.75rem',
         background: 'var(--color-surface-0)',
         borderBottom: '1px solid var(--color-border-subtle)',
@@ -32,15 +35,18 @@ export default function AppTopbar({ title, actions }: AppTopbarProps) {
           color: 'var(--color-text-1)',
           margin: 0,
           flexShrink: 0,
+          whiteSpace: 'nowrap',
         }}
       >
         {title}
       </h1>
       {actions && (
         <div
+          // Les actions prennent la place restante, sans déborder sur le
+          // titre : ce qui ne tient pas (statistiques) se masque.
           style={{
-            display: 'flex', alignItems: 'center', gap: '0.75rem',
-            overflowX: 'auto',
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem',
+            flex: '1 1 auto', minWidth: 0, overflow: 'hidden',
           }}
         >
           {actions}

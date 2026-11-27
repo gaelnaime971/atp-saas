@@ -347,7 +347,7 @@ export default function Coaching() {
             Aucun coaching à venir — réserve ton créneau ci-dessous.
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: 14 }}>
             {upcoming.map((s) => {
               const jw = joinWindow(s.scheduled_at, s.duration_minutes || 60)
               const badge = statusBadge(s.meeting_status)

@@ -206,8 +206,8 @@ export default function Stats() {
         <>
           {/* 4 KPI cards */}
           <div
-            className="grid gap-4"
-            style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 16 }}
+            className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+            style={{ marginBottom: 16 }}
           >
             <KpiCard
               label="P&L Total"
@@ -233,8 +233,8 @@ export default function Stats() {
 
           {/* 3 metric cards */}
           <div
-            className="grid gap-4"
-            style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 16 }}
+            className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+            style={{ marginBottom: 16 }}
           >
             <KpiCard
               label="Max Drawdown"
@@ -255,8 +255,8 @@ export default function Stats() {
 
           {/* Charts */}
           <div
-            className="grid gap-4"
-            style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: 24 }}
+            className="grid gap-4 grid-cols-1 md:grid-cols-2"
+            style={{ marginBottom: 24 }}
           >
             <Card>
               <p className="text-sm font-semibold" style={{ color: 'var(--text)', marginBottom: 12 }}>

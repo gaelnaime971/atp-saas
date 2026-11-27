@@ -100,10 +100,11 @@ export function verticalGradient(
  *   backgroundColor: barGradientByValue(t)
  */
 export function barGradientByValue(t: ChartTokens) {
-  return (ctx: { chart: { ctx: CanvasRenderingContext2D; chartArea: { top: number; bottom: number } | null }; parsed: { y: number | null } }) => {
+  // `parsed` est absent quand Chart.js appelle la fonction pour la légende.
+  return (ctx: { chart: { ctx: CanvasRenderingContext2D; chartArea: { top: number; bottom: number } | null }; parsed?: { y: number | null } }) => {
     const { chart, parsed } = ctx
     if (!chart.chartArea) return `rgba(${t.profitRgb}, 0.7)`  // fallback avant premier layout
-    const v = parsed.y ?? 0
+    const v = parsed?.y ?? 0
     const rgb = v > 0 ? t.profitRgb : v < 0 ? t.lossRgb : t.warnRgb
     // Gradient plus opaque en haut (0.9), plus doux en bas (0.5).
     return verticalGradient(chart.ctx, chart.chartArea, rgb, [[0, 0.9], [1, 0.5]])

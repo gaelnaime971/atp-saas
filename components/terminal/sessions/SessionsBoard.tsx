@@ -88,7 +88,7 @@ export default function SessionsBoard({ serverTimeZone, settingsHref }: { server
 
       {now === null ? <BoardSkeleton /> : (
         <>
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)]">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)]">
             <Card>
               <h2 style={sectionTitle}>Ton horloge · {timeZoneLabel(tz)}</h2>
               <RadialClock now={now} tz={tz} />
@@ -99,13 +99,13 @@ export default function SessionsBoard({ serverTimeZone, settingsHref }: { server
             </Card>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {(['tokyo', 'london', 'newYork', 'globex'] as const).map(id => (
               <SessionCard key={id} id={id} state={states![id]} now={now} tz={tz} cash={id === 'newYork' ? states!.cashUs : undefined} />
             ))}
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <UsDay now={now} tz={tz} />
             <Expirations now={now} />
           </div>
@@ -229,16 +229,19 @@ function Timeline({ now, tz }: { now: number; tz: string }) {
   const labelCol = '6.5rem'
 
   return (
-    <div className="flex flex-col gap-3">
+    // Sur petit écran, la frise défile dans sa carte (largeur minimale lisible).
+    <div style={{ overflowX: 'auto', overscrollBehaviorX: 'contain' }}>
+    <div className="flex flex-col gap-3" style={{ minWidth: 520 }}>
       <div className="grid" style={{ gridTemplateColumns: `${labelCol} 1fr` }}>
         <span />
         <div className="relative" style={{ height: 32 }}>
           {[0, 3, 6, 9, 12, 15, 18, 21, 24].map(h => (
-            <span key={h} style={{ ...mono, position: 'absolute', left: `${(h / 24) * 100}%`, bottom: 0, transform: 'translateX(-50%)', fontSize: 10, color: 'var(--color-text-3)' }}>
+            // Libellés des bords alignés à l'intérieur de la frise (pas de débordement).
+            <span key={h} style={{ ...mono, position: 'absolute', left: `${(h / 24) * 100}%`, bottom: 0, transform: h === 0 ? 'none' : h === 24 ? 'translateX(-100%)' : 'translateX(-50%)', fontSize: 10, color: 'var(--color-text-3)' }}>
               {String(h).padStart(2, '0')}
             </span>
           ))}
-          <span style={{ ...mono, position: 'absolute', left: `${nowPct}%`, top: 0, transform: 'translateX(-50%)', fontSize: 10, fontWeight: 600, color: 'var(--color-accent)' }}>
+          <span style={{ ...mono, position: 'absolute', left: `${nowPct}%`, top: 0, transform: `translateX(-${Math.min(100, Math.max(0, nowPct))}%)`, fontSize: 10, fontWeight: 600, color: 'var(--color-accent)' }}>
             {formatTime(now, tz)}
           </span>
         </div>
@@ -276,6 +279,7 @@ function Timeline({ now, tz }: { now: number; tz: string }) {
         {formatTime(zonedTimeToUtc(today, '17:00', 'America/New_York'), tz)} chez toi, pause quotidienne de{' '}
         {formatTime(zonedTimeToUtc(today, '17:00', 'America/New_York'), tz)} à {formatTime(zonedTimeToUtc(today, '18:00', 'America/New_York'), tz)}.
       </p>
+    </div>
     </div>
   )
 }
@@ -409,7 +413,8 @@ function Expirations({ now }: { now: number }) {
   return (
     <Card>
       <h2 style={sectionTitle}>Échéances NQ et YM · roll · OPEX</h2>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+      <div style={{ overflowX: 'auto', overscrollBehaviorX: 'contain' }}>
+      <table style={{ width: '100%', minWidth: 360, borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ ...mono, fontSize: 10, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'left' }}>
             <th style={{ fontWeight: 500, paddingBottom: 8 }}>Contrat</th>
@@ -436,6 +441,7 @@ function Expirations({ now }: { now: number }) {
           ))}
         </tbody>
       </table>
+      </div>
 
       <div style={{ ...sectionTitle, margin: '1.25rem 0 0.5rem 0' }}>OPEX mensuelles</div>
       <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
@@ -491,8 +497,8 @@ function BoardSkeleton() {
   const block = (h: number): CSSProperties => ({ height: h, background: 'var(--color-surface-1)', border: '1px solid var(--color-border-subtle)', borderRadius: 'var(--radius-xl)' })
   return (
     <div className="flex flex-col gap-5" aria-busy="true" aria-label="Calcul des horaires">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)]"><div style={block(380)} /><div style={block(380)} /></div>
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{[0, 1, 2, 3].map(i => <div key={i} style={block(230)} />)}</div>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)]"><div style={block(380)} /><div style={block(380)} /></div>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">{[0, 1, 2, 3].map(i => <div key={i} style={block(230)} />)}</div>
     </div>
   )
 }

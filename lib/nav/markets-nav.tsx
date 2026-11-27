@@ -1,4 +1,5 @@
 import type { NavGroup } from '@/components/ui/AppSidebar'
+import type { ShellTab } from '@/lib/ui/shell'
 import { MARKETS_BASE_PATH } from '@/lib/nav/spaces'
 import type { TerminalViewer } from '@/lib/terminal/access'
 
@@ -94,3 +95,11 @@ export function marketsNavFor(viewer: Exclude<TerminalViewer, 'hidden'>): NavGro
   if (viewer === 'member') return MARKETS_NAV
   return MARKETS_NAV.map(g => ({ ...g, items: g.items.filter(i => i.id !== 'stock-analysis') }))
 }
+
+/** Barre d'onglets mobile (< 768 px) de Marchés : 4 raccourcis + Menu. */
+export const MARKETS_TABS: ShellTab<MarketsNavId>[] = [
+  { id: 'marches-overview', label: 'Vue d’ensemble' },
+  { id: 'marches-sessions', label: 'Horaires' },
+  { id: 'marches-calendrier', label: 'Calendrier' },
+  { id: 'marches-cot', label: 'COT' },
+]
