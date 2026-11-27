@@ -186,3 +186,15 @@ Arrêté le 27/11/2026.
 - **Lecture des pages** (`lib/market/read.ts`) : côté serveur, service-role, cache PARTAGÉ de 15 min invalidé par le cron et le bouton admin (tag `market-data`), toujours après `requireMarketsViewer()` (`lib/terminal/viewer-server.ts`, accès membre compris, partagé avec le layout). Chaque page affiche la date de ses données, avec un avertissement si elles sont en retard (`lib/market/freshness.ts`).
 - **Licences FRED** relevées le 27/11/2026 dans les métadonnées de chaque série : toutes « public domain » ou « copyrighted: citation required » (séries produites par la Fed), aucun copyright de tiers. Aucune série écartée.
 - **Mentions** : texte exact exigé par les conditions de l'API FRED (« This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis. »), lien vers ces conditions et phrase d'acceptation ; organismes producteurs cités ; CFTC citée. **À faire côté CGU** : les conditions FRED demandent que les conditions d'utilisation de l'application disent que l'utiliser vaut acceptation des conditions de l'API FRED.
+
+## COT (lot C, partie 2)
+
+Arrêté le 27/11/2026. Page `/dashboard/marches/cot` (`?m=NQ|ES|YM|ZN`), d'après la maquette 07.
+
+- **Source** : API publique de la CFTC, rapport Traders in Financial Futures (dataset `udgc-27he`), sans clé.
+- **Choix : futures seuls** (`futonly_or_combined = 'FutOnly'`), partout (page, sentiment). C'est la lecture habituelle du COT, et la série est continue depuis 2006 pour les 4 marchés.
+- **Codes de contrat**, relevés dans les données de la CFTC (stables malgré le renommage des marchés en 2022) : NQ `209742` (E-mini Nasdaq-100), ES `13874A` (E-mini S&P 500), YM `124603` (E-mini Dow $5), ZN `043602` (T-Note 10 ans).
+- **Catégories** : institutionnels (asset managers), spéculateurs (leveraged funds), banques (dealers).
+- **Calculs** (`lib/market/cot.ts`, testés) : nette = longs − shorts ; % de l'OI = nette / open interest ; variation = nette − nette du rapport précédent ; **percentile sur 3 ans de la nette en % de l'OI** (l'open interest varie trop en 3 ans pour comparer des contrats bruts). Lecture : ≤ 20 très vendeur, ≥ 80 très acheteur, extrême sous 10 et au-dessus de 90.
+- **Dates** : positions du mardi ; publication affichée = le vendredi suivant (règle habituelle). La date de première réception est stockée (`received_at`).
+- **Pas repris de la maquette** : RTY, GC, CL, 6E (hors périmètre NQ/YM/ES/ZN), « Lecture Jarvis ».

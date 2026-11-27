@@ -31,3 +31,9 @@ export function isIngestLate(lastSuccessIso: string | null, now: number): boolea
   if (!lastSuccessIso) return true
   return now - Date.parse(lastSuccessIso) > 2 * DAY
 }
+
+/** Horloge d'une requête serveur (lue une fois, partagée par la page). */
+export function requestClock(): { now: number; today: string } {
+  const now = Date.now()
+  return { now, today: new Date(now).toISOString().slice(0, 10) }
+}
