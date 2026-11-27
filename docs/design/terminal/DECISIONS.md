@@ -246,3 +246,18 @@ Page admin « Agenda Terminal » (groupe Terminal), route `/api/admin/terminal-a
 - **Résultats d'entreprises** : date (New York), ticker, avant l'ouverture ou après la clôture (heure indicative 8:00 ou 16:05 ET dans le calendrier), nom proposé d'après la liste de départ. Impact moyen.
 - **Discours de la Fed** : date, heure de New York facultative, intitulé. Saisie manuelle faute de source officielle des discours à venir.
 - **Horaires CME des jours de fête** : pour chaque jour de la table, plages Globex (schéma du code par défaut, corrigeables) et confirmation. Table `market_holiday_confirmations`, appliquée par `applyConfirmations` aux pages Sessions & horaires et Calendrier : « à confirmer » disparaît, les plages corrigées remplacent celles du code.
+
+## Banques centrales (lot D, partie 3)
+
+Page `/dashboard/marches/banques-centrales`, d'après la maquette 05, en heure du membre.
+
+- **Contenu** : pour la Fed, la BCE et la BoJ, taux directeur actuel, dernier changement (date d'effet), issue de la dernière réunion (hausse, baisse, maintien), prochaine réunion (J−n, heure de la décision chez le membre, projections, « date à confirmer »), graphique en escalier sur 3 ans, réunions des 12 prochains mois. Bandeau « Prochaine décision » avec compte à rebours, heures de la décision et de la conférence, fenêtre ATP (±15 min, fusionnée).
+- **Sources** :
+  | Donnée | Source | Conditions |
+  |---|---|---|
+  | Fourchette des fed funds | FRED `DFEDTARL`, `DFEDTARU` (Board of Governors) | domaine public, mention FRED |
+  | Taux de dépôt et de refinancement de la BCE | API de données de la BCE (`FM/D.U2.EUR.4F.KR.DFR.LEV`, `MRR_FR`) | réutilisation libre, y compris commerciale, source citée, données non modifiées, mention de la gratuité (`ECB_NOTICE`) |
+  | Décisions de la BoJ | communiqués de politique monétaire de la BoJ, table `BOJ_DECISIONS` (recoupée avec la série officielle du taux de base des prêts) | conditions de l'API de la BoJ publiées en japonais seulement → table saisie depuis les communiqués, pas d'appel automatique |
+  | Calendriers des réunions | pages officielles de la Fed, de la BCE et de la BoJ (tables de `lib/market/central-banks.ts`, à prolonger chaque année) | — |
+- **Heures** : Fed 14:00 (décision) et 14:30 (conférence) à New York ; BCE 14:15 et 14:45 à Francfort ; BoJ sans heure fixe (fin de réunion, matinée à Tokyo), signalé sur la page.
+- **Probabilités** : Fed seulement, **lien** vers le Market Probability Tracker de la Fed d'Atlanta, sans ses chiffres : ses conditions n'autorisent la reprise que sans but commercial. Pas de CME FedWatch ni de Polymarket. Aucune probabilité pour la BCE et la BoJ (pas de source officielle gratuite).

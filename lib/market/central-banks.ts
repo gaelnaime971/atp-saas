@@ -4,6 +4,7 @@
  * Les taux de la Fed et de la BCE viennent de leurs séries officielles
  * (FRED DFEDTARL/DFEDTARU, API de données de la BCE), voir ingestion.
  */
+import type { Observation } from '@/lib/market/fred'
 
 export type BankCode = 'FED' | 'ECB' | 'BOJ'
 
@@ -134,3 +135,56 @@ export function lastMeeting(bank: BankCode, today: string): Meeting | null {
 
 /** Atlanta Fed Market Probability Tracker : lien seulement (conditions : pas d'usage commercial). */
 export const ATLANTA_FED_MPT_URL = 'https://www.atlantafed.org/cenfis/market-probability-tracker'
+
+// ─── Calculs (pur, testé dans central-banks.test.ts) ────────────
+
+export interface RateChange { date: string; from: number; to: number }
+
+/** Changements de niveau d'une série de taux (date d'effet = première date au nouveau niveau). */
+export function rateChanges(obs: readonly Observation[]): RateChange[] {
+  const out: RateChange[] = []
+  for (let i = 1; i < obs.length; i++) {
+    if (Math.abs(obs[i].value - obs[i - 1].value) > 1e-9) out.push({ date: obs[i].date, from: obs[i - 1].value, to: obs[i].value })
+  }
+  return out
+}
+
+/** BoJ : décisions → observations (une par décision). */
+export function bojObservations(): Observation[] {
+  return BOJ_DECISIONS.map(d => ({ date: d.date, value: d.rate }))
+}
+
+/**
+ * Issue de la dernière réunion : un changement de taux en vigueur entre
+ * le jour de la décision et les 7 jours suivants (la Fed et la BCE
+ * appliquent leurs décisions le lendemain ou la semaine suivante).
+ */
+export function meetingOutcome(meeting: Meeting, changes: readonly RateChange[]): { kind: 'hike' | 'cut' | 'hold'; change?: RateChange } {
+  const until = new Date(Date.parse(`${meeting.decisionDate}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10)
+  const c = changes.find(x => x.date >= meeting.decisionDate && x.date <= until)
+  if (!c) return { kind: 'hold' }
+  return { kind: c.to > c.from ? 'hike' : 'cut', change: c }
+}
+
+/** Série en escalier pour le graphique : un point juste avant chaque changement. */
+export function stepSeries(changes: readonly RateChange[], start: { date: string; value: number }, end: string): Observation[] {
+  const out: Observation[] = [{ date: start.date, value: start.value }]
+  for (const c of changes) {
+    if (c.date <= start.date || c.date > end) continue
+    const before = new Date(Date.parse(`${c.date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
+    out.push({ date: before, value: c.from }, { date: c.date, value: c.to })
+  }
+  const last = out[out.length - 1]
+  if (last.date < end) out.push({ date: end, value: last.value })
+  return out
+}
+
+/** Taux à une date (dernier niveau connu ≤ date) d'une série triée. */
+export function rateAt(obs: readonly Observation[], date: string): number | null {
+  let v: number | null = null
+  for (const o of obs) {
+    if (o.date <= date) v = o.value
+    else break
+  }
+  return v
+}
