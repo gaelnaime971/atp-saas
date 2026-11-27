@@ -29,6 +29,7 @@ describe('format des chiffres publiés', () => {
     expect(formatFigure(165, 'change_k')).toBe('+165 k')
     expect(formatFigure(4.3, 'level_pct')).toBe('4,3 %')
     expect(formatFigure(189, 'level_k')).toBe('189 k')
+    expect(formatFigure(701, 'level_thousands')).toBe('701 k')
     expect(formatFigure(7.523, 'level_m')).toBe('7,52 M')
     expect(formatFigure(null, 'pct_mom')).toBe('—')
   })

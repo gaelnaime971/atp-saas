@@ -30,12 +30,20 @@ async function get(url: string, label: string): Promise<Response> {
 export async function fetchFredReleaseDates(from: string, to: string): Promise<FredReleaseDate[]> {
   const key = process.env.FRED_API_KEY
   if (!key) throw new Error('FRED_API_KEY absente')
-  const params = new URLSearchParams({
-    api_key: key, file_type: 'json', realtime_start: from, realtime_end: to,
-    include_release_dates_with_no_data: 'true', limit: '10000', order_by: 'release_date', sort_order: 'asc',
-  })
-  const res = await get(`https://api.stlouisfed.org/fred/releases/dates?${params}`, 'FRED calendrier')
-  return parseFredReleaseDates(await res.json())
+  // FRED : 1000 dates au plus par appel (toutes publications confondues) → pagination.
+  const out: FredReleaseDate[] = []
+  for (let offset = 0, page = 0; page < 20; page++, offset += 1000) {
+    const params = new URLSearchParams({
+      api_key: key, file_type: 'json', realtime_start: from, realtime_end: to,
+      include_release_dates_with_no_data: 'true', limit: '1000', offset: String(offset), order_by: 'release_date', sort_order: 'asc',
+    })
+    const res = await get(`https://api.stlouisfed.org/fred/releases/dates?${params}`, 'FRED calendrier')
+    const json = await res.json() as { count?: unknown; release_dates?: unknown[] }
+    out.push(...parseFredReleaseDates(json))
+    const count = typeof json.count === 'number' ? json.count : 0
+    if (offset + 1000 >= count || !json.release_dates?.length) break
+  }
+  return out
 }
 
 export function parseFredReleaseDates(json: unknown): FredReleaseDate[] {

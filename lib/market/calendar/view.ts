@@ -62,7 +62,8 @@ export function formatFigure(v: number | null, t: FigureTransform): string {
     case 'pct_qoq': return `${fmtNumber(v, 1, { sign: true })} %`
     case 'change_k': return `${fmtNumber(v, 0, { sign: true })} k`
     case 'level_pct': return `${fmtNumber(v, 1)} %`
-    case 'level_k': return `${fmtNumber(v, 0)} k`
+    case 'level_k':
+    case 'level_thousands': return `${fmtNumber(v, 0)} k`
     case 'level_m': return `${fmtNumber(v, 2)} M`
     case 'level_bn': return `${fmtNumber(v, 1)} Md$`
   }

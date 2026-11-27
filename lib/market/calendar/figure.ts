@@ -25,7 +25,8 @@ function measure(obs: readonly VintageObservation[], i: number, t: FigureTransfo
     case 'pct_qoq': return prev && prev.value !== 0 ? ((cur.value / prev.value) - 1) * 100 : null
     case 'change_k': return prev ? cur.value - prev.value : null // PAYEMS est déjà en milliers
     case 'level_pct': return cur.value
-    case 'level_k': return cur.value / 1000
+    case 'level_k': return cur.value / 1000 // ICSA en unités → milliers
+    case 'level_thousands': return cur.value // HOUST, HSN1F déjà en milliers
     case 'level_m': return cur.value / 1000 // JTSJOL en milliers → millions
     case 'level_bn': return cur.value / 1000 // BOPGSTB en millions → milliards
   }

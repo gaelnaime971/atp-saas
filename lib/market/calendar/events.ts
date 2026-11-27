@@ -49,9 +49,11 @@ export interface BeaIcsEvent { start: number; summary: string }
 /** Publications à partir des dates FRED, heures du BEA quand il les donne. */
 export function releaseEvents(fredDates: readonly FredReleaseDate[], bea: readonly BeaIcsEvent[]): CalendarEvent[] {
   const out: CalendarEvent[] = []
+  const datesOf = (id: number) => new Set(fredDates.filter(x => x.releaseId === id).map(x => x.date))
+  const skip = new Map(RELEASES.filter(r => r.skipDatesOf).map(r => [r.releaseId, datesOf(r.skipDatesOf!)]))
   for (const d of fredDates) {
     const def = RELEASE_BY_ID.get(d.releaseId)
-    if (!def) continue
+    if (!def || skip.get(def.releaseId)?.has(d.date)) continue
     out.push({
       id: `release:${def.releaseId}:${d.date}`, kind: 'release', title: def.title, agency: def.agency,
       at: at(d.date, def.timeEt), date: d.date, impact: def.impact, timeOfficial: false,

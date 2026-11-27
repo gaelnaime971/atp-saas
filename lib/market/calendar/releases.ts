@@ -17,7 +17,7 @@
  */
 
 export type Impact = 'high' | 'medium' | 'low'
-export type FigureTransform = 'pct_mom' | 'pct_qoq' | 'change_k' | 'level_pct' | 'level_k' | 'level_m' | 'level_bn'
+export type FigureTransform = 'pct_mom' | 'pct_qoq' | 'change_k' | 'level_pct' | 'level_k' | 'level_thousands' | 'level_m' | 'level_bn'
 
 export interface ReleaseDef {
   /** Identifiant FRED de la publication. */
@@ -31,6 +31,13 @@ export interface ReleaseDef {
   figure?: { series: string; transform: FigureTransform; label: string }
   /** Résumé du fichier iCalendar du BEA qui correspond à cette publication. */
   beaSummary?: RegExp
+  /**
+   * Dates FRED à ignorer quand elles tombent le jour d'une autre
+   * publication : FRED rattache aussi à « New Residential Construction »
+   * (27) les jours de « New Residential Sales » (97), où les mises en
+   * chantier ne sont pas publiées.
+   */
+  skipDatesOf?: number
 }
 
 export const RELEASES: ReleaseDef[] = [
@@ -44,8 +51,8 @@ export const RELEASES: ReleaseDef[] = [
   { releaseId: 192, title: 'Offres d’emploi (JOLTS)', agency: 'BLS', timeEt: '10:00', impact: 'medium', figure: { series: 'JTSJOL', transform: 'level_m', label: 'postes ouverts' } },
   { releaseId: 11, title: 'Coût de l’emploi (ECI)', agency: 'BLS', timeEt: '08:30', impact: 'medium', figure: { series: 'ECIALLCIV', transform: 'pct_qoq', label: 'sur un trimestre' } },
   { releaseId: 13, title: 'Production industrielle', agency: 'Fed', timeEt: '09:15', impact: 'low', figure: { series: 'INDPRO', transform: 'pct_mom', label: 'sur un mois' } },
-  { releaseId: 27, title: 'Mises en chantier', agency: 'Census', timeEt: '08:30', impact: 'low', figure: { series: 'HOUST', transform: 'level_k', label: 'rythme annuel' } },
-  { releaseId: 97, title: 'Ventes de logements neufs', agency: 'Census', timeEt: '10:00', impact: 'low', figure: { series: 'HSN1F', transform: 'level_k', label: 'rythme annuel' } },
+  { releaseId: 27, title: 'Mises en chantier', agency: 'Census', timeEt: '08:30', impact: 'low', figure: { series: 'HOUST', transform: 'level_thousands', label: 'rythme annuel' }, skipDatesOf: 97 },
+  { releaseId: 97, title: 'Ventes de logements neufs', agency: 'Census', timeEt: '10:00', impact: 'low', figure: { series: 'HSN1F', transform: 'level_thousands', label: 'rythme annuel' } },
   { releaseId: 51, title: 'Balance commerciale', agency: 'BEA/Census', timeEt: '08:30', impact: 'low', figure: { series: 'BOPGSTB', transform: 'level_bn', label: 'solde' }, beaSummary: /^U\.S\. International Trade in Goods and Services/i },
   { releaseId: 188, title: 'Prix à l’importation', agency: 'BLS', timeEt: '08:30', impact: 'low', figure: { series: 'IR', transform: 'pct_mom', label: 'sur un mois' } },
   { releaseId: 229, title: 'Dépenses de construction', agency: 'Census', timeEt: '10:00', impact: 'low', figure: { series: 'TTLCONS', transform: 'pct_mom', label: 'sur un mois' } },

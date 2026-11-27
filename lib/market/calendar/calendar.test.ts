@@ -43,6 +43,12 @@ describe('dédoublonnage', () => {
   it('publications non suivies ignorées, résumé BEA inconnu ignoré', () => {
     expect(releaseEvents([{ releaseId: 999, date: '2026-12-01' }], [{ start: 0, summary: 'GDP by County, 2025' }])).toEqual([])
   })
+  it('mises en chantier : les jours des ventes de logements neufs (rattachés par FRED) sont ignorés', () => {
+    const events = releaseEvents([
+      { releaseId: 27, date: '2026-11-18' }, { releaseId: 27, date: '2026-11-25' }, { releaseId: 97, date: '2026-11-25' },
+    ], [])
+    expect(events.map(e => e.id).sort()).toEqual(['release:27:2026-11-18', 'release:97:2026-11-25'])
+  })
   it('même adjudication vue dans « à venir » et « réalisées » : une seule', () => {
     const a = { cusip: 'X1', originalTerm: '10-Year', securityTerm: '10-Year', closeDate: '2026-12-09', closeTime: '01:00 PM', highYield: null }
     expect(auctionEvents([a, { ...a, highYield: 4.9 }])).toHaveLength(1)
