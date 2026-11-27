@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { fedLiquidity, macroFigure } from './macro'
+import { fedLiquidity, macroFigure, yieldCurve } from './macro'
+
+describe('courbe 10 ans − 2 ans', () => {
+  it('DGS10 − DGS2 à la même date ; date sans l’un des deux taux : ignorée', () => {
+    const d10 = [{ date: '2026-11-23', value: 4.92 }, { date: '2026-11-24', value: 4.91 }, { date: '2026-11-25', value: 4.9 }]
+    const d2 = [{ date: '2026-11-23', value: 4.63 }, { date: '2026-11-24', value: 4.63 }]
+    expect(yieldCurve(d10, d2)).toEqual([{ date: '2026-11-23', value: 0.29 }, { date: '2026-11-24', value: 0.28 }])
+  })
+})
 
 describe('liquidité de la Fed : unités et fréquences', () => {
   it('bilan et compte du Trésor en millions, reverse repo en milliards → résultat en milliards', () => {

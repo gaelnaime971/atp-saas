@@ -195,7 +195,7 @@ Arrêté le 27/11/2026. Page `/dashboard/marches/cot` (`?m=NQ|ES|YM|ZN`), d'apr�
 - **Choix : futures seuls** (`futonly_or_combined = 'FutOnly'`), partout (page, sentiment). C'est la lecture habituelle du COT, et la série est continue depuis 2006 pour les 4 marchés.
 - **Codes de contrat**, relevés dans les données de la CFTC (stables malgré le renommage des marchés en 2022) : NQ `209742` (E-mini Nasdaq-100), ES `13874A` (E-mini S&P 500), YM `124603` (E-mini Dow $5), ZN `043602` (T-Note 10 ans).
 - **Catégories** : institutionnels (asset managers), spéculateurs (leveraged funds), banques (dealers).
-- **Calculs** (`lib/market/cot.ts`, testés) : nette = longs − shorts ; % de l'OI = nette / open interest ; variation = nette − nette du rapport précédent ; **percentile sur 3 ans de la nette en % de l'OI** (l'open interest varie trop en 3 ans pour comparer des contrats bruts). Lecture : ≤ 20 très vendeur, ≥ 80 très acheteur, extrême sous 10 et au-dessus de 90.
+- **Calculs** (`lib/market/cot.ts`, testés) : nette = longs − shorts ; % de l'OI = nette / open interest ; variation = nette − nette du rapport précédent ; **percentile sur 3 ans de la nette en % de l'OI** (l'open interest varie trop en 3 ans pour comparer des contrats bruts). Lecture **relative aux 3 ans** (juste aussi pour une nette vendeuse) : ≥ 90 « Proche du plus haut sur 3 ans », ≥ 80 « Plus acheteurs que d'habitude », ≤ 20 « Plus vendeurs que d'habitude », ≤ 10 « Proche du plus bas sur 3 ans », sinon « Dans la norme » ; badge « extrême » à 90 et plus, ou à 10 et moins (lot D).
 - **Dates** : positions du mardi ; publication affichée = le vendredi suivant (règle habituelle). La date de première réception est stockée (`received_at`).
 - **Pas repris de la maquette** : RTY, GC, CL, 6E (hors périmètre NQ/YM/ES/ZN), « Lecture Jarvis ».
 
@@ -203,14 +203,14 @@ Arrêté le 27/11/2026. Page `/dashboard/marches/cot` (`?m=NQ|ES|YM|ZN`), d'apr�
 
 Arrêté le 27/11/2026. Page `/dashboard/marches/macro`, sans maquette : langage des maquettes 07 et 08 (cartes, chiffres en police data, mini-graphiques).
 
-- **Séries FRED** : DGS2, DGS10, T10Y2Y, DFII10, T10YIE, liquidité de la Fed, ICSA, UNRATE, GDPNOW. Par série : dernière valeur, date (ou mois, ou trimestre), variation par rapport à la publication précédente (en points de base pour les taux), mini-graphique sur 1 an, source.
+- **Séries FRED** : DGS2, DGS10, courbe 10 ans − 2 ans (calculée : DGS10 − DGS2 à la même date, `yieldCurve`, depuis le lot D ; la série T10Y2Y n'est plus utilisée), DFII10, T10YIE, liquidité de la Fed, ICSA, UNRATE, GDPNOW. Par série : dernière valeur, date (ou mois, ou trimestre), variation par rapport à la publication précédente (en points de base pour les taux), mini-graphique sur 1 an, source. Libellés : « Au mar. 24 nov. 2026 », « En octobre 2026 » (mensuel), « Estimation pour le T4 2026 » (GDPNow, avec « Estimation finale du T3 2026 : x,x % » à la place d'une variation).
 - **Liquidité de la Fed** (`lib/market/macro.ts`, testée) = WALCL − WTREGEN − RRPONTSYD, en **milliards de dollars**, une valeur par mercredi du bilan. WALCL et WTREGEN sont en millions (÷ 1 000) et hebdomadaires ; RRPONTSYD est en milliards et quotidien (valeur du mercredi, ou la dernière connue avant). Une date sans l'une des trois valeurs est ignorée.
 
 ## Sentiment de risque ATP (lot C, partie 4)
 
 Arrêté le 27/11/2026. Page `/dashboard/marches/sentiment`, d'après la maquette 08. Nom : « Sentiment de risque ATP » (pas de « Fear & Greed »).
 
-- **7 composantes** (`lib/market/sentiment.ts`, testé) : stress financier (STLFSI4), risque de marché (NFCIRISK), conditions de crédit (NFCICREDIT), taux réel 10 ans (DFII10), liquidité de la Fed (calcul de la page Macro), courbe 10 ans − 2 ans (T10Y2Y), positionnement des asset managers sur ES et NQ (COT, nette en % de l'OI, moyenne des deux percentiles).
+- **7 composantes** (`lib/market/sentiment.ts`, testé) : stress financier (STLFSI4), risque de marché (NFCIRISK), conditions de crédit (NFCICREDIT), taux réel 10 ans (DFII10), liquidité de la Fed (calcul de la page Macro), courbe 10 ans − 2 ans (DGS10 − DGS2, même calcul que la page Macro), positionnement des asset managers sur ES et NQ (COT, nette en % de l'OI, moyenne des deux percentiles).
 - **Calcul** : percentile sur 3 ans de la valeur du jour, **orienté** pour que haut = appétit (stress, risque, crédit et taux réel inversés : 100 − percentile) ; score = moyenne simple des composantes disponibles ; zones : aversion sous 40, neutre de 40 à 60, appétit au-dessus de 60. Contribution de chaque composante = son percentile orienté / nombre de composantes.
 - **Historique** : un point par semaine sur 1 an, chaque point calculé avec les seules données connues à sa date (dernière valeur ≤ date).
 - **Composante écartée ou sans donnée** : le score se calcule sans elle et la page le dit. Aucune écartée à ce jour (licences vérifiées, partie 1).

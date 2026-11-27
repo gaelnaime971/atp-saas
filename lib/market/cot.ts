@@ -104,10 +104,17 @@ export function netHistory(rows: readonly CotRow[], since: string) {
   }))
 }
 
-/** Lecture factuelle du percentile (seuils 20 / 80). */
+/**
+ * Lecture du percentile, RELATIVE aux 3 dernières années (juste aussi
+ * pour une position nette vendeuse : « plus acheteurs que d'habitude »
+ * peut vouloir dire « moins vendeurs »). Seuils 10 / 20 / 80 / 90 ;
+ * badge « extrême » à 90 et plus, ou à 10 et moins.
+ */
 export function percentileReading(p: number | null): { label: string; extreme: boolean } {
   if (p === null) return { label: '—', extreme: false }
-  if (p <= 20) return { label: 'Très vendeur (3 ans)', extreme: p <= 10 }
-  if (p >= 80) return { label: 'Très acheteur (3 ans)', extreme: p >= 90 }
+  if (p >= 90) return { label: 'Proche du plus haut sur 3 ans', extreme: true }
+  if (p >= 80) return { label: 'Plus acheteurs que d’habitude', extreme: false }
+  if (p <= 10) return { label: 'Proche du plus bas sur 3 ans', extreme: true }
+  if (p <= 20) return { label: 'Plus vendeurs que d’habitude', extreme: false }
   return { label: 'Dans la norme', extreme: false }
 }

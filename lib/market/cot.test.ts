@@ -64,10 +64,14 @@ describe('COT : nettes, % OI, variation, percentile 3 ans', () => {
     const h = netHistory([prev, last], '2026-11-15')
     expect(h.find(c => c.category === 'levMoney')?.points).toEqual([{ date: '2026-11-17', value: -10928 }])
   })
-  it('lecture : seuils 20 / 80, extrême sous 10 et au-dessus de 90', () => {
-    expect(percentileReading(8)).toEqual({ label: 'Très vendeur (3 ans)', extreme: true })
-    expect(percentileReading(18).extreme).toBe(false)
+  it('lecture relative aux 3 ans : seuils 10 / 20 / 80 / 90, extrême à 10 et moins ou 90 et plus', () => {
+    expect(percentileReading(8)).toEqual({ label: 'Proche du plus bas sur 3 ans', extreme: true })
+    expect(percentileReading(10).extreme).toBe(true)
+    expect(percentileReading(18)).toEqual({ label: 'Plus vendeurs que d’habitude', extreme: false })
     expect(percentileReading(50).label).toBe('Dans la norme')
-    expect(percentileReading(95)).toEqual({ label: 'Très acheteur (3 ans)', extreme: true })
+    expect(percentileReading(84)).toEqual({ label: 'Plus acheteurs que d’habitude', extreme: false })
+    expect(percentileReading(90)).toEqual({ label: 'Proche du plus haut sur 3 ans', extreme: true })
+    // Aucune formulation absolue (« très acheteur ») : une nette vendeuse peut être « plus acheteuse que d'habitude ».
+    for (const p of [0, 15, 50, 85, 100]) expect(percentileReading(p).label).not.toMatch(/Très/)
   })
 })

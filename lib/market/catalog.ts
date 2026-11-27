@@ -28,7 +28,6 @@ export interface FredSeriesDef {
 export const FRED_SERIES: FredSeriesDef[] = [
   { code: 'DGS2', label: 'Taux à 2 ans', unit: 'pct', frequency: 'D', provider: 'Board of Governors of the Federal Reserve System', license: 'public domain: citation requested' },
   { code: 'DGS10', label: 'Taux à 10 ans', unit: 'pct', frequency: 'D', provider: 'Board of Governors of the Federal Reserve System', license: 'public domain: citation requested' },
-  { code: 'T10Y2Y', label: 'Courbe 10 ans − 2 ans', unit: 'pct', frequency: 'D', provider: 'Federal Reserve Bank of St. Louis', license: 'copyrighted: citation required' },
   { code: 'DFII10', label: 'Taux réel à 10 ans', unit: 'pct', frequency: 'D', provider: 'Board of Governors of the Federal Reserve System', license: 'public domain: citation requested' },
   { code: 'T10YIE', label: 'Inflation attendue à 10 ans', unit: 'pct', frequency: 'D', provider: 'Federal Reserve Bank of St. Louis', license: 'copyrighted: citation required' },
   { code: 'WALCL', label: 'Bilan de la Fed', unit: 'usd_millions', frequency: 'W', provider: 'Board of Governors of the Federal Reserve System', license: 'public domain: citation requested' },

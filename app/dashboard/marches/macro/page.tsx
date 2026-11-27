@@ -8,16 +8,16 @@ import { DataStamp, SourceMentions } from '@/components/terminal/data/DataNotice
 import { requireMarketsViewer } from '@/lib/terminal/viewer-server'
 import { readLastSuccess, readSeries } from '@/lib/market/read'
 import { FRED_BY_CODE, type FredFrequency } from '@/lib/market/catalog'
-import { fedLiquidity, macroFigure, type MacroFigure } from '@/lib/market/macro'
+import { fedLiquidity, macroFigure, yieldCurve, type MacroFigure } from '@/lib/market/macro'
 import { isDataLate, isIngestLate, requestClock } from '@/lib/market/freshness'
 import { minusYears } from '@/lib/market/stats'
 import { fmtNumber } from '@/lib/format'
-import { formatDateKey } from '@/lib/time'
+import { formatPeriod, periodLabel } from '@/lib/market/period'
 import type { Observation } from '@/lib/market/fred'
 
 export const metadata: Metadata = { title: 'Macro US · Marchés · ATP' }
 
-const CODES = ['DGS2', 'DGS10', 'T10Y2Y', 'DFII10', 'T10YIE', 'WALCL', 'WTREGEN', 'RRPONTSYD', 'ICSA', 'UNRATE', 'GDPNOW']
+const CODES = ['DGS2', 'DGS10', 'DFII10', 'T10YIE', 'WALCL', 'WTREGEN', 'RRPONTSYD', 'ICSA', 'UNRATE', 'GDPNOW']
 
 type Kind = 'rate' | 'pct' | 'count' | 'billions'
 
@@ -38,7 +38,7 @@ const GROUPS: { title: string; cards: CardDef[] }[] = [
     cards: [
       { id: 'DGS2', label: 'Taux à 2 ans', hint: 'Bon du Trésor US, échéance constante', kind: 'rate', frequency: 'D', source: 'Fed (H.15)', codes: ['DGS2'] },
       { id: 'DGS10', label: 'Taux à 10 ans', hint: 'Bon du Trésor US, échéance constante', kind: 'rate', frequency: 'D', source: 'Fed (H.15)', codes: ['DGS10'] },
-      { id: 'T10Y2Y', label: 'Courbe 10 ans − 2 ans', hint: 'Négative = courbe inversée', kind: 'rate', frequency: 'D', source: 'Fed de St. Louis', codes: ['T10Y2Y'] },
+      { id: 'CURVE', label: 'Courbe 10 ans − 2 ans', hint: 'Taux 10 ans − taux 2 ans · négative = inversée', kind: 'rate', frequency: 'D', source: 'Fed (H.15), calcul ATP', codes: ['DGS10', 'DGS2'] },
       { id: 'DFII10', label: 'Taux réel à 10 ans', hint: 'Bon indexé sur l’inflation (TIPS)', kind: 'rate', frequency: 'D', source: 'Fed (H.15)', codes: ['DFII10'] },
       { id: 'T10YIE', label: 'Inflation attendue à 10 ans', hint: 'Point mort : 10 ans nominal − réel', kind: 'rate', frequency: 'D', source: 'Fed de St. Louis', codes: ['T10YIE'] },
       { id: 'LIQ', label: 'Liquidité de la Fed', hint: 'Bilan − compte du Trésor − reverse repo', kind: 'billions', frequency: 'W', source: 'Fed (H.4.1), Fed de New York', codes: ['WALCL', 'WTREGEN', 'RRPONTSYD'] },
@@ -78,12 +78,7 @@ function formatChange(kind: Kind, d: number): string {
   }
 }
 
-function formatPeriod(date: string, frequency: FredFrequency): string {
-  const [y, m] = date.split('-').map(Number)
-  if (frequency === 'Q') return `T${Math.floor((m - 1) / 3) + 1} ${y}`
-  if (frequency === 'M') return new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(Date.UTC(y, m - 1, 1))
-  return formatDateKey(date, { year: true })
-}
+
 
 export default async function MacroPage() {
   await requireMarketsViewer()
@@ -110,7 +105,9 @@ export default async function MacroPage() {
 
   const data = series.data
   const resolve = (id: string): Observation[] =>
-    id === 'LIQ' ? fedLiquidity(data.WALCL ?? [], data.WTREGEN ?? [], data.RRPONTSYD ?? []) : data[id] ?? []
+    id === 'LIQ' ? fedLiquidity(data.WALCL ?? [], data.WTREGEN ?? [], data.RRPONTSYD ?? [])
+      : id === 'CURVE' ? yieldCurve(data.DGS10 ?? [], data.DGS2 ?? [])
+      : data[id] ?? []
   const figures = Object.fromEntries(GROUPS.flatMap(g => g.cards).map(c => [c.id, macroFigure(resolve(c.id))])) as Record<string, MacroFigure>
   const latest = Object.values(figures).map(f => f.last?.date).filter((d): d is string => !!d).sort().at(-1) ?? null
   const ingestLate = lastOk.ok && isIngestLate(lastOk.data.fred, now)
@@ -140,15 +137,20 @@ export default async function MacroPage() {
                     <>
                       <div className="flex items-baseline gap-3 flex-wrap" style={{ marginTop: 12 }}>
                         <span style={{ ...mono, fontSize: 26, fontWeight: 600, color: 'var(--color-text-1)' }}>{formatValue(card.kind, f.last.value)}</span>
-                        {f.change !== null && f.previous && (
+                        {card.frequency !== 'Q' && f.change !== null && f.previous && (
                           <span style={{ ...mono, fontSize: 12, color: 'var(--color-text-2)' }}>
                             {formatChange(card.kind, f.change)} <span style={{ color: 'var(--color-text-3)' }}>vs {formatPeriod(f.previous.date, card.frequency)}</span>
                           </span>
                         )}
                       </div>
                       <div style={{ ...mono, fontSize: 11, color: 'var(--color-text-3)', marginTop: 2 }}>
-                        {card.frequency === 'Q' ? 'Estimation pour le ' : 'Au '}{formatPeriod(f.last.date, card.frequency)}
+                        {periodLabel(f.last.date, card.frequency)}
                       </div>
+                      {card.frequency === 'Q' && f.previous && (
+                        <div style={{ ...mono, fontSize: 11, color: 'var(--color-text-2)', marginTop: 2 }}>
+                          Estimation finale du {formatPeriod(f.previous.date, 'Q')} : {formatValue(card.kind, f.previous.value)}
+                        </div>
+                      )}
                       <div style={{ marginTop: 10 }}>
                         <Sparkline points={f.year} color="var(--color-accent)" ariaLabel={`${card.label} sur un an`} />
                       </div>

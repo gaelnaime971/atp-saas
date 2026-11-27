@@ -7,7 +7,7 @@ import { DataStamp, SourceMentions } from '@/components/terminal/data/DataNotice
 import { requireMarketsViewer } from '@/lib/terminal/viewer-server'
 import { readCot, readLastSuccess, readSeries } from '@/lib/market/read'
 import { FRED_BY_CODE, FRED_EXCLUDED } from '@/lib/market/catalog'
-import { fedLiquidity } from '@/lib/market/macro'
+import { fedLiquidity, yieldCurve } from '@/lib/market/macro'
 import { marketRows, netOf, pctOfOi } from '@/lib/market/cot'
 import {
   SENTIMENT_COMPONENTS, SENTIMENT_YEARS, ZONE_LABEL, sentimentAt, sentimentHistory,
@@ -20,7 +20,7 @@ import { formatDateKey } from '@/lib/time'
 
 export const metadata: Metadata = { title: 'Sentiment de risque · Marchés · ATP' }
 
-const FRED_CODES = ['STLFSI4', 'NFCIRISK', 'NFCICREDIT', 'DFII10', 'WALCL', 'WTREGEN', 'RRPONTSYD', 'T10Y2Y']
+const FRED_CODES = ['STLFSI4', 'NFCIRISK', 'NFCICREDIT', 'DFII10', 'WALCL', 'WTREGEN', 'RRPONTSYD', 'DGS10', 'DGS2']
 
 const ZONE_COLOR: Record<SentimentZone, string> = {
   aversion: 'var(--color-loss)',
@@ -75,7 +75,7 @@ export default async function SentimentPage() {
   const inputs: SentimentInputs = {
     stress: d.STLFSI4 ?? [], marketRisk: d.NFCIRISK ?? [], credit: d.NFCICREDIT ?? [], realRate: d.DFII10 ?? [],
     liquidity: fedLiquidity(d.WALCL ?? [], d.WTREGEN ?? [], d.RRPONTSYD ?? []),
-    curve: d.T10Y2Y ?? [],
+    curve: yieldCurve(d.DGS10 ?? [], d.DGS2 ?? []),
     positioning: { ES: positioningOf('ES'), NQ: positioningOf('NQ') },
   }
   // Composantes écartées pour copyright : aucune à ce jour (catalogue FRED).

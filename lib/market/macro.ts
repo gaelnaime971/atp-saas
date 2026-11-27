@@ -24,6 +24,22 @@ export function fedLiquidity(walcl: readonly Observation[], tga: readonly Observ
   return out
 }
 
+/**
+ * Courbe 10 ans − 2 ans calculée à partir des deux taux affichés
+ * (DGS10 − DGS2), seulement aux dates où les deux existent. Remplace la
+ * série T10Y2Y : même définition, mais toujours cohérente avec les
+ * deux cartes de taux de la page.
+ */
+export function yieldCurve(dgs10: readonly Observation[], dgs2: readonly Observation[]): Observation[] {
+  const two = new Map(dgs2.map(o => [o.date, o.value]))
+  const out: Observation[] = []
+  for (const o of dgs10) {
+    const v = two.get(o.date)
+    if (v !== undefined) out.push({ date: o.date, value: Math.round((o.value - v) * 1e6) / 1e6 })
+  }
+  return out
+}
+
 export interface MacroFigure {
   last: Observation | null
   previous: Observation | null

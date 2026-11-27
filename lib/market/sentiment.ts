@@ -3,7 +3,7 @@
  *
  * - 7 composantes publiques (DECISIONS.md) : stress financier (STLFSI4),
  *   risque de marché (NFCIRISK), crédit (NFCICREDIT), taux réel 10 ans
- *   (DFII10), liquidité de la Fed, courbe 10 ans − 2 ans (T10Y2Y),
+ *   (DFII10), liquidité de la Fed, courbe 10 ans − 2 ans (DGS10 − DGS2),
  *   positionnement des asset managers sur ES et NQ (COT, % de l'OI).
  * - Chaque composante devient un percentile sur 3 ans (valeur du jour
  *   parmi les 3 dernières années), ORIENTÉ pour que « haut » signifie
@@ -38,7 +38,7 @@ export const SENTIMENT_COMPONENTS: SentimentComponentDef[] = [
   { id: 'credit', label: 'Conditions de crédit', hint: 'Sous-indice crédit de la Fed de Chicago · haut = crédit tendu', direction: -1, unit: 'index', source: 'FRED NFCICREDIT' },
   { id: 'realRate', label: 'Taux réel à 10 ans', hint: 'TIPS 10 ans · haut = frein pour les actions', direction: -1, unit: 'pct', source: 'FRED DFII10' },
   { id: 'liquidity', label: 'Liquidité de la Fed', hint: 'Bilan − compte du Trésor − reverse repo · haut = appétit', direction: 1, unit: 'billions', source: 'FRED WALCL, WTREGEN, RRPONTSYD' },
-  { id: 'curve', label: 'Courbe des taux', hint: 'Écart 10 ans − 2 ans · haut = appétit', direction: 1, unit: 'pct', source: 'FRED T10Y2Y' },
+  { id: 'curve', label: 'Courbe des taux', hint: 'Écart 10 ans − 2 ans · haut = appétit', direction: 1, unit: 'pct', source: 'FRED DGS10 − DGS2' },
   { id: 'positioning', label: 'Positionnement des institutionnels', hint: 'Asset managers sur ES et NQ, % de l’OI · haut = appétit', direction: 1, unit: 'pctOi', source: 'CFTC (COT)' },
 ]
 
