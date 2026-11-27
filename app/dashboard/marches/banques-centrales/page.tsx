@@ -145,9 +145,9 @@ export default async function BanquesCentralesPage() {
         <ul className="md:hidden flex flex-col" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {rows.map((r, i) => (
             <li key={r.code} style={{ borderTop: i ? '1px solid var(--color-border-subtle)' : 'none', padding: i ? '0.875rem 0 0 0' : 0, marginBottom: '0.875rem' }}>
-              <div className="flex items-baseline justify-between gap-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <span>{r.bank}</span>
-                <span style={{ ...mono, color: 'var(--color-text-1)', fontWeight: 600, textAlign: 'right' }}>{r.rate}</span>
+                <span style={{ ...mono, color: 'var(--color-text-1)', fontWeight: 600, textAlign: 'right', marginLeft: 'auto' }}>{r.rate}</span>
               </div>
               <dl className="grid gap-x-3 gap-y-1.5" style={{ gridTemplateColumns: 'auto 1fr', margin: '0.625rem 0 0 0', fontSize: 12 }}>
                 <dt style={{ color: 'var(--color-text-3)' }}>Dernier changement</dt><dd style={{ margin: 0, color: 'var(--color-text-2)' }}>{r.change}</dd>
