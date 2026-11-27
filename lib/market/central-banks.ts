@@ -93,9 +93,12 @@ export const BOJ_MEETINGS: Meeting[] = [
  * série officielle du taux de base des prêts de la BoJ (API Time-Series
  * Data Search, série IR01/MADR1M), qui suit chaque décision avec un
  * écart de 0,25 pt : 0,75 % (janv. 2025), 1 % (déc. 2025), 1,25 % (juin
- * 2026), 1,5 % (sept. 2026).
+ * 2026), 1,5 % (sept. 2026). Mars 2024 : sortie des taux négatifs, cible
+ * « autour de 0 à 0,1 % », représentée par sa borne haute (0,1 %).
  */
 export const BOJ_DECISIONS: { date: string; rate: number }[] = [
+  { date: '2016-02-16', rate: -0.1 },
+  { date: '2024-03-19', rate: 0.1 },
   { date: '2024-07-31', rate: 0.25 },
   { date: '2025-01-24', rate: 0.5 },
   { date: '2025-12-19', rate: 0.75 },

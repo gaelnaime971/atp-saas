@@ -41,6 +41,7 @@ describe('banques centrales : décisions', () => {
     expect(BOJ_DECISIONS.at(-1)).toEqual({ date: '2026-09-18', rate: 1.25 })
     expect(rateAt(bojObservations(), '2026-11-27')).toBe(1.25)
     expect(rateAt(bojObservations(), '2026-07-01')).toBe(1.0)
+    expect(rateAt(bojObservations(), '2023-11-27')).toBe(-0.1)
   })
   it('escalier pour le graphique', () => {
     expect(stepSeries(changes, { date: '2026-01-01', value: 3.75 }, '2026-11-27')).toEqual([

@@ -9,7 +9,7 @@ import { requireMarketsViewer } from '@/lib/terminal/viewer-server'
 import { getMemberTimeZone } from '@/lib/time-server'
 import { readLastSuccess, readSeries } from '@/lib/market/read'
 import {
-  ATLANTA_FED_MPT_URL, BANKS, MEETINGS, bojObservations, lastMeeting, meetingOutcome, nextMeeting, rateChanges, stepSeries,
+  ATLANTA_FED_MPT_URL, BANKS, ECB_MEETINGS, MEETINGS, bojObservations, lastMeeting, meetingOutcome, nextMeeting, rateChanges, stepSeries,
   type BankCode, type Meeting, type RateChange,
 } from '@/lib/market/central-banks'
 import { ECB_NOTICE } from '@/lib/market/ecb'
@@ -142,7 +142,7 @@ export default async function BanquesCentralesPage() {
                       {lastChange ? <><span style={{ ...mono, color: lastChange.to > lastChange.from ? 'var(--color-loss)' : 'var(--color-profit)' }}>{pts(lastChange)}</span> en vigueur le {formatDateKey(lastChange.date, { year: true })}</> : '—'}
                     </td>
                     <td style={{ color: 'var(--color-text-2)' }}>
-                      {v.last && outcome ? <>{outcome.kind === 'hold' ? 'Maintien' : outcome.kind === 'hike' ? 'Hausse' : 'Baisse'} le {formatDateKey(v.last.decisionDate)}</> : v.code === 'ECB' ? <span style={{ color: 'var(--color-text-3)' }}>voir le dernier changement</span> : '—'}
+                      {v.last && outcome ? <>{outcome.kind === 'hold' ? 'Maintien' : outcome.kind === 'hike' ? 'Hausse' : 'Baisse'} le {formatDateKey(v.last.decisionDate)}</> : v.code === 'ECB' ? <span style={{ color: 'var(--color-text-3)' }}>calendrier suivi à partir du {formatDateKey(ECB_MEETINGS[0].decisionDate)}</span> : '—'}
                     </td>
                     <td style={{ color: 'var(--color-text-1)' }}>
                       {v.next ? (
