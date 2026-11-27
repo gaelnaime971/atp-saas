@@ -205,3 +205,13 @@ Arrêté le 27/11/2026. Page `/dashboard/marches/macro`, sans maquette : langage
 
 - **Séries FRED** : DGS2, DGS10, T10Y2Y, DFII10, T10YIE, liquidité de la Fed, ICSA, UNRATE, GDPNOW. Par série : dernière valeur, date (ou mois, ou trimestre), variation par rapport à la publication précédente (en points de base pour les taux), mini-graphique sur 1 an, source.
 - **Liquidité de la Fed** (`lib/market/macro.ts`, testée) = WALCL − WTREGEN − RRPONTSYD, en **milliards de dollars**, une valeur par mercredi du bilan. WALCL et WTREGEN sont en millions (÷ 1 000) et hebdomadaires ; RRPONTSYD est en milliards et quotidien (valeur du mercredi, ou la dernière connue avant). Une date sans l'une des trois valeurs est ignorée.
+
+## Sentiment de risque ATP (lot C, partie 4)
+
+Arrêté le 27/11/2026. Page `/dashboard/marches/sentiment`, d'après la maquette 08. Nom : « Sentiment de risque ATP » (pas de « Fear & Greed »).
+
+- **7 composantes** (`lib/market/sentiment.ts`, testé) : stress financier (STLFSI4), risque de marché (NFCIRISK), conditions de crédit (NFCICREDIT), taux réel 10 ans (DFII10), liquidité de la Fed (calcul de la page Macro), courbe 10 ans − 2 ans (T10Y2Y), positionnement des asset managers sur ES et NQ (COT, nette en % de l'OI, moyenne des deux percentiles).
+- **Calcul** : percentile sur 3 ans de la valeur du jour, **orienté** pour que haut = appétit (stress, risque, crédit et taux réel inversés : 100 − percentile) ; score = moyenne simple des composantes disponibles ; zones : aversion sous 40, neutre de 40 à 60, appétit au-dessus de 60. Contribution de chaque composante = son percentile orienté / nombre de composantes.
+- **Historique** : un point par semaine sur 1 an, chaque point calculé avec les seules données connues à sa date (dernière valeur ≤ date).
+- **Composante écartée ou sans donnée** : le score se calcule sans elle et la page le dit. Aucune écartée à ce jour (licences vérifiées, partie 1).
+- **Différences avec la maquette** : les composantes de la maquette (VIX, S&P 500, spread haut rendement, AUD/JPY, dollar, bitcoin) sont remplacées par les séries publiques de la Fed et de la CFTC (arbitrage de l'étape 0). Pas de « Lecture Jarvis ».
