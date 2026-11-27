@@ -59,6 +59,7 @@ export default function MarketsShell({ viewer, children }: { viewer: Exclude<Ter
         activePage: activeId,
         onPageChange: () => { /* tous les items actifs sont des liens */ },
         storageKey: 'atp.sidebar.trader',
+        drawerFooterLabel: isAdmin ? 'Déconnexion' : 'Mon compte, contrat, documents',
         header: railCollapsed => (
           <>
             {isAdmin

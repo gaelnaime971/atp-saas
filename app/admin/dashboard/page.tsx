@@ -126,6 +126,7 @@ export default function AdminDashboard() {
         onPageChange: id => goTo(id),
         banner: { label: 'Admin', tone: 'loss' },
         storageKey: 'atp.sidebar.admin',
+        drawerFooterLabel: 'Trading perso, paramètres',
         // Rail replié (tablette par défaut) : icônes seules, nom au survol.
         footer: railCollapsed => (
           <>

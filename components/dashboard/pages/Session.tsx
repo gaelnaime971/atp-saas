@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/client'
 import { toneForPlanScore } from '@/lib/format'
 import type { TraderAccount } from '@/lib/types'
 
+import { DEFAULT_INSTRUMENT, defaultInstrument } from '@/lib/session/instrument'
+
 const INSTRUMENTS = ['ES', 'NQ', 'DAX', 'YM', 'MYM', 'MNQ', 'GC', 'MGC']
 const MOODS = ['😴', '😬', '😐', '😌', '🎯', '🔥'] as const
 
@@ -61,7 +63,8 @@ export default function Session() {
   const [accounts, setAccounts] = useState<TraderAccount[]>([])
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([])
   const [date, setDate] = useState(todayISO())
-  const [instrument, setInstrument] = useState('ES')
+  // Dernier instrument utilisé par le membre, sinon NQ (lib/session/instrument).
+  const [instrument, setInstrument] = useState(DEFAULT_INSTRUMENT)
   const [tradesCount, setTradesCount] = useState<number>(0)
   const [pnl, setPnl] = useState<number>(0)
   const [rValue, setRValue] = useState<number>(0)
@@ -82,11 +85,16 @@ export default function Session() {
     async function loadAccounts() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data } = await supabase.from('trader_accounts').select('*').eq('trader_id', user.id).order('created_at', { ascending: true })
+      const [{ data }, { data: last }] = await Promise.all([
+        supabase.from('trader_accounts').select('*').eq('trader_id', user.id).order('created_at', { ascending: true }),
+        supabase.from('trading_sessions').select('instrument').eq('trader_id', user.id)
+          .order('session_date', { ascending: false }).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      ])
       if (data) {
         setAccounts(data as TraderAccount[])
-        setSelectedAccountIds(data.map((a: any) => a.id))
+        setSelectedAccountIds((data as TraderAccount[]).map(a => a.id))
       }
+      setInstrument(defaultInstrument((last as { instrument?: string | null } | null)?.instrument, INSTRUMENTS))
     }
     loadAccounts()
   }, [])

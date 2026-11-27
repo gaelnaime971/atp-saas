@@ -267,8 +267,8 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
             <div style={{ ...shimmer, width: 180, height: 16 }} />
           </div>
 
-          {/* KPI cards skeleton */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+          {/* KPI cards skeleton (même grille que les cartes) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: 16 }}>
             {[1, 2, 3, 4].map(i => (
               <div
                 key={i}
@@ -407,7 +407,8 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           donne un responsive natif 3→2→1 col selon largeur, sans media
           query. Le seuil 280 est ce que les cartes tolèrent avant que
           les 2/3 pills débordent. */}
-      <Reveal delay={40} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+      {/* Une colonne jusqu'à 1023 px (pas de carte isolée en 2+1 sur tablette), 3 au-delà. */}
+      <Reveal delay={40} className="grid grid-cols-1 lg:grid-cols-3" style={{ gap: 16 }}>
         <InsightIAPerf onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
         <InsightIAMarket onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
         <InsightIAMental onGoToAnalysis={onGoToAnalysis ?? (() => {})} />
@@ -417,7 +418,8 @@ export default function Dashboard({ onGoToAnalysis }: DashboardProps = {}) {
           Chaque KpiCard reçoit un <AnimatedNumber> en value. Le format
           arrondit selon les décimales voulues (Math.round pour Win Rate
           et Sessions qui doivent être des ints propres pendant le tween). */}
-      <Reveal delay={80} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+      {/* 2×2 sur mobile large et tablette (pas de 3+1), 4 à partir de 1024 px. */}
+      <Reveal delay={80} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: 16 }}>
         <KpiCard
           label="P&L Total"
           value={<AnimatedNumber value={totalPnl} format={n => fmtUsd(n, 2, { sign: true })} />}

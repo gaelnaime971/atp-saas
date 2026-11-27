@@ -60,6 +60,8 @@ export interface AppSidebarProps<Id extends string> {
   variant?: 'rail' | 'drawer'
   /** Appelé quand un élément de navigation est choisi (ferme le tiroir). */
   onNavigate?: () => void
+  /** Tiroir mobile : libellé de la ligne compacte qui déplie le pied de menu. */
+  drawerFooterLabel?: string
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -389,6 +391,7 @@ function NavGroupSection<Id extends string>({
 
 export default function AppSidebar<Id extends string>({
   groups, activePage, onPageChange, banner, storageKey, footer, header, variant = 'rail', onNavigate,
+  drawerFooterLabel = 'Mon compte, contrat, documents',
 }: AppSidebarProps<Id>) {
   const isDrawer = variant === 'drawer'
   const kind = useViewportKind()
@@ -493,10 +496,11 @@ export default function AppSidebar<Id extends string>({
           gap: '0.5rem',
         }}
       >
+        {/* Rail replié : le symbole seul (le logo complet serait écrasé). */}
         <img
-          src="/logo-atp.png"
+          src={railCollapsed ? '/logo-atp-symbol.png' : '/logo-atp.png'}
           alt="Alpha Trading Pro"
-          style={{ height: railCollapsed ? 28 : 32, transition: 'height 0.18s ease' }}
+          style={{ height: railCollapsed ? 30 : 32, width: 'auto' }}
         />
         {banner && bannerStyle && !railCollapsed && (
           <span
@@ -586,13 +590,51 @@ export default function AppSidebar<Id extends string>({
         </svg>
       </button>}
 
-      {/* Footer (avatar + logout injecté par le shell) */}
-      {footer && (
+      {/* Footer (avatar + logout injecté par le shell). Tiroir mobile : une
+          ligne compacte qui se déplie, pour laisser la place au menu. */}
+      {footer && (isDrawer ? (
+        <DrawerFooter label={drawerFooterLabel}>{typeof footer === 'function' ? footer(false) : footer}</DrawerFooter>
+      ) : (
         <div style={{ borderTop: '1px solid var(--color-border-subtle)', padding: railCollapsed ? '0.75rem 0.5rem' : '0.75rem' }}>
           {typeof footer === 'function' ? footer(railCollapsed) : footer}
         </div>
-      )}
+      ))}
     </aside>
+  )
+}
+
+/** Pied du menu dans le tiroir mobile : replié par défaut, une ligne. */
+function DrawerFooter({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ borderTop: '1px solid var(--color-border-subtle)', padding: '0.25rem 0.75rem' }}>
+      <button
+        type="button"
+        data-drawer-keep-open
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem',
+          padding: '0 0.25rem', background: 'transparent', border: 'none', cursor: 'pointer',
+          fontFamily: 'var(--font-display)', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-2)',
+        }}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.625rem' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+            <circle cx="12" cy="8" r="4" />
+            <path strokeLinecap="round" d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+          </svg>
+          {label}
+        </span>
+        <svg
+          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', opacity: 0.7 }}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && <div style={{ paddingTop: '0.5rem', paddingBottom: '0.5rem' }}>{children}</div>}
+    </div>
   )
 }
 
